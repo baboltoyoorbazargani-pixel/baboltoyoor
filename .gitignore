@@ -9,3 +9,9 @@ node_modules/
 build/
 dist/
 data-preview/
+
+# SQLite runtime files (never commit)
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
