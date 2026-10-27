@@ -10,7 +10,7 @@
 - **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏.
 - اجرای دستی روی ویندوز: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏.
 - ابزارهای SQL: `node scripts/sql-query.js "SELECT ..."` و پشتیبانگیری `node scripts/backup-db.js`.
-- مسیرهای API از لایهٔ `lib/sql-repos.js` با prepared statement استفاده میکنند و دادهها در ابتدای هر درخواست از SQL تازه میشوند (`docs/sqlite-database-fa.md` ← فاز ۲).
+- مسیرهای API از لایهٔ `lib/sql-repos.js` با prepared statement استفاده میکنند و دادهها در ابتدای هر درخواست از SQL تازه میشوند (فاز ۲). در **فاز ۳** نوشتها هم ردیفبهردیف شدند: هر تغییر همان لحظه `INSERT ... ON CONFLICT DO UPDATE` یا `DELETE` اجرا میکند و `store.save()` فقط همگامسازی افزایشی است (`docs/sqlite-database-fa.md` ← فاز ۳).
 - پل باسکول (نمایشگر ‎PU 850‎): ‏`node scripts/weighbridge-bridge.js --port COM3 --baud 9600 --server http://127.0.0.1 --token <TOKEN>`‏ — مستند پروتکل: ‏`docs/weighbridge-pu850.md`‏.
 
 ## شروع از صفر (دیتای خام)
@@ -26,4 +26,4 @@
 - استقرار ویندوز سرور: ‏`docs/deployment-windows-server-2025.md`‏ • پروتکل باسکول: ‏`docs/weighbridge-pu850.md`‏
 
 ## تست‌ها
-‏`npm test`‏ — مجموعهٔ تست خودکار (بدون وابستگی): ۳۹۲ آزمون در ۷۲ فایل ‏`node:test`‏؛ روی Node 20 و 22 اجرا می‌شود. اجرای مستقیم ‏`node --test`‏ نیز همان نتیجه را می‌دهد.
+`npm test` — مجموعهٔ تست خودکار (بدون وابستگی): ۴۳۴ آزمون در ۷۶ فایل `node:test`؛ روی Node 22.5+ اجرا میشود (`node:sqlite` در Node 20 وجود ندارد). اجرای مستقیم `node --test` نیز همان نتیجه را میدهد.

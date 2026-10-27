@@ -1,7 +1,7 @@
 18423e2da142ae4a05f3dad4d0903ba89a14abcd6a5fc7c9f69c0809d13798e1  ./.gitignore
-91daca1610d88f49281882ddd9ede8adde92a7f9944ec72c1a7390e062d2f38e  ./CHANGELOG.md
+9b30e27fc1cddbe4837c7114259c4c4386ce4a902f30b61a7758f89cb768dab3  ./CHANGELOG.md
 cf5db6b7c699488e4f4fbb243af67205f640173bce553f01a8d9d20414eff31b  ./NOTICE.txt
-7115f9b0ee3b7c6308f5858a2e9721dfb1d2cd8f8b7cdba798408011639c9ec8  ./README.md
+df0d36adb91655381c1d582b03b2c8bf01fc5afe78f5781dde5213ea8de36d72  ./README.md
 320c7fa99424c56b9d5e2a1bde9f1610b5678b302497e3dac620fb825091f20a  ./RELEASE-37.37.0-fa.md
 47d694d1bc5032fb8543c7f400c9cc14a7ac0f03b751bc6f3bf1b966b5b1d9d9  ./RELEASE-37.38.0-fa.md
 06d5341eb192c86b7cf9499dc195428d082da65ac6bfce75f6fd3ea708a1e576  ./RELEASE-37.39.0-fa.md
@@ -11,9 +11,9 @@ c9fbfc2417b4f91a648473156f59f3a138e4dc8a275b74ab13b684ae18e18b38  ./RELEASE-37.4
 802d5dae281431a49948203c149bf51205c428b5f0b8ebe9d31b0079a5018e0e  ./RELEASE-37.43.0-fa.md
 6e5a006e078f48892f1622c0fb8370e143c6cb6ce7f17aef2d1941a6a90b2829  ./VERSION.txt
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.png
-8ff5fc1758f94dd1820f32f42dc4ac0ec750e4e28e7f5e921344cae727296cab  ./docs/PROJECT-PROMPT-fa.md
+43a5be810c6c9b15630c42b7a128c927757c8dec5307d334797d2c79b370262e  ./docs/PROJECT-PROMPT-fa.md
 0543e44ac6510627c343f89447af63235f5be2cf9df816a46d5da1110cd12ebc  ./docs/deployment-windows-server-2025.md
-99e41c98b4e804f98e30a36659a6cbdeb8075a9591f356b1fb03e435ae10d120  ./docs/sqlite-database-fa.md
+d0328cfcb5b933aac8dca266de9db35ceadfaed62c1f0afed60f03c1bafe6c78  ./docs/sqlite-database-fa.md
 b331c4f3b873d5a7f09ce1ed6bbb8e745d6295537cb336313fdf2efed155ec26  ./docs/weighbridge-pu850.md
 f44c3b892eb502c337bc9bcf60ece04d767ea7e5405ab69db912fde2f8e32b78  ./lib/catalog.js
 cf6be44288468af21a1afe69b628298298b4a060f372faea3c32cd3793b10d0e  ./lib/config.js
@@ -24,6 +24,7 @@ db0a7500d4fe9fbd6555df03d05dce7e0f7279e4d11beb27624b6fc3470de13f  ./lib/csv.js
 82d55d6bc4a8395d51618e068e55af500bfeb33d26e558bae4b65a741dc35d05  ./lib/domain.js
 97dea67ab257210722c8981ed01b67be87d87fd42328060fab8d9830591168af  ./lib/http.js
 9d2802e1916cb9a83cad3e265845c8bf8b2340e5b29a90132237b4b16ede6b80  ./lib/invoice-numbers.js
+078bdc41952e1608ce0bfb40a5745dc13af63aa94ed84a3a5aa9facd0c426a5f  ./lib/live-collections.js
 8437ab9e073bc1182a69637f6ceb978bac18288a9549d07cf79ea081f37456b8  ./lib/load-env.js
 3644480e9bc4505612d4ebd41f0ddbc7df5b72a782648b4bf5805793c5ed2e80  ./lib/logger.js
 2cd2b247d35ff29aec56044b454a701bf7f3fc881fa5bbe2929322a4136a3f17  ./lib/order-numbers.js
@@ -41,10 +42,10 @@ eda4e728a22f3a958f3c08aeb993a2d0d4f6535fde1ce244998401d766d06f88  ./lib/routes/i
 0a70fd09acd02854eb058d822abd04102011bfd994c6054c21d00ffc784b1bfa  ./lib/routes/weighbridge.js
 1f79d017a230136bb2004db4e543c86c79f7690c77064adea29ed6b78f44d769  ./lib/security.js
 0b3a2009030062b8c4185b57a778281e4142d947458fff38464f6baaada489a8  ./lib/settlement-methods.js
-5c2293ffe530847b4b52ec35828ca87f36e598847a387e719417fef46258f81e  ./lib/sql-repos.js
-56be832a6222750d8e538f029e0e774b7c1fa36a9ec50ca243e90e6d92fa01ba  ./lib/sqlite-store.js
+c1acc44b55fdba532675012679a01f3240d7ffc8aeeb932a600a26afca0def29  ./lib/sql-repos.js
+a0db42fd8a30100ebd9151be51f58f6f2234e6db54985c6493afd5f51b868fab  ./lib/sqlite-store.js
 c4479f9f7b5ae521023488a2ac0d9edec37279ec12b530bae121f7189946a7dc  ./lib/store-runs.js
-337a89a22e9c6a1ed06631497182fd60a6e9f242c492993c8034bf5e06726e98  ./lib/store.js
+477c7ff2fde5db744ff735d51b5f0c0326d15d6714cdfbaf97c93b16d51780b3  ./lib/store.js
 6854ae9ae2a6e40429d3912006469f3581ccbcaa87ead4ec762b26120070cd1f  ./lib/ticket-settings.js
 82f08a6ac463f2669576a405db3f42b8a78ca3acecbae9ead92d81e40932b8dc  ./lib/validate.js
 eba092ede1e86c0e82145efeee6dcaf439d3430ad89fd80de87145aa8034dbd1  ./lib/weighbridge.js
@@ -130,6 +131,7 @@ cde6d6a47eb7abea065408a224d298a266989396832c5749154de8cad756460a  ./tests/server
 9ebd36bded55bbf43901f9d553f2b8c75e6d8982662e459bc0166a6906fc9c61  ./tests/settlement-methods.test.js
 4a1dba227bd6bdbe186d37cc4f553925be0efa4213b88edc026d474704f341fe  ./tests/settlement-queue-card.test.js
 c133321be13a2bf52cd9dfcc5d501662c77ee1a16b91bd623e305412ceae3303  ./tests/sql-phase2.test.js
+cb7bdc6c4905bec01d1fc3a5d578720d55526298821dcccbb89783e608fd67f3  ./tests/sql-phase3.test.js
 86a9a37e30475ed2ab2a7e478c25490894f06e214fbb4e86b97d471a753f3f3f  ./tests/sqlite-store.test.js
 4649ee370b1ed02ab9710b7a7809c74bcfb9d8353ade5890b3494457cf595d87  ./tests/store-branch-numbers.test.js
 cb8102e1b74bc8ab7f962b35853d5eb585cfdee2edc7db90bffefcf5fade7ae6  ./tests/store-flow-separation-376.test.js
