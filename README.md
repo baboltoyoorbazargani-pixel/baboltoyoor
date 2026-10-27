@@ -10,6 +10,7 @@
 - **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏.
 - اجرای دستی روی ویندوز: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏.
 - ابزارهای SQL: `node scripts/sql-query.js "SELECT ..."` و پشتیبانگیری `node scripts/backup-db.js`.
+- مسیرهای API از لایهٔ `lib/sql-repos.js` با prepared statement استفاده میکنند و دادهها در ابتدای هر درخواست از SQL تازه میشوند (`docs/sqlite-database-fa.md` ← فاز ۲).
 - پل باسکول (نمایشگر ‎PU 850‎): ‏`node scripts/weighbridge-bridge.js --port COM3 --baud 9600 --server http://127.0.0.1 --token <TOKEN>`‏ — مستند پروتکل: ‏`docs/weighbridge-pu850.md`‏.
 
 ## شروع از صفر (دیتای خام)

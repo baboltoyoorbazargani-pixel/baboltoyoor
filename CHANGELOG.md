@@ -1,3 +1,11 @@
+# فاز ۲ — مسیرهای API مستقیماً SQL اجرا میکنند
+
+- **تازهمسازی زنده:** `lib/http.js` در ابتدای هر درخواست `store.refresh()` را صدا میزند؛ با `PRAGMA data_version` تغییرات اتصالهای دیگر (ابزار BI/CLI) تشخیص داده و نما از SQL بارگذاری مجدد میشود. همهٔ ۱۲۰ نقطهٔ `store.get()` اکنون دادهٔ زندهٔ SQL میبینند.
+- **لایهٔ تازهٔ `lib/sql-repos.js`:** Repositoryهای `all/find/findBy/where/select/count/insert/replace/remove` با prepared statement، اعتبارسنجی نام ستون و بایند پارامترها؛ `lib/sqlite-store.js` اکنون `all/get/run/put/del/dataVersion/refreshIfChanged/queryCount` صادر میکند.
+- **مسیرهای تبدیلشده به SQL خالص:** احراز هویت نشست، جستجوی بایدپخشی، **داشبورد** (یک پرسوجوی تجمیعی برای ۷ شمارنده)، **Audit** (WHERE پویا + COUNT + LIMIT بایندشده)، **گزارش پیشرفته** (joinها و شمارشها)، و فهرست کاربران/محصولات/پوز/رانندگان/مراجعات.
+- نوشتها همچنان از `store.save()` تراکنشی عبور میکنند؛ زنجیرهٔ Audit و بایدپخشی حفظ شدند. `ctx.user` مرجع زنده میماند تا تعویض رمز کار کند.
+- تستها: **۴۲۵ موفق / ۰ شکست** (۷ تست تازهٔ `sql-phase2.test.js` شامل اثبات دیدهشدن تغییرات خارجی SQL توسط API، ایمنی در برابر تزریق و Repository CRUD).
+
 # مهاجرت دیتابیس به SQLite (پس از انتشار ۳۷٫۴۳٫۰ — بدون تغییر پین نسخه)
 
 - **منبع اصلی دادهها اکنون SQL است:** `DATA_DIR/baboltoyoor.db` (SQLite) بهجای `data/db.json`. لایهٔ تازهٔ `lib/sqlite-store.js` با `node:sqlite` داخلی Node — بدون هیچ وابستگی خارجی.
