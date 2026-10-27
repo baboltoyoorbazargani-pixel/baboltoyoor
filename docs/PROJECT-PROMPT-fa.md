@@ -34,7 +34,8 @@
 server.js                  ورودی سرور
 lib/                       منطق سمت سرور
   config.js                همهٔ تنظیمات و envها
-  sqlite-store.js          اتصال/اسکیمای SQLite، ذخیرهٔ تراکنشی، مهاجرت db.json، پرسوجو/بکاپ
+  sqlite-store.js          اتصال/اسکیمای SQLite، ذخیرهٔ تراکنشی، prepared statements، مهاجرت/بکاپ
+  sql-repos.js             Repositoryها و پرسوجوهای SQL مسیرهای API (فاز ۲)
   store.js                 لایهٔ دادهها روی SQL + nowIso/audit
   domain.js                قوانین دامنه، اعلان‌ها، publicUser
   http.js                  روتر (route)، پاسخ‌ها، idempotency
@@ -80,6 +81,7 @@ VERSION.txt                هویت داخلی 37.6.0 — دست نخورد (پ�
 - ذخیره تراکنشی (`BEGIN IMMEDIATE`/`COMMIT`) و افزایشی (diff بر اساس `id` و `payload`)؛ `WAL` + `synchronous=FULL`.
 - مهاجرت خودکار: اگر دیتابیس SQL خالی و `DATA_DIR/db.json` موجود باشد، در اولین `init()` خوانده، `migrate()` شده، در جداول SQL نوشته و فایل قدیمی به `db.json.migrated-<timestamp>` بایگانی میشود.
 - زنجیرهٔ هش Audit، شمارندهها، idempotency و قفل تکنمونهای (`.lock`) بدون تغییر باقی میمانند.
+- **فاز ۲:** `lib/http.js` در ابتدای هر درخواست `store.refresh()` را با `PRAGMA data_version` صدا میزند؛ تمام مسیرها دادهٔ زندهٔ SQL میبینند. لایهٔ `lib/sql-repos.js` شامل prepared statement برای Repositoryهاست و مسیرهای احراز هویت، بایدپخشی، داشبورد، Audit، گزارشها و فهرستها مستقیماً SQL اجرا میکنند. نوشتها همچنان از `store.save()` تراکنشی میگذرند.
 - ابزارها: `scripts/sql-query.js` (فقط SELECT/PRAGMA/WITH/EXPLAIN، پارامترهای بایندشده) و `scripts/backup-db.js` (VACUUM INTO). مستند کامل: `docs/sqlite-database-fa.md`.
 
 ## ۳) نقش‌ها و کارتابل‌ها (۷ نقش قطعی)
@@ -170,7 +172,7 @@ VERSION.txt                هویت داخلی 37.6.0 — دست نخورد (پ�
 ## ۹) تست‌ها
 
 - اجرا: `npm test` (`node --test`) — بدون وابستگی؛ سرور واقعی روی پورت‌های مجزا با `DATA_DIR` موقت بالا می‌آید.
-- وضعیت فعلی: **۴۱۷ تست، همه سبز** (۷۵ فایل، شامل ۱۱ تست `sqlite-store.test.js` و ۱۴ تست نصبکننده). هر نسخهٔ جدید باید تست قراردادیِ رفتار خودش را اضافه کند (قرارداد CSS/HTML با رگکس + تست API واقعی هرجا رفتار سمت سرور عوض شده).
+- وضعیت فعلی: **۴۲۵ تست، همه سبز** (۷۶ فایل، شامل ۱۱ تست `sqlite-store.test.js`، ۷ تست `sql-phase2.test.js` و ۱۴ تست نصبکننده). هر نسخهٔ جدید باید تست قراردادیِ رفتار خودش را اضافه کند (قرارداد CSS/HTML با رگکس + تست API واقعی هرجا رفتار سمت سرور عوض شده).
 - هویت داخلی `37.6.0` در `VERSION.txt` و `package.json` و `lib/store.js` پین تست هویت است؛ برای bump ظاهری نسخه **دست نخورد**.
 
 ## ۱۰) روند انتشار هر نسخه (گام‌به‌گام، بدون استثنا)
