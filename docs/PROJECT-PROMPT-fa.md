@@ -36,6 +36,7 @@ lib/                       منطق سمت سرور
   config.js                همهٔ تنظیمات و envها
   sqlite-store.js          اتصال/اسکیمای SQLite، ذخیرهٔ تراکنشی، prepared statements، مهاجرت/بکاپ
   sql-repos.js             Repositoryها و پرسوجوهای SQL مسیرهای API (فاز ۲)
+  live-collections.js      نوشت ردیفبهردیف write-through روی SQL (فاز ۳)
   store.js                 لایهٔ دادهها روی SQL + nowIso/audit
   domain.js                قوانین دامنه، اعلان‌ها، publicUser
   http.js                  روتر (route)، پاسخ‌ها، idempotency
@@ -55,7 +56,7 @@ public/                    فرانت‌اند
   mobile.css / compatibility.css   ← لایه‌های CSS؛ اصلاحات جدید معمولاً
                                      به‌صورت بلوک نسخه‌دار در انتهای compatibility.css
   fonts/ + fonts.css       فونت‌های محلی
-tests/                     تست‌های node:test (بدون وابستگی) — اکنون ۷۲ فایل
+tests/                     تست‌های node:test (بدون وابستگی) — اکنون ۷۶ فایل
 docs/                      deployment-windows-server-2025.md ، weighbridge-pu850.md
 scripts/                   start.ps1 / start-hidden.ps1 / weighbridge-bridge.js
 assets/logo.png            لوگوی رسمی (سرویس /logo.png)
@@ -77,11 +78,12 @@ VERSION.txt                هویت داخلی 37.6.0 — دست نخورد (پ�
 
 - منبع اصلی دادهها **فایل SQLite** است: `DATA_DIR/baboltoyoor.db` (قابل override با `SQLITE_FILE`). فایل `db.json` فقط منبع مهاجرت است و دیگر نوشته نمیشود.
 - پیادهسازی: `node:sqlite` داخلی Node.js ≥ 22.5 (**هیچ پکیج خارجی اضافه نشود**). حداقل نسخهٔ Node در `package.json` برابر `>=22.5.0` است.
-- ۱۵ جدول موجودیتی + `meta` و `counters` + `schema_info`؛ ستونهای پرکاربرد واقعی و ایندکسدار، بهعلاوهٔ ستون `payload` (JSON) برای حفظ کامل رکوردها.
-- ذخیره تراکنشی (`BEGIN IMMEDIATE`/`COMMIT`) و افزایشی (diff بر اساس `id` و `payload`)؛ `WAL` + `synchronous=FULL`.
+- ۱۷ جدول موجودیتی (شامل `vehicles` و `weigh_trips`) + `meta`، `counters`، `settings` و `schema_info`؛ ستونهای پرکاربرد واقعی و ایندکسدار، بهعلاوهٔ ستون `payload` (JSON) برای حفظ کامل رکوردها.
+- ذخیره تراکنشی (`BEGIN IMMEDIATE`/`COMMIT`) و افزایشی (diff بر اساس `id` و `payload` مقابل محتوای واقعی SQL)؛ `WAL` + `synchronous=FULL`.
 - مهاجرت خودکار: اگر دیتابیس SQL خالی و `DATA_DIR/db.json` موجود باشد، در اولین `init()` خوانده، `migrate()` شده، در جداول SQL نوشته و فایل قدیمی به `db.json.migrated-<timestamp>` بایگانی میشود.
 - زنجیرهٔ هش Audit، شمارندهها، idempotency و قفل تکنمونهای (`.lock`) بدون تغییر باقی میمانند.
-- **فاز ۲:** `lib/http.js` در ابتدای هر درخواست `store.refresh()` را با `PRAGMA data_version` صدا میزند؛ تمام مسیرها دادهٔ زندهٔ SQL میبینند. لایهٔ `lib/sql-repos.js` شامل prepared statement برای Repositoryهاست و مسیرهای احراز هویت، بایدپخشی، داشبورد، Audit، گزارشها و فهرستها مستقیماً SQL اجرا میکنند. نوشتها همچنان از `store.save()` تراکنشی میگذرند.
+- **فاز ۲:** `lib/http.js` در ابتدای هر درخواست `store.refresh()` را با `PRAGMA data_version` صدا میزند؛ تمام مسیرها دادهٔ زندهٔ SQL میبینند. لایهٔ `lib/sql-repos.js` شامل prepared statement برای Repositoryهاست و مسیرهای احراز هویت، بایدپخشی، داشبورد، Audit، گزارشها و فهرستها مستقیماً SQL اجرا میکنند.
+- **فاز ۳:** `lib/live-collections.js` نمای درون حافظه را به پراکسی write-through تبدیل میکند؛ `push`، `splice`، `Object.assign`، فیلدهای تودرتو، `meta`، `counters` و تنظیمات، همان لحظه فقط همان ردیف را با `INSERT ... ON CONFLICT DO UPDATE` یا `DELETE` در SQL مینویسند. `sql.save()` افزایشی است و با محتوای واقعی SQL مقایسه میکند (هیچ جدولی کامل پاک و بازنویسی نمیشود). `store.save()` فقط همگامسازی و پاکسازی idempotency است. نوشت مستقیم `repos.*.insert/replace/remove` هم با نمای درون حافظه هماهنگ میشود. مستند کامل: بخش ۸ `docs/sqlite-database-fa.md`.
 - ابزارها: `scripts/sql-query.js` (فقط SELECT/PRAGMA/WITH/EXPLAIN، پارامترهای بایندشده) و `scripts/backup-db.js` (VACUUM INTO). مستند کامل: `docs/sqlite-database-fa.md`.
 
 ## ۳) نقش‌ها و کارتابل‌ها (۷ نقش قطعی)
@@ -172,7 +174,7 @@ VERSION.txt                هویت داخلی 37.6.0 — دست نخورد (پ�
 ## ۹) تست‌ها
 
 - اجرا: `npm test` (`node --test`) — بدون وابستگی؛ سرور واقعی روی پورت‌های مجزا با `DATA_DIR` موقت بالا می‌آید.
-- وضعیت فعلی: **۴۲۵ تست، همه سبز** (۷۶ فایل، شامل ۱۱ تست `sqlite-store.test.js`، ۷ تست `sql-phase2.test.js` و ۱۴ تست نصبکننده). هر نسخهٔ جدید باید تست قراردادیِ رفتار خودش را اضافه کند (قرارداد CSS/HTML با رگکس + تست API واقعی هرجا رفتار سمت سرور عوض شده).
+- وضعیت فعلی: **۴۳۴ تست، همه سبز** (۷۶ فایل، شامل ۱۱ تست `sqlite-store.test.js`، ۷ تست `sql-phase2.test.js`، ۹ تست `sql-phase3.test.js` و ۱۴ تست نصبکننده). هر نسخهٔ جدید باید تست قراردادیِ رفتار خودش را اضافه کند (قرارداد CSS/HTML با رگکس + تست API واقعی هرجا رفتار سمت سرور عوض شده).
 - هویت داخلی `37.6.0` در `VERSION.txt` و `package.json` و `lib/store.js` پین تست هویت است؛ برای bump ظاهری نسخه **دست نخورد**.
 
 ## ۱۰) روند انتشار هر نسخه (گام‌به‌گام، بدون استثنا)
