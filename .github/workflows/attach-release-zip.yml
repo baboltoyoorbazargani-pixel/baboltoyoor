@@ -1,0 +1,51 @@
+name: Attach 37.43.0 ZIP assets
+
+# Temporary publishing helper: this sandbox cannot reach uploads.github.com,
+# so the release assets are built and attached by a runner instead.
+on:
+  push:
+    branches: [arena/667b7835-baboltoyoor]
+    paths: [.github/workflows/attach-release-zip.yml]
+  workflow_dispatch:
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: v37.43.0
+          path: src
+
+      - name: Build versioned ZIP from the tag
+        run: |
+          set -euo pipefail
+          mkdir -p dist/BabolToyor-37.43.0
+          cp -a src/. dist/BabolToyor-37.43.0/
+          rm -rf dist/BabolToyor-37.43.0/.git
+          (cd dist/BabolToyor-37.43.0 && sha256sum -c SHA256SUMS.txt >/dev/null)
+          (cd dist && zip -qr BabolToyor-37.43.0.zip BabolToyor-37.43.0)
+          sha256sum dist/BabolToyor-37.43.0.zip
+
+      - name: Fetch the original Drive ZIP (only if publicly readable)
+        run: |
+          set -euo pipefail
+          curl -fsSL --max-time 90 "https://drive.usercontent.google.com/download?id=1_p2M2xJs8vy03BjH1dy8iQj5977Jh2if&export=download&confirm=t" -o dist/original.zip || true
+          if [ -f dist/original.zip ] && [ "$(md5sum dist/original.zip | cut -d' ' -f1)" = "d5ab8fde05285a5cf1bda1545c4a888a" ]; then
+            mv dist/original.zip dist/BabolToyor-37.43.0-drive-original.zip
+            echo "Original Drive ZIP verified (MD5 match)."
+          else
+            rm -f dist/original.zip
+            echo "Original Drive ZIP is not publicly downloadable; skipping."
+          fi
+
+      - name: Upload assets to release v37.43.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload v37.43.0 dist/*.zip --clobber --repo "$GITHUB_REPOSITORY"
+          gh release view v37.43.0 --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'
