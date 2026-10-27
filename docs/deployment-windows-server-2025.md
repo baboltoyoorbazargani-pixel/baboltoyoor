@@ -1,63 +1,82 @@
-# نصب روی Windows Server 2025 (نسخه 37.2.10)
+# نصب و استقرار روی Windows Server 2025 (نسخهٔ ۳۷٫۴۳٫۰)
 
 ## خلاصه
-فایل `dist\BabolToyorSmart-Setup-37.2.10.exe` را روی سرور اجرا کنید (با دسترسی Administrator). نصب‌کننده همه چیز را خودکار انجام می‌دهد:
 
-1. نصب **Node.js 22 LTS** اگر نصب نباشد (دانلود از nodejs.org و بررسی SHA256).
-2. کپی فایل‌های برنامه در `C:\BabolToyorSmart`.
-3. ساخت فایل `.env` با رمز اولیه تصادفی مدیر (فقط یک بار، و فقط اگر پایگاه داده وجود نداشته باشد).
-4. ثبت **Windows Service** با نام `BabolToyorSmart` (شروع خودکار با سرور و راه‌اندازی مجدد در خطا).
-5. باز کردن فایروال برای `TCP 80` در پروفایل‌های Domain و Private.
-6. اجرای سرویس و بررسی سلامت برنامه؛ ساخت میان‌بر روی دسکتاپ و Start Menu.
+فایل **`windows-installer/BabolToyor-Setup.cmd`** یک نصبکنندهٔ تکفایل است. کافی است آن را روی سرور کپی و با **Run as administrator** اجرا کنید (با دابلکلیک هم خودش درخواست UAC میدهد). هیچ کدنویسی، نصب دستی وابستگی یا ویرایش تنظیمات لازم نیست.
+
+سامانه روی **پورت ۸۰** اجرا میشود؛ آدرس `http://localhost` روی خود سرور و `http://IP-سرور` از شبکه داخلی — **بدون نوشتن پورت**.
+
+> راهنمای کامل و فارسی نصبکننده: `windows-installer/README-fa.md`
+
+## نصبکننده چه میکند
+
+1. **Node.js ۲۰+**: اگر نباشد، بهترتیب از (الف) فایل پورتابل `node-v*-win-x64.zip` کنار نصبکننده، (ب) `winget` و (ج) دانلود رسمی `nodejs.org` **همراه بررسی SHA256** نصب میکند.
+2. **کپی فایلهای برنامه** در `C:\BabolToyor`: اگر `app.zip` کنار نصبکننده باشد از همان استفاده میکند (نصب آفلاین)، وگرنه بستهٔ ریلیز `v37.43.0` را از گیتهاب میگیرد.
+3. **ساخت `.env`** با `PORT=80`، `HOST=0.0.0.0`، `DATA_DIR=C:\BabolToyor\data` و یک رمز تصادفی قوی برای `admin`. دسترسی فایل فقط برای `SYSTEM` و `Administrators` است.
+4. **پورت ۸۰**: اگر IIS/HTTP.sys پورت را گرفته باشد، سایت مربوطه متوقف و `serverAutoStart` آن خاموش میشود (با هشدار در لاگ)؛ در صورت نیاز `W3SVC` متوقف و Manual میشود. با `-NoAutoStopIis` میتوان جلوی این کار را گرفت.
+5. **فایروال**: قانون ورودی `Babol Toyor - HTTP (TCP 80)` برای پروفایلهای Domain/Private/Public.
+6. **اجرای خودکار**: Scheduled Task با نام `Babol Toyor - Application Server`، حساب `SYSTEM`، trigger هنگام بوت، بدون محدودیت زمان اجرا و ریاستارت در خطا. یک supervisor هم در صورت خروج `node` ظرف ۵ ثانیه سامانه را بالا میآورد.
+7. **بررسی سلامت** (`GET /api/server-time`)، ساخت میانبر `http://localhost/` روی دسکتاپ و Start Menu، و نوشتن `C:\BabolToyor\INSTALL-INFO.txt` شامل آدرس، نام کاربری و رمز اولیه.
 
 ## نصب
-1. فایل Setup را روی سرور کپی و با **Run as administrator** اجرا کنید.
-2. مسیر نصب را تغییر ندهید مگر لازم باشد.
-3. صبر کنید تا پیام «Installation finished» ظاهر شود (نصب Node.js ممکن است چند دقیقه طول بکشد).
-4. فایل `C:\BabolToyorSmart\INITIAL-ADMIN-PASSWORD.txt` را باز کنید، با نام کاربری `admin` وارد شوید، رمز را فوراً تغییر دهید و **سپس این فایل را حذف کنید**.
 
-آدرس برنامه روی خود سرور: `http://localhost`
-از کامپیوترهای داخل شبکه فقط آی‌پی سرور را وارد کنید: `http://IP-سرور` (بدون پورت)
-
-نصب‌کننده سامانه را روی پورت ۸۰ قرار می‌دهد. اگر پورت ۸۰ توسط برنامه دیگری مثل IIS اشغال باشد، نصب با پیام مشخص متوقف می‌شود؛ آن برنامه را متوقف کنید یا از پورت دیگری استفاده کنید.
+1. پوشهٔ `windows-installer` (یا پکیج `BabolToyor-Windows-Setup` شامل `BabolToyor-Setup.cmd` + `app.zip`) را روی سرور کپی کنید.
+2. روی `BabolToyor-Setup.cmd` راستکلیک → **Run as administrator**.
+3. صبر کنید تا `INSTALLATION FINISHED` نمایش داده شود (نصب Node.js ممکن است چند دقیقه طول بکشد).
+4. فایل `C:\BabolToyor\INSTALL-INFO.txt` را باز کنید؛ با `admin` و رمز آن وارد شوید. سامانه در اولین ورود **تعویض رمز را اجباری میکند**. سپس فایل اطلاعات را حذف کنید.
 
 ## ارتقا
-Setup جدید را روی نصب قبلی اجرا کنید. سرویس متوقف می‌شود، فایل‌های برنامه جایگزین می‌شوند و این موارد **دست‌نخورده** می‌مانند:
-- `C:\BabolToyorSmart\data` (پایگاه داده)
-- `C:\BabolToyorSmart\.env` (تنظیمات)
-- `C:\BabolToyorSmart\logs`
 
-مهاجرت داده‌ها هنگام اولین اجرای نسخه جدید به‌طور خودکار انجام می‌شود.
+همان `BabolToyor-Setup.cmd` را دوباره اجرا کنید. تسک متوقف، فایلهای برنامه جایگزین و سامانه دوباره بالا میآید. این موارد **دستنخورده** میمانند:
 
-## پشتیبان‌گیری (مهم)
-فایل اصلی داده: `C:\BabolToyorSmart\data\db.json`
+- `C:\BabolToyor\data` (پایگاه داده)
+- `C:\BabolToyor\.env` (تنظیمات و رمز — فقط `PORT` دوباره روی ۸۰ تنظیم میشود)
+- `C:\BabolToyor\logs`
 
-روزانه از کل پوشه `data` و `.env` پشتیبان بگیرید. برای پشتیبان‌گیری امن، قبل از کپی سرویس را متوقف کنید:
-```powershell
-Stop-Service BabolToyorSmart
-Copy-Item C:\BabolToyorSmart\data -Destination D:\Backup\data-$(Get-Date -Format yyyyMMdd) -Recurse
-Start-Service BabolToyorSmart
+## پشتیبانگیری (مهم)
+
+فایل اصلی داده: `C:\BabolToyor\data\db.json`
+
+```bat
+BabolToyor-Setup.cmd restart
+:: برای کپی امن، ابتدا تسک را متوقف کنید:
+schtasks /End /TN "Babol Toyor - Application Server"
+robocopy C:\BabolToyor\data D:\Backup\baboltoyoor-data /E
+schtasks /Run /TN "Babol Toyor - Application Server"
 ```
 
-## بررسی وضعیت و عیب‌یابی
-- وضعیت سرویس: `Get-Service BabolToyorSmart` (باید `Running` باشد).
-- لاگ نصب: `C:\BabolToyorSmart\logs\install.log`
-- لاگ برنامه: `C:\BabolToyorSmart\service\BabolToyorSmart.out.log` و `.err.log`
-- تست شبکه از یک کامپیوتر دیگر: `Test-NetConnection IP-سرور -Port 80`
-- اگر سرویس بالا نمی‌آید: فایل `.env` را بررسی کنید (مقدار `PORT` باید با پورت فایروال یکی باشد).
+## دستورات و عیبیابی
 
-## حذف برنامه
-از **Apps & Features** (یا Settings → Apps) «Babol Toyor Smart System» را حذف کنید. سرویس، قانون فایروال و میان‌برها حذف می‌شوند؛ اما `data`، `.env` و `logs` برای امنیت داده‌ها نگه داشته می‌شوند.
+```bat
+BabolToyor-Setup.cmd status      :: وضعیت تسک، پورت ۸۰ و سلامت
+BabolToyor-Setup.cmd logs        :: ۴۰ خط آخر لاگها
+BabolToyor-Setup.cmd restart     :: راهاندازی مجدد
+BabolToyor-Setup.cmd uninstall   :: حذف (دادهها حفظ میشوند)
+BabolToyor-Setup.cmd help        :: پارامترها
+```
+
+- لاگ نصب: `C:\BabolToyor\logs\install.log`
+- لاگ برنامه: `server.out.log` / `server.err.log` و لاگ supervisor: `supervisor.log`
+- تست از کلاینت: `Test-NetConnection IP-سرور -Port 80`
+- اگر پورت ۸۰ اشغال است و نباید IIS دست بخورد: `BabolToyor-Setup.cmd install -Port 8080 -NoAutoStopIis` (در این حالت آدرس دارای پورت خواهد بود).
 
 ## امنیت
-- `.env` فقط برای SYSTEM و Administrators قابل خواندن است.
-- نرم‌افزار فقط روی شبکه داخلی باز می‌شود (پروفایل Domain و Private). برای محدودیت بیشتر، در `Firewall with Advanced Security` قانون `Babol Toyor Smart - TCP 80` را به زیرشبکه داخلی محدود کنید.
-- پشت Reverse Proxy با HTTPS، در `.env` مقدار `COOKIE_SECURE=true` و `TRUST_PROXY=true` را تنظیم کنید.
 
-## ساخت نصب‌کننده (برای توسعه‌دهنده)
-روی لینوکس یا macOS با NSIS:
+- `.env` و `INSTALL-INFO.txt` فقط برای `SYSTEM` و `Administrators` قابل خواندناند. رمز اولیه را بعد از اولین ورود عوض کرده و فایل اطلاعات را حذف کنید.
+- سامانه روی HTTP ساده است (چون پورت ۸۰ بدون پورت خواسته شده). در صورت قرارگرفتن پشت reverse proxy با HTTPS، در `.env` مقادیر `COOKIE_SECURE=true` و `TRUST_PROXY=true` را قرار دهید.
+- CSP سختگیرانه (`script-src 'self'`)، نشست `HttpOnly; SameSite=Strict`، قفل ورود بعد از ۵ تلاش و هش `scrypt` همچنان پابرجا هستند.
+
+## حذف برنامه
+
+`BabolToyor-Setup.cmd uninstall` — تسک، قانون فایروال و میانبرها حذف میشوند؛ `data`، `.env` و `logs` حفظ میشوند. برای حذف کامل: `BabolToyor-Setup.cmd uninstall -PurgeData`.
+
+## ساخت مجدد فایل تکی (توسعهدهنده)
+
+منبع خوانا `windows-installer/Install-BabolToyor.ps1` است؛ فایل تکی از روی آن ساخته میشود:
+
 ```bash
-sudo apt-get install -y nsis
-bash installer/build.sh
+node windows-installer/build-single-file.js
+npm test        # شامل tests/windows-installer.test.js
 ```
-خروجی: `dist/BabolToyorSmart-Setup-<version>.exe`
+
+همچنین `SHA256SUMS.txt` ریشه پس از هر تغییر در این پوشه باید بازسازی شود.
