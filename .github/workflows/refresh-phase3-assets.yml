@@ -42,24 +42,31 @@ jobs:
           ls -l "$D/baboltoyoor.db"
       - name: Build offline Windows package
         run: |
-          python3 - <<'PY'
-          import os, zipfile
+          cat > "$RUNNER_TEMP/build-package.py" <<'PYEOF'
+          import os, zipfile, hashlib, shutil
           from pathlib import Path
-          root = Path(os.environ['GITHUB_WORKSPACE'])
-          out = Path(os.environ['RUNNER_TEMP']) / 'btpkg'
-          out.mkdir(parents=True, exist_ok=True)
-          EX = {'.git','node_modules','data','.arena','.cache','__pycache__','coverage','dist','build'}
+          root = Path(os.environ.get('BT_ROOT') or os.environ.get('GITHUB_WORKSPACE'))
+          out = Path(os.environ.get('BT_OUT') or os.environ.get('RUNNER_TEMP')) / 'btpkg'
+          if out.exists(): shutil.rmtree(out)
+          out.mkdir(parents=True)
+          EX = {'.git','node_modules','data','.arena','.cache','__pycache__','coverage','dist','build','.github'}
           files = []
           for p in sorted(root.rglob('*'), key=lambda x: str(x.relative_to(root))):
               rel = p.relative_to(root)
               if not p.is_file(): continue
               if any(part in EX for part in rel.parts): continue
               if p.suffix.lower() in ('.zip','.db','.log'): continue
-              if rel.parts and rel.parts[0] == '.github': continue
               files.append((p, rel))
+          FIXED = (2026, 1, 1, 0, 0, 0)
+          def add(z, src, name):
+              zi = zipfile.ZipInfo(name, date_time=FIXED)
+              zi.compress_type = zipfile.ZIP_DEFLATED
+              zi.create_system = 3
+              zi.external_attr = 0o100644 << 16
+              with z.open(zi, 'w') as dst, (src.open('rb') if isinstance(src, Path) else open(src,'rb')) as f:
+                  shutil.copyfileobj(f, dst)
           with zipfile.ZipFile(out/'app.zip','w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-              for p, rel in files:
-                  z.write(p, str(rel).replace(os.sep,'/'))
+              for p, rel in files: add(z, p, str(rel).replace(os.sep,'/'))
           readme = """بابل طیور — بستهٔ نصب آفلاین ویندوز سرور ۲۰۲۵
           ================================================
 
@@ -77,18 +84,18 @@ jobs:
           مستند SQL و فاز ۳: docs/sqlite-database-fa.md (بخش ۸)
           """
           (out/'README-INSTALL-fa.txt').write_text(readme, 'utf-8')
-          import shutil
           shutil.copy2(root/'windows-installer'/'BabolToyor-Setup.cmd', out/'BabolToyor-Setup.cmd')
-          final = root/'BabolToyor-Windows-Setup.zip'
+          final = Path(os.environ.get('BT_FINAL') or str(root/'BabolToyor-Windows-Setup.zip'))
           with zipfile.ZipFile(final,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-              for name in ['BabolToyor-Setup.cmd','app.zip','README-INSTALL-fa.txt']:
-                  z.write(out/name, name)
-          import hashlib
+              add(z, out/'BabolToyor-Setup.cmd', 'BabolToyor-Setup.cmd')
+              add(z, out/'app.zip', 'app.zip')
+              add(z, out/'README-INSTALL-fa.txt', 'README-INSTALL-fa.txt')
           print('app files:', len(files))
           print('package bytes:', final.stat().st_size)
           print('PACKAGE_SHA256=' + hashlib.sha256(final.read_bytes()).hexdigest())
-          PY
-          unzip -t BabolToyor-Windows-Setup.zip | tail -1
+PYEOF
+          BT_ROOT="$GITHUB_WORKSPACE" BT_OUT="$RUNNER_TEMP" BT_FINAL="$GITHUB_WORKSPACE/BabolToyor-Windows-Setup.zip" python3 "$RUNNER_TEMP/build-package.py"
+          unzip -t "$GITHUB_WORKSPACE/BabolToyor-Windows-Setup.zip" | tail -1
       - name: Upload assets to release v37.43.0
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
