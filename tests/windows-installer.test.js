@@ -35,6 +35,8 @@ test('installer writes .env with PORT=80 and enforces it on upgrades too', () =>
   assert.match(ps1, /\$values\['ADMIN_INITIAL_PASSWORD'\]/);
   assert.match(ps1, /enforced on every install/);
   assert.match(ps1, /WriteAllText\(\$EnvPath/);
+  assert.match(ps1, /SQLITE_FILE/);
+  assert.match(ps1, /baboltoyoor\.db/);
   assert.match(ps1, /Protect-File \$EnvPath/);
 });
 
@@ -49,10 +51,12 @@ test('admin password is random and .env-safe (no quotes, hash or whitespace)', (
   assert.doesNotMatch(ps1, /ADMIN_INITIAL_PASSWORD=[^\s$'"]{8,}/);
 });
 
-test('Node.js 20+ is required and the downloaded MSI is SHA256 verified', () => {
-  assert.match(ps1, /-and \[int\]\$Matches\[1\] -ge 20/);
+test('Node.js 22+ is required and the downloaded MSI is SHA256 verified', () => {
+  assert.match(ps1, /-and \[int\]\$Matches\[1\] -ge 22/);
+  assert.match(ps1, /Node\.js 22\+/);
   assert.match(ps1, /nodejs\.org\/dist\/index\.json/);
   assert.match(ps1, /SHASUMS256\.txt/);
+  assert.match(ps1, /\[int\]\$Matches\[1\] -ge 22/);
   assert.match(ps1, /Get-FileHash -LiteralPath \$msi -Algorithm SHA256/);
   assert.match(ps1, /checksum mismatch/);
   assert.match(ps1, /node-v\*-win-x64\.zip/);
@@ -91,6 +95,7 @@ test('supervisor restarts node and uses a marker so it can be stopped safely', (
   assert.match(ps1, /\$p\.WaitForExit\(\)/);
   assert.match(ps1, /Start-Sleep -Seconds 5/);
   assert.match(ps1, /--baboltoyor=/);
+  assert.match(ps1, /--disable-warning=ExperimentalWarning/);
   assert.match(ps1, /Rotate-Log/);
   // the embedded supervisor is a here-string with terminators at column 0
   for (const line of ps1.split('\n')) {
@@ -184,4 +189,10 @@ test('docs describe the real installer and the port-80 no-port URL', () => {
   assert.doesNotMatch(doc, /BabolToyorSmart-Setup-37\.2\.10\.exe/);
   const mainReadme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.match(mainReadme, /windows-installer\/BabolToyor-Setup\.cmd/);
+  assert.match(mainReadme, /SQLite/);
+  assert.match(doc, /SQLite/);
+  assert.match(readme, /SQLite|baboltoyoor\.db/);
+  const sqlDoc = fs.readFileSync(path.join(root, 'docs', 'sqlite-database-fa.md'), 'utf8');
+  assert.match(sqlDoc, /baboltoyoor\.db/);
+  assert.match(sqlDoc, /SELECT/);
 });

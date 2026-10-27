@@ -75,7 +75,7 @@ test('stylesheet موبایل از allowlist استاتیک با content-type ص
 });
 
 test('مسیرهای خارج از Allowlist و Path Traversal قابل دسترسی نیستند', async () => {
-  for (const p of ['/server.js', '/data/db.json', '/package.json', '/../package.json', '/%2e%2e/package.json', '/lib/config.js', '/.env']) {
+  for (const p of ['/server.js', '/data/db.json', '/data/baboltoyoor.db', '/data/baboltoyoor.db-wal', '/package.json', '/../package.json', '/%2e%2e/package.json', '/lib/config.js', '/.env']) {
     const r = await call('GET', p);
     assert.equal(r.status, 404, `path ${p} must be 404`);
     assert.doesNotMatch(r.text, /PORT|passwordHash|scrypt/);

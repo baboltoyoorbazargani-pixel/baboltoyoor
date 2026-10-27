@@ -16,8 +16,9 @@
 
 | کار | توضیح |
 |---|---|
-| Node.js ۲۰+ | اگر نصب نباشد، از `node-v*-x64.zip` کنار فایل، سپس winget، سپس دانلود رسمی nodejs.org **با بررسی SHA256** نصب میکند |
+| Node.js ۲۲٫۵+ | اگر نصب نباشد، از `node-v*-x64.zip` کنار فایل، سپس winget، سپس دانلود رسمی nodejs.org **با بررسی SHA256** نصب میکند |
 | کپی سامانه | فایلها در `C:\BabolToyor` قرار میگیرند (اگر `app.zip` کنار نصبکننده باشد، بدون اینترنت هم کار میکند) |
+| دیتابیس SQL | ساخت `baboltoyoor.db` با جداول واقعی؛ انتقال خودکار `db.json` قدیمی در اولین اجرا |
 | پورت ۸۰ | فایل `.env` با `PORT=80` ساخته میشود؛ اگر IIS پورت ۸۰ را گرفته باشد، همان سایت متوقف و غیرفعال میشود (با هشدار واضح) |
 | فایروال | قانون ورودی `TCP 80` برای پروفایلهای Domain/Private/Public باز میشود |
 | اجرای خودکار | یک Scheduled Task با حساب `SYSTEM` هنگام بوت بالا میآید و در صورت کرش، سامانه را ظرف ۵ ثانیه ریاستارت میکند |
@@ -58,7 +59,7 @@ BabolToyor-Setup.cmd install -SourcePath "D:\my-build.zip"
 | مسیر | محتوا |
 |---|---|
 | `C:\BabolToyor\` | برنامه (`server.js`، `lib`، `public`، …) |
-| `C:\BabolToyor\data\db.json` | **پایگاه داده — حتماً پشتیبان بگیرید** |
+| `C:\BabolToyor\data\baboltoyoor.db` | **پایگاه داده — حتماً پشتیبان بگیرید** |
 | `C:\BabolToyor\.env` | تنظیمات شامل `PORT=80` و رمز اولیه |
 | `C:\BabolToyor\logs\` | `install.log`، `server.out.log`، `server.err.log`، `supervisor.log` |
 | `C:\BabolToyor\service\supervisor.ps1` | نگهدارندهٔ ریاستارت خودکار |
@@ -102,3 +103,18 @@ node windows-installer/build-single-file.js
 ```
 
 خروجی همان فایل تکی است (پیلود PowerShell بهصورت base64 درون `.cmd` قرار میگیرد تا مشکل execution policy، کدپیج و فایل دانلودشده پیش نیاید). تست قراردادی: `npm test` → `tests/windows-installer.test.js`.
+
+
+## دیتابیس SQL
+
+دیتابیس سامانه **SQLite** است (فایل `C:\BabolToyor\data\baboltoyoor.db`)، با جداول واقعی و ایندکس. نیازی به نصب SQL Server یا هیچ درایوری نیست؛ ولی چون از `node:sqlite` داخلی Node استفاده میشود، **Node.js حداقل ۲۲٫۵** لازم است و نصبکننده خودش آن را تأمین میکند.
+
+اگر قبلاً `db.json` داشتهاید، اولین اجرا اطلاعات را به SQL منتقل و فایل قدیمی را بایگانی میکند. پرسوجو و پشتیبانگیری:
+
+```bat
+node scripts\sql-query.js --stats
+node scripts\sql-query.js "SELECT order_no, status FROM orders"
+node scripts\backup-db.js
+```
+
+راهنمای کامل: `docs/sqlite-database-fa.md`.

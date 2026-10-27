@@ -10,7 +10,7 @@
 
 ## نصبکننده چه میکند
 
-1. **Node.js ۲۰+**: اگر نباشد، بهترتیب از (الف) فایل پورتابل `node-v*-win-x64.zip` کنار نصبکننده، (ب) `winget` و (ج) دانلود رسمی `nodejs.org` **همراه بررسی SHA256** نصب میکند.
+1. **Node.js ۲۲٫۵+**: اگر نباشد، بهترتیب از (الف) فایل پورتابل `node-v*-win-x64.zip` کنار نصبکننده، (ب) `winget` و (ج) دانلود رسمی `nodejs.org` **همراه بررسی SHA256** نصب میکند.
 2. **کپی فایلهای برنامه** در `C:\BabolToyor`: اگر `app.zip` کنار نصبکننده باشد از همان استفاده میکند (نصب آفلاین)، وگرنه بستهٔ ریلیز `v37.43.0` را از گیتهاب میگیرد.
 3. **ساخت `.env`** با `PORT=80`، `HOST=0.0.0.0`، `DATA_DIR=C:\BabolToyor\data` و یک رمز تصادفی قوی برای `admin`. دسترسی فایل فقط برای `SYSTEM` و `Administrators` است.
 4. **پورت ۸۰**: اگر IIS/HTTP.sys پورت را گرفته باشد، سایت مربوطه متوقف و `serverAutoStart` آن خاموش میشود (با هشدار در لاگ)؛ در صورت نیاز `W3SVC` متوقف و Manual میشود. با `-NoAutoStopIis` میتوان جلوی این کار را گرفت.
@@ -35,12 +35,13 @@
 
 ## پشتیبانگیری (مهم)
 
-فایل اصلی داده: `C:\BabolToyor\data\db.json`
+فایل اصلی داده: `C:\BabolToyor\data\baboltoyoor.db`
 
 ```bat
 BabolToyor-Setup.cmd restart
 :: برای کپی امن، ابتدا تسک را متوقف کنید:
 schtasks /End /TN "Babol Toyor - Application Server"
+node scripts/backup-db.js D:\Backup\baboltoyoor-20261027.db
 robocopy C:\BabolToyor\data D:\Backup\baboltoyoor-data /E
 schtasks /Run /TN "Babol Toyor - Application Server"
 ```
@@ -80,3 +81,13 @@ npm test        # شامل tests/windows-installer.test.js
 ```
 
 همچنین `SHA256SUMS.txt` ریشه پس از هر تغییر در این پوشه باید بازسازی شود.
+
+
+## پایگاهدادهٔ SQL
+
+سامانه از **SQLite** (فایل `C:\BabolToyor\data\baboltoyoor.db`) بهعنوان منبع اصلی دادهها استفاده میکند. جداول واقعی و ستونهای ایندکسهشده دارد و با `node:sqlite` داخلی Node 22.5+ کار میکند — **بدون هیچ درایور یا وابستگی خارجی**. به همین دلیل نصبکننده Node 22+ میگیرد.
+
+- اگر از نسخهٔ قبلی (فایل `db.json`) ارتقا میدهید، **اولین اجرا بهصورت خودکار** تمام اطلاعات را به جداول SQL منتقل و فایل قدیمی را به `db.json.migrated-<timestamp>` بایگانی میکند.
+- پرسوجوی مستقیم: `node scripts/sql-query.js "SELECT order_no, status FROM orders"` و آمار: `node scripts/sql-query.js --stats`.
+- پشتیبان امن: `node scripts/backup-db.js` (دستور `VACUUM INTO`؛ نیازی به توقف سرویس ندارد).
+- راهنمای کامل اسکما و مثالها: `docs/sqlite-database-fa.md`.
