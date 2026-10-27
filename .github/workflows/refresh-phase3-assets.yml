@@ -1,7 +1,9 @@
 name: Refresh phase 3 installer assets
 run-name: Refresh Windows installer assets (phase 3 build)
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - arena/ae3bc807-baboltoyoor
 permissions:
   contents: write
 jobs:
