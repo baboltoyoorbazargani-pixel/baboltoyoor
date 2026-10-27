@@ -6,7 +6,8 @@
 - نیازمندی: ‎Node.js 20+‎ — بدون هیچ وابستگی خارجی (‏`npm install`‏ لازم نیست).
 - شروع: ‏`node server.js`‏
 - متغیرهای محیطی: ‏`PORT`‏ (پیش‌فرض ۳۰۸۰)، ‏`HOST`‏، ‏`DATA_DIR`‏ (پوشهٔ دیتابیس؛ پیش‌فرض ‎`data/`‎ کنار پروژه)، ‏`ADMIN_INITIAL_PASSWORD`‏ (رمز اولیهٔ مدیر در اولین ساخت دیتابیس؛ مدیر در اولین ورود باید رمزش را عوض کند).
-- روی ویندوز سرور: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏؛ راهنمای استقرار: ‏`docs/deployment-windows-server-2025.md`‏.
+- **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏.
+- اجرای دستی روی ویندوز: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏.
 - پل باسکول (نمایشگر ‎PU 850‎): ‏`node scripts/weighbridge-bridge.js --port COM3 --baud 9600 --server http://127.0.0.1 --token <TOKEN>`‏ — مستند پروتکل: ‏`docs/weighbridge-pu850.md`‏.
 
 ## شروع از صفر (دیتای خام)
