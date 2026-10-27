@@ -93,7 +93,7 @@ jobs:
           print('app files:', len(files))
           print('package bytes:', final.stat().st_size)
           print('PACKAGE_SHA256=' + hashlib.sha256(final.read_bytes()).hexdigest())
-PYEOF
+          PYEOF
           BT_ROOT="$GITHUB_WORKSPACE" BT_OUT="$RUNNER_TEMP" BT_FINAL="$GITHUB_WORKSPACE/BabolToyor-Windows-Setup.zip" python3 "$RUNNER_TEMP/build-package.py"
           unzip -t "$GITHUB_WORKSPACE/BabolToyor-Windows-Setup.zip" | tail -1
       - name: Upload assets to release v37.43.0
