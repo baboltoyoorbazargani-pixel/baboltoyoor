@@ -1,0 +1,97 @@
+name: Refresh phase 3 installer assets
+run-name: Refresh Windows installer assets (phase 3 build)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (merged phase 3)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify manifest and full test suite
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          npm test
+      - name: Smoke test — real server, login and SQLite
+        run: |
+          set -e
+          D=$(mktemp -d)
+          PORT=4210 HOST=127.0.0.1 DATA_DIR="$D" ADMIN_INITIAL_PASSWORD='Ci!Smoke12345' \
+            node --disable-warning=ExperimentalWarning server.js > "$D/server.log" 2>&1 &
+          SP=$!
+          trap 'kill $SP 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null -X POST http://127.0.0.1:4210/api/login \
+              -H 'Content-Type: application/json' \
+              -d '{"username":"admin","password":"Ci!Smoke12345"}'; then break; fi
+            sleep 1
+          done
+          curl -sf -o /dev/null -X POST http://127.0.0.1:4210/api/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"Ci!Smoke12345"}'
+          ls -l "$D/baboltoyoor.db"
+      - name: Build offline Windows package
+        run: |
+          python3 - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          root = Path(os.environ['GITHUB_WORKSPACE'])
+          out = Path(os.environ['RUNNER_TEMP']) / 'btpkg'
+          out.mkdir(parents=True, exist_ok=True)
+          EX = {'.git','node_modules','data','.arena','.cache','__pycache__','coverage','dist','build'}
+          files = []
+          for p in sorted(root.rglob('*'), key=lambda x: str(x.relative_to(root))):
+              rel = p.relative_to(root)
+              if not p.is_file(): continue
+              if any(part in EX for part in rel.parts): continue
+              if p.suffix.lower() in ('.zip','.db','.log'): continue
+              if rel.parts and rel.parts[0] == '.github': continue
+              files.append((p, rel))
+          with zipfile.ZipFile(out/'app.zip','w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p, rel in files:
+                  z.write(p, str(rel).replace(os.sep,'/'))
+          readme = """بابل طیور — بستهٔ نصب آفلاین ویندوز سرور ۲۰۲۵
+          ================================================
+
+          محتویات: BabolToyor-Setup.cmd (نصبکنندهٔ تکفایل)، app.zip (فایلهای سامانه — SQLite + فاز ۳)،
+          و README-INSTALL-fa.txt (همین راهنما).
+
+          نصب: هر سه فایل را کنار هم روی سرور کپی کنید، روی BabolToyor-Setup.cmd
+          راستکلیک کرده و Run as administrator بزنید؛ صبر کنید تا INSTALLATION FINISHED بیاید.
+
+          نتیجه: سامانه روی پورت ۸۰ (http://IP-سرور بدون پورت)، فایلها در C:\\BabolToyor،
+          دیتابیس SQLite در C:\\BabolToyor\\data\\baboltoyoor.db، رمز مدیر در INSTALL-INFO.txt،
+          و اجرای خودکار هنگام بوت. Node.js 22.5+ بهصورت خودکار نصب میشود.
+
+          دستورات: BabolToyor-Setup.cmd status / logs / restart / uninstall
+          مستند SQL و فاز ۳: docs/sqlite-database-fa.md (بخش ۸)
+          """
+          (out/'README-INSTALL-fa.txt').write_text(readme, 'utf-8')
+          import shutil
+          shutil.copy2(root/'windows-installer'/'BabolToyor-Setup.cmd', out/'BabolToyor-Setup.cmd')
+          final = root/'BabolToyor-Windows-Setup.zip'
+          with zipfile.ZipFile(final,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for name in ['BabolToyor-Setup.cmd','app.zip','README-INSTALL-fa.txt']:
+                  z.write(out/name, name)
+          import hashlib
+          print('app files:', len(files))
+          print('package bytes:', final.stat().st_size)
+          print('PACKAGE_SHA256=' + hashlib.sha256(final.read_bytes()).hexdigest())
+          PY
+          unzip -t BabolToyor-Windows-Setup.zip | tail -1
+      - name: Upload assets to release v37.43.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v37.43.0 \
+            BabolToyor-Windows-Setup.zip \
+            windows-installer/BabolToyor-Setup.cmd \
+            --clobber
