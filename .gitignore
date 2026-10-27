@@ -1,0 +1,11 @@
+# Runtime data and secrets: never commit
+data/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+node_modules/
+build/
+dist/
+data-preview/
