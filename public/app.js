@@ -781,7 +781,7 @@ async function go(page,sub){
     else if(page==='scale'){setHeader('باسکول','کارتابل باسکول','ثبت ورود و خروج وسیله‌ها، محاسبه خالص بار و ثبت کالا');await renderScale()}
     else if(page==='customers'){setHeader('مشتریان','پرونده مشتریان','کد مشتری، اطلاعات کامل و سوابق مراجعه و سفارش');await renderCustomers()}
     else if(page==='dispatch'){if(r!=='admin'&&r!=='dispatch')return go(own);setHeader('پخش','کارتابل واحد پخش','مشاهده سفارش‌ها؛ تخصیص راننده از کارتابل فروش و پیگیری تحویل');await renderDispatchPage(true)}
-    else if(page==='driver'){if(r!=='admin'&&r!=='driver')return go(own);setHeader('راننده','کارتابل راننده','سفارش‌های تخصیص‌یافته و ثبت تحویل با امضای مشتری');await renderDriverPage()}
+    else if(page==='driver'){if(r!=='admin'&&r!=='driver')return go(own);if(app.sub.driver==='reports'){setHeader('راننده','گزارش‌های راننده','گزارش ارسال‌های اختصاصی شما');await renderReportsPage('driver');return}setHeader('راننده','کارتابل راننده','سفارش‌های تخصیص‌یافته و ثبت تحویل با امضای مشتری');await renderDriverPage()}
     else if(page==='gate-dispatch'){if(r!=='admin'&&r!=='gate')return go(own);setHeader('نگهبانی','خروج ارسالی','ابتدا خروج اعلام‌شده توسط راننده را تأیید کنید؛ پس از تحویل مقصد، خروج نهایی را ثبت کنید');await renderGateDispatchPage()}
     else if(page==='returns'){if(r!=='admin'&&r!=='sales'&&r!=='warehouse')return go(own);setHeader('مرجوعی','برگه‌های مرجوعی','مرجوعی‌های راننده: فروش ارجاع می‌دهد و انبار دریافت می‌کند');await renderReturnsPage()}
     else if(page==='users'){if(r!=='admin')return go(own);setHeader('مدیریت','مدیریت کاربران','افزودن، ویرایش و غیرفعال‌سازی حساب‌های کاربری');await renderUsersPage()}
@@ -789,6 +789,7 @@ async function go(page,sub){
     else if(page==='drivers'){if(!['admin','dispatch'].includes(r))return go(own);if((r==='dispatch'||app.adminActiveRole==='dispatch')&&['dashboard','reports'].includes(app.sub.drivers)){setHeader('ترابری',app.sub.drivers==='reports'?'گزارشات ترابری':'داشبورد ترابری','خلاصه وضعیت ترابری');await renderRoleCartableDashboard('dispatch',app.sub.drivers);return}setHeader('عملیات','ترابری','رانندگان، سوابق سفارش‌ها و پخش');await renderDriversPage()}
     else if(page==='products'){if(r==='sales'){setHeader('فروش','کارتابل محصولات','تعیین قیمت روز و ویرایش محصولات');await renderProductsPage();}else{if(r!=='admin')return go(own);setHeader('مدیریت','محصولات و قیمت‌ها','ثبت، ویرایش، حذف محصول و تعیین قیمت روز');await renderProductsPage()}}
     else if(page==='activity'){if(r!=='admin')return go(own);setHeader('مدیریت','تاریخچه فعالیت‌ها','ردیابی کامل عملیات کاربران با زمان، IP و جزئیات');await renderActivityPage()}
+    else if(page==='backups'){if(r!=='admin')return go(own);setHeader('مدیریت','پشتیبان‌گیری و بازیابی','ساخت، دریافت و بازیابی نسخه‌های پشتیبان');await renderBackupsPage()}
     else if(page==='reports'){if(r!=='admin')return go(own);setHeader('مدیریت','گزارش‌های پیشرفته','گزارش از همه بخش‌های سامانه با انتخاب ستون و فیلتر، خروجی Excel و PDF');await renderReportsPage()}
     else if(page==='admin'){if(r!=='admin')return go(own);setHeader('مدیریت','مدیریت سیستم','کاتالوگ کالا، قیمت روز، حساب‌های کاربری و ردپای فعالیت‌ها');await renderAdmin()}
   }catch(e){toast(e.message)}
@@ -2108,6 +2109,7 @@ async function refreshWhDashToday(){
 }
 
 async function renderRoleCartableDashboard(role,view='dashboard'){
+  if (view === 'reports') return renderReportsPage(role);
   const names={gate:'نگهبانی',sales:'فروش',warehouse:'انبار',dispatch:'ترابری',store:'فروشگاه'};let w={...(app.workload||{})};
   if(role==='dispatch'){
     try{const [pending,assigned,delivered,drivers]=await Promise.all([api('/api/dispatch/orders?status=pending'),api('/api/dispatch/orders?status=assigned'),api('/api/dispatch/orders?status=delivered'),api('/api/dispatch/drivers')]);w.dispatchIncoming=pending.orders?.length||0;w.dispatchTransit=assigned.orders?.length||0;w.dispatchDelivered=delivered.orders?.length||0;w.activeDrivers=drivers.drivers?.length||0;}catch{}
@@ -2132,9 +2134,6 @@ async function renderRoleCartableDashboard(role,view='dashboard'){
   const roleIcons={gate:'shield',sales:'sales',warehouse:'warehouse',dispatch:'truck',store:'store'};
   const rolePage=role==='dispatch'?'drivers':role;
   const dashHeading=(title,desc,ico)=>`<div class="role-dash-heading"><span class="role-dash-hero-ico">${icon(ico,24)}</span><div class="role-dash-heading-text"><span class="eyebrow">${esc(names[role]||'کارتابل')} / ${view==='reports'?'REPORTS':'OVERVIEW'}</span><h2>${title}</h2><p>${desc}</p></div><span class="role-dash-live"><i></i> به‌روزرسانی زنده</span></div>`;
-  if(view==='reports'){
-    $('#content').innerHTML=`<section class="role-dash role-report-page" data-dash-role="${role}">${dashHeading(`گزارش ${esc(names[role]||'کارتابل')}`,'خلاصهٔ شاخص‌های عملیاتی قابل مشاهده برای این واحد','reports')}<div class="table-wrap"><table class="table"><thead><tr><th>شاخص</th><th>تعداد فعلی</th><th>بخش مربوط</th></tr></thead><tbody>${cards.map(([label,value,target])=>`<tr><td>${esc(label)}</td><td><b>${qty(value)}</b></td><td>${esc(label)}</td></tr>`).join('')}</tbody></table></div><button class="btn btn-primary" data-cartable="dashboard" data-role-page="${rolePage}">بازگشت به داشبورد</button></section>`;return;
-  }
   const dashMax=Math.max(1,...cards.map(([,value])=>Number(value)||0));
   $('#content').innerHTML=`<section class="role-dash" data-dash-role="${role}">${dashHeading(`داشبورد ${esc(names[role]||'کارتابل')}`,'خلاصهٔ وضعیت جاری و دسترسی سریع به بخش‌های اصلی کارتابل',roleIcons[role]||'dashboard')}<div class="role-dash-grid">${cards.map(([label,value,target,ico,tone],i)=>{const pct=Math.max(Number(value)>0?10:0,Math.round((Number(value)||0)/dashMax*100));return `<button class="role-dash-card tone-${tone||'red'}" style="--d:${i*70}ms" data-cartable="${target}" data-role-page="${rolePage}"><span class="role-dash-top"><span class="role-dash-ico">${icon(ico||'info',22)}</span><span class="role-dash-num">۰${i+1}</span></span><span class="role-dash-label">${esc(label)}</span><strong>${qty(value)}</strong><span class="role-dash-bar" aria-hidden="true"><i style="width:${pct}%"></i></span><small>مشاهدهٔ ${esc(label)} ←</small></button>`}).join('')}</div>${role==='warehouse'?whDashLiveHtml(whToday):''}<div class="role-dash-foot"><span class="role-dash-foot-live"><i></i> به‌روزرسانی خودکار وضعیت کارتابل فعال است</span><b>${esc(todayText())}</b></div></section>`;
   // v37.11.0 — تازه‌سازی زندهٔ آمار سفارشات امروز تا وقتی داشبورد انبار باز است (هر ۵ ثانیه).
@@ -2303,11 +2302,12 @@ function renderNav(){
   const r=normalizeRole(app.user?.roleCode),page=r==='dispatch'?'drivers':r;
   // v37.10.0 — هر ورودی: [کلید، عنوان، آیکن موضوعی بخش، کلید شمارنده]؛ آیکن و شمارنده دیگر قاطی نمی‌شوند.
   const entries={
-    gate:[['entry','ثبت ورود','entry',null],['waiting','در انتظار اقدام فروش','bell','gateEntry'],['exit','کنترل خروج','exitDoor','gateExit'],['dispatch','تحویل راننده','truck','gateDispatchPending'],['history','سوابق مراجعه','history',null]],
+    gate:[['entry','ثبت ورود','entry',null],['waiting','در انتظار اقدام فروش','bell','gateEntry'],['exit','کنترل خروج','exitDoor','gateExit'],['dispatch','تحویل راننده','truck','gateDispatchPending'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['reports','گزارش‌ها','reports',null]],
     warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['stores','فروشگاه‌ها','store','warehouseStores'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     dispatch:[['dashboard','داشبورد','dashboard',null],['drivers','رانندگان','driver',null],['orders','سفارشات','route','dispatchPending'],['reports','گزارشات','reports',null]],
-    store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]]
+    store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]],
+    driver:[['dashboard','کارتابل راننده','driver',null],['reports','گزارش‌ها','reports',null]]
   };
   if(r==='admin'){
     if(app.adminActiveRole&&entries[app.adminActiveRole]){
@@ -2315,7 +2315,7 @@ function renderNav(){
       const list=entries[role];
       $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${typeof badgeKey==='string'&&badgeCount(badgeKey)?navBadge(badgeCount(badgeKey)):''}</button>`).join('');return;
     }
-    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['products','محصولات','package',0],['users','کاربران','user',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['admin','تنظیمات سیستم','settings',0]];
+    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['products','محصولات','package',0],['users','کاربران','user',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
     $('#railNav').innerHTML='<div class="cartable-nav-title admin-root-title">مدیریت سامانه</div>'+items.map(([p,l,i,c])=>p==='gate'||p==='sales'||p==='warehouse'||p==='dispatch'||p==='store'?`<button type="button" class="cartable-nav-item" data-admin-cartable="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`:`<button type="button" class="cartable-nav-item ${app.page===p?'active':''}" data-page="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`).join('');return;
   }
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];
