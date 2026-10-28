@@ -1,7 +1,7 @@
 18423e2da142ae4a05f3dad4d0903ba89a14abcd6a5fc7c9f69c0809d13798e1  ./.gitignore
-9b30e27fc1cddbe4837c7114259c4c4386ce4a902f30b61a7758f89cb768dab3  ./CHANGELOG.md
+03bcf34241c4b8301efbf242a03532aceebfb3ef67f3759ab775658b29a5946e  ./CHANGELOG.md
 cf5db6b7c699488e4f4fbb243af67205f640173bce553f01a8d9d20414eff31b  ./NOTICE.txt
-df0d36adb91655381c1d582b03b2c8bf01fc5afe78f5781dde5213ea8de36d72  ./README.md
+780a987cdc5537d300a9e58ee9a6120715ab588ca7988d0b2b88acaf916f1c4d  ./README.md
 320c7fa99424c56b9d5e2a1bde9f1610b5678b302497e3dac620fb825091f20a  ./RELEASE-37.37.0-fa.md
 47d694d1bc5032fb8543c7f400c9cc14a7ac0f03b751bc6f3bf1b966b5b1d9d9  ./RELEASE-37.38.0-fa.md
 06d5341eb192c86b7cf9499dc195428d082da65ac6bfce75f6fd3ea708a1e576  ./RELEASE-37.39.0-fa.md
@@ -11,8 +11,8 @@ c9fbfc2417b4f91a648473156f59f3a138e4dc8a275b74ab13b684ae18e18b38  ./RELEASE-37.4
 802d5dae281431a49948203c149bf51205c428b5f0b8ebe9d31b0079a5018e0e  ./RELEASE-37.43.0-fa.md
 6e5a006e078f48892f1622c0fb8370e143c6cb6ce7f17aef2d1941a6a90b2829  ./VERSION.txt
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.png
-43a5be810c6c9b15630c42b7a128c927757c8dec5307d334797d2c79b370262e  ./docs/PROJECT-PROMPT-fa.md
-0543e44ac6510627c343f89447af63235f5be2cf9df816a46d5da1110cd12ebc  ./docs/deployment-windows-server-2025.md
+b76057e4590ac3bfa14f5b33fad1c44d8ceada91fdd1293ad50b3f66faa86d99  ./docs/PROJECT-PROMPT-fa.md
+24b4f9d1c4879ca55b32a8194f0f4064f60615e32761cb7a1190b8b7d98502e6  ./docs/deployment-windows-server-2025.md
 d0328cfcb5b933aac8dca266de9db35ceadfaed62c1f0afed60f03c1bafe6c78  ./docs/sqlite-database-fa.md
 b331c4f3b873d5a7f09ce1ed6bbb8e745d6295537cb336313fdf2efed155ec26  ./docs/weighbridge-pu850.md
 f44c3b892eb502c337bc9bcf60ece04d767ea7e5405ab69db912fde2f8e32b78  ./lib/catalog.js
@@ -159,9 +159,11 @@ cbda3303712697e297bd6f89521521d1c659a3f0c57ada843bdb4adbf5f137b4  ./tests/wareho
 f78911ecb45ad686502aaa3c871163703eec898aa6faa75472f7fb11868fd26b  ./tests/warehouse-store-tabs.test.js
 5674523a4e09333dc6a76378c07b16d24d8c8a8bed87b25f7d036cdc0b2825d8  ./tests/warehouse-today-stats.test.js
 821354912a0a100795e21a8b8223a333fc32392d5b867a64a7828f00b1170c7a  ./tests/weighbridge.test.js
-b5b360d51a6f9601d4f6cb495b70a6affc36874b80e801a2dd0023cd60e5236d  ./tests/windows-installer.test.js
+42ee0f8b459e84984a4175246a8d2f2303af09cc8a5913e5109f5348ef9eeb8b  ./tests/windows-installer.test.js
 ec1b3ec8e454a2d3a6b4ac373736691cf274e310a5cc56c548913f7b3dec0526  ./tests/workflow-navigation.test.js
 484d5e11cb5d531830a970ab10354f03667dc4a360e5371c88b21455afed74c8  ./windows-installer/BabolToyor-Setup.cmd
+a432ed85116daafdfee79565773abd1af828e7f5dcf0ff2569b773d11ae79243  ./windows-installer/INSTALL-STEPS-fa.html
+82db4e445ff27133950c796775612aefc065bde8aa4f232fe605d1f0a6b51547  ./windows-installer/INSTALL-STEPS-fa.md
 f1140be7aec3236c493ce4edea4d2eeafe90b9542e93a31de11fe89203d02178  ./windows-installer/Install-BabolToyor.ps1
-ae3e25b0946b434371ff38c7894a3d267bffc8124ca61e41dbbcde18aae28067  ./windows-installer/README-fa.md
+229e2a6ece745a938e06301cd6150630671187a4f434e99e34b96be3d8feb3e8  ./windows-installer/README-fa.md
 9c0d585124af98638054faf64833a96b3506e1f3b593a90c330e53b8cea622db  ./windows-installer/build-single-file.js

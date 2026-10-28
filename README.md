@@ -7,7 +7,7 @@
 - شروع: ‏`node server.js`‏
 - پایگاهداده: **SQLite (SQL واقعی)** در `DATA_DIR/baboltoyoor.db` — جداول و ستونهای ایندکسهشده؛ راهنما: `docs/sqlite-database-fa.md`.
 - متغیرهای محیطی: ‏`PORT`‏ (پیش‌فرض ۳۰۸۰)، ‏`HOST`‏، ‏`DATA_DIR`‏ (پوشهٔ دیتابیس؛ پیش‌فرض ‎`data/`‎ کنار پروژه)، ‏`SQLITE_FILE` (مسیر دلخواه فایل SQLite)، `ADMIN_INITIAL_PASSWORD`‏ (رمز اولیهٔ مدیر در اولین ساخت دیتابیس؛ مدیر در اولین ورود باید رمزش را عوض کند).
-- **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏.
+- **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/INSTALL-STEPS-fa.md`‏ (**گامبهگام و قابلچاپ**)، ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏. نصب SQLite لازم نیست؛ داخل Node.js 22.5+ است.
 - اجرای دستی روی ویندوز: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏.
 - ابزارهای SQL: `node scripts/sql-query.js "SELECT ..."` و پشتیبانگیری `node scripts/backup-db.js`.
 - مسیرهای API از لایهٔ `lib/sql-repos.js` با prepared statement استفاده میکنند و دادهها در ابتدای هر درخواست از SQL تازه میشوند (فاز ۲). در **فاز ۳** نوشتها هم ردیفبهردیف شدند: هر تغییر همان لحظه `INSERT ... ON CONFLICT DO UPDATE` یا `DELETE` اجرا میکند و `store.save()` فقط همگامسازی افزایشی است (`docs/sqlite-database-fa.md` ← فاز ۳).

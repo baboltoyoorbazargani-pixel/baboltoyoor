@@ -4,6 +4,11 @@
 
 سامانه روی **پورت ۸۰** اجرا میشود؛ یعنی در مرورگر فقط مینویسید `http://IP-سرور` یا `http://localhost` و **نیازی به نوشتن پورت نیست**.
 
+> 🆕 **راهنمای گامبهگام و قابلچاپ (بدون کدنویسی):** [`INSTALL-STEPS-fa.md`](INSTALL-STEPS-fa.md) • نسخهٔ [HTML قابلچاپ](INSTALL-STEPS-fa.html). از دانلود تا اولین ورود، همراه چکلیست و عیبیابی.
+
+> ❓ **آیا باید SQLite نصب کنم؟ خیر — هیچ نسخهای و از هیچ جایی.**
+> SQLite یک نرمافزار سرور نیست؛ کتابخانهای است که داخل **Node.js 22.5+** کامپایل شده و نصبکننده همان Node را هم خودکار نصب میکند. دیتابیس فقط فایل `C:\BabolToyor\data\baboltoyoor.db` است. نه SQL Server، نه درایور، نه `sqlite3.exe`. جزئیات و لینک ابزارهای اختیاری در بخش «دیتابیس SQL» و راهنمای گامبهگام.
+
 ---
 
 ## نصب (۳ قدم)
@@ -78,7 +83,8 @@ BabolToyor-Setup.cmd install -SourcePath "D:\my-build.zip"
 
 - `app.zip` را کنار `BabolToyor-Setup.cmd` بگذارید → نیازی به دانلود سامانه نیست.
 - اگر سرور Node.js ندارد و اینترنت هم ندارد، فایل `node-v22.x.x-win-x64.zip` (پورتابل رسمی) را کنار نصبکننده بگذارید؛ نصبکننده از همان استفاده میکند و چیزی روی سیستم نصب نمیکند.
-- در غیر این صورت، نصب Node.js به اینترنت نیاز دارد (nodejs.org).
+  - محل دانلود: <https://nodejs.org/en/download> → **Standalone Binary / Windows x64 (.zip)**، یا <https://nodejs.org/dist/> → پوشهٔ `v22.x.x/` → `node-v22.x.x-win-x64.zip`. حتماً **x64** و حتماً **zip** (نه MSI). نمونه: `node-v22.22.3-win-x64.zip`.
+- در غیر این صورت، نصب Node.js به اینترنت نیاز دارد (winget یا nodejs.org، با بررسی SHA-256).
 
 ## عیبیابی
 
@@ -107,7 +113,9 @@ node windows-installer/build-single-file.js
 
 ## دیتابیس SQL
 
-دیتابیس سامانه **SQLite** است (فایل `C:\BabolToyor\data\baboltoyoor.db`)، با جداول واقعی و ایندکس. نیازی به نصب SQL Server یا هیچ درایوری نیست؛ ولی چون از `node:sqlite` داخلی Node استفاده میشود، **Node.js حداقل ۲۲٫۵** لازم است و نصبکننده خودش آن را تأمین میکند.
+دیتابیس سامانه **SQLite** است (فایل `C:\BabolToyor\data\baboltoyoor.db`)، با جداول واقعی و ایندکس. **هیچ SQLite ای نباید نصب کنید**: ماژول `node:sqlite` داخل خود Node.js است؛ فقط **Node.js حداقل ۲۲٫۵** لازم است و نصبکننده خودش آن را تأمین میکند. نیازی به SQL Server، ODBC، `sqlite3.exe` یا DB Browser نیست.
+
+اگر فقط خواستید فایل دیتابیس را با ابزاری ببینید (**کاملاً اختیاری**): از <https://www.sqlite.org/download.html> بخش *Precompiled Binaries for Windows* فایل `sqlite-tools-win-x64-3540100.zip` (SQLite 3.54.1 — عدد انتهای نام فایل = نسخه؛ آخرین نسخهٔ همان صفحه را بگیرید) یا [DB Browser for SQLite](https://sqlitebrowser.org/dl/) را تهیه کنید. این ابزارها هیچ نقشی در نصب و اجرای سامانه ندارند.
 
 اگر قبلاً `db.json` داشتهاید، اولین اجرا اطلاعات را به SQL منتقل و فایل قدیمی را بایگانی میکند. پرسوجو و پشتیبانگیری:
 
