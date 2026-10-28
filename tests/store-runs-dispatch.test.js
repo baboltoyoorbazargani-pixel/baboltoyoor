@@ -75,7 +75,7 @@ test('راه‌اندازی: کاربران، راننده و سفارش فرو�
   admin = await login('admin', newAdmin);
   sales = await mkUser('srd-sales', 'sales');
   wh = await mkUser('srd-wh', 'warehouse');
-  storeUser = await mkUser('srd-shop', 'store', { storeName: 'بابُل تویور آزمایشی' });
+  storeUser = await mkUser('srd-shop', 'store', { storeName: 'بابل طیور آزمایشی' });
   gateCk = await mkUser('srd-gate', 'gate');
   const d = await call('POST', '/api/drivers', { cookie: admin, body: { fullName: 'علی راننده', phone: '09129998877', vehicleType: 'وانت', plate: '12ب34567' } });
   assert.equal(d.status, 201, JSON.stringify(d.json));
@@ -101,11 +101,19 @@ test('گارد: ارسال قبل از وزن (409)، سرویس دوم پیش �
 });
 
 test('ارسال سرویس اول: علامت اقلام، درخواست نزد فروش، ایدempotنتی، قفل وزن پس از ارسال', async () => {
+  assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:wh})).status,404);
   const early = await call('POST', `/api/orders/${ids.order}/store-run/send-run`, { ...IDEM(), cookie: wh, body: { run: 1 } });
   assert.equal(early.status, 409, 'بدون وزن ارسال نمی‌شود');
   assert.equal((await call('POST', `/api/orders/${ids.order}/store-run/weights`, { ...IDEM(), cookie: wh, body: { run: 1, items: [{ itemId: ids.i1, deliveredKg: 105 }] } })).status, 200, 'بیش از درخواست پذیرفته');
   const sent = await call('POST', `/api/orders/${ids.order}/store-run/send-run`, { ...IDEM(), cookie: wh, body: { run: 1 } });
   const o = ok(sent, 'send-run-1');
+  const firstPrint=await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:wh});
+  assert.equal(firstPrint.status,200); assert.deepEqual(firstPrint.json.document.lines.map(x=>x.deliveredKg),[105]);
+  assert.equal(firstPrint.json.document.lines[0].netKg,null);
+  assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/2`, {cookie:wh})).status,404);
+  assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:storeUser})).status,403);
+  assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:drv1})).status,403);
+  assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/3`, {cookie:wh})).status,400);
   assert.equal(o.storeRunOps.r1Shipment.status, 'PENDING_SALES');
   assert.deepEqual(o.storeRunOps.r1Shipment.itemIds, [ids.i1]);
   assert.ok(o.items.find((x) => x.id === ids.i1).sentRun1.at);
@@ -223,6 +231,16 @@ test('پس از بسته‌شدن خودکار با تأیید فروش، پای
   assert.equal(full.payments.find((p) => p.deliveryRun === 2).totalAmount, 0, 'سند دوم هم بدون مبلغ');
   assert.equal(full.payments.find((p) => p.deliveryRun === 2).priceLines[0].deliveredKg, 75, 'وزن خالص سند دوم بعد از مرجوعی');
   assert.equal(full.dispatchRuns.length, 1, 'سرویس اول در آرشیو پرونده است');
+  for(const ck of [sales,wh]){
+    const p1=await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:ck});
+    const p2=await call('GET', `/api/orders/${ids.order}/store-run/print/2`, {cookie:ck});
+    assert.equal(p1.status,200);assert.equal(p2.status,200);
+    assert.deepEqual(p1.json.document.lines.map(x=>x.deliveredKg),[105]);
+    assert.deepEqual(p2.json.document.lines.map(x=>x.deliveredKg),[80]);
+    assert.equal(p2.json.document.lines[0].returnKg,5);assert.equal(p2.json.document.lines[0].netKg,75);
+  }
+  const history=await call('GET','/api/warehouse/history?orderType=STORE',{cookie:wh});
+  assert.deepEqual(history.json.rows.find(x=>x.id===ids.order).printRuns,[1,2]);
 });
 
 test('فروشگاه: تأیید دریافت محمولهٔ سرویس دوم و مشاهدهٔ دو فاکتور در جزئیات سفارش', async () => {
@@ -272,7 +290,7 @@ test('فروش: endpoint فهرست ارسال‌های سرویس در انتظ
   const hit = list.json.shipments.find((x) => x.orderId === o.id);
   assert.ok(hit, 'سفارش در فهرست انتظار است');
   assert.equal(hit.run, 1);
-  assert.equal(hit.storeName, 'بابُل تویور آزمایشی');
+  assert.equal(hit.storeName, 'بابل طیور آزمایشی');
   assert.equal(hit.items.length, 1);
   assert.equal(hit.items[0].deliveredKg, 12.5);
   assert.equal((await call('GET', '/api/sales/store-run-shipments', { cookie: wh })).status, 403, 'نقش نامجاز');

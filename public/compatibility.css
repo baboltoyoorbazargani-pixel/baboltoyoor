@@ -759,3 +759,8 @@
 
 /* دامنه و گواهی */
 .tls-settings .notice{margin:14px 0;line-height:1.9}.tls-status{padding:12px 14px;border:1px solid var(--line,#ddd);border-radius:12px;background:#f7fafb;line-height:1.9;overflow-wrap:anywhere}.tls-settings .form-grid{align-items:end}.tls-settings .adm-check{grid-column:1/-1;line-height:1.8}.tls-settings .field small{color:var(--muted);font-size:12px}.tls-current{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* شمارش و چاپ سرویس‌ها و فرم غیرحضوری */
+.store-service-print,.store-receipt-summary{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.store-receipt-summary{grid-column:1/-1;margin-top:7px}.whh-row .store-service-print{grid-column:1/-1}
+@media(min-width:901px){#content .sales-remote-customer-grid-v40{grid-template-columns:repeat(3,minmax(0,1fr))!important}#content .sales-remote-place-v40{grid-column:auto!important}}
+.product-option.keyboard-active,.op-product-option.keyboard-active{background:#fce7eb;outline:2px solid #a6162d;outline-offset:-2px}
