@@ -230,7 +230,8 @@ test('پلاک خودروی راننده در تمام کارتابل‌های �
   assert.match(ui,/plateViewHtml\(d\.driverPlate/);
   assert.match(adminUi,/plateViewHtml\(r\.driverPlate/);
   assert.match(adminUi,/plateViewHtml\(x\.plate/);
-  assert.match(adminUi,/value="\$\{admE\(formatDispatchVehiclePlate\(x\?\.plate,''\)\)\}"/);
+  assert.match(adminUi,/plateEditorHtml\(x\?\.plate/);
+  assert.match(adminUi,/plateEditorValue\(e\.target,\{required:true\}\)/);
   assert.match(app,/plateViewHtml\(/);
   assert.match(css,/\.iran-plate\.is-compact/);
   assert.match(css,/\.iran-plate\.is-readonly/);

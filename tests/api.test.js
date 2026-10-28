@@ -430,3 +430,14 @@ test('سفارش امروز: ساعت سررسید گذشته مستقیم به 
     assert(orders.json.orders.some(o=>o.id===pending.json.order.id&&o.status==='SCHEDULED_REMOTE'));
   }
 });
+
+test('ثبت نگهبانی برای پلاک موتورسیکلت و رد پلاک ناقص', async () => {
+  const body={name:'موتورسوار آزمون',phone:'09129999123',vehicleType:'موتورسیکلت',plate:'۱۲۳-۴۵۶۷۸'};
+  const result=await call('POST','/api/visits',{cookie:gateCookie,body});
+  assert.equal(result.status,201,JSON.stringify(result.json));
+  assert.equal(result.json.enriched.customer.plate,'123-45678');
+  const partial=await call('POST','/api/visits',{cookie:gateCookie,body:{...body,phone:'09129999124',plate:'123-4567'}});
+  assert.equal(partial.status,400);
+  const car=await call('POST','/api/visits',{cookie:gateCookie,body:{...body,phone:'09129999125',vehicleType:'خودرو'}});
+  assert.equal(car.status,400);
+});

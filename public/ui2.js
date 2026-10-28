@@ -455,9 +455,10 @@ async function srSalesOpenShip(orderId, run) { // v37.6.0
       <div class="sr-ship-modal-order"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><b>${esc(o.storeName||'فروشگاه')}</b><span class="st-run-chip st-run-r${run===2?2:1}">سرویس ${label}</span></div>
       <p class="sr-ship-hint">این محموله با رانندهٔ همین سرویس به فروشگاه ارسال می‌شود؛ فاکتور سرویس به‌صورت سند تحویل وزنی (بدون مبلغ) صادر می‌گردد.</p>
       <div class="sr-ship-items">${items.map((i) => `<div class="sr-ship-item"><div class="sr-ship-item-info"><b>${esc(i.product?.name || 'قلم')}</b><span>وزن سرویس: <b>${qty(runKgOf(i))} کیلوگرم</b></span></div></div>`).join('')}</div>
-      <div class="field"><label>رانندهٔ محمولهٔ سرویس ${label}</label><div class="input-shell"><select id="srShipDriver" required><option value="">— انتخاب راننده —</option>${(drv.drivers || []).map((d) => `<option value="${esc(d.id)}">${esc(d.fullName)} — ${esc(d.plate || 'بدون پلاک')}</option>`).join('')}</select></div></div>
+      <div class="field"><label>رانندهٔ محمولهٔ سرویس ${label}</label><div class="input-shell"><select id="srShipDriver" required><option value="">— انتخاب راننده —</option>${(drv.drivers || []).map((d) => `<option value="${esc(d.id)}">${esc(d.fullName)} — ${esc(d.plate || 'بدون پلاک')}</option>`).join('')}</select></div><div id="srShipPlate">${plateViewHtml('','—',true)}</div></div>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button type="submit" class="btn btn-primary">${icon('send',16)} واگذاری به راننده</button></div>
     </form>`);
+    $('#srShipDriver')?.addEventListener('change',e=>{$('#srShipPlate').innerHTML=plateViewHtml((drv.drivers||[]).find(d=>d.id===e.target.value)?.plate,'—',true);});
     $('#srShipForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const driverId = $('#srShipDriver')?.value || '';
@@ -669,8 +670,8 @@ function bindGate(tab){
     if(a==='pick-customer')return pickCustomer(Number(el.dataset.index));
   };
   const f=$('#gateForm'); if(f)f.addEventListener('submit',submitGate);
-  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox'); if(nv.checked){box.innerHTML=`<div class="gt-novehicle">${icon('user',17)} بدون وسیله نقلیه</div>`;}else{box.innerHTML=plateMarkup(app.plate)}});
-  if($('#plateBox'))$('#plateBox').innerHTML=plateMarkup(app.plate);
+  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;});
+  if($('#plateBox'))$('#plateBox').innerHTML=plateEditorHtml('',f?.elements.vehicleType?.value||'');
 }
 
 /* پلاک ایران — ظاهر جدید، همان کلاس‌ها */

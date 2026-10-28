@@ -706,3 +706,15 @@
   background:url("/logo.png") center/contain no-repeat;opacity:.07;
 }
 @media (max-width:1024px){#loginView .login-stage::before{display:none}}
+
+/* پلاک‌های خودرو و موتورسیکلت: قطعات پنهان نباید در grid جا بگیرند. */
+.iran-plate.iran-plate [hidden]{display:none!important}
+.iran-plate.iran-plate.is-motor{width:calc(var(--plate-h) * 2.3)!important;grid-template-columns:calc(var(--plate-h) * .46) 1fr!important;grid-template-rows:1fr 1fr!important}
+.iran-plate.iran-plate.is-motor .blue-strip{grid-column:1;grid-row:1 / span 2}
+.iran-plate.iran-plate.is-motor .motor-top{grid-column:2;grid-row:1}
+.iran-plate.iran-plate.is-motor .motor-bottom{grid-column:2;grid-row:2;border-top:1px solid #d7dee6!important}
+.iran-plate.iran-plate.is-motor .plate-part span,.iran-plate.iran-plate.is-motor .plate-part input{font-size:calc(var(--plate-h) * .28)!important}
+.iran-plate.iran-plate .plate-code{background:#eef2f7!important}
+.iran-plate-legacy{display:inline-block;border:2px solid #415060;border-left:7px solid #0d5a9c;border-radius:7px;background:#fff;color:#17202a;font-weight:700;padding:3px 8px;max-width:100%;overflow-wrap:anywhere}
+.plate-legacy-note{display:block;margin-top:6px;color:#8a5200;overflow-wrap:anywhere}
+[data-plate-editor]{min-width:0;max-width:100%}
