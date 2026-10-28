@@ -587,17 +587,31 @@ function adminNavItems() {
 // مدیریت نسخه‌های پشتیبان SQLite؛ فقط مدیر. بازیابی، تمام داده‌های فعلی را جایگزین می‌کند.
 async function renderBackupsPage() {
   const { backups } = await api('/api/admin/backups');
-  $('#content').innerHTML = admHead('backups', 'پشتیبان‌گیری و بازیابی', 'ساخت نسخهٔ یکپارچه از داده‌ها و بازیابی نسخه‌های موجود روی سرور.', undefined) + `
+  $('#content').innerHTML = admHead('backups', 'پشتیبان‌گیری و بازیابی', 'ساخت، بارگذاری و بازیابی نسخهٔ پشتیبان داده‌ها.', undefined) + `
     <div class="adm-report"><div class="adm-rep-side">
       <p>نسخهٔ پشتیبان شامل اطلاعات کاربران و هش رمزهاست؛ فایل دانلودشده را در محل امن و جدا از سرور نگه دارید.</p>
       <button class="btn btn-primary" type="button" id="backup-create">ایجاد نسخهٔ پشتیبان</button>
       <p>بازیابی داده‌های فعلی را جایگزین می‌کند. پیش از آن یک نسخهٔ ایمنی خودکار ساخته می‌شود و همه کاربران باید دوباره وارد شوند.</p>
-      <p>فقط نسخه‌هایی که از همین بخش روی سرور ساخته شده‌اند قابل بازیابی هستند؛ بارگذاری فایل از رایانه در این نسخه پشتیبانی نمی‌شود.</p>
+      <label class="cust-field"><span>انتخاب فایل پشتیبان SQLite از رایانه (حداکثر ۵۱۲ مگابایت)</span><input type="file" id="backup-file" accept=".db,application/octet-stream"></label>
+      <button class="btn btn-secondary" type="button" id="backup-upload">افزودن فایل پشتیبان</button>
+      <p>فایل دانلودشدهٔ پشتیبان را انتخاب کنید. پس از بررسی، فایل به فهرست اضافه می‌شود؛ بازیابی جداگانه با دکمهٔ «بازیابی» و تأیید رمز انجام می‌شود.</p>
       <div id="backup-message" role="status"></div>
     </div><div class="adm-rep-main"><div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>نام نسخه</th><th>زمان</th><th>حجم (بایت)</th><th>عملیات</th></tr></thead><tbody>
       ${backups.map(b => `<tr><td>${admE(b.name)}</td><td>${admE(dt(b.createdAt))}</td><td>${admE(b.size)}</td><td><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
     </tbody></table></div><div id="backup-confirm"></div></div></div></section>`;
   $('#backup-create').onclick = async e => { e.currentTarget.disabled = true; try { await api('/api/admin/backups', { method:'POST', body:'{}' }); await renderBackupsPage(); toast('نسخهٔ پشتیبان ساخته شد.'); } catch (err) { $('#backup-message').textContent = err.message; e.currentTarget.disabled = false; } };
+  $('#backup-upload').onclick = async e => {
+    const button = e.currentTarget, file = $('#backup-file').files[0], message = $('#backup-message');
+    if (!file) { message.textContent = 'ابتدا فایل پشتیبان را انتخاب کنید.'; return; }
+    if (file.size > 512 * 1024 * 1024) { message.textContent = 'حجم فایل نباید بیش از ۵۱۲ مگابایت باشد.'; return; }
+    button.disabled = true; message.textContent = 'در حال بارگذاری و بررسی فایل پشتیبان…';
+    try {
+      const response = await fetch('/api/admin/backups/upload', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/octet-stream','X-Backup-Upload':'1'}, body:file });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { if (response.status === 401) handleSessionExpired(); throw new Error(data.error || 'بارگذاری پشتیبان انجام نشد.'); }
+      await renderBackupsPage(); toast('فایل بررسی و به فهرست پشتیبان‌ها اضافه شد؛ برای بازیابی، دکمهٔ بازیابی را انتخاب کنید.');
+    } catch (err) { message.textContent = err.message || 'ارتباط برای بارگذاری برقرار نشد.'; button.disabled = false; }
+  };
   $('#content').onclick = e => {
     const b = e.target.closest('[data-backup-restore]'); if (!b) return;
     const name = b.dataset.backupRestore;
