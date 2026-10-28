@@ -1208,9 +1208,7 @@ async function handleLoginSubmit(e){
 }
 async function handleLogout(){
   try{await api('/api/logout',{method:'POST',body:'{}'});}catch{}
-  if(app.indicatorTimer){clearInterval(app.indicatorTimer);app.indicatorTimer=null}
-  if(app.timer){clearInterval(app.timer);app.timer=null}
-  app.user=null; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null;
+  resetClientState();
   closeModal();
   showLoginView('');
   const f=$('#loginForm'); if(f){f.reset();}
@@ -1284,7 +1282,9 @@ async function bootstrap(){
 function resetClientState(){
   if(app.indicatorTimer){clearInterval(app.indicatorTimer);app.indicatorTimer=null}
   if(app.timer){clearInterval(app.timer);app.timer=null}
-  app.user=null; app.notifSeen=null; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
+  stopNotifReminder(); closeNotifPanel();
+  app.notifRequestSeq=(app.notifRequestSeq||0)+1; app.notifAppliedSeq=app.notifRequestSeq;
+  app.user=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
 }
 function handleSessionExpired(){
   if(!app.user) return;
@@ -1353,27 +1353,77 @@ function notifTimeText(iso){
     return faDigits(`${jy}/${pad2(jm)}/${pad2(jd)} - ${hh}:${p.minute}`);
   }catch{return ''}
 }
-function notifSoundOn(){return localStorage.getItem('bt.notifSound')!=='0'}
+const NOTIF_REPEAT_MS=30000;
+function notifSoundOn(){try{return localStorage.getItem('bt.notifSound')!=='0'}catch{return true}}
 function unlockAudio(){
   try{
-    if(!app.audioCtx) app.audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(app.audioCtx.state==='suspended') app.audioCtx.resume();
-  }catch{}
+    const Audio=window.AudioContext||window.webkitAudioContext;
+    if(!Audio) return Promise.resolve(false);
+    if(!app.audioCtx || app.audioCtx.state==='closed') app.audioCtx=new Audio();
+    const ctx=app.audioCtx;
+    if(ctx.state==='running') return Promise.resolve(true);
+    return Promise.resolve(ctx.resume()).then(()=>ctx.state==='running',()=>false);
+  }catch{return Promise.resolve(false)}
 }
-function playNotifChime(){
-  if(!notifSoundOn()) return;
-  unlockAudio();
-  const ctx=app.audioCtx; if(!ctx||ctx.state!=='running') return;
+function setNotifAudioStatus(blocked){
+  app.notifAudioBlocked=blocked;
+  const status=$('#notifAudioStatus');
+  if(status){status.hidden=!blocked; status.textContent=blocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':'';}
+  const bell=$('#bell'); if(bell) bell.title=blocked?'برای فعال‌سازی صدای اعلان، پنل اعلان‌ها را باز و صدای سایت را فعال کنید.':'اعلان‌های عملیاتی';
+}
+function stopNotifChime(){
+  app.notifSoundSeq=(app.notifSoundSeq||0)+1;
+  for(const node of app.notifSoundNodes||[]){try{node.stop()}catch{} try{node.disconnect()}catch{}}
+  app.notifSoundNodes=[];
+}
+async function playNotifChime(){
+  if(!notifSoundOn()) return false;
+  stopNotifChime(); const seq=app.notifSoundSeq;
+  let timeout; const ready=await Promise.race([unlockAudio(),new Promise(resolve=>{timeout=setTimeout(()=>resolve(false),1500)})]);
+  clearTimeout(timeout);
+  if(seq!==app.notifSoundSeq || !notifSoundOn()) return false;
+  const ctx=app.audioCtx;
+  if(!ready || !ctx || ctx.state!=='running'){
+    setNotifAudioStatus(true);
+    if(app.user && !app.notifAudioWarningShown){app.notifAudioWarningShown=true;toast('صدای اعلان مسدود است؛ روی اعلان‌ها و سپس «آزمایش صدا» بزنید و صدای مرورگر و دستگاه را بررسی کنید.');}
+    return false;
+  }
+  setNotifAudioStatus(false);
   const t0=ctx.currentTime;
-  [[784,0],[1046,0.16]].forEach(([freq,dt])=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.value=freq;
-    g.gain.setValueAtTime(0.0001,t0+dt);
-    g.gain.exponentialRampToValueAtTime(0.3,t0+dt+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001,t0+dt+0.3);
-    o.connect(g); g.connect(ctx.destination); o.start(t0+dt); o.stop(t0+dt+0.32);
+  try{
+    // Three bell strikes with inharmonic partials and a long metallic decay.
+    for(const strike of [0,0.75,1.5]) for(const [frequency,level,decay] of [[880,0.30,1.6],[1760,0.14,1.1],[2376,0.08,0.8],[3432,0.04,0.55]]){
+      const oscillator=ctx.createOscillator(), gain=ctx.createGain(), at=t0+strike;
+      oscillator.type='sine'; oscillator.frequency.value=frequency;
+      gain.gain.setValueAtTime(0.0001,at);
+      gain.gain.exponentialRampToValueAtTime(level,at+0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001,at+decay);
+      oscillator.connect(gain); gain.connect(ctx.destination);
+      oscillator.onended=()=>{try{oscillator.disconnect();gain.disconnect()}catch{}};
+      oscillator.start(at); oscillator.stop(at+decay+0.02);
+      app.notifSoundNodes.push(oscillator);
+    }
+    try{navigator.vibrate&&navigator.vibrate([180,90,180,90,180])}catch{}
+    return true;
+  }catch{stopNotifChime();setNotifAudioStatus(true);return false}
+}
+function stopNotifReminder(){
+  if(app.notifReminderTimer){clearTimeout(app.notifReminderTimer);app.notifReminderTimer=null}
+  stopNotifChime();
+}
+function startNotifReminder(playNow=true){
+  if(app.notifReminderTimer){clearTimeout(app.notifReminderTimer);app.notifReminderTimer=null}
+  if(!app.user || !(app.notifUnread>0) || !notifSoundOn()) return;
+  if(playNow) void playNotifChime();
+  app.notifReminderTimer=setTimeout(()=>{app.notifReminderTimer=null;startNotifReminder(true)},NOTIF_REPEAT_MS);
+}
+function onNotifAudioGesture(){
+  const wasBlocked=app.notifAudioBlocked;
+  void unlockAudio().then(ready=>{
+    if(ready && wasBlocked && app.notifAudioBlocked && app.user && app.notifUnread>0 && notifSoundOn()){
+      setNotifAudioStatus(false); startNotifReminder(true);
+    }
   });
-  try{navigator.vibrate&&navigator.vibrate([120,60,120])}catch{}
 }
 function positionNotifPanel(){
   const panel=$('#notificationPanel'), bell=$('#bell'); if(!panel||!bell) return;
@@ -1394,7 +1444,7 @@ function closeNotifPanel(){$('#notificationPanel')?.classList.add('hidden')}
 function renderNotifPanel(d){
   const panel=$('#notificationPanel'); const list=d.notifications||[];
   const soundOn=notifSoundOn();
-  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
+  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="test-notif-sound">آزمایش صدا</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div id="notifAudioStatus" class="notice" role="status" ${app.notifAudioBlocked?'':'hidden'}>${app.notifAudioBlocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':''}</div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
 }
 async function toggleNotifications(){
   const panel=$('#notificationPanel'); if(!panel) return;
@@ -1402,6 +1452,7 @@ async function toggleNotifications(){
   if(!panel.classList.contains('hidden')){closeNotifPanel();return;}
   try{
     const d=await api('/api/notifications');
+    notifyNewArrivals(d);
     renderNotifPanel(d);
     positionNotifPanel();
     panel.classList.remove('hidden');
@@ -1416,7 +1467,7 @@ async function markNotificationsRead(id=''){
 }
 async function openNotificationTarget(id,type,role){
   const route=notifRoute(type,role);
-  try{await api('/api/notifications/read',{method:'POST',body:JSON.stringify({id})})}catch{}
+  try{await api('/api/notifications/read',{method:'POST',body:JSON.stringify({id})})}catch(e){toast(e.message);return}
   closeNotifPanel();
   await refreshIndicators();
   const mine=normalizeRole(app.user?.roleCode);
@@ -1426,24 +1477,33 @@ async function openNotificationTarget(id,type,role){
 }
 function notifyNewArrivals(d){
   const list=d?.notifications||[];
-  if(!app.notifSeen){ app.notifSeen=new Set(list.map(n=>n.id)); return; }
-  const fresh=list.filter(n=>!n.isRead && !app.notifSeen.has(n.id));
+  const fresh=app.notifSeen ? list.filter(n=>!n.isRead && !app.notifSeen.has(n.id)) : [];
   app.notifSeen=new Set(list.map(n=>n.id));
+  app.notifUnread=Math.max(0,Number(d?.unread)||0);
+  if(!app.notifUnread) stopNotifReminder();
+  else if(fresh.length || !app.notifReminderTimer) startNotifReminder(true);
   if(!fresh.length) return;
-  playNotifChime();
   const bell=$('#bell');
   if(bell){bell.classList.remove('bell-ring'); void bell.offsetWidth; bell.classList.add('bell-ring');}
   toast(fresh.length===1?`اعلان جدید: ${fresh[0].message}`:`${faDigits(fresh.length)} اعلان جدید دریافت شد`);
-  if(!$('#notificationPanel')?.classList.contains('hidden')) toggleNotifications().then(()=>toggleNotifications()).catch(()=>{});
+  if(!$('#notificationPanel')?.classList.contains('hidden')) renderNotifPanel(d);
 }
-document.addEventListener('pointerdown',unlockAudio,{passive:true});
-document.addEventListener('keydown',unlockAudio);
-document.addEventListener('click',async e=>{
-  const t=e.target.closest?.('[data-action="toggle-notif-sound"]'); if(!t) return;
-  const on=!notifSoundOn();
-  localStorage.setItem('bt.notifSound',on?'1':'0');
-  if(on){unlockAudio();playNotifChime();}
-  t.setAttribute('aria-pressed',String(on)); t.textContent=on?'صدا: روشن':'صدا: خاموش';
+document.addEventListener('pointerdown',onNotifAudioGesture,{passive:true});
+document.addEventListener('keydown',onNotifAudioGesture);
+document.addEventListener('click',e=>{
+  const t=e.target.closest?.('[data-action="toggle-notif-sound"]');
+  if(t){
+    const on=!notifSoundOn();
+    try{localStorage.setItem('bt.notifSound',on?'1':'0')}catch{}
+    if(on){if(app.notifUnread>0) startNotifReminder(true);else void playNotifChime()}
+    else {stopNotifReminder();setNotifAudioStatus(false)}
+    t.setAttribute('aria-pressed',String(on)); t.textContent=on?'صدا: روشن':'صدا: خاموش';
+    return;
+  }
+  if(e.target.closest?.('[data-action="test-notif-sound"]')){
+    if(!notifSoundOn()) return toast('ابتدا صدای اعلان را روشن کنید.');
+    void playNotifChime();
+  }
 });
 window.addEventListener('resize',()=>{ if(!$('#notificationPanel')?.classList.contains('hidden')) positionNotifPanel(); });
 
@@ -2286,8 +2346,12 @@ function invoiceRowsV27(rows){
 /* faster global indicator cadence — sales tab switches must never wait for the live badge refresh */
 async function refreshIndicators(){
   try{
-    const [noti,w]=await Promise.all([api('/api/notifications'),api('/api/workload')]);
-    app.workload=w.counts||{};notifyNewArrivals(noti);
+    const userId=app.user?.id; if(!userId) return;
+    const seq=app.notifRequestSeq=(app.notifRequestSeq||0)+1;
+    const [noti,w]=await Promise.all([api('/api/notifications'),api('/api/workload').catch(()=>null)]);
+    if(!app.user || app.user.id!==userId || seq<=(app.notifAppliedSeq||0)) return;
+    app.notifAppliedSeq=seq;
+    if(w) app.workload=w.counts||{};notifyNewArrivals(noti);
     const bc=$('#bellCount'); if(bc){bc.textContent=qty(noti.unread||0);bc.classList.toggle('hidden',!(noti.unread>0));}
     const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
