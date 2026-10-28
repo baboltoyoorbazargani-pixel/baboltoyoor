@@ -1,13 +1,15 @@
-# سامانهٔ هوشمند بابل طیور — نسخهٔ ۳۷٫۴۳٫۰
+# سامانهٔ هوشمند بابل طیور — نسخهٔ انتشار ۱٫۰٫۰
 
 سامانهٔ عملیات بابل طیور: نگهبانی (ثبت ورود/کنترل خروج)، فروش (سفارش عادی و فروشگاهی، تسویه)، فروشگاه (ثبت سفارش و پیگیری)، انبار (ورودی، آماده‌سازی و سرویس‌های ارسال، سوابق و گزارشات) و رانندگان/پیک‌ها.
 
+شمارهٔ انتشار عمومی در `RELEASE_VERSION.txt` است. شمارهٔ داخلی سازگاری `37.6.0` و شناسه‌های نسخهٔ فایل‌های ظاهری حفظ شده‌اند و شمارهٔ انتشار نیستند.
+
 ## اجرا
-- نیازمندی: ‎Node.js 22.5+‎ — بدون هیچ وابستگی خارجی (‏`npm install`‏ لازم نیست؛ SQLite داخلی خود Node است).
+- نیازمندی: ‎Node.js 22.13+‎ — بدون هیچ وابستگی خارجی (‏`npm install`‏ لازم نیست؛ SQLite داخلی خود Node است).
 - شروع: ‏`node server.js`‏
 - پایگاهداده: **SQLite (SQL واقعی)** در `DATA_DIR/baboltoyoor.db` — جداول و ستونهای ایندکسهشده؛ راهنما: `docs/sqlite-database-fa.md`.
 - متغیرهای محیطی: ‏`PORT`‏ (پیش‌فرض ۳۰۸۰)، ‏`HOST`‏، ‏`DATA_DIR`‏ (پوشهٔ دیتابیس؛ پیش‌فرض ‎`data/`‎ کنار پروژه)، ‏`SQLITE_FILE` (مسیر دلخواه فایل SQLite)، `ADMIN_INITIAL_PASSWORD`‏ (رمز اولیهٔ مدیر در اولین ساخت دیتابیس؛ مدیر در اولین ورود باید رمزش را عوض کند).
-- **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/INSTALL-STEPS-fa.md`‏ (**گامبهگام و قابلچاپ**)، ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏. نصب SQLite لازم نیست؛ داخل Node.js 22.5+ است.
+- **نصب یککلیک روی ویندوز سرور ۲۰۲۵:** ‏`windows-installer/BabolToyor-Setup.cmd`‏ — بدون کدنویسی، همهچیز خودکار و سامانه روی **پورت ۸۰** (`http://IP-سرور` بدون پورت). راهنما: ‏`windows-installer/INSTALL-STEPS-fa.md`‏ (**گامبهگام و قابلچاپ**)، ‏`windows-installer/README-fa.md`‏ و ‏`docs/deployment-windows-server-2025.md`‏. نصب SQLite جداگانه لازم نیست؛ همراه Node.js است.
 - اجرای دستی روی ویندوز: ‏`scripts/start.ps1`‏ یا ‏`scripts/start-hidden.ps1`‏.
 - ابزارهای SQL: `node scripts/sql-query.js "SELECT ..."` و پشتیبانگیری `node scripts/backup-db.js`.
 - مسیرهای API از لایهٔ `lib/sql-repos.js` با prepared statement استفاده میکنند و دادهها در ابتدای هر درخواست از SQL تازه میشوند (فاز ۲). در **فاز ۳** نوشتها هم ردیفبهردیف شدند: هر تغییر همان لحظه `INSERT ... ON CONFLICT DO UPDATE` یا `DELETE` اجرا میکند و `store.save()` فقط همگامسازی افزایشی است (`docs/sqlite-database-fa.md` ← فاز ۳).
@@ -22,7 +24,7 @@
 
 ## مستندات
 - تغییرات هر نسخه: ‏`CHANGELOG.md`‏ (آخرین نسخه در صدر فایل)
-- یادداشت همین نسخه: ‏`RELEASE-37.43.0-fa.md`‏
+- یادداشت همین نسخه: ‏`RELEASE-1.0.0-fa.md`‏
 - استقرار ویندوز سرور: ‏`docs/deployment-windows-server-2025.md`‏ • پروتکل باسکول: ‏`docs/weighbridge-pu850.md`‏
 
 ## تست‌ها

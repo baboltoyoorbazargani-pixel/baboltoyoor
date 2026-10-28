@@ -85,3 +85,46 @@ test('a corrupted snapshot is rejected without replacing the live database', asy
   const current=await call('POST','/api/unit-reports/store/query',admin,{source:'orders'});
   assert.deepEqual(new Set(current.json.rows.map(x=>x.orderNo)),new Set(['oa','ob']));
 });
+
+test('admin can upload a downloaded backup, validate it and restore it; unsafe uploads are rejected', async () => {
+  const listing = await call('GET','/api/admin/backups',admin);
+  const original = listing.json.backups.find(b=>b.name.includes('-manual-') && !b.name.includes('20260101'));
+  const backup = (await call('GET',`/api/admin/backups/${original.name}/download`,admin)).bytes;
+  const upload = async (cookie, bytes, headers={'Content-Type':'application/octet-stream','X-Backup-Upload':'1'}) => {
+    const res = await fetch(base+'/api/admin/backups/upload',{method:'POST',headers:{...headers,...(cookie ? {Cookie:cookie} : {})},body:bytes});
+    return {status:res.status,json:await res.json()};
+  };
+  const salesCookie = (await call('POST','/api/login',null,{username:'sales1',password})).cookie;
+  assert.equal((await upload(null, backup)).status,401);
+  assert.equal((await upload(salesCookie, backup)).status,403);
+  assert.equal((await upload(admin, backup, {'Content-Type':'application/octet-stream'})).status,415);
+  assert.equal((await upload(admin, Buffer.from('not a database'))).status,400);
+  const corrupt = fs.readFileSync(path.join(dir,'backups','baboltoyor-manual-20260101T000000-abcdef123456.db'));
+  assert.equal((await upload(admin,corrupt)).status,400);
+  const altered=path.join(dir,'malicious.db'); fs.writeFileSync(altered,backup);
+  const alteredDb=new DatabaseSync(altered); alteredDb.exec('CREATE VIEW malicious_view AS SELECT * FROM users'); alteredDb.close();
+  assert.equal((await upload(admin,fs.readFileSync(altered))).status,400);
+  const afterBad=await call('GET','/api/admin/backups',admin);
+  assert.equal(afterBad.json.backups.filter(b=>b.name.includes('-uploaded-')).length,0);
+  assert.equal(fs.readdirSync(path.join(dir,'backups')).filter(n=>n.startsWith('.upload-')).length,0);
+
+  const result=await upload(admin,backup); assert.equal(result.status,201,JSON.stringify(result.json));
+  assert.match(result.json.name,/^baboltoyor-uploaded-/);
+  fs.unlinkSync(path.join(dir,'backups',original.name));
+  const db=new DatabaseSync(path.join(dir,'baboltoyoor.db')); db.prepare("DELETE FROM orders WHERE id='oa'").run(); db.close();
+  let r=await call('POST','/api/unit-reports/store/query',admin,{source:'orders'}); assert.deepEqual(r.json.rows.map(x=>x.orderNo),['ob']);
+  assert.equal((await call('POST',`/api/admin/backups/${result.json.name}/restore`,admin,{confirm:'RESTORE',password:'wrong'})).status,403);
+  r=await call('POST',`/api/admin/backups/${result.json.name}/restore`,admin,{confirm:'RESTORE',password}); assert.equal(r.status,200,JSON.stringify(r.json));
+  assert.match(r.json.safety,/before-restore/); assert.equal((await call('GET','/api/me',admin)).status,401);
+  admin=(await call('POST','/api/login',null,{username:'admin',password})).cookie;
+  r=await call('POST','/api/unit-reports/store/query',admin,{source:'orders'}); assert.deepEqual(new Set(r.json.rows.map(x=>x.orderNo)),new Set(['oa','ob']));
+});
+
+test('oversize upload is rejected from the declared size before consuming the body', async () => {
+  const http = require('node:http');
+  const status = await new Promise((resolve,reject) => {
+    const req=http.request(base+'/api/admin/backups/upload',{method:'POST',headers:{Cookie:admin,'Content-Type':'application/octet-stream','X-Backup-Upload':'1','Content-Length':String(512*1024*1024+1)}}, res => {res.resume();resolve(res.statusCode);req.destroy();});
+    req.on('error',reject); req.flushHeaders();
+  });
+  assert.equal(status,413);
+});
