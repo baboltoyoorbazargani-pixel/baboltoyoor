@@ -823,13 +823,11 @@ function renderGateExit(orders){return `<section class="card card-pad"><div clas
 function bindGate(tab){
   $('#content').onclick=async e=>{const b=e.target.closest('[data-sub]');if(b){const [k,v]=b.dataset.sub.split(':');app.sub[k]=v;await renderGate(v);return}const action=e.target.closest('[data-action]')?.dataset.action;if(action==='invoice')return previewInvoice(e.target.closest('[data-action]').dataset.id,Number(e.target.closest('[data-action]').dataset.run)||null);if(action==='open-exit')return openExit(e.target.closest('[data-action]').dataset.id);if(action==='confirm-exit')return confirmExit(e.target.closest('[data-action]').dataset.id)};
   const f=$('#gateForm');if(f)f.addEventListener('submit',submitGate)
-  const nv=$('#noVehicle');if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(nv.checked){box.innerHTML='<div class="pill" style="margin-top:12px;width:100%;justify-content:center">بدون وسیله نقلیه</div>';}else{box.innerHTML=plateMarkup(app.plate)}});
-  if($('#plateBox'))$('#plateBox').innerHTML=plateMarkup(app.plate);
+  const nv=$('#noVehicle');if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;});
+  if($('#plateBox'))$('#plateBox').innerHTML=plateEditorHtml('',f?.elements.vehicleType?.value||'');
 }
 async function submitGate(e){e.preventDefault();const f=e.target;const data=Object.fromEntries(new FormData(f));data.noVehicle=!!$('#noVehicle')?.checked;
-if(!data.noVehicle){const box=$('#plateBox');app.plate={a:$('.plate-a',box)?.value||'',letter:$('.plate-letter',box)?.value||'',c:$('.plate-c',box)?.value||'',province:$('.plate-province',box)?.value||''};}
-data.plate=data.noVehicle?'':formatPlate(app.plate);
-if(!data.noVehicle&&!data.plate){$('#gateMsg').textContent='تمام بخش‌های پلاک را کامل وارد کنید: دو رقم، حرف، سه رقم و کد دو رقمی استان.';return;}
+try{data.plate=data.noVehicle?'':plateEditorValue(f,{required:true});}catch(err){$('#gateMsg').textContent=err.message;return;}
 if(!data.name||!data.phone)return;try{await api('/api/visits',{method:'POST',body:JSON.stringify(data)});toast('ورود مشتری ثبت شد و به فروش ارسال شد.');app.plate={a:'',letter:'ب',c:'',province:''};app.customerMatches=[];await renderGate('entry');const nameInput=$('#gateForm [name="name"]');if(nameInput)nameInput.focus();}catch(err){$('#gateMsg').textContent=err.message}}
 /* v37.3.4 — پایانه پوز راننده همراه با نام بانک؛ شماره تماس قابل کلیک */
 const BT_POS_BANKS=['بانک ملت','بانک ملی','بانک صادرات','بانک تجارت','بانک سپه','بانک کشاورزی','بانک مسکن','بانک رفاه','بانک پاسارگاد','بانک سامان','بانک پارسیان','بانک اقتصاد نوین','بانک شهر','بانک آینده','بانک دی','بانک سینا','بانک کارآفرین','بانک توسعه تعاون','پست بانک','بانک رسالت','بانک قرض‌الحسنه مهر ایران','بانک سرمایه','بانک خاورمیانه','بانک ایران زمین','بانک گردشگری'];
@@ -841,7 +839,11 @@ function fa(v=''){return String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])}
 function en(v=''){return String(v).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))}
 function plateDigits(v,len){return fa(en(v).replace(/\D/g,'').slice(0,len))}
 function formatPlate(p){const a=en(p.a||''),c=en(p.c||''),pr=en(p.province||''),l=p.letter||'';return /^\d{2}$/.test(a)&&/^\d{3}$/.test(c)&&/^\d{2}$/.test(pr)&&/^[بپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی]$/.test(l)?`${fa(a)} ${l} ${fa(c)} - ${fa(pr)}`:''}
-function parsePlate(s=''){const t=en(s).replace(/\s/g,'');const m=t.match(/(\d{2})([آ-ی])?(\d{3})[-]?(\d{2})/);return m?{a:m[1],letter:m[2]||'ب',c:m[3],province:m[4]}:{a:'',letter:'ب',c:'',province:''}}
+function parsePlate(s=''){
+  const t=en(String(s)).replace(/\s/g,'').replace(/[–—]/g,'-');
+  const m=t.match(/^(\d{2})([بپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی])(\d{3})-?(\d{2})$/);
+  return m?{a:m[1],letter:m[2],c:m[3],province:m[4]}:{a:'',letter:'ب',c:'',province:''};
+}
 function formatDispatchVehiclePlate(value,fallback='—'){
   const raw=String(value??'').trim();
   if(!raw)return fallback;
@@ -850,17 +852,58 @@ function formatDispatchVehiclePlate(value,fallback='—'){
   return fa(en(raw).replace(/\s*-\s*/g,' - ').replace(/\s+/g,' '))||fallback;
 }
 function plateViewHtml(value, fallback='بدون پلاک', compact=false){
-  const p=parsePlate(value||'');
-  const has=!!(p.a||p.letter||p.c||p.province);
-  if(!has) return `<span class="plate-text" style="color:var(--muted);font-size:12px;font-weight:700">${esc(fallback)}</span>`;
-  const cls=compact? 'iran-plate is-readonly is-compact' : 'iran-plate is-readonly';
-  return `<div class="${cls}" style="display:inline-grid;vertical-align:middle" dir="ltr" aria-label="پلاک ${esc(formatPlate(p)||value)}"><div class="blue-strip"><span>IR<br>ایران</span></div><div class="plate-part"><span>${esc(p.a||'')}</span></div><div class="plate-part"><span>${esc(p.letter||'')}</span></div><div class="plate-part"><span>${esc(p.c||'')}</span></div><div class="plate-part plate-code"><span>${esc(p.province||'')}</span></div></div>`;
+  const raw=String(value??'').trim();
+  if(!raw) return `<span class="plate-text" style="color:var(--muted);font-size:12px;font-weight:700">${esc(fallback)}</span>`;
+  const t=en(raw).replace(/\s/g,'').replace(/[–—]/g,'-');
+  const motorcycle=t.match(/^(\d{3})-?(\d{5})$/);
+  const p=parsePlate(raw), valid=!!formatPlate(p);
+  const cls=compact?'iran-plate is-readonly is-compact':'iran-plate is-readonly';
+  const blue='<div class="blue-strip"><span>IR<br>ایران</span></div>';
+  if(motorcycle)return `<div class="${cls} is-motor" dir="ltr" aria-label="پلاک موتورسیکلت ${esc(raw)}">${blue}<div class="plate-part motor-top"><span>${esc(fa(motorcycle[1]))}</span></div><div class="plate-part motor-bottom"><span>${esc(fa(motorcycle[2]))}</span></div></div>`;
+  // Never fabricate a letter or truncate unrecognised historical plates.
+  if(!valid)return `<span class="iran-plate-legacy" dir="auto" title="پلاک قدیمی؛ قالب آن قابل تشخیص نیست">${esc(raw)}</span>`;
+  return `<div class="${cls}" style="display:inline-grid;vertical-align:middle" dir="ltr" aria-label="پلاک ${esc(formatPlate(p))}">${blue}<div class="plate-part"><span>${esc(fa(p.a))}</span></div><div class="plate-part"><span>${esc(p.letter)}</span></div><div class="plate-part"><span>${esc(fa(p.c))}</span></div><div class="plate-part plate-code"><span>${esc(fa(p.province))}</span></div></div>`;
+}
+// Reusable segmented input. Its hidden value is sent only after validation;
+// unrecognised legacy values remain intact until the user deliberately edits them.
+function plateEditorHtml(value='',vehicleType='',name='plate'){
+  const raw=String(value??''), p=parsePlate(raw), car=!!formatPlate(p);
+  const motor=en(raw).replace(/\s/g,'').match(/^(\d{3})-?(\d{5})$/);
+  const isMotor=/موتور/.test(String(vehicleType));
+  const letters=['ب','پ','ت','ث','ج','چ','ح','خ','د','ذ','ر','ز','ژ','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ک','گ','ل','م','ن','و','ه','ی'];
+  const noCar=isMotor?' hidden':'', noMotor=isMotor?'':' hidden';
+  return `<div data-plate-editor data-dirty="0" data-motor="${isMotor?'1':'0'}" data-original="${esc(raw)}"><input type="hidden" name="${esc(name)}" value="${esc(raw)}" data-plate-value><div class="iran-plate plate-editor${isMotor?' is-motor':''}" dir="ltr"><div class="blue-strip"><span>IR<br>ایران</span></div><div class="plate-part" data-car${noCar}><input data-plate-a maxlength="2" inputmode="numeric" autocomplete="off" aria-label="دو رقم اول پلاک" placeholder="۱۲" value="${car?esc(fa(p.a)):''}"></div><div class="plate-part" data-car${noCar}><select data-plate-letter aria-label="حرف پلاک"><option value="">—</option>${letters.map(l=>`<option value="${l}" ${car&&l===p.letter?'selected':''}>${l}</option>`).join('')}</select></div><div class="plate-part" data-car${noCar}><input data-plate-c maxlength="3" inputmode="numeric" autocomplete="off" aria-label="سه رقم پلاک" placeholder="۳۴۵" value="${car?esc(fa(p.c)):''}"></div><div class="plate-part plate-code" data-car${noCar}><input data-plate-province maxlength="2" inputmode="numeric" autocomplete="off" aria-label="کد استان" placeholder="۶۷" value="${car?esc(fa(p.province)):''}"></div><div class="plate-part motor-top" data-motor${noMotor}><input data-motor-a maxlength="3" inputmode="numeric" autocomplete="off" aria-label="سه رقم بالای پلاک موتور" value="${motor?esc(fa(motor[1])):''}" placeholder="۱۲۳"></div><div class="plate-part motor-bottom" data-motor${noMotor}><input data-motor-b maxlength="5" inputmode="numeric" autocomplete="off" aria-label="پنج رقم پایین پلاک موتور" value="${motor?esc(fa(motor[2])):''}" placeholder="۴۵۶۷۸"></div></div>${raw&&(!car&&!motor||(isMotor&&!motor)||(!isMotor&&!car))?`<small class="plate-legacy-note">پلاک قبلی با قالب استاندارد قابل تشخیص نیست و بدون تغییر حفظ می‌شود: ${esc(raw)}. برای اصلاح، بخش‌های پلاک را تکمیل کنید.</small>`:''}</div>`;
+}
+function bindPlateEditor(form, vehicleTypeControl){
+  const root=form.querySelector('[data-plate-editor]');if(!root||root.dataset.bound==='1')return;root.dataset.bound='1';
+  const select=vehicleTypeControl||form.querySelector('[name="vehicleType"]');
+  const syncMode=()=>{const motor=/موتور/.test(String(select?.value||''));if(root.dataset.motor===(motor?'1':'0'))return;root.dataset.motor=motor?'1':'0';root.dataset.dirty='1';root.querySelector('.iran-plate').classList.toggle('is-motor',motor);root.querySelectorAll('[data-car]').forEach(x=>x.hidden=motor);root.querySelectorAll('[data-motor]').forEach(x=>x.hidden=!motor);};
+  if(select){if(select._plateSync){select.removeEventListener('change',select._plateSync);select.removeEventListener('input',select._plateSync);}select._plateSync=syncMode;select.addEventListener('change',syncMode);select.addEventListener('input',syncMode);}
+  root.addEventListener('input',e=>{if(e.target.matches('input:not([type="hidden"])'))e.target.value=plateDigits(e.target.value,Number(e.target.maxLength)||5);root.dataset.dirty='1';});
+  root.addEventListener('change',()=>{root.dataset.dirty='1';});
+}
+function plateEditorValue(form,{required=false}={}){
+  const root=form.querySelector('[data-plate-editor]');if(!root)return '';
+  const original=root.dataset.original||'';
+  if(root.dataset.dirty!=='1'&&original)return original;
+  const val=s=>root.querySelector(s)?.value||'';
+  let result='',hasDigits=false;
+  if(root.dataset.motor==='1'){
+    const a=en(val('[data-motor-a]')),b=en(val('[data-motor-b]'));hasDigits=!!(a||b);
+    if(/^\d{3}$/.test(a)&&/^\d{5}$/.test(b))result=`${a}-${b}`;
+  }else{
+    const p={a:val('[data-plate-a]'),letter:val('[data-plate-letter]'),c:val('[data-plate-c]'),province:val('[data-plate-province]')};
+    hasDigits=!!(p.a||p.c||p.province);result=formatPlate(p);
+  }
+  if(!hasDigits&&!required)return '';
+  if(!result)throw new Error(root.dataset.motor==='1'?'پلاک موتورسیکلت را با سه رقم بالا و پنج رقم پایین کامل وارد کنید.':'پلاک را کامل وارد کنید: دو رقم، حرف، سه رقم و کد دو رقمی استان.');
+  return result;
 }
 function plateMarkup(p){const letters=['ب','پ','ت','ث','ج','چ','ح','خ','د','ذ','ر','ز','ژ','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ک','گ','ل','م','ن','و','ه','ی'];return `<div class="iran-plate"><div class="blue-strip"><span>IR<br>ایران</span></div><div class="plate-part"><input class="plate-a" maxlength="2" inputmode="numeric" value="${esc(p.a||'')}" placeholder="۱۲"></div><div class="plate-part"><select class="plate-letter">${letters.map(l=>`<option ${l===(p.letter||'ب')?'selected':''}>${l}</option>`).join('')}</select></div><div class="plate-part"><input class="plate-c" maxlength="3" inputmode="numeric" value="${esc(p.c||'')}" placeholder="۳۴۵"></div><div class="plate-part plate-code"><input class="plate-province" maxlength="2" inputmode="numeric" value="${esc(p.province||'')}" placeholder="۶۷"></div></div><div class="plate-preview">${formatPlate(p)||'نمونه: ۱۲ ب ۳۴۵ - ۶۷'}</div>`}
-function bindPlate(){const box=$('#plateBox');if(!box)return;const sync=()=>{app.plate={a:$('.plate-a',box)?.value||'',letter:$('.plate-letter',box)?.value||'ب',c:$('.plate-c',box)?.value||'',province:$('.plate-province',box)?.value||''};$('.plate-preview',box).textContent=formatPlate(app.plate)||'نمونه: ۱۲ ب ۳۴۵ - ۶۷';debouncePlateSearch()};box.addEventListener('input',sync);box.addEventListener('change',sync)}
-let plateTimer=null;function debouncePlateSearch(){clearTimeout(plateTimer);const raw=formatPlate(app.plate);clearTimeout(plateTimer);plateTimer=setTimeout(()=>searchCustomers(raw),220)}
+function bindPlate(){const box=$('#plateBox'),form=$('#gateForm');if(!box||!form)return;bindPlateEditor(form);box.oninput=box.onchange=()=>debouncePlateSearch();}
+let plateTimer=null;function debouncePlateSearch(){clearTimeout(plateTimer);let raw='';try{raw=plateEditorValue($('#gateForm'),{required:true});}catch{}plateTimer=setTimeout(()=>searchCustomers(raw),220)}
 async function searchCustomers(raw){if(!raw)return $('#plateSuggest').innerHTML='';try{const q=raw||'';const d=await api('/api/customers/search?q='+encodeURIComponent(q));app.customerMatches=d.customers||[];$('#plateSuggest').innerHTML=app.customerMatches.length?app.customerMatches.slice(0,5).map((c,i)=>`<button type="button" class="suggestion" data-action="pick-customer" data-index="${i}"><main><b>${esc(c.name)}</b><span>${plateViewHtml(c.plate, '—', true)} • ${esc(c.phone||'')}</span></main><span>${icon('arrow',16)}</span></button>`).join(''):''}catch{}}
-function pickCustomer(i){const c=app.customerMatches[i];if(!c)return;const f=$('#gateForm');if(!f)return;f.name.value=c.name||'';f.phone.value=c.phone||'';f.vehicleType.value=c.vehicleType||'خودرو';const p=parsePlate(c.plate||'');app.plate=p;$('#plateBox').innerHTML=plateMarkup(p);$('#plateSuggest').innerHTML='';bindPlate();toast('سوابق مشتری بازیابی شد.')}
+function pickCustomer(i){const c=app.customerMatches[i];if(!c)return;const f=$('#gateForm');if(!f)return;f.elements.name.value=c.name||'';f.elements.phone.value=c.phone||'';f.elements.vehicleType.value=c.vehicleType||'خودرو';$('#plateBox').innerHTML=plateEditorHtml(c.plate||'',f.elements.vehicleType.value);$('#plateSuggest').innerHTML='';bindPlate();toast('سوابق مشتری بازیابی شد.')}
 async function openExit(id){try{const d=await api('/api/orders/'+id);const o=d.order;$('#exitEditor').innerHTML=`<div class="card card-pad" style="border-color:#e7b6bc"><div class="panel-head"><div><span class="eyebrow">FINAL CHECK</span><h2>کنترل خروج — ${esc(fa(o.payment?.invoiceNumber||o.orderNo||'—'))}</h2><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px"><span>${esc(storeAwareOrderName(o))}</span>${plateViewHtml(o.customer?.plate, 'بدون پلاک', true)}</div></div><div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${id}">${icon('receipt',15)} فاکتور</button></div></div><div class="section-space" style="display:grid;gap:8px">${o.items.filter(i=>i.itemStatus!=='CANCELLED').map(i=>`<label class="queue-item"><span><input type="checkbox" data-exit-item="${i.id}" checked style="margin-left:8px;accent-color:var(--brand)"><strong>${esc(i.product?.name||'—')}</strong><span style="display:block;color:var(--muted);font-size:12px;margin-top:2px">${qty(i.deliveredKg)} کیلوگرم • ${money(i.finalAmount)}</span></span>${badge(i.itemStatus)}</label>`).join('')}</div><div class="sticky-actions"><span class="subtle">همه اقلام فاکتور را با بار واقعی تطبیق دهید.</span><button class="btn btn-success" data-action="confirm-exit" data-id="${id}">${icon('check',17)} ثبت خروج نهایی</button></div></div>`}catch(e){toast(e.message)}}
 /* v37.34.0 — تأیید خروج نگهبانی: بازخورد درون‌برگه‌ای و وضعیت «در حال ثبت»،
    تا کلیک روی «ثبت خروج نهایی» در هیچ شرایطی (شبکهٔ کند/قلم بدون تیک) بی‌واکنش به نظر نرسد. */
@@ -1039,7 +1082,7 @@ async function renderAdmin(){
         <div class="field"><label>سطح دسترسی</label><div class="input-shell"><select name="roleCode"><option value="gate">نگهبانی</option><option value="sales">فروش</option><option value="warehouse">انبار</option><option value="store">فروشگاه</option><option value="dispatch">واحد پخش</option><option value="driver">راننده</option><option value="admin">مدیر سیستم</option></select></div></div>
         <div class="field" data-legacy-driver-field style="display:none"><label>شماره تماس راننده *</label><div class="input-shell"><input name="drvPhone" inputmode="tel" dir="ltr" placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰"></div></div>
         <div class="field" data-legacy-driver-field style="display:none"><label>نوع خودرو *</label><div class="input-shell"><input name="drvVehicleType" list="drvVehicleTypes" placeholder="مثلاً وانت"></div><datalist id="drvVehicleTypes"><option value="وانت"></option><option value="کامیون"></option><option value="کامیونت"></option><option value="موتورسیکلت"></option><option value="پژو"></option></datalist></div>
-        <div class="field" data-legacy-driver-field style="display:none"><label>پلاک خودرو *</label><div class="input-shell"><input name="drvPlate" placeholder="مثلاً ۱۲ ب ۳۴۵ - ۶۷"></div></div>
+        <div class="field" data-legacy-driver-field style="display:none"><label>پلاک خودرو *</label>${plateEditorHtml('','','drvPlate')}</div>
         <div class="field" data-legacy-driver-field style="display:none"><label>پایانه پوز</label><div class="input-shell"><input name="drvPosTerminal" dir="ltr" placeholder="POS-01"></div></div>
         <div class="field" data-legacy-driver-field style="display:none"><label>نام بانک پوز</label><div class="input-shell"><input name="drvPosBank" list="drvPosBanks" placeholder="مثلاً بانک ملت"></div><datalist id="drvPosBanks">${BT_POS_BANKS.map(x=>`<option value="${esc(x)}"></option>`).join('')}</datalist><small class="field-hint">راننده با همین مشخصات ساخته می‌شود و در کارتابل ترابری دیده می‌شود.</small></div>
         <div class="field"><label>رمز اولیه</label><div class="input-shell"><input name="password" type="password" required autocomplete="new-password"></div></div>
@@ -1076,10 +1119,10 @@ function bindAdmin(){
   };
   // v37.38.0 — انتخاب نقش «راننده» فیلد رانندهٔ متصل را نشان می‌دهد و بدون انتخاب آن خطا می‌دهد
   const uf=$('#userForm');
-  if(uf){const rsel=uf.elements.roleCode;
+  if(uf){bindPlateEditor(uf,uf.elements.drvVehicleType);const rsel=uf.elements.roleCode;
     const usync=()=>{uf.querySelectorAll('[data-legacy-driver-field]').forEach(f=>{f.style.display=rsel.value==='driver'?'':'none';});};
     rsel?.addEventListener('change',usync); usync();}
-  $('#userForm')?.addEventListener('submit',async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.roleCode=normalizeRole(b.roleCode);b.username=String(b.username||'').trim();b.fullName=String(b.fullName||'').trim();b.position=String(b.position||'').trim();b.storeName=String(b.storeName||'').trim();if(b.roleCode==='store'&&!b.storeName)return toast('برای کاربر فروشگاه، نام فروشگاه را وارد کنید.');if(b.roleCode==='driver'&&!(String(b.drvPhone||'').trim()&&String(b.drvVehicleType||'').trim()&&String(b.drvPlate||'').trim()))return toast('برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید؛ راننده با همین مشخصات ساخته می‌شود.');try{await api('/api/admin/users',{method:'POST',body:JSON.stringify(b)});toast('حساب کاربری با موفقیت ساخته شد.');await renderAdmin()}catch(err){toast(err.message)}});
+  $('#userForm')?.addEventListener('submit',async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.roleCode=normalizeRole(b.roleCode);b.username=String(b.username||'').trim();b.fullName=String(b.fullName||'').trim();b.position=String(b.position||'').trim();b.storeName=String(b.storeName||'').trim();if(b.roleCode==='driver'){try{b.drvPlate=plateEditorValue(e.target,{required:true});}catch(err){return toast(err.message);}}if(b.roleCode==='store'&&!b.storeName)return toast('برای کاربر فروشگاه، نام فروشگاه را وارد کنید.');if(b.roleCode==='driver'&&!(String(b.drvPhone||'').trim()&&String(b.drvVehicleType||'').trim()&&String(b.drvPlate||'').trim()))return toast('برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید؛ راننده با همین مشخصات ساخته می‌شود.');try{await api('/api/admin/users',{method:'POST',body:JSON.stringify(b)});toast('حساب کاربری با موفقیت ساخته شد.');await renderAdmin()}catch(err){toast(err.message)}});
   $('#productForm')?.addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/admin/products',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});toast('محصول اضافه شد.');await renderAdmin()}catch(err){toast(err.message)}});
   $('#priceForm')?.addEventListener('submit',async e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target)); fd.price=String(parseRial(fd.price||'')); if(!fd.price || Number(fd.price)<=0) return toast('قیمت معتبر وارد کنید.'); try{await api('/api/admin/prices',{method:'POST',body:JSON.stringify(fd)});toast('قیمت ثبت شد.'); e.target.reset(); bindRialInputs(e.target);}catch(err){toast(err.message)}});
   bindRialInputs($('#content'));
@@ -1089,11 +1132,12 @@ async function openUserEdit(id){
   // v37.38.0 — فرم ویرایش قدیمی فقط ۴ نقش داشت و ویرایش کاربر فروش/پخش/راننده نقش او را خاموش عوض می‌کرد؛ حالا هر ۷ نقش + رانندهٔ متصل
   const drList=await api('/api/drivers').then(r=>r.drivers||[]).catch(()=>[]);
   const myDrv=drList.find(x=>x.id===u.driverId);
-  openModal('ویرایش حساب کاربری',`<form id="userEditForm"><div class="form-grid"><div class="field"><label>نام کاربری</label><div class="input-shell"><input name="username" value="${esc(u.username)}" required></div></div><div class="field"><label>نام و نام خانوادگی</label><div class="input-shell"><input name="fullName" value="${esc(u.fullName)}" required></div></div><div class="field"><label>سمت سازمانی</label><div class="input-shell"><input name="position" value="${esc(u.position||'')}" required placeholder="سمت شخص"></div></div><div class="field"><label>نام فروشگاه <span class="subtle">(برای نقش فروشگاه)</span></label><div class="input-shell"><input name="storeName" value="${esc(u.storeName||'')}" placeholder="مثلاً فروشگاه مرکزی"></div></div><div class="field"><label>سطح دسترسی</label><div class="input-shell"><select name="roleCode">${Object.entries(ROLE).map(([v,t])=>`<option value="${v}" ${normalizeRole(u.roleCode)===v?'selected':''}>${t}</option>`).join('')}</select></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>شماره تماس راننده *</label><div class="input-shell"><input name="drvPhone" inputmode="tel" dir="ltr" value="${esc(myDrv?.phone||'')}"></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>نوع خودرو *</label><div class="input-shell"><input name="drvVehicleType" value="${esc(myDrv?.vehicleType||'')}"></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>پلاک خودرو *</label><div class="input-shell"><input name="drvPlate" value="${esc(myDrv?.plate||'')}"></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>پایانه پوز / نام بانک</label><div class="input-shell"><input name="drvPosTerminal" dir="ltr" value="${esc(myDrv?.posTerminal||'')}"></div><div class="input-shell"><input name="drvPosBank" value="${esc(myDrv?.posBank||'')}"></div><small class="field-hint">این مشخصات روی رکورد راننده در کارتابل ترابری به‌روز می‌شود.</small></div><input type="hidden" name="driverId" value="${esc(u.driverId||'')}"><div class="field"><label>رمز جدید <span class="subtle">(اختیاری)</span></label><div class="input-shell"><input name="password" type="password" placeholder="در صورت نیاز تغییر دهید"></div></div><div class="field"><label>وضعیت حساب</label><div class="input-shell"><select name="isActive"><option value="true" ${u.isActive?'selected':''}>فعال</option><option value="false" ${!u.isActive?'selected':''}>غیرفعال</option></select></div></div></div><div class="sticky-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary">ذخیره تغییرات</button></div></form>`);
+  openModal('ویرایش حساب کاربری',`<form id="userEditForm"><div class="form-grid"><div class="field"><label>نام کاربری</label><div class="input-shell"><input name="username" value="${esc(u.username)}" required></div></div><div class="field"><label>نام و نام خانوادگی</label><div class="input-shell"><input name="fullName" value="${esc(u.fullName)}" required></div></div><div class="field"><label>سمت سازمانی</label><div class="input-shell"><input name="position" value="${esc(u.position||'')}" required placeholder="سمت شخص"></div></div><div class="field"><label>نام فروشگاه <span class="subtle">(برای نقش فروشگاه)</span></label><div class="input-shell"><input name="storeName" value="${esc(u.storeName||'')}" placeholder="مثلاً فروشگاه مرکزی"></div></div><div class="field"><label>سطح دسترسی</label><div class="input-shell"><select name="roleCode">${Object.entries(ROLE).map(([v,t])=>`<option value="${v}" ${normalizeRole(u.roleCode)===v?'selected':''}>${t}</option>`).join('')}</select></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>شماره تماس راننده *</label><div class="input-shell"><input name="drvPhone" inputmode="tel" dir="ltr" value="${esc(myDrv?.phone||'')}"></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>نوع خودرو *</label><div class="input-shell"><input name="drvVehicleType" value="${esc(myDrv?.vehicleType||'')}"></div></div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>پلاک خودرو *</label>${plateEditorHtml(myDrv?.plate||'',myDrv?.vehicleType||'','drvPlate')}</div><div class="field" data-user-edit-driver style="display:${normalizeRole(u.roleCode)==='driver'?'':'none'}"><label>پایانه پوز / نام بانک</label><div class="input-shell"><input name="drvPosTerminal" dir="ltr" value="${esc(myDrv?.posTerminal||'')}"></div><div class="input-shell"><input name="drvPosBank" value="${esc(myDrv?.posBank||'')}"></div><small class="field-hint">این مشخصات روی رکورد راننده در کارتابل ترابری به‌روز می‌شود.</small></div><input type="hidden" name="driverId" value="${esc(u.driverId||'')}"><div class="field"><label>رمز جدید <span class="subtle">(اختیاری)</span></label><div class="input-shell"><input name="password" type="password" placeholder="در صورت نیاز تغییر دهید"></div></div><div class="field"><label>وضعیت حساب</label><div class="input-shell"><select name="isActive"><option value="true" ${u.isActive?'selected':''}>فعال</option><option value="false" ${!u.isActive?'selected':''}>غیرفعال</option></select></div></div></div><div class="sticky-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary">ذخیره تغییرات</button></div></form>`);
   const uef=$('#userEditForm');
+  bindPlateEditor(uef,uef.elements.drvVehicleType);
   const ursel=uef.elements.roleCode;
   ursel.addEventListener('change',()=>{uef.querySelectorAll('[data-user-edit-driver]').forEach(f=>{f.style.display=ursel.value==='driver'?'':'none';});});
-  uef.addEventListener('submit',async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.isActive=b.isActive==='true';if(!b.password)delete b.password;if(b.roleCode==='driver'&&!(String(b.drvPhone||'').trim()&&String(b.drvVehicleType||'').trim()&&String(b.drvPlate||'').trim()))return toast('برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید.');try{await api('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify(b)});closeModal();toast('حساب کاربری ویرایش شد.');await renderAdmin()}catch(err){toast(err.message)}})
+  uef.addEventListener('submit',async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.isActive=b.isActive==='true';if(!b.password)delete b.password;if(b.roleCode==='driver'){try{b.drvPlate=plateEditorValue(uef,{required:true});}catch(err){return toast(err.message);}}if(b.roleCode==='driver'&&!(String(b.drvPhone||'').trim()&&String(b.drvVehicleType||'').trim()&&String(b.drvPlate||'').trim()))return toast('برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید.');try{await api('/api/admin/users/'+id,{method:'PUT',body:JSON.stringify(b)});closeModal();toast('حساب کاربری ویرایش شد.');await renderAdmin()}catch(err){toast(err.message)}})
 }
 async function deleteUser(id){
   const d=await api('/api/admin/users'); const u=(d.users||[]).find(x=>String(x.id)===String(id)); if(!u){toast('حساب کاربری موردنظر پیدا نشد.');return;}
@@ -2864,7 +2908,7 @@ function orderCustomerFields(o){
 }
 function orderCustomerStripHtml(o,settlement=false){
   const fields=orderCustomerFields(o).map(([label,value])=>[label,label==='شماره سفارش'?fa(value):value]).filter(([label])=>!settlement||!['نوع وسیله','پلاک','محله','محل ارسال'].includes(label));
-  return `<div class="bt-customer-strip-scroll" role="region" aria-label="مشخصات مشتری" tabindex="0"><div class="bt-customer-strip" style="--customer-fields:${fields.length}">${fields.map(([label,value])=>`<div class="bt-customer-field" tabindex="0" title="${esc(label)}: ${esc(value)}" aria-label="${esc(label)}: ${esc(value)}"><b>${esc(label)}</b><span>${esc(value)}</span></div>`).join('')}</div></div>`;
+  return `<div class="bt-customer-strip-scroll" role="region" aria-label="مشخصات مشتری" tabindex="0"><div class="bt-customer-strip" style="--customer-fields:${fields.length}">${fields.map(([label,value])=>`<div class="bt-customer-field" tabindex="0" title="${esc(label)}: ${esc(value)}" aria-label="${esc(label)}: ${esc(value)}"><b>${esc(label)}</b><span>${label==='پلاک'?plateViewHtml(o.customer?.plate,'بدون پلاک',true):esc(value)}</span></div>`).join('')}</div></div>`;
 }
 function stlDispatchControls(o,returnControl=''){
   const d=o.dispatch||null;
@@ -2873,7 +2917,7 @@ function stlDispatchControls(o,returnControl=''){
   const options=drivers.map(x=>`<option value="${esc(x.id)}" ${x.id===d?.driverId?'selected':''}>${esc(x.fullName)} — ${esc(formatDispatchVehiclePlate(x.plate,'بدون پلاک'))}</option>`).join('');
   const actionLabel=d?.priceApprovedAt?'تغییر راننده':'تأیید قیمت و ارسال';
   const hint=drivers.length?'':'<small class="stl-dispatch-hint">رانندهٔ فعالی پیدا نشد؛ ابتدا راننده را در مدیریت فعال کنید.</small>';
-  return `<div class="stl-dispatch-control"><select class="adm-select" data-stl-driver aria-label="انتخاب راننده برای سفارش"><option value="">انتخاب راننده فعال…</option>${options}</select>${returnControl}<button type="button" class="btn btn-primary btn-sm" data-stl="send-dispatch">${icon('send',14)} ${actionLabel}</button>${hint}</div>`;
+  return `<div class="stl-dispatch-control"><select class="adm-select" data-stl-driver aria-label="انتخاب راننده برای سفارش"><option value="">انتخاب راننده فعال…</option>${options}</select>${returnControl}<button type="button" class="btn btn-primary btn-sm" data-stl="send-dispatch">${icon('send',14)} ${actionLabel}</button><span data-stl-plate>${plateViewHtml(drivers.find(x=>x.id===d?.driverId)?.plate,'—',true)}</span>${hint}</div>`;
 }
 // Shared by the live UI layer and the fallback settlement renderer.
 function stlFooterHtml(o){
@@ -2975,6 +3019,7 @@ window.BTSettlementRenderers={row:stlRowHtml,form:stlFormHtml};
 function stlPaintForm(){
   const host = $('#stlMain'); if(!host || !stl.order) return;
   host.innerHTML = stlFormHtml(stl.order);
+  const driverSelect=host.querySelector('[data-stl-driver]');if(driverSelect)driverSelect.addEventListener('change',()=>{host.querySelector('[data-stl-plate]').innerHTML=plateViewHtml(stl.drivers.find(x=>x.id===driverSelect.value)?.plate,'—',true);});
   stlBindSig(); stlRecalc(); stlUpdateSigState(); stlUpdateFpState(); stlBindPayments();
 }
 function stlRecalc(){
@@ -3162,8 +3207,9 @@ function scRenderShell(){
       </section>
       <section class="sc2-op card">
         <div class="sc2-op-head"><div><span class="eyebrow">OPERATION</span><h3>ثبت وزن وسیله</h3></div><span id="scPhase" class="sc-phase entry">ورود (وزن اول)</span></div>
-        <label class="sc2-field"><span>پلاک وسیله</span><input id="scPlate" class="sc2-plate" list="scVehicles" placeholder="پلاک را وارد یا انتخاب کنید" autocomplete="off"></label>
-        <datalist id="scVehicles"></datalist>
+        <label class="sc2-field"><span>انتخاب پلاک ثبت‌شده یا داخل باسکول</span><select id="scExistingPlate"><option value="">ورود پلاک جدید</option></select></label>
+        <input type="hidden" id="scPlate"><div id="scSelectedPreview"></div><small id="scPlateNotice" role="status"></small>
+        <div id="scManualWrap"><label class="sc2-field"><span>نوع پلاک جدید</span><select id="scManualType"><option>خودرو</option><option>موتورسیکلت</option></select></label><div id="scManualEditor">${plateEditorHtml()}</div></div>
         <div id="scOpenHint" class="sc2-hint"></div>
         <div class="sc2-field"><span>کالا <small>(برای ورود)</small></span><input id="scTileSearch" class="sc2-tile-search" placeholder="جستجوی کالا (نام یا کد)" autocomplete="off"><div id="scTiles" class="sc2-tiles"></div><select id="scProduct" hidden></select></div>
         <label class="sc2-field" id="scCustomerWrap"><span>نام مشتری یا طرف حساب <small>(اختیاری، برای ورود)</small></span><input id="scCustomer" maxlength="120" placeholder="نام مشتری یا طرف حساب" autocomplete="off"></label>
@@ -3180,7 +3226,7 @@ function scRenderShell(){
       <summary><span>افزودن وسیله و کالا</span><small>${r==='admin'?'وسیله، کالا و شبیه‌ساز':'وسیله'}</small></summary>
       <div class="sc2-admin-grid">
         <div class="sc2-admin-block"><h4>ثبت وسیله جدید</h4>
-          <label class="sc2-field"><span>پلاک</span><input id="scNewPlate" placeholder="پلاک"></label>
+          <label class="sc2-field"><span>نوع پلاک</span><select id="scNewType"><option>خودرو</option><option>موتورسیکلت</option></select></label><div id="scNewEditor">${plateEditorHtml()}</div>
           <label class="sc2-field"><span>نام راننده</span><input id="scNewDriver" placeholder="اختیاری"></label>
           <button type="button" class="sc-secondary" data-sc="add-vehicle">افزودن وسیله</button></div>
         ${r==='admin'?`<div class="sc2-admin-block"><h4>افزودن کالا به کاتالوگ</h4>
@@ -3211,9 +3257,9 @@ function scListDone(done){
   return done.length? `<div class="sc-list">${done.map(t=>`<article class="sc-item"><div>${plateViewHtml(t.plate, '—', true)}<small>${esc(t.productName||'—')} • ${formatDateTime24(t.closedAt)}</small></div><div class="sc-item-w"><small>خالص</small><b>${qty(t.netKg)} کیلو</b><small>بار ${qty(t.loadedKg)} • خالی ${qty(t.emptyKg)}</small></div><button type="button" class="sc-ghost" data-sc="print" data-id="${esc(t.id)}">چاپ فیش</button></article>`).join('')}</div>` : '<div class="sc-empty">هنوز وزن‌کشی تکمیل‌شده‌ای نیست.</div>';
 }
 function scFillSelects(st){
-  const sig=JSON.stringify([st.vehicles.map(v=>v.plate+v.driverName),st.products.map(p=>p.id+p.name)]);
+  const sig=JSON.stringify([st.vehicles.map(v=>v.plate+v.driverName),st.open.map(t=>t.plate),st.products.map(p=>p.id+p.name)]);
   if(sig===app.sc.sig) return; app.sc.sig=sig;
-  const dl=$('#scVehicles'); if(dl) dl.innerHTML=st.vehicles.map(v=>`<option value="${esc(v.plate)}">${esc(v.driverName||'')}</option>`).join('');
+  const existing=$('#scExistingPlate');if(existing){const keep=existing.value;const choices=[...new Set([...st.open.map(t=>t.plate),...st.vehicles.map(v=>v.plate)].filter(Boolean))];existing.innerHTML='<option value="">ورود پلاک جدید</option>'+choices.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');existing.value=choices.includes(keep)?keep:'';if(keep&&!existing.value)scSyncPlate();}
   const sel=$('#scProduct'); const keep=sel?sel.value:'';
   if(sel) sel.innerHTML='<option value="">— انتخاب کالا —</option>'+st.products.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   if(sel && keep) sel.value=keep;
@@ -3275,9 +3321,24 @@ async function scRefresh(){
     const sim=$('#scSim'); if(sim && st.simulator && !sim.dataset.ready){ sim.dataset.ready='1'; sim.innerHTML=`<section class="card sc-panel"><div class="sc-panel-head"><h2>شبیه‌ساز دستگاه (آزمایشی)</h2></div><div class="sc-grid"><label class="sc-field"><span>وزن (کیلوگرم)</span><input id="scSimW" inputmode="numeric" value="12000"></label></div><div class="sc-actions"><button type="button" class="sc-secondary" data-sc="sim" data-stable="1">ارسال وزن پایدار</button><button type="button" class="sc-ghost" data-sc="sim" data-stable="0">ارسال وزن ناپایدار</button></div></section>`; }
   }catch(e){ /* قطع موقت شبکه: پیام نمایش داده نمی‌شود تا فرم مزاحم نشود */ }
 }
+function scBindPlateEditors(){
+  const manual=$('#scManualEditor'),fresh=$('#scNewEditor');
+  if(manual)bindPlateEditor(manual,$('#scManualType'));
+  if(fresh)bindPlateEditor(fresh,$('#scNewType'));
+}
+function scSyncPlate(){
+  const selected=$('#scExistingPlate')?.value||'',manual=$('#scManualEditor');
+  let value=selected;
+  let duplicate=false;
+  if(!selected&&manual){try{value=plateEditorValue(manual,{required:true});const key=x=>en(x||'').replace(/[\s-]/g,'');duplicate=[...(app.sc.state?.open||[]),...(app.sc.state?.vehicles||[])].some(x=>key(x.plate)===key(value));if(duplicate)value='';}catch{value='';}}
+  const notice=$('#scPlateNotice');if(notice)notice.textContent=duplicate?'این پلاک قبلاً ثبت شده است؛ برای حفظ سوابق، آن را از فهرست پلاک‌های ثبت‌شده انتخاب کنید.':'';
+  const field=$('#scPlate');if(field)field.value=value;
+  const wrap=$('#scManualWrap');if(wrap)wrap.hidden=!!selected;
+  const preview=$('#scSelectedPreview');if(preview)preview.innerHTML=selected?plateViewHtml(selected,'—',true):'';
+}
 async function renderScale(){
   if(app.timer){clearInterval(app.timer);app.timer=null}
-  scRenderShell(); await scRefresh();
+  app.sc.sig=''; scRenderShell(); scBindPlateEditors(); await scRefresh();
   app.timer=setInterval(scRefresh,1500);
 }
 // ---- فیش باسکول (چاپ) ----
@@ -3301,7 +3362,7 @@ async function scPrintTicket(trip, st, cfg){
     exitTime: scFaTime(trip.closedAt), empty: kg(trip.emptyKg),
     driver: trip.driverName||'—', net: kg(trip.netKg), customer: trip.customerName||'—',
   };
-  const cells=cfg.fields.filter(f=>f.show).map(f=>`<div class="pt-cell" style="grid-column:${f.col};grid-row:${f.row}"><small>${esc(f.label)}</small><b>${esc(vals[f.key]??'—')}</b></div>`).join('');
+  const cells=cfg.fields.filter(f=>f.show).map(f=>`<div class="pt-cell" style="grid-column:${f.col};grid-row:${f.row}"><small>${esc(f.label)}</small><b>${f.key==='plate'?plateViewHtml(trip.plate,'—',true):esc(vals[f.key]??'—')}</b></div>`).join('');
   area.innerHTML=`<div class="pt-ticket" dir="rtl" style="grid-template-columns:${cfg.colsMm.map(v=>v+'mm').join(' ')};grid-template-rows:${cfg.rowsMm.map(v=>v+'mm').join(' ')};font-size:${cfg.fontPt}pt"><div class="pt-title" style="grid-column:1 / span 6;grid-row:1">${esc(cfg.title)}</div>${cells}</div>`;
   let pg=document.getElementById('scPageStyle');
   if(!pg){ pg=document.createElement('style'); pg.id='scPageStyle'; document.head.appendChild(pg); }
@@ -3373,7 +3434,7 @@ async function scWeigh(){
     const r=await api('/api/weighbridge/weigh',{method:'POST',body:JSON.stringify({plate,productId:isOpen?undefined:productId,customerName})});
     if(r.phase==='ENTRY') scSetMsg(`وزن اول ثبت شد: ${qty(r.trip.firstWeight)} کیلوگرم. با وزن دوم (خروج)، بار و خالی و خالص مشخص می‌شود.`,'ok');
     else scSetMsg(`خروج ثبت شد. خالص بار: ${qty(r.trip.netKg)} کیلوگرم.`,'ok');
-    if(isOpen) $('#scPlate').value=''; else { const cu=$('#scCustomer'); if(cu) cu.value=''; }
+    if(isOpen){$('#scExistingPlate').value='';$('#scManualEditor').innerHTML=plateEditorHtml();$('#scManualType').value='خودرو';scBindPlateEditors();scSyncPlate();} else { const cu=$('#scCustomer'); if(cu) cu.value=''; }
     await scRefresh();
   }catch(e){ scSetMsg(e.message,'err') }
   finally{ app.sc.busy=false; if(btn) btn.disabled=false; }
@@ -3390,9 +3451,8 @@ if(!window.__scBound){
     if(a==='tc-reset'){ if(!confirm('تنظیمات چاپ فیش به پیش‌فرض برگردد؟')) return; try{ const r=await api('/api/weighbridge/ticket-settings',{method:'PUT',body:JSON.stringify({settings:{}})}); app.sc.ticket=r.settings; $('#scTcBody').innerHTML=scTcHtml(r.settings); scTcMsgSet('تنظیمات به پیش‌فرض برگشت.','ok'); }catch(err){ scTcMsgSet(err.message,'err') } return; }
     if(a==='pick'){ const sel=$('#scProduct'); if(sel && !t.disabled){ sel.value=t.dataset.id; scMarkTile(); scRefresh(); } return; }
     if(a==='add-vehicle'){
-      const plate=en($('#scNewPlate')?.value||'').trim(); const driverName=$('#scNewDriver')?.value.trim()||'';
-      if(!plate) return scSetMsg('پلاک را وارد کنید.','err');
-      try{ await api('/api/weighbridge/vehicles',{method:'POST',body:JSON.stringify({plate,driverName})}); $('#scNewPlate').value=''; $('#scNewDriver').value=''; scSetMsg('وسیله ثبت شد.','ok'); app.sc.sig=''; await scRefresh(); }catch(err){ scSetMsg(err.message,'err') }
+      let plate;try{plate=en(plateEditorValue($('#scNewEditor'),{required:true})).trim();}catch(err){return scSetMsg(err.message,'err');} const key=x=>en(x||'').replace(/[\s-]/g,'');if((app.sc.state?.vehicles||[]).some(x=>key(x.plate)===key(plate)))return scSetMsg('این پلاک قبلاً ثبت شده است؛ آن را از فهرست انتخاب کنید.','err'); const driverName=$('#scNewDriver')?.value.trim()||'';
+      try{ await api('/api/weighbridge/vehicles',{method:'POST',body:JSON.stringify({plate,driverName})}); $('#scNewEditor').innerHTML=plateEditorHtml();$('#scNewType').value='خودرو';scBindPlateEditors();$('#scNewDriver').value=''; scSetMsg('وسیله ثبت شد.','ok'); app.sc.sig=''; await scRefresh(); }catch(err){ scSetMsg(err.message,'err') }
       return;
     }
     if(a==='add-product'){
@@ -3412,10 +3472,10 @@ if(!window.__scBound){
     }
   });
   document.addEventListener('input', e=>{
-    if(e.target && e.target.id==='scPlate') scRefresh();
+    if(e.target?.closest('#scManualEditor')){scSyncPlate();scRefresh();}
     if(e.target && e.target.id==='scTileSearch'){ const q=en(e.target.value||'').trim().toLowerCase(); document.querySelectorAll('.sc2-tile').forEach(t=>{ t.hidden = !!q && !t.textContent.toLowerCase().includes(q); }); }
   });
-  document.addEventListener('change', e=>{ if(e.target && e.target.id==='scProduct') { scMarkTile(); scRefresh(); } });
+  document.addEventListener('change', e=>{ if(e.target?.id==='scExistingPlate'||e.target?.id==='scManualType'||e.target?.closest('#scManualEditor')){scSyncPlate();scRefresh();} if(e.target && e.target.id==='scProduct') { scMarkTile(); scRefresh(); } });
   document.addEventListener('toggle', e=>{ if(e.target && e.target.id==='scTcDetails' && e.target.open) scTcLoad(); }, true);
 }
 

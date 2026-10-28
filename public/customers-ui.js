@@ -89,7 +89,7 @@ function custFormHtml(c) {
       <label class="cust-field"><span>شماره دوم</span><input name="phone2" inputmode="tel" maxlength="30" value="${v('phone2')}"></label>
       <label class="cust-field"><span>کد ملی</span><input name="nationalId" inputmode="numeric" maxlength="10" value="${v('nationalId')}"></label>
       <label class="cust-field"><span>نوع وسیله</span><select name="vehicleType">${CUST_VEHICLES.map((x) => `<option ${x === vt ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-      <label class="cust-field"><span>پلاک</span><input name="plate" maxlength="30" placeholder="مثلاً ۱۲ ب ۳۴۵ - ۶۷" value="${v('plate')}"></label>
+      <div class="cust-field"><span>پلاک</span>${plateEditorHtml(c?.plate||'',vt)}</div>
       <label class="cust-field"><span>محله</span><input name="district" maxlength="100" value="${v('district')}"></label>
       <label class="cust-field cust-span2"><span>شرکت / واحد</span><input name="company" maxlength="120" value="${v('company')}"></label>
       <label class="cust-field cust-span2"><span>نشانی</span><input name="address" maxlength="250" value="${v('address')}"></label>
@@ -106,6 +106,7 @@ function custFormHtml(c) {
 function custForm(c) {
   openModal(c ? `ویرایش مشتری ${c.code}` : 'مشتری جدید', custFormHtml(c));
   const f = $('#custForm');
+  bindPlateEditor(f);
   f.addEventListener('submit', (e) => custSubmit(e, c));
   f.querySelector('[data-cust-cancel]').addEventListener('click', () => (c ? custDetail(c.id) : closeModal()));
 }
@@ -116,6 +117,8 @@ async function custSubmit(e, c) {
   const body = Object.fromEntries(new FormData(form));
   const msg = $('#custMsg');
   try {
+    body.plate = plateEditorValue(form);
+    if(c && form.querySelector('[data-plate-editor]').dataset.dirty!=='1') delete body.plate;
     const d = c
       ? await api('/api/customers/' + c.id, { method: 'PUT', body: JSON.stringify(body) })
       : await api('/api/customers', { method: 'POST', body: JSON.stringify(body) });
@@ -186,12 +189,10 @@ async function gateCodeLookup() {
 function gateFillCustomer(c) {
   const f = $('#gateForm');
   if (!f) return;
-  f.name.value = c.name || '';
-  f.phone.value = c.phone || '';
-  if (c.vehicleType) f.vehicleType.value = c.vehicleType;
-  const p = parsePlate(c.plate || '');
-  app.plate = p;
-  $('#plateBox').innerHTML = plateMarkup(p);
+  f.elements.name.value = c.name || '';
+  f.elements.phone.value = c.phone || '';
+  if (c.vehicleType) f.elements.vehicleType.value = c.vehicleType;
+  $('#plateBox').innerHTML = plateEditorHtml(c.plate || '',f.elements.vehicleType.value);
   bindPlate();
   $('#gateCustId').value = c.id;
   $('#gateCustCode').value = c.code;

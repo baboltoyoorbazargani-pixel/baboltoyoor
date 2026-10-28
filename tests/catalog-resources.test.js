@@ -77,3 +77,13 @@ test('catalog survives restart and pre-update backup restores safely',async()=>{
   admin=await login('admin',password);assert.deepEqual((await call('GET','/api/admin/store-branches')).json.branches,[]);
   const users=(await call('GET','/api/admin/users')).json.users;assert.equal(users.find(u=>u.username==='legacy-shop').branchNo,7);assert.equal(users.some(u=>u.username==='store-new'),false);
 });
+test('ویرایش خودروی قدیمی بدون دستکاری پلاک ناشناخته و اصلاح آگاهانه',async()=>{
+  let r=await call('POST','/api/admin/transport-vehicles',{vehicleType:'وانت',plate:'31ن654-21'});assert.equal(r.status,201,JSON.stringify(r.json));
+  const id=r.json.vehicle.id, db=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
+  const payload=JSON.parse(db.prepare('SELECT payload FROM vehicles WHERE id=?').get(id).payload);
+  payload.plate='پلاک قدیمی';db.prepare('UPDATE vehicles SET plate=?, payload=? WHERE id=?').run(payload.plate,JSON.stringify(payload),id);db.close();
+  r=await call('PUT','/api/admin/transport-vehicles/'+id,{vehicleType:'وانت',plate:'پلاک قدیمی',isActive:true});
+  assert.equal(r.status,200,JSON.stringify(r.json));assert.equal(r.json.vehicle.plate,'پلاک قدیمی');
+  r=await call('PUT','/api/admin/transport-vehicles/'+id,{vehicleType:'کامیون',plate:'پلاک قدیمی'});assert.equal(r.status,400);
+  r=await call('PUT','/api/admin/transport-vehicles/'+id,{vehicleType:'وانت',plate:'11ج222-33'});assert.equal(r.status,200);assert.equal(r.json.vehicle.plate,'11ج222-33');
+});
