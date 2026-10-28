@@ -764,3 +764,40 @@
 .store-service-print,.store-receipt-summary{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.store-receipt-summary{grid-column:1/-1;margin-top:7px}.whh-row .store-service-print{grid-column:1/-1}
 @media(min-width:901px){#content .sales-remote-customer-grid-v40{grid-template-columns:repeat(3,minmax(0,1fr))!important}#content .sales-remote-place-v40{grid-column:auto!important}}
 .product-option.keyboard-active,.op-product-option.keyboard-active{background:#fce7eb;outline:2px solid #a6162d;outline-offset:-2px}
+
+/* هماهنگی فرم‌ها: در برگه‌های کوچک نوار عملیات روی ورودی قیمت قرار نگیرد. */
+#appView #content #priceForm .sticky-actions{position:static!important;bottom:auto!important}
+
+/* با کم‌شدن عرض، عملیات هر قلم در همان کارت و در چند خط قابل دسترس بماند. */
+@media(max-width:1150px){
+  #appView #content .sr318-row>.sr318-ops{flex-wrap:wrap!important;min-width:0!important;max-width:100%!important}
+  #appView #content .sr318-row>.sr318-ops .btn{white-space:normal!important;height:auto!important;min-height:34px!important}
+  #appView #content .sr318-group-head{flex-wrap:wrap;min-width:0}
+  #appView #content .sr318-sendline .store-service-print{max-width:100%;flex-wrap:wrap}
+}
+
+/* برگهٔ انبار در موبایل نباید برای دیدن وزن یا وضعیت موجودی اسکرول افقی بخواهد. */
+@media(max-width:700px){
+  #appView #content .bt-customer-strip-scroll{overflow-x:visible!important}
+  #appView #content .bt-customer-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #appView #content .bt-customer-field{height:auto!important;min-height:44px!important}
+  #appView #content .bt-customer-field>span{overflow-wrap:anywhere!important;line-height:1.5!important}
+  #appView #content .wh38-sheet .wh38-progress{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:6px 10px!important}
+  #appView #content .wh38-sheet .wh38-progress i{display:none!important}
+  #appView #content .wh38-sheet .wh38-note{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important;gap:4px!important;height:auto!important;min-height:0!important}
+  #appView #content .wh38-sheet .wh38-note b,#appView #content .wh38-sheet .wh38-note span{position:static!important;white-space:normal!important;line-height:1.7!important}
+}
+@media(max-width:1150px){
+  #appView #content .wh38-prep-items{grid-template-columns:minmax(0,1fr)!important;overflow-x:visible!important;padding-inline:10px!important}
+  #appView #content .wh38-prep-item:not(.sr318-row){grid-template-columns:28px repeat(2,minmax(0,1fr))!important;grid-template-areas:'num product product' '. quantity description' '. weight stock'!important;gap:8px!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-num{grid-area:num!important;margin-top:25px!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(2){grid-area:product!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(3){grid-area:quantity!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(4){grid-area:description!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(5){grid-area:weight!important}
+  #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-stock-cell{grid-area:stock!important}
+  #appView #content .wh38-prep-item:not(.sr318-row) .wh38-cell-label{height:auto!important;min-height:20px!important;white-space:normal!important;line-height:1.5!important}
+  #appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-title strong,#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-desc{white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.5!important;overflow:visible!important}
+  #appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-title,#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-desc{height:auto!important;min-height:44px!important;padding-block:7px!important}
+  #appView #content .wh38-prep-item:not(.sr318-row) .wh38-req b{white-space:normal!important;overflow-wrap:anywhere!important}
+}
