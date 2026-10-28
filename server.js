@@ -7,13 +7,15 @@ const log = require('./lib/logger');
 const store = require('./lib/store');
 const sec = require('./lib/security');
 const { createHandler } = require('./lib/http');
+const { manager: tlsManager } = require('./lib/tls-manager');
 require('./lib/routes');
 const { activateDueRemoteOrders } = require('./lib/domain');
 
 const release = store.acquireLock();
 store.init();
 
-const server = http.createServer(createHandler());
+const appHandler = createHandler();
+const server = http.createServer((req,res)=>tlsManager.httpHandler(req,res,appHandler));
 server.requestTimeout = 30000;
 server.headersTimeout = 15000;
 server.keepAliveTimeout = 5000;
@@ -28,6 +30,7 @@ timers.forEach((t) => t.unref());
 function shutdown(signal) {
   log.info('server', 'shutting down', { signal });
   timers.forEach(clearInterval);
+  tlsManager.close();
   server.close(() => { release(); process.exit(0); });
   setTimeout(() => process.exit(0), 5000).unref();
 }
@@ -35,6 +38,8 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('uncaughtException', (e) => { log.error('process', 'uncaught exception', { error: e.message, stack: e.stack }); });
 
-server.listen(config.PORT, config.HOST, () => {
-  log.info('server', 'listening', { host: config.HOST, port: config.PORT, env: config.APP_ENV });
+tlsManager.init(appHandler).then(() => {
+  server.listen(config.PORT, config.HOST, () => {
+    log.info('server', 'listening', { host: config.HOST, port: config.PORT, env: config.APP_ENV });
+  });
 });

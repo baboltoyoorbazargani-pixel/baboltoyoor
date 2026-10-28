@@ -13,7 +13,7 @@ param(
   [string]$InstallDir = 'C:\BabolToyor',
   [int]$Port = 80,
   [string]$SourcePath = '',
-  [string]$AppZipUrl = 'https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.5/BabolToyor-App-1.0.5.zip',
+  [string]$AppZipUrl = 'https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.6/BabolToyor-App-1.0.6.zip',
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
   [switch]$NoAutoStopIis,
@@ -568,7 +568,7 @@ function Write-InfoFile {
 function Invoke-Install {
   Write-Host ''
   Write-Host '========================================================' -ForegroundColor Cyan
-  Write-Host '  Babol Toyor 1.0.5 - Windows Server 2025 one-click setup' -ForegroundColor Cyan
+  Write-Host '  Babol Toyor 1.0.6 - Windows Server 2025 one-click setup' -ForegroundColor Cyan
   Write-Host ("  Install dir : " + $InstallDir) -ForegroundColor Cyan
   Write-Host ("  Web address : " + (Get-AppUrl) + "  (port $Port)") -ForegroundColor Cyan
   Write-Host '========================================================' -ForegroundColor Cyan
@@ -649,6 +649,8 @@ function Invoke-Uninstall {
   if ($t) { Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue }
   $rule = Get-NetFirewallRule -DisplayName $FwRuleName -ErrorAction SilentlyContinue
   if ($rule) { Remove-NetFirewallRule -DisplayName $FwRuleName -ErrorAction SilentlyContinue }
+  $httpsRule = Get-NetFirewallRule -Name 'BabolToyor-HTTPS-443' -ErrorAction SilentlyContinue
+  if ($httpsRule) { Remove-NetFirewallRule -Name 'BabolToyor-HTTPS-443' -ErrorAction SilentlyContinue }
   foreach ($d in @([Environment]::GetFolderPath('CommonDesktopDirectory'), [Environment]::GetFolderPath('CommonPrograms'))) {
     if (-not $d) { continue }
     $f = Join-Path $d $ShortcutName

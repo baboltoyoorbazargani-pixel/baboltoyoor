@@ -756,3 +756,6 @@
 /* نشان مقصد اعلان و شمارنده مراحل نگهبانی */
 .gate-dispatch-count{display:inline-flex;align-items:center;justify-content:center;min-width:1.7em;padding:2px 6px;margin-inline-start:5px;border-radius:999px;background:#e6edf5;color:#233d5b;font-size:.85em}
 .notif-target-highlight{outline:3px solid #e58b24!important;outline-offset:3px;scroll-margin:90px}
+
+/* دامنه و گواهی */
+.tls-settings .notice{margin:14px 0;line-height:1.9}.tls-status{padding:12px 14px;border:1px solid var(--line,#ddd);border-radius:12px;background:#f7fafb;line-height:1.9;overflow-wrap:anywhere}.tls-settings .form-grid{align-items:end}.tls-settings .adm-check{grid-column:1/-1;line-height:1.8}.tls-settings .field small{color:var(--muted);font-size:12px}.tls-current{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
