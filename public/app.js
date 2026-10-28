@@ -708,6 +708,7 @@ async function api(path,opts={}){
   const method=String(opts.method||'GET').toUpperCase();
   const headers={'Content-Type':'application/json',...(opts.headers||{})};
   const mutating=method!=='GET'&&method!=='HEAD';
+  const connectionGeneration=window.btConnection?.current?.();
   const sig=mutating?`${method} ${path} ${opts.body||''}`:'';
   if(mutating){
     if(WRITES_IN_FLIGHT.has(sig)) throw new Error('این عملیات در حال انجام است. لطفاً منتظر پاسخ سامانه بمانید.');
@@ -720,12 +721,12 @@ async function api(path,opts={}){
     res=await fetch(path,{...opts,method,headers,credentials:'same-origin'});
     data=await res.json().catch(()=>({}));
   }catch(_){
-    window.btConnection?.failure(path);
+    if(!mutating) window.btConnection?.failure(path,connectionGeneration);
     // قطع ارتباط: کلید نگه داشته می‌شود تا تلاش مجدد همان عملیات را تکرار نکند
     if(mutating) WRITES_IN_FLIGHT.delete(sig);
     throw new Error('ارتباط با سرور داخلی برقرار نشد. اتصال شبکه را بررسی کنید و دوباره تلاش کنید؛ عملیات دوبار ثبت نمی‌شود.');
   }
-  if(res.status<500)window.btConnection?.success(path);else window.btConnection?.failure(path);
+  if(!mutating){if(res.status<500)window.btConnection?.success(path,connectionGeneration);else window.btConnection?.failure(path,connectionGeneration);}
   if(mutating){WRITES_IN_FLIGHT.delete(sig);WRITE_KEYS.delete(sig);}
   if(!res.ok){
     if(res.status===401&&path!=='/api/login') handleSessionExpired();
@@ -767,6 +768,7 @@ async function go(page,sub){
   const productsOk=page==='products'&&r==='sales'; // v37.3.1 — کارتابل محصولات (قیمت + ویرایش) برای فروش
   const dispatchExtraOk=(page==='returns'&&['sales','warehouse'].includes(r))||(page==='gate-dispatch'&&r==='gate');
   if(r!=='admin'&&page!==own&&!scaleOk&&!customersOk&&!productsOk&&!dispatchExtraOk){toast('این حساب فقط به کارتابل واحد خود دسترسی دارد.');page=own}
+  window.btConnection?.reset?.();
   app.page=page; if(sub)app.sub[page]=sub;
   const appView=$('#appView'); if(appView)appView.setAttribute('data-cartable-page',page);
   // صفحهٔ قبلی را پیش از درخواست‌های async پاک کن تا فرم نقش قبلی باقی نماند.
@@ -785,6 +787,7 @@ async function go(page,sub){
     else if(page==='gate-dispatch'){if(r!=='admin'&&r!=='gate')return go(own);setHeader('نگهبانی','خروج ارسالی','ابتدا خروج اعلام‌شده توسط راننده را تأیید کنید؛ پس از تحویل مقصد، خروج نهایی را ثبت کنید');await renderGateDispatchPage()}
     else if(page==='returns'){if(r!=='admin'&&r!=='sales'&&r!=='warehouse')return go(own);setHeader('مرجوعی','برگه‌های مرجوعی','مرجوعی‌های راننده: فروش ارجاع می‌دهد و انبار دریافت می‌کند');await renderReturnsPage()}
     else if(page==='users'){if(r!=='admin')return go(own);setHeader('مدیریت','مدیریت کاربران','افزودن، ویرایش و غیرفعال‌سازی حساب‌های کاربری');await renderUsersPage()}
+    else if(page==='transport-vehicles'||page==='store-branches'){if(r!=='admin')return go(own);setHeader('مدیریت',page==='transport-vehicles'?'خودروهای ترابری':'شعب فروشگاه','تعریف مستقل برای انتخاب در حساب کاربری');await renderResourcePage(page==='transport-vehicles'?'vehicle':'branch')}
     else if(page==='payment-devices'){if(r!=='admin')return go(own);setHeader('مدیریت','دستگاه‌های پوز','تعریف و مدیریت دستگاه‌های فعال برای فرم‌های تسویه');await renderPaymentDevicesPage()}
     else if(page==='drivers'){if(!['admin','dispatch'].includes(r))return go(own);if((r==='dispatch'||app.adminActiveRole==='dispatch')&&['dashboard','reports'].includes(app.sub.drivers)){setHeader('ترابری',app.sub.drivers==='reports'?'گزارشات ترابری':'داشبورد ترابری','خلاصه وضعیت ترابری');await renderRoleCartableDashboard('dispatch',app.sub.drivers);return}setHeader('عملیات','ترابری','رانندگان، سوابق سفارش‌ها و پخش');await renderDriversPage()}
     else if(page==='products'){if(r==='sales'){setHeader('فروش','کارتابل محصولات','تعیین قیمت روز و ویرایش محصولات');await renderProductsPage();}else{if(r!=='admin')return go(own);setHeader('مدیریت','محصولات و قیمت‌ها','ثبت، ویرایش، حذف محصول و تعیین قیمت روز');await renderProductsPage()}}
@@ -1028,7 +1031,7 @@ async function renderAdmin(){
   <div class="admin-grid">
     <section class="card admin-form">
       <div class="panel-head"><div><span class="eyebrow">USER DIRECTORY</span><h2>ایجاد حساب کاربری</h2><p>برای هر شخص، نام کامل، سمت سازمانی و سطح دسترسی را مشخص کنید.</p></div><span class="pill">${qty(users.filter(x=>x.isActive).length)} حساب فعال</span></div>
-      <form id="userForm" class="form-grid section-space">
+      <p>ساخت و ویرایش حساب‌ها از بخش «کاربران» انجام می‌شود.</p><button class="btn btn-primary" type="button" data-action="manage-users">مدیریت کاربران</button><form id="userForm" class="form-grid section-space" style="display:none">
         <div class="field"><label>نام کاربری</label><div class="input-shell"><input name="username" required autocomplete="off"></div></div>
         <div class="field"><label>نام و نام خانوادگی</label><div class="input-shell"><input name="fullName" required></div></div>
         <div class="field"><label>سمت سازمانی</label><div class="input-shell"><input name="position" required placeholder="مثلاً مسئول فروش، نگهبان، مدیر انبار"></div></div>
@@ -1067,7 +1070,7 @@ function bindAdmin(){
     const el=e.target.closest('[data-action]'); const a=el?.dataset.action;
     if(a==='edit-product')return openProductEdit(el.dataset.id);
     if(a==='sync-catalog'){try{const d=await api('/api/admin/products/sync-catalog',{method:'POST'});toast(`کاتالوگ همگام شد؛ ${qty(d.total)} محصول بررسی شد.`);await renderAdmin()}catch(err){toast(err.message)}}
-    if(a==='edit-user')return openUserEdit(el.dataset.id);
+    if(a==='manage-users'||a==='edit-user')return go('users');
     if(a==='delete-user')return deleteUser(el.dataset.id);
     if(a==='print-page')window.print();
   };
@@ -2379,7 +2382,7 @@ function renderNav(){
       const list=entries[role];
       $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${typeof badgeKey==='string'&&badgeCount(badgeKey)?navBadge(badgeCount(badgeKey)):''}</button>`).join('');return;
     }
-    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['products','محصولات','package',0],['users','کاربران','user',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
+    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['products','محصولات','package',0],['users','کاربران','user',0],['transport-vehicles','خودروهای ترابری','truck',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
     $('#railNav').innerHTML='<div class="cartable-nav-title admin-root-title">مدیریت سامانه</div>'+items.map(([p,l,i,c])=>p==='gate'||p==='sales'||p==='warehouse'||p==='dispatch'||p==='store'?`<button type="button" class="cartable-nav-item" data-admin-cartable="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`:`<button type="button" class="cartable-nav-item ${app.page===p?'active':''}" data-page="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`).join('');return;
   }
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];

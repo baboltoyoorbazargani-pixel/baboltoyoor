@@ -48,10 +48,10 @@ test('قرارداد UI: مشخصات راننده در فرم کاربر است
   const au = read('public/admin-ui.js');
   const app = read('public/app.js');
   const ext = read('lib/routes/admin-ext.js');
-  for (const n of ['drvPhone', 'drvVehicleType', 'drvPlate', 'drvPosTerminal', 'drvPosBank']) {
+  for (const n of ['drvPhone', 'vehicleId', 'paymentDeviceId', 'branchId']) {
     assert.match(au, new RegExp(`name="${n}"`), `فرم مدیریت فیلد ${n}`);
-    assert.match(app, new RegExp(`name="${n}"`), `فرم قدیمی فیلد ${n}`);
   }
+  assert.match(app, /data-action="manage-users"/);
   assert.doesNotMatch(au, /data-adm="drv-new"/, 'دکمهٔ ساخت راننده در کارتابل ترابری نیست');
   assert.match(au, /رانندگان هنگام ساخت «کاربر راننده» ساخته می‌شوند/);
   assert.match(au, /adm\.canEditDrivers=canEditDrivers/);
