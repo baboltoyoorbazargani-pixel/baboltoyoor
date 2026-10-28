@@ -206,3 +206,27 @@ test('ارجاع به فروش، نشان پایان کار انبار را پا
   assert.equal((await call('POST', `/api/orders/${o.id}/return-sales`, { ...IDEM(), cookie: wh, body: { reason: 'اصلاح سفارش' } })).status, 200);
   assert.equal((await getOrder(o.id)).storeRunOps?.finalizedAt || null, null, 'با ارجاع، کار انبار دوباره باز محسوب می‌شود');
 });
+
+test('تکمیل یا بستن با کسری، وزن ارسال‌نشدهٔ سرویس دوم را از گردش ارسال حذف نمی‌کند', async () => {
+  for (const action of ['complete', 'out-of-stock']) {
+    const o = await newOrder([{ productId: 'p01', requestedQty: 100, requestedUnit: 'کیلوگرم' }]);
+    const itemId = o.items[0].id;
+    const post = (ep, body) => call('POST', `/api/orders/${o.id}/store-run/${ep}`, { ...IDEM(), cookie: wh, body });
+    assert.equal((await post('weights', { run: 1, items: [{ itemId, deliveredKg: 30 }] })).status, 200);
+    assert.equal((await post('move', { itemId })).status, 200);
+    assert.equal((await post('send-run', { run: 1 })).status, 200);
+    assert.equal((await post('weights', { run: 2, items: [{ itemId, deliveredKg: 50 }] })).status, 200);
+    assert.equal((await post(action, { itemId, note: 'تست' })).status, 200);
+    assert.equal((await getOrder(o.id)).storeRunOps?.finalizedAt || null, null, action);
+    assert.equal(await visibleInPreparing(o.id), true, action);
+    assert.equal(await inWarehouseHistory(o.id), false, action);
+    assert.equal((await post('send-run', { run: 2 })).status, 200);
+    assert.ok((await getOrder(o.id)).storeRunOps?.finalizedAt, action);
+    assert.equal(await visibleInPreparing(o.id), false, action);
+    assert.equal(await inWarehouseHistory(o.id), true, action);
+    const ships = await call('GET', '/api/sales/store-run-shipments', { cookie: sales });
+    const ship = ships.json.shipments.find(s => s.orderId === o.id && s.run === 2);
+    assert.ok(ship, 'سرویس دوم باید در ورودی فروش دیده شود');
+    assert.ok(ship.items.some(i => i.itemId === itemId || i.id === itemId));
+  }
+});

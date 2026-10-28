@@ -275,7 +275,7 @@ function paintDriver(data) {
   if(!sections[dsp.driverTab])dsp.driverTab='assigned';
   const current=sections[dsp.driverTab];
   const info = `${d.fullName||'راننده'} • ${d.phone ? fa(d.phone) + ' • ' : ''}${d.vehicleType || 'خودرو نامشخص'} • پلاک ${formatDispatchVehiclePlate(d.plate)} • پوز ${driverPosText(d)}`;
-  const nav=`<nav class="sd-tabs dsp-driver-tabs" aria-label="وضعیت سفارش‌های راننده" dir="rtl">${Object.entries(sections).map(([key,section])=>`<button type="button" class="sd-tab ${dsp.driverTab===key?'active':''}" data-dsp-driver-tab="${key}"><span class="sd-tab-index">${fa(String(Object.keys(sections).indexOf(key)+1).padStart(2,'0'))}</span><span class="sd-tab-copy"><strong>${section.label}</strong><small>${fa(section.orders.length)} سفارش</small></span></button>`).join('')}</nav>`;
+  const nav=`<nav class="sd-tabs dsp-driver-tabs" aria-label="وضعیت سفارش‌های راننده" dir="rtl">${Object.entries(sections).map(([key,section])=>`<button type="button" class="sd-tab ${dsp.driverTab===key?'active':''}" data-dsp-driver-tab="${key}"><span class="sd-tab-index">${fa(String(Object.keys(sections).indexOf(key)+1).padStart(2,'0'))}</span><span class="sd-tab-copy"><strong>${section.label}</strong><small>${fa(section.orders.length)} سفارش</small></span><b class="sd-tab-count ${section.orders.length>0?'show':''}">${section.orders.length?fa(section.orders.length):''}</b></button>`).join('')}</nav>`;
   const historyHint=dsp.driverTab==='history'&&Number(data.historyTotal)>history.length?`<p class="dsp-history-hint">نمایش ${fa(history.length)} سابقهٔ اخیر از ${fa(data.historyTotal)} مورد.</p>`:'';
   $('#content').innerHTML = admHead('truck', 'کارتابل راننده', info, current.orders.length)
     + nav + `<section class="sd-panel adm-panel dsp-driver-stage"><div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico">${icon(dsp.driverTab==='delivered'||dsp.driverTab==='history'?'receipt':'truck',20)}</span><div><h2>${current.label}</h2><p>${dsp.driverTab==='assigned'?'سفارش‌های واگذارشده و در انتظار اعلام خروج.':dsp.driverTab==='inTransit'?'سفارش‌هایی که خروج آن‌ها تأیید شده و در مسیر مشتری هستند.':dsp.driverTab==='delivered'?'تحویل‌های ثبت‌شده که در انتظار بررسی نهایی فروش هستند.':'سابقهٔ سفارش‌های نهایی‌شده.'}</p></div></div><div class="sd-count"><strong>${fa(current.orders.length)}</strong><span>سفارش</span></div></div>${historyHint}<div class="adm-list dsp-list">${current.orders.map(current.render).join('')||sdEmpty(dsp.driverTab==='assigned'||dsp.driverTab==='inTransit'?'truck':'receipt',current.empty,'')}</div></section>`;
@@ -461,7 +461,9 @@ function updateGateDispatchInCartable(data) {
   const home = $('#gateHomeDispatch');
   if (home) home.innerHTML = gateHomeDispatchMarkup(data);
   const full = $('#gateDispatchPanel');
-  if (full) full.innerHTML = app.sub.gate==='dispatch' && typeof gateDispatchTabsHtml==='function' ? gateDispatchTabsHtml(data,app.gateDispatchTab||'awaiting') : app.sub.gate?.startsWith('dispatch-') && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.sub.gate) : gateDispatchMarkup(data);
+  if (full) full.innerHTML = app.sub.gate==='dispatch' && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.gateDispatchTab||'awaiting') : app.sub.gate?.startsWith('dispatch-') && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.sub.gate) : gateDispatchMarkup(data);
+  const counts={awaiting:(data.awaitingDriver||[]).length,leaving:(data.leaving||[]).length,transit:(data.inTransit||[]).length};
+  document.querySelectorAll('[data-gate-dispatch-count]').forEach(el=>{const count=counts[el.dataset.gateDispatchCount]||0;el.textContent=qty(count);});
 }
 function startGateDispatchLive() {
   if(app.timer)clearInterval(app.timer);
@@ -543,7 +545,7 @@ function paintReturns(data) {
     let action = '';
     if (role !== 'warehouse' && t.status === 'AT_SALES') action = `<button class="btn btn-primary btn-sm" type="button" data-ret="refer" data-id="${esc(t.id)}">${icon('send', 14)} ارجاع به انبار</button>`;
     if (role !== 'sales' && t.status === 'AT_WAREHOUSE') action = `<button class="btn btn-success btn-sm" type="button" data-ret="receive" data-id="${esc(t.id)}">${icon('check', 14)} دریافت مرجوعی در انبار</button>`;
-    return `<article class="dsp-card"><header class="dsp-card-head"><div><b>${esc(t.productName)} — ${dspKg(t.kg)}</b><small>${esc(t.customerName)} • سفارش ${esc(fa(t.orderNo))}${t.fullOrder ? ' • مرجوعی کلی' : ''}</small></div><span class="badge ${t.status === 'RECEIVED' ? 'green' : t.status === 'AT_WAREHOUSE' ? 'blue' : 'orange'}">${esc(DSP_RET_STATUS[t.status] || t.status)}</span></header>
+    return `<article class="dsp-card" data-return-id="${esc(t.id)}"><header class="dsp-card-head"><div><b>${esc(t.productName)} — ${dspKg(t.kg)}</b><small>${esc(t.customerName)} • سفارش ${esc(fa(t.orderNo))}${t.fullOrder ? ' • مرجوعی کلی' : ''}</small></div><span class="badge ${t.status === 'RECEIVED' ? 'green' : t.status === 'AT_WAREHOUSE' ? 'blue' : 'orange'}">${esc(DSP_RET_STATUS[t.status] || t.status)}</span></header>
       <div class="dsp-driver">علت: ${esc(t.reason || '—')}</div>
       <small class="adm-note">راننده: ${esc(t.driverName || '—')} • تحویل: ${esc(formatDateTime24(t.deliveredAt))}${t.salesReferredAt ? ` • ارجاع فروش: ${esc(formatDateTime24(t.salesReferredAt))}` : ''}${t.warehouseReceivedAt ? ` • دریافت انبار: ${esc(formatDateTime24(t.warehouseReceivedAt))}` : ''}</small>
       ${action}</article>`;

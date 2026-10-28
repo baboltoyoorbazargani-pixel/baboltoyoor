@@ -32,7 +32,7 @@ test('notification acknowledgements and counts are per user, include all unread 
   assert.equal((await call('GET','/api/workload',sales1)).json.counts.notifications,82);
   assert.equal((await call('POST','/api/notifications/read',admin,{id:'n0'})).status,200);
   assert.equal((await call('GET','/api/notifications',sales1)).json.unread,82,'admin opening must not silence sales');
-  assert.equal((await call('POST','/api/notifications/read',sales1,{id:'n0'})).status,200);
+  r=await call('POST','/api/notifications/read',sales1,{id:'n0'});assert.equal(r.status,200);assert.equal(r.json.unread,81);assert.ok(!r.json.notifications.some(n=>n.id==='n0'&&!n.isRead));
   assert.equal((await call('GET','/api/notifications',sales1)).json.unread,81);
   assert.equal((await call('GET','/api/notifications',sales2)).json.unread,82,'another account must still see it');
   await call('POST','/api/notifications/read',sales1,{});
