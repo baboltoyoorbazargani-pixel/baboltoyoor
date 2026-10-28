@@ -34,4 +34,6 @@ jobs:
           gh release upload v37.43.0 \
             BabolToyor-Windows-Setup.zip \
             windows-installer/BabolToyor-Setup.cmd \
+            windows-installer/INSTALL-STEPS-fa.html \
+            windows-installer/INSTALL-STEPS-fa.md \
             --clobber
