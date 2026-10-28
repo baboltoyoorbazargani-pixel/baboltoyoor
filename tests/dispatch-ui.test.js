@@ -16,7 +16,7 @@ const adminUi = fs.readFileSync(path.join(root, 'admin-ui.js'), 'utf8');
 const core = fs.readFileSync(path.join(__dirname, '..', 'lib', 'routes', 'core.js'), 'utf8');
 
 test('خروج‌های منتظر تأیید در تب اصلی نگهبانی دیده می‌شوند و فقط پیش از حرکت به نگهبان ارجاع دارند', () => {
-  assert.match(app,/gate:\[\['entry','ثبت ورود','entry',null\],\['waiting','در انتظار اقدام فروش','bell','gateEntry'\],\['exit','کنترل خروج','exitDoor','gateExit'\],\['dispatch','تحویل راننده','truck','gateDispatchPending'\],\['history','سوابق مراجعه','history',null\]\]/);
+  assert.match(app,/gate:\[\['entry','ثبت ورود','entry',null\],\['waiting','در انتظار اقدام فروش','bell','gateEntry'\],\['exit','کنترل خروج','exitDoor','gateExit'\],\['dispatch','تحویل راننده','truck','gateDispatchPending'\],\['history','سوابق مراجعه','history',null\],\['reports','گزارش‌ها','reports',null\]\]/);
   for(const label of ['در انتظار ثبت خروج راننده','در انتظار تأیید خروج','در حال ارسال به مشتری'])assert(ui.includes(label),`missing delivery tab ${label}`);
   assert.match(ui, /try\{dispatchData=await api\('\/api\/gate\/dispatch'\);?\}/);
   const gateStart=ui.indexOf('async function renderGate(tab){'),gateEnd=ui.indexOf('\nfunction renderGateEntry',gateStart);

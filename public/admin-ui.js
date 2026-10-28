@@ -422,11 +422,15 @@ function paintActivity() {
 }
 
 /* ---------- گزارش پیشرفته ---------- */
-async function renderReportsPage() {
-  const d = await api('/api/admin/reports/sources');
+async function renderReportsPage(unit = null) {
+  const scope = unit || 'admin';
+  const base = unit ? `/api/unit-reports/${encodeURIComponent(unit)}` : '/api/admin/reports';
+  if (adm.reportScope !== scope) { adm.reportDraft = null; adm.report = null; adm.reportScope = scope; }
+  adm.reportBase = base;
+  const d = await api(`${base}/sources`);
   adm.sources = d.sources || [];
   if (!adm.reportDraft) adm.reportDraft = { source: adm.sources[0]?.key, from: '', to: '', fields: null, filters: [] };
-  $('#content').innerHTML = admHead('reports', 'گزارش‌های پیشرفته', 'از هر بخش سامانه گزارش بسازید، ستون‌ها و فیلترهای دلخواه را انتخاب کنید و فایل Excel یا PDF بگیرید.', undefined) + `
+  $('#content').innerHTML = admHead('reports', unit ? `گزارش مستقل ${ROLE[unit] || unit}` : 'گزارش‌های پیشرفته', 'از هر بخش سامانه گزارش بسازید، ستون‌ها و فیلترهای دلخواه را انتخاب کنید و فایل Excel یا PDF بگیرید.', undefined) + `
     <div class="adm-report">
       <div class="adm-rep-side">
         <label class="cust-field"><span>منبع داده</span><select id="repSource">${adm.sources.map((s) => `<option value="${s.key}" ${s.key === adm.reportDraft.source ? 'selected' : ''}>${admE(s.label)}</option>`).join('')}</select></label>
@@ -442,7 +446,7 @@ async function renderReportsPage() {
         <div id="repResult" class="adm-rep-result"></div>
       </div>
     </div></section>`;
-  $('#repSource').addEventListener('change', (e) => { adm.reportDraft = { source: e.target.value, from: '', to: '', fields: null, filters: [] }; adm.report = null; renderReportsPage(); });
+  $('#repSource').addEventListener('change', (e) => { adm.reportDraft = { source: e.target.value, from: '', to: '', fields: null, filters: [] }; adm.report = null; renderReportsPage(unit); });
   paintReportControls();
   bindAdm('reports');
 }
@@ -487,7 +491,7 @@ async function runReport() {
   $('#repMsg').textContent = '';
   if (!dr.fields.length) { $('#repMsg').textContent = 'حداقل یک ستون انتخاب کنید.'; return; }
   try {
-    const r = await api('/api/admin/reports/query', { method: 'POST', body: JSON.stringify(dr) });
+    const r = await api(`${adm.reportBase}/query`, { method: 'POST', body: JSON.stringify(dr) });
     adm.report = r; adm.reportQuery=JSON.parse(JSON.stringify(dr));
     $('#repSummary').textContent = `${fa(r.total)} ردیف یافت شد؛ نمایش ${fa(Math.min(r.rows.length,300))} ردیف اول. خروجی CSV کامل براساس همین فیلترها از سرور دریافت می‌شود.`;
     const shown = r.rows.slice(0, 300);
@@ -507,7 +511,7 @@ async function exportReportCsv() {
   if(adm.exportBusy)return;adm.exportBusy=true;
   const button=document.querySelector('[data-adm="rep-csv"]');if(button){button.disabled=true;button.textContent='در حال دریافت خروجی کامل…';}
   try{
-    const response=await fetch('/api/admin/reports/export',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(q)});
+    const response=await fetch(`${adm.reportBase}/export`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(q)});
     if(!response.ok){const error=await response.json().catch(()=>({}));if(response.status===401)handleSessionExpired();throw new Error(error.error||'دریافت گزارش انجام نشد.');}
     const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download=`gozaresh-${r.source}-${admToday()}.csv`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
@@ -578,4 +582,31 @@ function adminNavItems() {
     ['users', 'کاربران', 'users'], ['drivers', 'ترابری', 'truck'], ['customers', 'مشتریان', 'user'], ['products', 'محصولات', 'receipt'], ['payment-devices', 'دستگاه‌های پوز', 'receipt'],
     ['activity', 'تاریخچه', 'fingerprint'], ['reports', 'گزارش‌ها', 'reports'],
   ];
+}
+
+// مدیریت نسخه‌های پشتیبان SQLite؛ فقط مدیر. بازیابی، تمام داده‌های فعلی را جایگزین می‌کند.
+async function renderBackupsPage() {
+  const { backups } = await api('/api/admin/backups');
+  $('#content').innerHTML = admHead('backups', 'پشتیبان‌گیری و بازیابی', 'ساخت نسخهٔ یکپارچه از داده‌ها و بازیابی نسخه‌های موجود روی سرور.', undefined) + `
+    <div class="adm-report"><div class="adm-rep-side">
+      <p>نسخهٔ پشتیبان شامل اطلاعات کاربران و هش رمزهاست؛ فایل دانلودشده را در محل امن و جدا از سرور نگه دارید.</p>
+      <button class="btn btn-primary" type="button" id="backup-create">ایجاد نسخهٔ پشتیبان</button>
+      <p>بازیابی داده‌های فعلی را جایگزین می‌کند. پیش از آن یک نسخهٔ ایمنی خودکار ساخته می‌شود و همه کاربران باید دوباره وارد شوند.</p>
+      <p>فقط نسخه‌هایی که از همین بخش روی سرور ساخته شده‌اند قابل بازیابی هستند؛ بارگذاری فایل از رایانه در این نسخه پشتیبانی نمی‌شود.</p>
+      <div id="backup-message" role="status"></div>
+    </div><div class="adm-rep-main"><div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>نام نسخه</th><th>زمان</th><th>حجم (بایت)</th><th>عملیات</th></tr></thead><tbody>
+      ${backups.map(b => `<tr><td>${admE(b.name)}</td><td>${admE(dt(b.createdAt))}</td><td>${admE(b.size)}</td><td><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
+    </tbody></table></div><div id="backup-confirm"></div></div></div></section>`;
+  $('#backup-create').onclick = async e => { e.currentTarget.disabled = true; try { await api('/api/admin/backups', { method:'POST', body:'{}' }); await renderBackupsPage(); toast('نسخهٔ پشتیبان ساخته شد.'); } catch (err) { $('#backup-message').textContent = err.message; e.currentTarget.disabled = false; } };
+  $('#content').onclick = e => {
+    const b = e.target.closest('[data-backup-restore]'); if (!b) return;
+    const name = b.dataset.backupRestore;
+    $('#backup-confirm').innerHTML = `<div class="card card-pad"><h3>تأیید بازیابی</h3><p>تمام داده‌های فعلی با نسخهٔ ${admE(name)} جایگزین می‌شود. رمز مدیر فعلی را برای تأیید وارد کنید.</p><label>رمز مدیر <input type="password" id="backup-password" autocomplete="current-password"></label><button class="btn btn-primary" type="button" id="backup-confirm-action">تأیید و بازیابی</button><div id="backup-restore-error" role="alert"></div></div>`;
+    $('#backup-confirm-action').onclick = async ev => {
+      if (!confirm('بازیابی جایگزین تمام اطلاعات فعلی می‌شود. ادامه می‌دهید؟')) return;
+      ev.currentTarget.disabled = true;
+      try { const r = await api(`/api/admin/backups/${encodeURIComponent(name)}/restore`, { method:'POST', body:JSON.stringify({confirm:'RESTORE', password:$('#backup-password').value}) }); alert(r.message); location.reload(); }
+      catch (err) { $('#backup-restore-error').textContent = err.message; ev.currentTarget.disabled = false; }
+    };
+  };
 }
