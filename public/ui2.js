@@ -563,8 +563,8 @@ function gateDispatchFocusMarkup(data,key){
   return `<section class="sd-panel gate-dispatch-focus" aria-label="${esc(title)}"><div class="gate-tab-context"><p>${esc(desc)}</p><span class="sd-count"><strong>${qty(rows.length)}</strong><span>سفارش</span></span></div><div class="adm-list dsp-list gate-dispatch-vertical-list">${cards}</div></section>`;
 }
 function gateDispatchTabsHtml(data,active,error=''){
-  const tabs=[['awaiting','در انتظار ثبت خروج راننده'],['leaving','در انتظار تأیید خروج'],['transit','در حال ارسال به مشتری']];
-  const nav=`<div class="gate-dispatch-tabs" role="tablist" aria-label="مراحل تحویل راننده">${tabs.map(([id,label])=>`<button type="button" role="tab" aria-selected="${active===id?'true':'false'}" class="${active===id?'active':''}" data-gate-dispatch-tab="${id}">${label}</button>`).join('')}</div>`;
+  const tabs=[['awaiting','در انتظار ثبت خروج راننده',(data.awaitingDriver||[]).length],['leaving','در انتظار تأیید خروج',(data.leaving||[]).length],['transit','در حال ارسال به مشتری',(data.inTransit||[]).length]];
+  const nav=`<div class="gate-dispatch-tabs" role="tablist" aria-label="مراحل تحویل راننده">${tabs.map(([id,label,count])=>`<button type="button" role="tab" aria-selected="${active===id?'true':'false'}" class="${active===id?'active':''}" data-gate-dispatch-tab="${id}">${label} <b class="gate-dispatch-count" data-gate-dispatch-count="${id}">${qty(count)}</b></button>`).join('')}</div>`;
   const panel=error?`<div class="gate-dispatch-load-error" role="alert">صف خروج ارسالی بارگذاری نشد: ${esc(error)}</div>`:gateDispatchFocusMarkup(data,active);
   return nav+`<div id="gateDispatchPanel" role="tabpanel" aria-label="${tabs.find(([id])=>id===active)?.[1]||tabs[0][1]}">${panel}</div>`;
 }

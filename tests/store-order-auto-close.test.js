@@ -26,7 +26,8 @@ test('بسته‌شدن سفارش به «تکمیل محصول» دستی بر�
 });
 
 test('پایان عملیات روز هم فقط برای اقلام واقعاً تعیین‌تکلیف‌نشده تصمیم می‌خواهد', () => {
-  assert.match(routes, /const unresolved = active\.filter\(\(i\) => SR\.itemBlocksClose\(order, i\)\);/);
+  assert.match(routes, /shipmentFlow \? SR\.itemBlocksClose\(order, i\)/);
+  assert.match(routes, /!\(i\.runCompleted \|\| i\.shortageClosed\) && SR\.itemBlocksClose/);
 });
 
 /* ---------- یکپارچه‌سازی ---------- */

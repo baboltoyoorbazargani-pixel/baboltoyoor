@@ -1306,7 +1306,7 @@ async function bootstrap(){
     if(a==='close-modal'){closeModal();return;}
     if(a==='print-invoice'){return printInvoice(actionEl.dataset.id,Number(actionEl.dataset.run)||null);}
     if(a==='read-notifications'){return markNotificationsRead();}
-    if(a==='open-notification'){return openNotificationTarget(actionEl.dataset.id,actionEl.dataset.type,actionEl.dataset.role);}
+    if(a==='open-notification'){return openNotificationTarget(actionEl.dataset.id,actionEl.dataset.type,actionEl.dataset.role,actionEl.dataset.entityType,actionEl.dataset.entityId);}
     if(a==='resubmit-order'){return resubmitOrder(actionEl.dataset.id);}
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();$('#notificationPanel')?.classList.add('hidden');}});
@@ -1331,7 +1331,7 @@ function resetClientState(){
   if(app.timer){clearInterval(app.timer);app.timer=null}
   stopNotifReminder(); closeNotifPanel();
   app.notifRequestSeq=(app.notifRequestSeq||0)+1; app.notifAppliedSeq=app.notifRequestSeq;
-  app.user=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
+  app.user=null; app.notifSnapshot=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
 }
 function handleSessionExpired(){
   if(!app.user) return;
@@ -1384,7 +1384,12 @@ const NOTIF_ROUTES={
   DISPATCH_DRIVER_ASSIGNED:{page:'gate',sub:'dispatch'},
   DISPATCH_DRIVER_EXIT_PENDING:{page:'gate',sub:'dispatch'},
   DISPATCH_DELIVERY_PENDING_SALES:{page:'sales',sub:'delivery'},
-  SETTLEMENT_DONE:{page:'gate',sub:'exit'}
+  SETTLEMENT_DONE:{page:'gate',sub:'exit'},
+  STORE_RUN_R1_SENT:{page:'sales',sub:'stores'},
+  STORE_RUN_R2_SENT:{page:'sales',sub:'stores'},
+  DISPATCH_RETURN:{page:'sales',sub:'delivery'},
+  RETURN_TO_WAREHOUSE:{page:'returns'},
+  ORDER_CLOSED:{page:'gate',sub:'dispatch'}
 };
 function notifRoute(type,targetRole){
   if(type==='STORE_ORDER_APPROVED') return targetRole==='warehouse'?{page:'warehouse'}:{page:'sales',sub:'stores'};
@@ -1491,36 +1496,115 @@ function closeNotifPanel(){$('#notificationPanel')?.classList.add('hidden')}
 function renderNotifPanel(d){
   const panel=$('#notificationPanel'); const list=d.notifications||[];
   const soundOn=notifSoundOn();
-  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="test-notif-sound">آزمایش صدا</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div id="notifAudioStatus" class="notice" role="status" ${app.notifAudioBlocked?'':'hidden'}>${app.notifAudioBlocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':''}</div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
+  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="test-notif-sound">آزمایش صدا</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div id="notifAudioStatus" class="notice" role="status" ${app.notifAudioBlocked?'':'hidden'}>${app.notifAudioBlocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':''}</div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}" data-entity-type="${esc(n.entityType||'')}" data-entity-id="${esc(n.entityId||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
+}
+function applyNotifSnapshot(d){
+  app.notifSnapshot=d;
+  notifyNewArrivals(d);
+  const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
 }
 async function toggleNotifications(){
   const panel=$('#notificationPanel'); if(!panel) return;
   unlockAudio();
   if(!panel.classList.contains('hidden')){closeNotifPanel();return;}
   try{
+    const userId=app.user?.id,seq=app.notifRequestSeq=(app.notifRequestSeq||0)+1;
     const d=await api('/api/notifications');
-    notifyNewArrivals(d);
-    renderNotifPanel(d);
-    positionNotifPanel();
-    panel.classList.remove('hidden');
+    if(!app.user||app.user.id!==userId)return;
+    if(seq>(app.notifAppliedSeq||0)){app.notifAppliedSeq=seq;applyNotifSnapshot(d);}
+    renderNotifPanel(app.notifSnapshot||d);
+    positionNotifPanel(); panel.classList.remove('hidden');
   }catch(e){toast(e.message)}
 }
-async function markNotificationsRead(id=''){
+async function acknowledgeNotifications(id=''){
+  const userId=app.user?.id;
+  // باز کردن، زنگ در حال پخش را فوراً متوقف می‌کند؛ یادآور دیگر اعلان‌ها بعداً ادامه می‌یابد.
+  stopNotifReminder();
   try{
-    await api('/api/notifications/read',{method:'POST',body:JSON.stringify(id?{id}:{})});
+    const d=await api('/api/notifications/read',{method:'POST',body:JSON.stringify(id?{id}:{})});
+    if(!app.user||app.user.id!==userId)return false;
+    // در طول درخواست نیز ممکن است یک تازه‌سازی قدیمی صدا را دوباره فعال کرده باشد.
+    stopNotifReminder();
+    // همهٔ درخواست‌هایی که پیش از تأیید سرور شروع شده‌اند نامعتبرند.
+    app.notifAppliedSeq=app.notifRequestSeq=(app.notifRequestSeq||0)+1;
+    app.notifSeen=new Set((d.notifications||[]).map(n=>n.id));
+    app.notifUnread=Math.max(0,Number(d.unread)||0);
+    app.notifSnapshot=d;
+    const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
+    if(app.notifUnread) startNotifReminder(false);
     closeNotifPanel();
-    await refreshIndicators();
-  }catch(e){toast(e.message)}
+    return true;
+  }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}
 }
-async function openNotificationTarget(id,type,role){
-  const route=notifRoute(type,role);
-  try{await api('/api/notifications/read',{method:'POST',body:JSON.stringify({id})})}catch(e){toast(e.message);return}
-  closeNotifPanel();
-  await refreshIndicators();
-  const mine=normalizeRole(app.user?.roleCode);
-  if(!route){ return go(landing()); }
-  if(mine!=='admin' && mine!==route.page){ toast('این اعلان مربوط به کارتابل دیگری است.'); return; }
-  await go(route.page, route.sub);
+async function markNotificationsRead(id=''){ await acknowledgeNotifications(id); }
+function focusNotificationElement(el){
+  if(!el)return false;
+  const card=el.closest('article,.sr-ship-row,.sd-queue-row')||el;
+  card.classList.add('notif-target-highlight');
+  card.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>card.classList.remove('notif-target-highlight'),6000);
+  return true;
+}
+async function openNotificationTarget(id,type,role,entityType,entityId){
+  if(!await acknowledgeNotifications(id))return;
+  const route=notifRoute(type,role), mine=normalizeRole(app.user?.roleCode);
+  if(!route){toast('مسیر این اعلان قدیمی مشخص نیست.');return;}
+  if(mine!=='admin' && mine!==role){toast('این اعلان مربوط به کارتابل دیگری است.');return;}
+  if(!entityId||!entityType){await go(route.page,route.sub);toast('شناسهٔ مورد در این اعلان قدیمی موجود نیست.');return;}
+  try{
+    if(entityType==='visit'){
+      const visits=(await api('/api/visits')).visits||[];
+      const visit=visits.find(v=>v.id===entityId);
+      await go(route.page,route.sub);
+      if(!visit||visit.status!=='WAITING_SALES')return toast('این مراجعه دیگر در صف ثبت سفارش نیست.');
+      await openOrder(entityId);return;
+    }
+    if(entityType==='return'){
+      const sets=await Promise.all(['AT_SALES','AT_WAREHOUSE','RECEIVED'].map(status=>api('/api/returns?status='+status)));
+      const ticket=sets.flatMap(x=>x.returns||[]).find(x=>x.id===entityId);
+      if(!ticket){await go('returns');return toast('برگهٔ مرجوعی دیگر در دسترس نیست.');}
+      dsp.retTab=ticket.status;await go('returns');
+      if(!focusNotificationElement(document.querySelector(`[data-return-id="${CSS.escape(entityId)}"]`)))toast('برگهٔ مرجوعی دیگر در دسترس نیست.');
+      return;
+    }
+    if(entityType!=='order'){await go(route.page,route.sub);return toast('نوع مورد این اعلان قابل نمایش نیست.');}
+    if(route.page==='gate'&&route.sub==='dispatch'){
+      const data=await api('/api/gate/dispatch');
+      const found=[['awaiting',data.awaitingDriver],['leaving',data.leaving],['transit',data.inTransit]].find(([,rows])=>(rows||[]).some(o=>o.id===entityId));
+      if(found)app.gateDispatchTab=found[0];
+      await go('gate','dispatch');
+      if(!found||!focusNotificationElement(document.querySelector(`[data-order="${CSS.escape(entityId)}"]`)))toast('این محموله دیگر در صف جاری نگهبانی نیست.');
+      return;
+    }
+    const order=(await api('/api/orders/'+encodeURIComponent(entityId))).order;
+    if(route.page==='warehouse'){
+      const phase=order.orderType==='STORE'?'stores':(order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming');
+      if(order.orderType==='STORE')app.wh38.storeTab=order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming';
+      await go('warehouse',phase);
+      if(order.orderType==='STORE'&&order.status==='WAREHOUSE_PENDING')return wh38StoreDetails(entityId);
+      return openOrderDetails(entityId);
+    }
+    if(route.page==='sales'&&order.orderType==='STORE'){
+      // صفحه فروش ممکن است دادهٔ چند ثانیه قبل را در حافظه داشته باشد.
+      if(app.salesFetchPromise)await app.salesFetchPromise.catch(()=>{});
+      await fetchSalesCache(true);
+      app.salesStoreTab=type==='STORE_RUN_R1_SENT'||type==='STORE_RUN_R2_SENT'||order.status==='STORE_PENDING_SALES'?'incoming':order.status==='CLOSED'?'history':'processing';
+      await go('sales','stores');
+      if(type==='STORE_RUN_R1_SENT'||type==='STORE_RUN_R2_SENT'){
+        const run=type==='STORE_RUN_R2_SENT'?'2':'1';
+        const el=document.querySelector(`[data-action="sr-ship-open"][data-order="${CSS.escape(entityId)}"][data-run="${run}"]`);
+        if(focusNotificationElement(el))return;
+      }
+      return openOrderDetails(entityId);
+    }
+    await go(route.page,route.sub);
+    if(route.page==='gate'){
+      const el=document.querySelector(`[data-action="open-exit"][data-id="${CSS.escape(entityId)}"]`);
+      if(focusNotificationElement(el))return;
+      return toast('این فاکتور دیگر در صف کنترل خروج نیست.');
+    }
+    return openOrderDetails(entityId);
+  }catch(e){toast('مورد اعلان در دسترس نیست یا وضعیت آن تغییر کرده است: '+e.message);}
 }
 function notifyNewArrivals(d){
   const list=d?.notifications||[];
@@ -2398,8 +2482,7 @@ async function refreshIndicators(){
     const [noti,w]=await Promise.all([api('/api/notifications'),api('/api/workload').catch(()=>null)]);
     if(!app.user || app.user.id!==userId || seq<=(app.notifAppliedSeq||0)) return;
     app.notifAppliedSeq=seq;
-    if(w) app.workload=w.counts||{};notifyNewArrivals(noti);
-    const bc=$('#bellCount'); if(bc){bc.textContent=qty(noti.unread||0);bc.classList.toggle('hidden',!(noti.unread>0));}
+    if(w) app.workload=w.counts||{};applyNotifSnapshot(noti);
     const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
     const salesCountKeys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
@@ -2418,7 +2501,7 @@ function renderNav(){
     warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['stores','فروشگاه‌ها','store','warehouseStores'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     dispatch:[['dashboard','داشبورد','dashboard',null],['drivers','رانندگان','driver',null],['orders','سفارشات','route','dispatchPending'],['reports','گزارشات','reports',null]],
     store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]],
-    driver:[['dashboard','کارتابل راننده','driver',null],['reports','گزارش‌ها','reports',null]]
+    driver:[['dashboard','کارتابل راننده','driver','driverOpen'],['reports','گزارش‌ها','reports',null]]
   };
   if(r==='admin'){
     if(app.adminActiveRole&&entries[app.adminActiveRole]){

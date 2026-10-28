@@ -752,3 +752,7 @@
   min-height:20px!important;line-height:20px!important;
 }
 #modal .cust-form .cust-field[hidden]{display:none!important}
+
+/* نشان مقصد اعلان و شمارنده مراحل نگهبانی */
+.gate-dispatch-count{display:inline-flex;align-items:center;justify-content:center;min-width:1.7em;padding:2px 6px;margin-inline-start:5px;border-radius:999px;background:#e6edf5;color:#233d5b;font-size:.85em}
+.notif-target-highlight{outline:3px solid #e58b24!important;outline-offset:3px;scroll-margin:90px}
