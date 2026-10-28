@@ -710,11 +710,45 @@
 /* پلاک‌های خودرو و موتورسیکلت: قطعات پنهان نباید در grid جا بگیرند. */
 .iran-plate.iran-plate [hidden]{display:none!important}
 .iran-plate.iran-plate.is-motor{width:calc(var(--plate-h) * 2.3)!important;grid-template-columns:calc(var(--plate-h) * .46) 1fr!important;grid-template-rows:1fr 1fr!important}
-.iran-plate.iran-plate.is-motor .blue-strip{grid-column:1;grid-row:1 / span 2}
-.iran-plate.iran-plate.is-motor .motor-top{grid-column:2;grid-row:1}
-.iran-plate.iran-plate.is-motor .motor-bottom{grid-column:2;grid-row:2;border-top:1px solid #d7dee6!important}
+.iran-plate.iran-plate.is-motor .blue-strip{grid-column:1!important;grid-row:1!important}
+.iran-plate.iran-plate.is-motor .motor-top{grid-column:2!important;grid-row:1!important}
+.iran-plate.iran-plate.is-motor .motor-bottom{grid-column:1 / span 2!important;grid-row:2!important;border-top:1px solid #d7dee6!important;background:#fff!important}
 .iran-plate.iran-plate.is-motor .plate-part span,.iran-plate.iran-plate.is-motor .plate-part input{font-size:calc(var(--plate-h) * .28)!important}
 .iran-plate.iran-plate .plate-code{background:#eef2f7!important}
 .iran-plate-legacy{display:inline-block;border:2px solid #415060;border-left:7px solid #0d5a9c;border-radius:7px;background:#fff;color:#17202a;font-weight:700;padding:3px 8px;max-width:100%;overflow-wrap:anywhere}
 .plate-legacy-note{display:block;margin-top:6px;color:#8a5200;overflow-wrap:anywhere}
 [data-plate-editor]{min-width:0;max-width:100%}
+
+/* ورودی پلاک: فاصلهٔ selectهای عمومی نباید عرض حرف یا اعداد را بپوشاند. */
+#appView #content .iran-plate.plate-editor input,
+#appView #content .iran-plate.plate-editor select,
+#modal .iran-plate.plate-editor input,
+#modal .iran-plate.plate-editor select{
+  box-sizing:border-box!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;
+  padding:0 2px!important;text-align:center!important;text-align-last:center!important;letter-spacing:0!important;
+  line-height:normal!important;color:#101820!important;cursor:text;
+}
+#appView #content .iran-plate.plate-editor select,#modal .iran-plate.plate-editor select{cursor:pointer}
+.iran-plate.plate-editor .plate-letter-part{position:relative}
+.iran-plate.plate-editor .plate-letter-part::after{content:'▾';position:absolute;right:3px;bottom:1px;line-height:1;font-size:10px;color:#536576;pointer-events:none}
+#appView #content .iran-plate .blue-strip span,#modal .iran-plate .blue-strip span{color:#fff!important}
+#appView #content .iran-plate.plate-editor :is(input,select):focus-visible,
+#modal .iran-plate.plate-editor :is(input,select):focus-visible{outline:2px solid #a8172e!important;outline-offset:-3px!important}
+
+/* موتور ملی: نشان آبی فقط بالا چپ است و پنج رقم تمام عرض پایین را می‌گیرند. */
+#appView #content #plateBox .iran-plate.is-motor{
+  width:min(100%,190px)!important;height:80px!important;
+  grid-template-columns:34px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) minmax(0,1fr)!important;
+}
+#appView #content #plateBox .iran-plate.is-motor .blue-strip{width:auto!important}
+#appView #content #plateBox .iran-plate.is-motor input{height:100%!important;font-size:22px!important}
+
+/* یک ردیف برچسب و یک ردیف کنترل، در فرم‌های اصلی مدیریت و مشتری. */
+#modal .cust-form .cust-field:not(.adm-check){
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:start!important;align-items:stretch!important;
+  min-width:0!important;gap:6px!important;margin:0!important;
+}
+#modal .cust-form .cust-field:not(.adm-check)>span:first-child{
+  min-height:20px!important;line-height:20px!important;
+}
+#modal .cust-form .cust-field[hidden]{display:none!important}

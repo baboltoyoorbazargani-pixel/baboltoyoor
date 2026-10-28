@@ -52,3 +52,12 @@ test('باسکول غیرفعال می‌ماند و انتخاب سوابق ق�
  assert.match(src,/st\.open\.map\(t=>t\.plate\)/);assert.match(src,/let value=selected/);
  assert.match(src,/این پلاک قبلاً ثبت شده است؛ برای حفظ سوابق/);
 });
+test('قواعد نهایی فرم، حرف پلاک را با فاصلهٔ داخلی کم و موتور را در دو ردیف نشان می‌دهند',()=>{
+ const css=fs.readFileSync('public/compatibility.css','utf8'),admin=fs.readFileSync('public/admin-ui.js','utf8');
+ assert.match(css,/\.iran-plate\.plate-editor select[\s\S]*?padding:0 2px!important/);
+ assert.match(css,/#plateBox \.iran-plate\.is-motor\{[\s\S]*?grid-template-columns:34px minmax\(0,1fr\)!important;grid-template-rows:minmax\(0,1fr\) minmax\(0,1fr\)!important/);
+ assert.match(css,/\.is-motor \.blue-strip\{grid-column:1!important;grid-row:1!important/);
+ assert.match(css,/\.is-motor \.motor-bottom\{grid-column:1 \/ span 2!important;grid-row:2!important/);
+ assert.match(css,/#modal \.cust-form \.cust-field:not\(\.adm-check\)\{[\s\S]*?display:grid!important/);
+ assert.match(admin,/\.iran-plate\.is-motor \.motor-bottom\{grid-column:1 \/ span 2;grid-row:2/);
+});
