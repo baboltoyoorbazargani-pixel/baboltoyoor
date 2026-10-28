@@ -68,7 +68,7 @@ BabolToyor-Setup.cmd help        :: پارامترها
 ## امنیت
 
 - `.env` و `INSTALL-INFO.txt` فقط برای `SYSTEM` و `Administrators` قابل خواندناند. رمز اولیه را بعد از اولین ورود عوض کرده و فایل اطلاعات را حذف کنید.
-- سامانه روی HTTP ساده است (چون پورت ۸۰ بدون پورت خواسته شده). در صورت قرارگرفتن پشت reverse proxy با HTTPS، در `.env` مقادیر `COOKIE_SECURE=true` و `TRUST_PROXY=true` را قرار دهید.
+- در نصب اولیه HTTP ساده است. مدیر می‌تواند HTTPS خودکار یک دامنهٔ عمومی را از تنظیمات سیستم فعال کند؛ پیش‌نیاز DNS و پورت‌های ۸۰ و ۴۴۳، امنیت دسترسی عمومی و محدودیت HTTP داخلی را در `docs/domain-https-fa.md` بخوانید. در استقرار جداگانه پشت reverse proxy، `COOKIE_SECURE=true` و `TRUST_PROXY=true` فقط با پراکسی مورد اعتماد تنظیم شوند.
 - CSP سختگیرانه (`script-src 'self'`)، نشست `HttpOnly; SameSite=Strict`، قفل ورود بعد از ۵ تلاش و هش `scrypt` همچنان پابرجا هستند.
 
 ## حذف برنامه

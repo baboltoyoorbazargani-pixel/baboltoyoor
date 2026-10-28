@@ -1071,6 +1071,18 @@ async function renderAdmin(){
   const admDrivers=dr.drivers||[];
   const users=u.users||[]; const products=p.products||[]; const active=products.filter(x=>x.isActive);
   $('#content').innerHTML=`
+  <section class="card card-pad section-space tls-settings" id="tlsSettings">
+    <div class="panel-head"><div><span class="eyebrow">DOMAIN &amp; HTTPS</span><h2>دامنه و گواهی HTTPS</h2><p>اتصال یک دامنهٔ عمومی و دریافت و تمدید خودکار گواهی رایگان Let’s Encrypt</p></div></div>
+    <div class="notice">پیش از شروع، در پنل دامنه رکورد DNS را به IP عمومی این سرور وصل کنید و پورت‌های ۸۰ و ۴۴۳ را از اینترنت تا سرور باز و هدایت کنید. دامنهٔ داخلی، IP و wildcard پشتیبانی نمی‌شوند. باز کردن سامانه روی اینترنت آن را در دسترس عموم قرار می‌دهد؛ رمزهای قوی و محدودیت‌های شبکه را بررسی کنید.</div>
+    <div id="tlsStatus" class="tls-status" role="status" aria-live="polite">در حال دریافت وضعیت…</div>
+    <form id="tlsSettingsForm" class="form-grid section-space" autocomplete="off">
+      <div class="field"><label for="tlsDomain">نام دامنه</label><div class="input-shell"><input id="tlsDomain" name="domain" dir="ltr" placeholder="example.com" required maxlength="253" spellcheck="false"></div><small>بدون https://، پورت یا مسیر</small></div>
+      <div class="field"><label for="tlsEmail">ایمیل اطلاع‌رسانی تمدید (اختیاری)</label><div class="input-shell"><input id="tlsEmail" name="email" type="email" dir="ltr" maxlength="254" placeholder="admin@example.com"></div></div>
+      <div class="field"><label for="tlsPassword">تأیید رمز مدیر</label><div class="input-shell"><input id="tlsPassword" name="password" type="password" required autocomplete="current-password"></div></div>
+      <label class="adm-check"><input type="checkbox" name="terms" required> شرایط <a href="https://letsencrypt.org/repository/" target="_blank" rel="noopener noreferrer">Let’s Encrypt</a> را می‌پذیرم و اتصال عمومی سامانه به اینترنت را تأیید می‌کنم.</label>
+      <div class="sticky-actions" style="grid-column:1/-1"><span class="subtle">گواهی خودکار نگهداری می‌شود. دسترسی HTTP با IP داخلی برای سازگاری باقی می‌ماند و رمزگذاری‌شده نیست.</span><button class="btn btn-primary" type="submit">دریافت و فعال‌سازی HTTPS</button></div>
+    </form>
+  </section>
   <div class="admin-grid">
     <section class="card admin-form">
       <div class="panel-head"><div><span class="eyebrow">USER DIRECTORY</span><h2>ایجاد حساب کاربری</h2><p>برای هر شخص، نام کامل، سمت سازمانی و سطح دسترسی را مشخص کنید.</p></div><span class="pill">${qty(users.filter(x=>x.isActive).length)} حساب فعال</span></div>
@@ -1107,6 +1119,29 @@ async function renderAdmin(){
   <div class="admin-grid section-space"><section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">AUDIT TRAIL</span><h2>ردپای فعالیت‌ها</h2></div></div><div class="table-wrap section-space"><table class="table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>موجودیت</th></tr></thead><tbody>${pageItems('audit',a.audit).map(x=>`<tr><td>${dt(x.createdAt)}</td><td><strong>${esc(x.username||'—')}</strong></td><td><b>${esc(auditLabel(x.action))}</b><div class="subtle">${esc(auditDetails(x))}</div></td><td>${esc(x.entityType||'—')}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">لاگی وجود ندارد.</td></tr>'}</tbody></table></div>${pagerHtml('audit',a.audit.length)}</section></div>`;
   bindAdmin(); bindJalaliDates($('#content')); bindRialInputs($('#content'));
   enhanceAdminCollapsible();
+  startTlsSettings();
+}
+function showTlsStatus(data){
+  const el=$('#tlsStatus');if(!el)return;
+  const active=data.active;
+  el.innerHTML=active?`<div class="tls-current"><span class="badge ${active.valid?'green':'orange'}">${active.valid?'HTTPS فعال':'گواهی منقضی شده'}</span> دامنه: <b dir="ltr">${esc(active.domain)}</b> · اعتبار تا ${esc(formatDateTime24(active.expiresAt))} · <a href="https://${esc(active.domain)}/" target="_blank" rel="noopener noreferrer">بازکردن سامانه با HTTPS</a></div>`:'<div>هنوز گواهی فعالی تنظیم نشده است.</div>';
+  if(data.job?.message)el.innerHTML+=`<div class="${data.job.state==='error'?'form-error':'subtle'}">${esc(data.job.message)}</div>`;
+  const form=$('#tlsSettingsForm');if(form){const btn=form.querySelector('button[type=submit]');if(btn)btn.disabled=!!app.tlsSubmitPending||data.job?.state==='working';
+    if(!form.dataset.initialized&&active){form.elements.domain.value=active.domain;form.elements.email.value=active.email||'';form.dataset.initialized='1';}}
+}
+function startTlsSettings(){
+  if(app.tlsStatusTimer)clearInterval(app.tlsStatusTimer);
+  const refresh=async()=>{if(app.page!=='admin'||!$('#tlsSettings')){clearInterval(app.tlsStatusTimer);app.tlsStatusTimer=null;return;}
+    const seq=app.tlsUiSeq=(app.tlsUiSeq||0)+1;
+    try{const data=await api('/api/admin/https');if(seq===app.tlsUiSeq)showTlsStatus(data);}catch(e){const el=$('#tlsStatus');if(el&&seq===app.tlsUiSeq)el.textContent='دریافت وضعیت HTTPS ناموفق بود: '+e.message;}};
+  $('#tlsSettingsForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.target;const b={domain:form.elements.domain.value,email:form.elements.email.value,password:form.elements.password.value,terms:form.elements.terms.checked};
+    if(!confirm('سامانه از اینترنت عمومی قابل دسترسی خواهد بود. دامنه و هدایت پورت‌ها را بررسی کرده‌اید؟'))return;
+    const btn=form.querySelector('button[type=submit]');btn.disabled=true;app.tlsSubmitPending=true;app.tlsUiSeq=(app.tlsUiSeq||0)+1;
+    try{const data=await api('/api/admin/https',{method:'POST',body:JSON.stringify(b)});app.tlsUiSeq++;app.tlsSubmitPending=false;form.elements.password.value='';showTlsStatus(data);toast('درخواست گواهی ثبت شد. وضعیت را در همین بخش پیگیری کنید.');}
+    catch(err){app.tlsSubmitPending=false;toast(err.message);btn.disabled=false;}
+  });
+  void refresh();app.tlsStatusTimer=setInterval(refresh,3000);
 }
 function bindAdmin(){
   $('#content').onclick=async e=>{
