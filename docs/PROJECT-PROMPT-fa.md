@@ -58,6 +58,7 @@ public/                    فرانت‌اند
   fonts/ + fonts.css       فونت‌های محلی
 tests/                     تست‌های node:test (بدون وابستگی) — اکنون ۷۶ فایل
 docs/                      deployment-windows-server-2025.md ، weighbridge-pu850.md
+windows-installer/         BabolToyor-Setup.cmd + INSTALL-STEPS-fa.md/html (راهنمای نصب گامبهگام)
 scripts/                   start.ps1 / start-hidden.ps1 / weighbridge-bridge.js
 assets/logo.png            لوگوی رسمی (سرویس /logo.png)
 data/baboltoyoor.db        دیتابیس SQL خام (ساخته‌شده در اولین اجرا): فقط admin + ۶۳ محصول
@@ -85,6 +86,7 @@ VERSION.txt                هویت داخلی 37.6.0 — دست نخورد (پ�
 - **فاز ۲:** `lib/http.js` در ابتدای هر درخواست `store.refresh()` را با `PRAGMA data_version` صدا میزند؛ تمام مسیرها دادهٔ زندهٔ SQL میبینند. لایهٔ `lib/sql-repos.js` شامل prepared statement برای Repositoryهاست و مسیرهای احراز هویت، بایدپخشی، داشبورد، Audit، گزارشها و فهرستها مستقیماً SQL اجرا میکنند.
 - **فاز ۳:** `lib/live-collections.js` نمای درون حافظه را به پراکسی write-through تبدیل میکند؛ `push`، `splice`، `Object.assign`، فیلدهای تودرتو، `meta`، `counters` و تنظیمات، همان لحظه فقط همان ردیف را با `INSERT ... ON CONFLICT DO UPDATE` یا `DELETE` در SQL مینویسند. `sql.save()` افزایشی است و با محتوای واقعی SQL مقایسه میکند (هیچ جدولی کامل پاک و بازنویسی نمیشود). `store.save()` فقط همگامسازی و پاکسازی idempotency است. نوشت مستقیم `repos.*.insert/replace/remove` هم با نمای درون حافظه هماهنگ میشود. مستند کامل: بخش ۸ `docs/sqlite-database-fa.md`.
 - ابزارها: `scripts/sql-query.js` (فقط SELECT/PRAGMA/WITH/EXPLAIN، پارامترهای بایندشده) و `scripts/backup-db.js` (VACUUM INTO). مستند کامل: `docs/sqlite-database-fa.md`.
+- **نصب روی ویندوز سرور ۲۰۲۵ (بدون کدنویسی):** مرجع اصلی `windows-installer/INSTALL-STEPS-fa.md` و نسخهٔ قابلچاپ `INSTALL-STEPS-fa.html` است. **SQLite نباید جداگانه نصب شود**؛ داخل Node.js 22.5+ است و نصبکننده آن را خودکار میگیرد. برای سرور کاملاً آفلاین، فایل `node-v22.x.x-win-x64.zip` (پورتابل x64) کنار `.cmd` قرار میگیرد. ابزارهای sqlite.org فقط برای دیدن اختیاری محتویات دیتابیساند.
 
 ## ۳) نقش‌ها و کارتابل‌ها (۷ نقش قطعی)
 

@@ -196,3 +196,29 @@ test('docs describe the real installer and the port-80 no-port URL', () => {
   assert.match(sqlDoc, /baboltoyoor\.db/);
   assert.match(sqlDoc, /SELECT/);
 });
+
+test('step-by-step guide exists, answers the SQLite question and gives exact download links', () => {
+  const md = fs.readFileSync(path.join(installerDir, 'INSTALL-STEPS-fa.md'), 'utf8');
+  const html = fs.readFileSync(path.join(installerDir, 'INSTALL-STEPS-fa.html'), 'utf8');
+  for (const doc of [md, html]) {
+    assert.match(doc, /SQLite/);
+    assert.match(doc, /خیر/);
+    assert.match(doc, /22[./]5|۲۲[./]۵/);
+    assert.match(doc, /nodejs\.org/);
+    assert.match(doc, /INSTALLATION FINISHED/);
+    assert.match(doc, /Run as administrator/);
+    assert.match(doc, /INSTALL-INFO\.txt/);
+    assert.match(doc, /http:\/\/localhost/);
+    assert.match(doc, /BabolToyor-Windows-Setup\.zip/);
+  }
+  assert.match(html, /dir="rtl"/);
+  assert.match(html, /lang="fa"/);
+  assert.match(md, /sqlite\.org\/download\.html/);
+  assert.match(md, /sqlite-tools-win-x64/);
+  assert.match(md, /node-v22\.x\.x-win-x64\.zip/);
+  assert.match(md, /backup-db\.js/);
+  const deploy = fs.readFileSync(path.join(root, 'docs', 'deployment-windows-server-2025.md'), 'utf8');
+  assert.match(deploy, /INSTALL-STEPS-fa\.md/);
+  const readme = fs.readFileSync(path.join(installerDir, 'README-fa.md'), 'utf8');
+  assert.match(readme, /INSTALL-STEPS-fa\.md/);
+});

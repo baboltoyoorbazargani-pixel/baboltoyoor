@@ -1,3 +1,11 @@
+# راهنمای نصب گامبهگام ویندوز سرور ۲۰۲۵ (بدون کدنویسی)
+
+- **دو فایل تازه:** `windows-installer/INSTALL-STEPS-fa.md` (راهنمای کامل گامبهگام) و `INSTALL-STEPS-fa.html` (نسخهٔ RTL قابلچاپ/ذخیرهٔ PDF). از دانلود تا اولین ورود: چکلیست، لینکهای مستقیم دانلود، نصب آنلاین و **کاملاً آفلاین**، UAC، پیام `INSTALLATION FINISHED`، تعویض اجباری رمز، بکاپ، ارتقا و جدول عیبیابی.
+- **پاسخ صریح به سؤال پرتکرار:** نیازی به نصب SQLite نیست — `node:sqlite` داخل **Node.js 22.5+** کامپایل شده و نصبکننده Node را خودکار نصب میکند. دیتابیس فقط فایل `C:\BabolToyor\data\baboltoyoor.db` است؛ نه SQL Server، نه ODBC، نه `sqlite3.exe`. ابزارهای اختیاری sqlite.org (مثلاً `sqlite-tools-win-x64-3540100.zip` / SQLite 3.54.1) فقط برای کسانی که بخواهند دیتابیس را ببینند معرفی شدند.
+- **نسخه و محل دانلود دقیق:** حداقل Node.js `>=22.5.0` (`package.json`)، نسخهٔ تستشده 22 LTS؛ نصب دستی اختیاری از <https://nodejs.org/en/download> (LTS, Windows x64 MSI) و برای سرور بدون اینترنت فایل پورتابل `node-v22.x.x-win-x64.zip` از <https://nodejs.org/dist/>.
+- `windows-installer/README-fa.md`، `docs/deployment-windows-server-2025.md`، `README.md` و پرامپت مرجع بهروز شدند؛ `README-INSTALL-fa.txt` داخل بستهٔ آفلاین نیز گامبهگام شد.
+- تستها: **۴۳۵ موفق / ۰ شکست** (۱ تست قراردادی تازه برای وجود راهنما، پاسخ SQLite، لینکها و نسخهها).
+
 # فاز ۳ — نوشت ردیفبهردیف SQL بهجای ذخیرهٔ کل دیتابیس
 
 - **لایهٔ تازهٔ `lib/live-collections.js` (write-through):** نمای درون حافظه بعد از `init()`/`refresh()` به پراکسی زنده تبدیل میشود. `push`، `splice`، `pop`، `Object.assign`، تغییر فیلدهای تودرتو، `meta`، `counters` و تنظیمات، **در همان لحظه** فقط همان ردیف را با `INSERT ... ON CONFLICT(id) DO UPDATE` یا `DELETE ... WHERE id = ?` در SQLite مینویسند. همهٔ مسیرهای نوشتن (بیش از ۷۰ نقطه) بدون تغییر کدشان SQL واقعی اجرا میکنند.
