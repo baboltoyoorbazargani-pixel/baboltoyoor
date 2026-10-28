@@ -14,7 +14,7 @@ function harness(fields){
  storeAwareOrderName:o=>o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—'),storeAwareOrderPhone:o=>o?.orderType==='STORE'?'':(o?.customer?.phone||'—'),today:()=> '2026-10-14',normalizeTime24:s=>String(s||''),toast:m=>messages.push(m),n:Number,
  app:{futureDraft:[{productId:'p01',requestedQty:'2',requestedUnit:'کیلوگرم',description:'بسته‌بندی'}]},
  api:async(url,opts)=>{calls.push({url,...opts});return{order:{status:'SCHEDULED_REMOTE'}}},
- renderOrderLineArea(){},renderSales:async()=>{},isoToJalali:s=>s,Event:class{}};
+ renderOrderLineArea(){},renderSales:async()=>{},readOrderDeposit:()=>null,isoToJalali:s=>s,Event:class{}};
  vm.createContext(context);vm.runInContext(submitSource,context);
  return{calls,messages,form,context};
 }

@@ -1279,7 +1279,7 @@ function invoiceHtml(o,paySel){
   <div class="inv38-rule"></div>
   <div class="inv38-cust"><div><span>مشتری</span><b>${customerName}</b></div><div><span>شماره تماس</span><b class="inv38-phone" dir="ltr">${customerPhone}</b></div><div><span>وضعیت</span><b>تسویه نهایی و آماده خروج</b></div></div>
   <p class="inv38-scroll-hint">برای مشاهده همه ستون‌های اقلام، جدول را افقی پیمایش کنید.</p><div class="inv38-table-scroll" role="region" aria-label="اقلام فاکتور؛ برای مشاهده همه ستون‌ها افقی پیمایش کنید" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th><th>فی</th><th>مبلغ</th></tr></thead><tbody>${items.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.product?.name||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td><td>${money(i.unitPrice)}</td><td>${money(i.finalAmount)}</td></tr>`).join('')}</tbody></table></div>
-  <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${methodHtml?`<div class="inv38-payment-title"><span>روش‌های تسویه</span></div>${methodHtml}`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
+  <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${p.deposit?`<div><span>بیعانه دریافت‌شده (${esc(settleLabels[p.deposit?.type]||'')})${p.deposit?.reference?` • پیگیری ${esc(p.deposit.reference)}`:''}</span><b>${money(p.deposit.amount)}</b></div>${p.deposit.refundedAmount?`<div><span>استرداد دستی بیعانه</span><b>${money(p.deposit.refundedAmount)}</b></div><div><span>بیعانه لحاظ‌شده</span><b>${money(p.depositAmount)}</b></div>`:''}<div><span>مانده پس از کسر بیعانه</span><b>${money(p.amountDue)}</b></div>`:''}${methodHtml?`<div class="inv38-payment-title"><span>روش‌های تسویه</span></div>${methodHtml}`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
   <div class="inv38-verify">
     <div class="inv38-verify-box"><div class="inv38-verify-title">تأیید مشتری</div>
       <div class="inv38-verify-grid">
@@ -2040,6 +2040,7 @@ async function openOrderDetails(id){
         <div><span>مقدار درخواستی</span><b>${qty(totalRequested)}</b></div>
         <div><span>وزن تحویلی</span><b>${qty(totalDelivered)} کیلوگرم</b></div>
       </div>
+      ${depositSummaryHtml(o.deposit)}
       ${o.notes?`<div class="detail-note"><span>${icon('info',16)}</span><div><b>یادداشت سفارش</b><p>${esc(o.notes)}</p></div></div>`:''}
       <div class="table-wrap section-space"><table class="table v21-detail-table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>واحد</th><th>توضیحات</th>${showRunCols?'<th>وزن سرویس اول</th><th>وزن سرویس دوم</th>':''}<th>وزن تحویلی</th><th>وضعیت</th></tr></thead><tbody>${items.map((i,k)=>`<tr class="${i.itemStatus==='CANCELLED'?'row-cancelled':''}"><td>${fa(String(k+1))}</td><td><strong>${esc(i.product?.name||'—')}</strong></td><td>${qty(i.requestedQty)}</td><td>${esc(i.requestedUnit||'—')}</td><td>${esc(i.description||'—')}</td>${showRunCols?`<td>${runView[i.id]&&n(runView[i.id].r1Kg)>0?qty(runView[i.id].r1Kg)+' کیلوگرم':'—'}</td><td>${runView[i.id]&&n(runView[i.id].r2Kg)>0?qty(runView[i.id].r2Kg)+' کیلوگرم':'—'}</td>`:''}<td>${i.deliveredKg==null?'—':qty(i.deliveredKg)+' کیلوگرم'}</td><td>${badge(i.itemStatus)}</td></tr>`).join('')}</tbody></table></div>
       <div class="sticky-actions"><span class="subtle">تمام تغییرات و ارجاع‌ها در سوابق مدیریتی ثبت می‌شوند.</span><div class="toolbar"><button class="btn btn-secondary" data-action="close-modal">بستن</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',16)} اصلاح سفارش</button><button class="btn btn-primary" data-action="resubmit-order" data-id="${o.id}">${icon('send',16)} ارسال مجدد به انبار</button>`:''}${o.orderType==='STORE'&&o.status==='STORE_PENDING_SALES'?`<button class="btn btn-primary" data-action="sales-edit-store-order" data-id="${o.id}">${icon('edit',16)} ویرایش سفارش</button>`:''}</div></div>
@@ -2197,12 +2198,53 @@ function futureOrderRowsV25(orders){
   return rows||salesEmptyV25('calendar','سفارشی برای روزهای آینده برنامه‌ریزی نشده است','سفارش‌های آینده پس از ثبت در این تقویم قرار می‌گیرند.');
 }
 
+// بیعانه صرفاً هنگام ثبت سفارش دریافت می‌شود؛ اطلاعات آن پس از ثبت قابل حذف پنهانی نیست.
+function depositEntryHtml(){
+ return `<section class="deposit-entry"><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
+ <div class="deposit-fields" data-deposit-fields hidden><label>مبلغ بیعانه (ریال)<input class="adm-input" data-deposit-amount inputmode="numeric" autocomplete="off" placeholder="مبلغ دریافتی"></label><label>نوع پرداخت<select class="adm-select" data-deposit-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option></select></label><label data-deposit-pos hidden>دستگاه فعال<select class="adm-select" data-deposit-device><option value="">انتخاب دستگاه</option></select></label><label data-deposit-bank-wrap hidden>بانک / حساب مقصد<input class="adm-input" data-deposit-bank maxlength="100"></label><label data-deposit-reference-wrap hidden>شماره پیگیری<input class="adm-input" data-deposit-reference maxlength="100" placeholder="شناسه تراکنش"></label></div></section>`;
+}
+function readOrderDeposit(form){
+ const box=form.querySelector('[data-deposit-fields]');if(!box||box.hidden)return null;
+ const amount=stlPayParse(box.querySelector('[data-deposit-amount]').value),type=box.querySelector('[data-deposit-type]').value;
+ if(!Number.isSafeInteger(amount)||amount<=0||amount>1e12)throw Error('مبلغ بیعانه معتبر را به ریال وارد کنید.');
+ const deposit={amount,type,deviceId:box.querySelector('[data-deposit-device]').value,bank:box.querySelector('[data-deposit-bank]').value.trim(),reference:box.querySelector('[data-deposit-reference]').value.trim()};
+ if(type==='POS'&&!deposit.deviceId)throw Error('دستگاه پوز فعال را انتخاب کنید.');
+ if(type==='CARD_TRANSFER'&&(!deposit.bank||!deposit.reference))throw Error('بانک مقصد و شماره پیگیری کارت‌به‌کارت را وارد کنید.');
+ return deposit;
+}
+function depositSummaryHtml(d){
+ if(!d)return '';const labels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت'};
+ const info=[labels[d.type]||d.type,d.deviceSnapshot?`${d.deviceSnapshot.title} / ${d.deviceSnapshot.bank}`:'',d.bank||'',d.reference?`پیگیری ${d.reference}`:''].filter(Boolean).map(esc).join(' • ');
+ return `<div class="deposit-summary"><b>بیعانه: ${money(d.amount)}</b><span>${info}</span>${d.refundedAmount?`<span>استرداد دستی ثبت‌شده: ${money(d.refundedAmount)}</span>`:''}${d.status==='REFUND_REQUIRED'?`<strong>استرداد دستی در انتظار پیگیری: ${money(Number(d.amount)-Number(d.refundedAmount||0))}</strong>`:d.status==='REFUNDED'?'<strong>استرداد دستی ثبت شد</strong>':''}</div>`;
+}
+document.addEventListener('click',async e=>{
+ const button=e.target.closest('[data-deposit-toggle]');if(!button)return;
+ const entry=button.closest('.deposit-entry'),fields=entry.querySelector('[data-deposit-fields]');fields.hidden=!fields.hidden;
+ button.setAttribute('aria-pressed',String(!fields.hidden));button.textContent=fields.hidden?'＋ ثبت بیعانه':'✓ بیعانه فعال است';
+});
+document.addEventListener('change',async e=>{
+ if(!e.target.matches('[data-deposit-type]'))return;
+ const box=e.target.closest('[data-deposit-fields]'),type=e.target.value;
+ box.querySelector('[data-deposit-pos]').hidden=type!=='POS';box.querySelector('[data-deposit-bank-wrap]').hidden=type!=='CARD_TRANSFER';box.querySelector('[data-deposit-reference-wrap]').hidden=!['POS','CARD_TRANSFER'].includes(type);
+ if(type==='POS'){
+   const select=box.querySelector('[data-deposit-device]');const previous=select.value;select.disabled=true;
+   try{const {devices=[]}=await api('/api/payment-devices');select.innerHTML='<option value="">انتخاب دستگاه</option>'+devices.map(d=>`<option value="${esc(d.id)}">${esc(d.title)} • ${esc(d.bank)} • پایانه ${esc(d.terminalNumber)}</option>`).join('');select.value=previous;}
+   catch(err){toast('دریافت دستگاه‌های پوز انجام نشد؛ دوباره نوع پرداخت را انتخاب کنید.');}finally{select.disabled=false;}
+ }
+});
+document.addEventListener('input',e=>{if(e.target.matches('[data-deposit-amount]'))stlFormatPriceInput(e.target);});
+document.addEventListener('reset',e=>{if(e.target.querySelector?.('[data-deposit-fields]'))setTimeout(()=>{const entry=e.target.querySelector('.deposit-entry');if(!entry)return;entry.querySelector('[data-deposit-fields]').hidden=true;const b=entry.querySelector('[data-deposit-toggle]');b.setAttribute('aria-pressed','false');b.textContent='＋ ثبت بیعانه';entry.querySelector('[data-deposit-pos]').hidden=true;entry.querySelector('[data-deposit-bank-wrap]').hidden=true;entry.querySelector('[data-deposit-reference-wrap]').hidden=true;},0);});
+function refundRowsHtml(rows){return (rows||[]).map(o=>`<article class="deposit-refund-row"><div><b>${esc(storeAwareOrderName(o))} • سفارش ${esc(fa(o.orderNo||'—'))}</b>${depositSummaryHtml(o.deposit)}</div><button type="button" class="btn btn-secondary btn-sm" data-action="deposit-refunded" data-id="${esc(o.id)}">ثبت استرداد دستی</button></article>`).join('')||'<p class="subtle">استرداد در انتظاری وجود ندارد.</p>';}
+async function refreshDepositRefunds(){const host=document.getElementById('depositRefundList');if(!host)return;try{const d=await api('/api/deposit-refunds');if(host.isConnected)host.innerHTML=refundRowsHtml(d.orders);}catch(e){host.textContent='دریافت فهرست استرداد ناموفق بود؛ صفحه را تازه‌سازی کنید.';}}
+async function markDepositRefunded(id){const reference=prompt('پس از استرداد واقعی وجه، شماره پیگیری یا توضیح استرداد دستی را وارد کنید:');if(reference===null)return;if(!reference.trim())return toast('شماره پیگیری یا توضیح استرداد الزامی است.');try{await api('/api/orders/'+encodeURIComponent(id)+'/deposit-refund',{method:'POST',body:JSON.stringify({reference})});toast('استرداد دستی ثبت شد.');await refreshDepositRefunds();}catch(e){toast(e.message);}}
+
 async function submitPhoneOrderV25(form){
   const items=(app.phoneDraft||[]).filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
   if(!items.length)return toast('حداقل یک محصول معتبر برای سفارش تلفنی وارد کنید.');
   const f=Object.fromEntries(new FormData(form));
   try{
-    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',items})});
+    const deposit=readOrderDeposit(form);
+    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',deposit,items})});
     toast(d.order?.status==='WAREHOUSE_PENDING'?'سفارش تلفنی ثبت و مستقیماً به انبار ارسال شد.':'سفارش تلفنی ثبت شد.');
     form.reset(); app.phoneDraft=[defaultOrderLine()]; renderOrderLineArea('phone','phoneDraft'); await renderSales('remote');
   }catch(e){toast(e.message)}
@@ -2218,9 +2260,10 @@ async function submitFutureOrderV25(form){
   const items=(app.futureDraft||[]).filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
   if(!items.length)return toast('حداقل یک محصول معتبر برای سفارش آینده وارد کنید.');
   try{
-    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${iso}T${tm}`,items})});
+    const deposit=readOrderDeposit(form);
+    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${iso}T${tm}`,deposit,items})});
     toast(d.order?.status==='SCHEDULED_REMOTE'?'سفارش برای تاریخ و ساعت انتخاب‌شده برنامه‌ریزی شد.':'سفارش در صف انبار قرار گرفت.');
-    form.reset(); const dateInp=form.querySelector('.jalali-date-input'); if(dateInp){dateInp.value=isoToJalali(iso); dateInp.dispatchEvent(new Event('input',{bubbles:true}));}
+    form.reset(); const dateInp=form.querySelector('.jalali-date-input[data-target=scheduledDate]'); if(dateInp){dateInp.value=isoToJalali(iso); dateInp.dispatchEvent(new Event('input',{bubbles:true}));}
     const t=form.querySelector('.time24-input'); if(t)t.value='08:00'; app.futureDraft=[defaultOrderLine()]; renderOrderLineArea('future','futureDraft'); await renderSales('future');
   }catch(e){toast(e.message)}
 }
@@ -2247,7 +2290,7 @@ async function editFutureV25(id){
     $('#futureEditFormV25')?.addEventListener('submit',async e=>{e.preventDefault();if(!e.target.reportValidity())return;const f=Object.fromEntries(new FormData(e.target));const tm=normalizeTime24(f.scheduledTime);if(!f.scheduledDate || f.scheduledDate<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');if(e.target.querySelector('[data-target=deliveryDate]')?.value.trim()&&!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر نیست.');if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');try{await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${f.scheduledDate}T${tm}`})});closeModal();toast('برنامه سفارش آینده به‌روزرسانی شد.');await renderSales('future')}catch(err){toast(err.message)}});
   }catch(e){toast(e.message)}
 }
-async function cancelFutureV25(id){if(!confirm('این سفارش آینده لغو شود؟'))return;try{await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast('سفارش آینده لغو شد.');await renderSales('future')}catch(e){toast(e.message)}}
+async function cancelFutureV25(id){const order=(app.salesCache?.orders||[]).find(o=>o.id===id);if(!confirm(order?.deposit?'سفارش لغو شود؟ بیعانه به‌صورت خودکار بازگردانده نمی‌شود و باید دستی استرداد و ثبت شود.':'این سفارش آینده لغو شود؟'))return;try{const result=await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast(result.order?.deposit?'سفارش لغو شد؛ استرداد دستی بیعانه را پیگیری کنید.':'سفارش آینده لغو شد.');await renderSales('future');await refreshDepositRefunds();}catch(e){toast(e.message)}}
 
 
 
@@ -2713,6 +2756,7 @@ function ensureSalesShellV29(){
               <textarea name="notes" maxlength="1000" rows="2" placeholder="هماهنگی، بسته‌بندی، محدودیت تحویل یا نکته مهم..."></textarea>
             </div>
           </div>
+          ${depositEntryHtml()}
           <footer class="fx41-foot">
             <button type="submit" class="btn btn-primary btn-lg">${icon('send',17)} ثبت برنامه ارسال</button>
             <button type="reset" class="btn btn-secondary">${icon('refresh',16)} پاک کردن فرم</button>
@@ -2846,6 +2890,7 @@ async function salesV29ClickHandler(e){
     if(a==='store-order-details-v25')return openOrderDetails(el.dataset.id);
     if(a==='future-edit')return editFutureV25(el.dataset.id);
     if(a==='future-cancel')return cancelFutureV25(el.dataset.id);
+    if(a==='deposit-refunded')return markDepositRefunded(el.dataset.id);
   }catch(err){toast(err?.message||'عملیات انجام نشد.');console.error(err);}
 }
 
@@ -2882,6 +2927,7 @@ function bindSalesPaneV29(tab){
     renderOrderLineArea('future','futureDraft');
     const form=pane.querySelector('#futureOrderFormV25');
     if(form){bindJalaliDates(form);bindTime24(form);}
+    void refreshDepositRefunds();
   }
 }
 
@@ -3050,9 +3096,11 @@ function stlFormatPriceInput(input){
 function stlActive(it){ return !it.voided && !it.skip; }
 function stlSubtotal(){ return stl.items.filter(stlActive).reduce((s,i)=>s+Math.round(i.delivered*i.price),0); }
 function stlTotal(){ return stlSubtotal()-Number(stl.discountAmount||0)+Number(stl.additionsAmount||0); }
+function stlDeposit(){return stl.order?.deposit?.status==='RECEIVED'?Number(stl.order.deposit.amount||0)-Number(stl.order.deposit.refundedAmount||0):0;}
+function stlDue(){return stlTotal()-stlDeposit();}
 function stlAdjustmentsHtml(o){
  const locked=o.dispatch?.priceApprovedAt?'disabled':'';
- return `<div class="stl-adjustments stl-money-summary"><div class="stl-summary-line"><span>جمع اقلام</span><b id="stlSubtotalAmount">${money(stlSubtotal())}</b></div><label>تخفیفات (ریال)<input class="stl-input" type="text" inputmode="numeric" data-stl-adjust="discountAmount" value="${esc(stlFmtPrice(stl.discountAmount))}" ${locked} placeholder="۰"></label><label>اضافات (ریال)<input class="stl-input" type="text" inputmode="numeric" data-stl-adjust="additionsAmount" value="${esc(stlFmtPrice(stl.additionsAmount))}" ${locked} placeholder="۰"></label><div class="stl-summary-line stl-summary-grand"><span>مبلغ نهایی</span><b id="stlTotalAmount">${money(stlTotal())}</b></div></div>`;
+ return `<div class="stl-adjustments stl-money-summary"><div class="stl-summary-line"><span>جمع اقلام</span><b id="stlSubtotalAmount">${money(stlSubtotal())}</b></div><label>تخفیفات (ریال)<input class="stl-input" type="text" inputmode="numeric" data-stl-adjust="discountAmount" value="${esc(stlFmtPrice(stl.discountAmount))}" ${locked} placeholder="۰"></label><label>اضافات (ریال)<input class="stl-input" type="text" inputmode="numeric" data-stl-adjust="additionsAmount" value="${esc(stlFmtPrice(stl.additionsAmount))}" ${locked} placeholder="۰"></label><div class="stl-summary-line stl-summary-grand"><span>مبلغ نهایی فاکتور</span><b id="stlTotalAmount">${money(stlTotal())}</b></div>${stlDeposit()?`<div class="stl-summary-line"><span>بیعانه پس از استرداد</span><b id="stlDepositAmount">${money(stlDeposit())}</b></div><div class="stl-summary-line"><span>مانده قابل دریافت</span><b id="stlDueAmount">${money(stlDue())}</b></div><div class="deposit-excess" id="stlDepositExcess" hidden><span>بیعانه بیش از مبلغ فاکتور است؛ ابتدا اضافه‌پرداخت را دستی برگردانید.</span><button type="button" class="btn btn-secondary btn-sm" data-stl="refund-deposit-excess">ثبت استرداد دستی اضافه‌پرداخت</button></div>`:''}</div>`;
 }
 function stlKg(){ return stl.items.filter(stlActive).reduce((s,i)=>s+i.delivered,0); }
 function stlItemsOf(o, prices){
@@ -3080,6 +3128,7 @@ function orderCustomerStripHtml(o,settlement=false){
   return `<div class="bt-customer-strip-scroll" role="region" aria-label="مشخصات مشتری" tabindex="0"><div class="bt-customer-strip" style="--customer-fields:${fields.length}">${fields.map(([label,value])=>`<div class="bt-customer-field" tabindex="0" title="${esc(label)}: ${esc(value)}" aria-label="${esc(label)}: ${esc(value)}"><b>${esc(label)}</b><span>${label==='پلاک'?plateViewHtml(o.customer?.plate,'بدون پلاک',true):esc(value)}</span></div>`).join('')}</div></div>`;
 }
 function stlDispatchControls(o,returnControl=''){
+  if(o.deposit)return `<div class="stl-dispatch-control deposit-dispatch-block">${returnControl}<span class="deposit-dispatch-message">سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span></div>`;
   const d=o.dispatch||null;
   if(d && !['PENDING_ASSIGN','ASSIGNED'].includes(d.status)) return `<span class="badge blue">${esc(dispatchStatusLabel(d.status))}</span>`;
   const drivers=Array.isArray(stl.drivers)?stl.drivers:[];
@@ -3130,7 +3179,7 @@ function stlRowHtml(it){
 }
 function stlPaymentRowsHtml(){
   const devices=stl.devices||[];
-  return `<div class="stl-payments" id="stlPayments"><div class="stl-payment-row" data-payrow><label class="stl-pay-field"><span>روش دریافت</span><select class="adm-select" data-paytype><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">اعتباری / مانده</option></select></label><label class="stl-pay-field"><span>مبلغ (ریال)</span><input class="adm-input stl-pay-amount" data-payamount inputmode="numeric" placeholder="مثلاً ۲٬۵۰۰٬۰۰۰"></label><div class="stl-pay-detail" data-paydetail></div><button type="button" class="btn btn-secondary btn-sm" data-payremove aria-label="حذف روش پرداخت">حذف</button></div></div><button type="button" class="btn btn-secondary btn-sm" data-payadd>＋ افزودن روش پرداخت</button><div class="stl-pay-totals"><span>قابل تسویه: <b id="stlPayExpected">${money(stlTotal())}</b></span><span>جمع ثبت‌شده: <b id="stlPaySum">۰</b></span><strong>مانده: <b id="stlPayBalance">${money(stlTotal())}</b></strong></div>`;
+  return `<div class="stl-payments" id="stlPayments"><div class="stl-payment-row" data-payrow><label class="stl-pay-field"><span>روش دریافت</span><select class="adm-select" data-paytype><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">اعتباری / مانده</option></select></label><label class="stl-pay-field"><span>مبلغ (ریال)</span><input class="adm-input stl-pay-amount" data-payamount inputmode="numeric" placeholder="مثلاً ۲٬۵۰۰٬۰۰۰"></label><div class="stl-pay-detail" data-paydetail></div><button type="button" class="btn btn-secondary btn-sm" data-payremove aria-label="حذف روش پرداخت">حذف</button></div></div><button type="button" class="btn btn-secondary btn-sm" data-payadd>＋ افزودن روش پرداخت</button><div class="stl-pay-totals"><span>قابل تسویه: <b id="stlPayExpected">${money(Math.max(0,stlDue()))}</b></span><span>جمع ثبت‌شده: <b id="stlPaySum">۰</b></span><strong>مانده: <b id="stlPayBalance">${money(Math.max(0,stlDue()))}</b></strong></div>`;
 }
 /* v37.40.0 — مبلغ پیش‌فرض روش‌های تسویه: ردیف اول کل مبلغ فاکتور را می‌گیرد؛
    با افزودن تراکنش تازه یا ویرایش مبلغ یک ردیف، ماندهٔ فاکتور به‌صورت خودکار
@@ -3138,9 +3187,10 @@ function stlPaymentRowsHtml(){
 function stlPayParse(v){return Number(en(String(v ?? '')).replace(/[^0-9]/g,'')) || 0;}
 function stlPayFmt(v){return v ? Number(v).toLocaleString('fa-IR') : '';}
 function stlPayRows(){return [...document.querySelectorAll('#stlPayments [data-payrow]')];}
-function stlPayBalance(exceptRow){const paid=stlPayRows().filter(r=>r!==exceptRow).reduce((s,r)=>s+stlPayParse(r.querySelector('[data-payamount]')?.value),0);return Math.max(0,stlTotal()-paid);}
+function stlPayBalance(exceptRow){const paid=stlPayRows().filter(r=>r!==exceptRow).reduce((s,r)=>s+stlPayParse(r.querySelector('[data-payamount]')?.value),0);return Math.max(0,stlDue()-paid);}
 function stlPayAutoFill(row){const input=row?.querySelector('[data-payamount]');if(!input)return;row.dataset.autopay='1';input.value=stlPayFmt(stlPayBalance(row));}
-function stlRefreshAutoPayments(){stlPayRows().forEach(r=>{if(r.dataset.autopay==='1')stlPayAutoFill(r);});}
+function stlRefreshAutoPayments(){stlPayRows().forEach(r=>{if(r.dataset.autopay==='1')stlPayAutoFill(r);});stlPayUpdate();}
+function stlPayUpdate(){const rows=stlPayRows(),sum=rows.reduce((n,r)=>n+stlPayParse(r.querySelector('[data-payamount]')?.value),0),expected=Math.max(0,stlDue());const a=document.getElementById('stlPaySum'),b=document.getElementById('stlPayExpected'),c=document.getElementById('stlPayBalance');if(a)a.textContent=money(sum);if(b)b.textContent=money(expected);if(c)c.textContent=money(expected-sum);}
 function stlBindPayments(){
  const host=document.getElementById('stlPayments');if(!host)return;
  const devices=stl.devices||[];
@@ -3150,18 +3200,18 @@ function stlBindPayments(){
   if(type==='CHECK')h='<label>بانک<input class="adm-input" data-bank placeholder="نام بانک"></label><label>شماره چک<input class="adm-input" data-check placeholder="شماره چک"></label><label>سررسید<input class="adm-input" data-due type="date"></label>';
   if(type==='CREDIT')h='<label>علت مانده<input class="adm-input" data-reason placeholder="علت / موعد پرداخت"></label>';
   box.innerHTML=h;box.hidden=!h;};
- const upd=()=>{let sum=0;host.querySelectorAll('[data-payrow]').forEach(r=>sum+=stlPayParse(r.querySelector('[data-payamount]').value));const expected=stlTotal(),a=document.getElementById('stlPaySum'),b=document.getElementById('stlPayExpected'),c=document.getElementById('stlPayBalance');if(a)a.textContent=money(sum);if(b)b.textContent=money(expected);if(c)c.textContent=money(expected-sum);};
+ const upd=stlPayUpdate;
  const bindRow=(r)=>{if(r.dataset.bound)return;r.dataset.bound='1';makeDetail(r);const amt=r.querySelector('[data-payamount]');r.querySelector('[data-paytype]').onchange=()=>{makeDetail(r);stlPayAutoFill(r);upd();};amt.oninput=e=>{r.dataset.autopay='';const v=stlPayParse(e.target.value);e.target.value=stlPayFmt(v);stlRefreshAutoPayments();upd();};r.querySelector('[data-payremove]').onclick=()=>{if(host.querySelectorAll('[data-payrow]').length<=1)return toast('حداقل یک روش تسویه لازم است.');r.remove();stlRefreshAutoPayments();upd();};if(!amt.value.trim())stlPayAutoFill(r);};
  host.querySelectorAll('[data-payrow]').forEach(bindRow);
  const add=document.querySelector('[data-payadd]');if(add)add.onclick=()=>{const tpl=host.querySelector('[data-payrow]').cloneNode(true);delete tpl.dataset.bound;delete tpl.dataset.autopay;tpl.querySelector('[data-payamount]').value='';tpl.querySelector('[data-paytype]').value='CASH';tpl.querySelector('[data-paydetail]').innerHTML='';tpl.querySelector('[data-paydetail]').hidden=true;host.appendChild(tpl);bindRow(tpl);stlPayAutoFill(tpl);upd();const inp=tpl.querySelector('[data-payamount]');if(inp){inp.focus();inp.select?.();}};upd();
 }
-function stlCollectPayments(){const rows=[...document.querySelectorAll('#stlPayments [data-payrow]')];return rows.map(r=>{const value=s=>r.querySelector(`[data-${s}]`)?.value||'';const amount=Number(value('payamount').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٬,\s]/g,''))||0;return {type:value('paytype'),amount,deviceId:value('device'),reference:value('reference'),bank:value('bank'),checkNumber:value('check'),dueDate:value('due'),reason:value('reason')};});}
+function stlCollectPayments(){const rows=[...document.querySelectorAll('#stlPayments [data-payrow]')];if(stlDue()===0 && rows.every(r=>!stlPayParse(r.querySelector('[data-payamount]')?.value)))return [];return rows.map(r=>{const value=s=>r.querySelector(`[data-${s}]`)?.value||'';const amount=Number(value('payamount').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٬,\s]/g,''))||0;return {type:value('paytype'),amount,deviceId:value('device'),reference:value('reference'),bank:value('bank'),checkNumber:value('check'),dueDate:value('due'),reason:value('reason')};});}
 function stlFormHtml(o){
   const dispatchStarted=!!o.dispatch;
   const priceApproved=!!o.dispatch?.priceApprovedAt;
   const approvedBanner=priceApproved
     ? `<div class="stl-approved-banner"><strong>قیمت‌ها توسط فروش تأیید شد</strong><span>تأیید ${esc(formatDateTime24(o.dispatch.priceApprovedAt))} • ${esc(o.dispatch.priceApprovedBy||'فروش')}</span><b>جمع مبلغ برای راننده: ${money(o.dispatch.approvedTotalAmount||stlTotal())}</b></div>`
-    : `<div class="stl-approval-prompt">برای ارسال به پخش، قیمت هر کیلو برای تمام اقلام تحویلی را بررسی کنید؛ سفارش تا زمان تأیید فروش برای راننده قابل مشاهده نیست.</div>`;
+    : o.deposit?`<div class="stl-approval-prompt">سفارش بیعانه دارد؛ تسویه در فروش انجام می‌شود و ارسال به پخش امکان‌پذیر نیست.</div>${depositSummaryHtml(o.deposit)}`:`<div class="stl-approval-prompt">برای ارسال به پخش، قیمت هر کیلو برای تمام اقلام تحویلی را بررسی کنید؛ سفارش تا زمان تأیید فروش برای راننده قابل مشاهده نیست.</div>`;
   return `<section class="stl-card">
     <header class="stl-form-head stl-form-head-inline">
       <span class="stl-inline-title">${dispatchStarted?'قیمت‌گذاری و پخش':'فرم تسویه'}</span>${orderCustomerStripHtml(o,true)}
@@ -3179,7 +3229,7 @@ function stlFormHtml(o){
       <div class="stl-section"><div class="stl-section-head"><h3>${icon('fingerprint',17)} احراز هویت</h3></div><div id="stlFpState" class="stl-state"></div><div class="stl-fp-actions"><button type="button" class="btn btn-secondary" data-stl="fp">${icon('fingerprint',16)} ثبت اثر انگشت از سنسور</button></div><label class="stl-check stl-manual"><input type="checkbox" data-stl-manual ${stl.manual?'checked':''}> بدون اثر انگشت مجاز است (تسویه دستی)</label></div>
     </div>`}
     </div></div>
-    ${dispatchStarted?'':`<div class="stl-section stl-payment-section"><div class="stl-section-head"><h3>${icon('receipt',17)} روش‌های تسویه</h3><span class="stl-hint-inline">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مبلغ فاکتور برابر باشد.</span></div>${stlPaymentRowsHtml()}</div>`}
+    ${dispatchStarted?'':`<div class="stl-section stl-payment-section"><div class="stl-section-head"><h3>${icon('receipt',17)} روش‌های تسویه</h3><span class="stl-hint-inline">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مانده پس از کسر بیعانه برابر باشد.</span></div>${stlPaymentRowsHtml()}</div>`}
     <div id="stlErrors" class="stl-errors" hidden style="margin-top:8px"></div>
     ${stlFooterHtml(o)}
   </section>`;
@@ -3207,6 +3257,9 @@ function stlRecalc(){
   const sub=document.getElementById('stlSubtotalAmount'); if(sub) sub.textContent=money(stlSubtotal());
   const kg=document.getElementById('stlTotalKg'); if(kg) kg.textContent = qty(stlKg())+' کیلوگرم';
   const tot=document.getElementById('stlTotalAmount'); if(tot) tot.textContent = money(stlTotal());
+  const due=document.getElementById('stlDueAmount');if(due)due.textContent=money(stlDue());
+  const dep=document.getElementById('stlDepositAmount');if(dep)dep.textContent=money(stlDeposit());
+  const excess=document.getElementById('stlDepositExcess');if(excess)excess.hidden=!(stlDue()<0&&stlTotal()>0);
   stlRefreshAutoPayments();
 }
 function stlUpdateSigState(){
@@ -3247,6 +3300,7 @@ function stlValidateDispatch(){
   if(!active.some(i=>i.delivered>0)) errs.push('حداقل یک قلم تحویلی برای ارسال به پخش لازم است.');
   const noPrice=active.filter(i=>i.delivered>0&&!(i.price>0)).map(i=>i.name);
   if(noPrice.length) errs.push('قیمت هر کیلو را برای همهٔ اقلام تحویلی وارد کنید: '+noPrice.join('، ')+'.');
+  if(stl.order?.deposit) errs.push('سفارش دارای بیعانه به پخش ارسال نمی‌شود.');
   if(stlTotal()<=0) errs.push('جمع مبلغ سفارش باید بیشتر از صفر باشد.');
   return errs;
 }
@@ -3261,9 +3315,10 @@ function stlValidate(){
   if(!stl.sig) errs.push('امضای مشتری را ثبت کنید.');
   if(!stl.fp && !stl.manual) errs.push('اثر انگشت را ثبت کنید یا گزینه «بدون اثر انگشت» را فعال کنید.');
   const payments=stlCollectPayments();
-  if(!payments.length||payments.some(p=>!p.type||p.amount<=0)) errs.push('برای هر روش تسویه، روش و مبلغ معتبر وارد کنید.');
+  if(stlDue()<0) errs.push('بیعانه از مبلغ نهایی بیشتر است؛ ابتدا اضافه‌پرداخت را دستی تعیین تکلیف کنید.');
+  if((stlDue()>0&&!payments.length)||payments.some(p=>!p.type||p.amount<=0)) errs.push('برای هر روش تسویه، روش و مبلغ معتبر وارد کنید.');
   const paid=payments.reduce((s,p)=>s+p.amount,0);
-  if(paid!==stlTotal()) errs.push('جمع روش‌های تسویه باید دقیقاً برابر مبلغ نهایی فاکتور باشد.');
+  if(paid!==Math.max(0,stlDue())) errs.push('جمع روش‌های تسویه باید دقیقاً برابر مانده پس از کسر بیعانه باشد.');
   if(payments.some(p=>p.type==='POS'&&!p.deviceId)) errs.push('برای هر پرداخت پوز، دستگاه فعال انتخاب کنید.');
   if(payments.some(p=>p.type==='CARD_TRANSFER'&&(!p.bank||!p.reference))) errs.push('برای کارت‌به‌کارت، بانک مقصد و شناسه پیگیری را وارد کنید.');
   if(payments.some(p=>p.type==='CHECK'&&(!p.bank||!p.checkNumber||!p.dueDate))) errs.push('برای چک، بانک، شماره چک و تاریخ سررسید را وارد کنید.');
@@ -3275,6 +3330,12 @@ function stlShowErrors(list){
   if(!list.length){ box.hidden=true; box.innerHTML=''; return; }
   box.hidden=false; box.innerHTML='<b>برای تسویه:</b><ul>'+list.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>';
   box.scrollIntoView({block:'nearest'});
+}
+async function stlRefundExcess(){
+ const id=stl.orderId, amount=-stlDue();if(!id||amount<=0||stlTotal()<=0||stl.refundBusy)return;
+ if(!confirm(`آیا ${money(amount)} اضافه‌پرداخت را واقعاً به مشتری بازگردانده‌اید؟ این دکمه انتقال وجه انجام نمی‌دهد.`))return;
+ const reference=prompt('شماره پیگیری یا توضیح استرداد دستی را وارد کنید:');if(reference===null)return;if(!reference.trim())return toast('شماره پیگیری یا توضیح استرداد الزامی است.');
+ stl.refundBusy=true;try{const result=await api('/api/orders/'+encodeURIComponent(id)+'/deposit-partial-refund',{method:'POST',body:JSON.stringify({amount,reference,expectedRefundedAmount:Number(stl.order.deposit.refundedAmount||0)})});if(stl.orderId!==id)return;stl.order=result.order;const summary=document.querySelector('#stlMain .deposit-summary');if(summary)summary.outerHTML=depositSummaryHtml(stl.order.deposit);stlRecalc();stlShowErrors([]);toast('استرداد دستی ثبت شد.');}catch(e){toast(e.message);}finally{stl.refundBusy=false;}
 }
 async function stlSubmit(){
   if(!stl.orderId || stl.busy) return;
@@ -3328,6 +3389,7 @@ if(!window.__stlBoundV374){
     if(a==='sig-clear') return stlClearSig();
     if(a==='fp') return stlCapture();
     if(a==='reopen'){ if(stl.orderId) return reopenSettlementToWarehouse(stl.orderId); return; }
+    if(a==='refund-deposit-excess') return stlRefundExcess();
     if(a==='submit') return stlSubmit();
   });
   document.addEventListener('input', e=>{
