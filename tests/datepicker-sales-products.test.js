@@ -79,7 +79,10 @@ test('v37.3.2 — فرم روزهای آتی: زمان ورود (کوتاه) و 
   const ui = read('public/ui2.js');
   const css = read('public/theme.css');
   const form = ui.slice(ui.indexOf('function futureFormV38'), ui.indexOf('window.renderSalesFutureV25'));
-  // ترتیب: نام، تلفن، زمان ورود، محل ارسال — داخل همان شبکهٔ بالایی
+  // تاریخ تحویل فقط تاریخ است و جدا از زمان ورود به انبار در همان شبکه قرار می‌گیرد.
+  assert.match(form, /jalaliInput\('تاریخ تحویل','deliveryDate','',true\)/);
+  assert.match(read('public/compatibility.css'), /#futureOrderFormV25 \.fx-top-grid>\.jalali-field\{grid-column:span 6!important\}/);
+  // ترتیب: نام، تلفن، زمان ورود، تاریخ تحویل و محل ارسال
   assert.match(form, /fx-top-grid">[\s\S]*name="name"[\s\S]*name="phone"[\s\S]*jalaliDateTimeInput\('زمان ورود به کارتابل انبار'[\s\S]*fx-addr-field[\s\S]*name="dispatchPlace"[\s\S]*<\/div>\s*<div class="sd-lines-head fx-lines-head">/);
   assert.doesNotMatch(form, /fx-full" style="grid-column:1\/-1"/);  // آدرس دیگر تمام‌عرض نیست
   assert.match(form, /<textarea name="notes" maxlength="1000" rows="1"/);

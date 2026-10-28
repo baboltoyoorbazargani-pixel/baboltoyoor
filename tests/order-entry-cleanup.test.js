@@ -30,11 +30,12 @@ test('all order-entry templates omit duplicate draft products and totals',()=>{
 });
 test('future entry accepts today and preserves the selected time and each item',async()=>{
  for(const scheduledTime of ['00:00','08:30','23:59']){
-  const h=harness({name:'مشتری',phone:'09123456789',dispatchPlace:'بابل',scheduledDate:'2026-10-14',scheduledTime});
+  const h=harness({name:'مشتری',phone:'09123456789',dispatchPlace:'بابل',deliveryDate:'2026-10-18',scheduledDate:'2026-10-14',scheduledTime});
   await h.context.submitFutureOrderV25(h.form);
   assert.equal(h.calls.length,1,JSON.stringify(h.messages));
   const payload=JSON.parse(h.calls[0].body);
   assert.equal(payload.scheduledAt,`2026-10-14T${scheduledTime}`);
+  assert.equal(payload.deliveryDate,'2026-10-18');
   assert.equal(payload.items.length,1);assert.equal(payload.items[0].requestedQty,2);
  }
 });
@@ -47,13 +48,18 @@ test('future entry still rejects previous dates and malformed times',async()=>{
 test('editing a future order also allows the selected time today',async()=>{
  const fields={scheduledDate:'2026-10-14',scheduledTime:'16:45',dispatchPlace:'بابل'};
  const calls=[],messages=[];let submit;
- const form={fields,addEventListener:(name,fn)=>{submit=fn},reportValidity:()=>true};
+ const form={fields,querySelector:()=>null,addEventListener:(name,fn)=>{submit=fn},reportValidity:()=>true};
  const source=app.slice(app.indexOf('async function editFutureV25(id)'),app.indexOf('async function cancelFutureV25(id)'));
  const c={FormData:class{constructor(f){this.fields=f.fields}*[Symbol.iterator](){yield*Object.entries(this.fields)}},
  api:async(url,opts)=>{if(opts){calls.push({url,...opts});return{}}return{order:{id:'test-order',orderType:'REMOTE',status:'SCHEDULED_REMOTE',customer:{name:'مشتری'},scheduledDate:'2026-10-15',scheduledAt:'2026-10-15T08:00'}}},
  toast:m=>messages.push(m),storeAwareOrderName:o=>o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—'),storeAwareOrderPhone:o=>o?.orderType==='STORE'?'':(o?.customer?.phone||'—'),today:()=> '2026-10-14',normalizeTime24:s=>s,openModal(){},closeModal(){},bindJalaliDates(){},bindTime24(){},
- $:()=>form,fa:v=>String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),esc:s=>s||'',badge:()=>'',jalaliDateTimeInput:()=>'',time24:s=>s.slice(11,16),icon:()=>'',nextDayIso:()=> '2026-10-15',renderSales:async()=>{}};
+ $:()=>form,fa:v=>String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),esc:s=>s||'',badge:()=>'',jalaliDateTimeInput:()=>'',jalaliInput:()=>'',time24:s=>s.slice(11,16),icon:()=>'',nextDayIso:()=> '2026-10-15',renderSales:async()=>{}};
  vm.createContext(c);vm.runInContext(source,c);await c.editFutureV25('test-order');
  assert.equal(typeof submit,'function');await submit({preventDefault(){},target:form});
  assert.equal(calls.length,1,JSON.stringify(messages));assert.equal(JSON.parse(calls[0].body).scheduledAt,'2026-10-14T16:45');
+});
+
+test('future entry requires a valid selected delivery date',async()=>{
+ const h=harness({scheduledDate:'2026-10-14',scheduledTime:'08:30',dispatchPlace:'بابل',deliveryDate:''});
+ await h.context.submitFutureOrderV25(h.form);assert.equal(h.calls.length,0);assert.match(h.messages[0],/تاریخ تحویل/);
 });

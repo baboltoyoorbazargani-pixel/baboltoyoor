@@ -253,7 +253,7 @@ function positionPopover(pop, anchor){
 function openJalaliCalendar(input){
   if(!input) return;
   const target=input.dataset.target;
-  const hidden=target?document.querySelector(`[name="${CSS.escape(target)}"]`):null;
+  const hidden=target?(input.closest('form')?.querySelector(`[name="${CSS.escape(target)}"]`) || document.querySelector(`[name="${CSS.escape(target)}"]`)):null;
   // fallback hidden near input
   const hidden2=hidden || input.closest('.jalali-field')?.querySelector('input[type="hidden"]');
   const hiddenInput=hidden||hidden2;
@@ -327,7 +327,7 @@ function selectJalaliDate(iso, jalaliStr){
   closeJalaliCalendar();
   // auto-focus time picker if exists in same form (future orders requirement)
   const form=input.closest('form');
-  if(form){
+  if(form && input.dataset.target!=='deliveryDate'){
     const timeInput=form.querySelector('.time24-input');
     if(timeInput){
       // small delay to let calendar close animation
@@ -1978,7 +1978,7 @@ async function openWarehouse(id){try{app.selectedWarehouse=id;const d=await api(
 function renderWarehouseEditorV21(o){
   const items=(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
   const totalReq=items.reduce((s,i)=>s+n(i.requestedQty),0);
-  $('#warehouseEditor').innerHTML=`<section class="warehouse-sheet-v21"><div class="warehouse-sheet-head"><div><button class="back-link" data-action="return-sales" data-id="" style="display:none"></button><span class="eyebrow">DELIVERY WORKBENCH</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(storeAwareOrderPhone(o))} <span class="dot-sep">•</span> سفارش <b>${esc(fa(o.orderNo||'—'))}</b> ${orderKindBadge(o)}${o.scheduledDate?`<span class="date-chip">تحویل ${dateLabel(o.scheduledDate)}</span>`:''}</p></div><div class="warehouse-head-status"><span class="live-pulse"><i></i> در حال کار</span>${badge(o.status)}</div></div><div class="warehouse-progress"><span class="done">ورود</span><i></i><span class="done">فروش</span><i></i><span class="active">انبار</span><i></i><span>تسویه</span><i></i><span>خروج</span></div><div class="warehouse-note-v21">برای هر قلم وزن واقعی تحویلی را فقط به کیلوگرم وارد کنید. در صورت نبود کالا، «عدم موجودی» را فعال کنید؛ این قلم با وزن صفر برای تسویه ثبت می‌شود.</div><div class="warehouse-items-v21">${items.map((i,k)=>warehouseItemCardV21(o,i,k)).join('')}</div><div class="warehouse-bottom-bar"><div><span>جمع وزن تحویلی</span><strong id="warehouseTotalKgV21">۰ کیلوگرم</strong><small>مقدار درخواستی: ${qty(totalReq)} واحد</small></div><div class="toolbar"><button class="btn btn-secondary btn-lg" data-action="return-sales" data-id="${o.id}">${icon('arrow',17)} ارجاع کل سفارش به فروش</button><button class="btn btn-primary btn-lg" data-action="confirm-warehouse" data-id="${o.id}">${icon('check',18)} ثبت تحویل و ارسال به تسویه</button></div></div></section>`;
+  $('#warehouseEditor').innerHTML=`<section class="warehouse-sheet-v21"><div class="warehouse-sheet-head"><div><button class="back-link" data-action="return-sales" data-id="" style="display:none"></button><span class="eyebrow">DELIVERY WORKBENCH</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(storeAwareOrderPhone(o))} <span class="dot-sep">•</span> سفارش <b>${esc(fa(o.orderNo||'—'))}</b> ${orderKindBadge(o)}${o.scheduledDate?`<span class="date-chip">ورود به انبار ${esc(dateLabel(o.scheduledDate))}</span>`:''}${o.deliveryDate?`<span class="date-chip">تاریخ تحویل ${esc(dateLabel(o.deliveryDate))}</span>`:''}</p></div><div class="warehouse-head-status"><span class="live-pulse"><i></i> در حال کار</span>${badge(o.status)}</div></div><div class="warehouse-progress"><span class="done">ورود</span><i></i><span class="done">فروش</span><i></i><span class="active">انبار</span><i></i><span>تسویه</span><i></i><span>خروج</span></div><div class="warehouse-note-v21">برای هر قلم وزن واقعی تحویلی را فقط به کیلوگرم وارد کنید. در صورت نبود کالا، «عدم موجودی» را فعال کنید؛ این قلم با وزن صفر برای تسویه ثبت می‌شود.</div><div class="warehouse-items-v21">${items.map((i,k)=>warehouseItemCardV21(o,i,k)).join('')}</div><div class="warehouse-bottom-bar"><div><span>جمع وزن تحویلی</span><strong id="warehouseTotalKgV21">۰ کیلوگرم</strong><small>مقدار درخواستی: ${qty(totalReq)} واحد</small></div><div class="toolbar"><button class="btn btn-secondary btn-lg" data-action="return-sales" data-id="${o.id}">${icon('arrow',17)} ارجاع کل سفارش به فروش</button><button class="btn btn-primary btn-lg" data-action="confirm-warehouse" data-id="${o.id}">${icon('check',18)} ثبت تحویل و ارسال به تسویه</button></div></div></section>`;
   $$('#warehouseEditor [data-weight]').forEach(i=>i.addEventListener('input',updateWarehouseTotalV21));
   $$('#warehouseEditor [data-oos]').forEach(c=>c.addEventListener('change',()=>{const id=c.dataset.oos;const w=$(`#warehouseEditor [data-weight="${id}"]`);if(w){w.disabled=c.checked;if(c.checked)w.value='';}updateWarehouseTotalV21()}));
   updateWarehouseTotalV21();
@@ -2030,7 +2030,7 @@ async function openOrderDetails(id){
     openModal('جزئیات کامل سفارش',`<div class="order-details-modal v21-detail-modal">
       <div class="order-detail-head">
         <div><span class="eyebrow">ORDER DETAIL</span><h2>${esc(fa(o.orderNo||'—'))}</h2><p>${esc(storeAwareOrderName(o))} • ${esc(storeAwareOrderPhone(o))}</p></div>
-        <div class="detail-status-stack">${orderKindBadge(o)}${o.scheduledDate?`<span class="date-chip">تحویل ${dateLabel(o.scheduledDate)}</span>`:''}${badge(o.status)}</div>
+        <div class="detail-status-stack">${orderKindBadge(o)}${o.scheduledDate?`<span class="date-chip">ورود به انبار ${esc(dateLabel(o.scheduledDate))}</span>`:''}${o.deliveryDate?`<span class="date-chip">تاریخ تحویل ${esc(dateLabel(o.deliveryDate))}</span>`:''}${badge(o.status)}</div>
       </div>
       <div class="detail-grid detail-grid-6">
         <div><span>نوع سفارش</span><b>${orderKindLabel(o)}</b></div>
@@ -2061,7 +2061,7 @@ function renderRemoteOrdersV21(orders){
         <div class="remote-customer-grid">
           <div class="field"><label>نام مشتری</label><div class="input-shell op-input"><span>${icon('user',17)}</span><input name="name" required placeholder="نام و نام خانوادگی"></div></div>
           <div class="field"><label>شماره تماس</label><div class="input-shell op-input"><span>${icon('phone',17)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
-          ${jalaliInput('تاریخ تحویل','scheduledDate',today(),true)}
+          ${jalaliInput('تاریخ ورود به انبار','scheduledDate',today(),true)}
           <div class="field remote-notes"><label>یادداشت کلی سفارش</label><div class="input-shell op-input op-textarea"><textarea name="notes" rows="2" maxlength="1000" placeholder="زمان مراجعه، هماهنگی مشتری یا نکات مهم سفارش..."></textarea></div></div>
         </div>
         <div class="remote-items-head"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>هر ردیف محصول، مقدار، واحد و توضیحات اختصاصی خودش را دارد.</p></div></div>
@@ -2186,11 +2186,11 @@ function futureOrderRowsV25(orders){
       (o.orderType==='REMOTE'?`<button class="btn btn-ghost btn-sm" data-action="future-edit" data-id="${o.id}">${icon('edit',14)} ویرایش زمان</button><button class="btn btn-ghost btn-sm danger-text" data-action="future-cancel" data-id="${o.id}">${icon('trash',14)} لغو</button>`:'');
     return `<article class="fx41-row">
       <div class="fx41-row-top">
-        <div class="fx41-row-date"><strong>${esc(dateLabel(o.scheduledDate))}</strong><b>${esc(fa(time24(o.scheduledAt)))}</b></div>
+        <div class="fx41-row-date"><small>ورود به انبار</small><strong>${esc(dateLabel(o.scheduledDate))}</strong><b>${esc(fa(time24(o.scheduledAt)))}</b></div>
         <div class="fx41-row-info"><div class="fx41-row-badges"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${typeBadge}</div><h3>${esc(storeAwareOrderName(o))}</h3><p>${esc(storeAwareOrderPhone(o))}</p></div>
         <div class="fx41-row-status">${badge(o.status)}</div>
       </div>
-      <div class="fx41-row-meta"><span><b>مقصد</b>${esc(o.dispatchPlace||'ثبت نشده')}</span><span><b>اقلام</b>${qty(activeItemsOf(o).length)} قلم</span><span><b>ثبت</b>${formatDateTime24(o.createdAt)}</div>
+      <div class="fx41-row-meta"><span><b>تاریخ تحویل</b>${o.deliveryDate?esc(dateLabel(o.deliveryDate)):'ثبت نشده'}</span><span><b>مقصد</b>${esc(o.dispatchPlace||'ثبت نشده')}</span><span><b>اقلام</b>${qty(activeItemsOf(o).length)} قلم</span><span><b>ثبت</b>${formatDateTime24(o.createdAt)}</div>
       <div class="fx41-row-actions">${actions}</div>
     </article>`;
   }).join('');
@@ -2212,6 +2212,7 @@ async function submitFutureOrderV25(form){
   const iso=f.scheduledDate||'';
   if(!iso || iso<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');
   const tm=normalizeTime24(f.scheduledTime||'');
+  if(!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر را انتخاب کنید.');
   if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');
   if(!String(f.dispatchPlace||'').trim())return toast('محل ارسال را وارد کنید.');
   const items=(app.futureDraft||[]).filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
@@ -2241,9 +2242,9 @@ async function editFutureV25(id){
   try{
     const d=await api('/api/orders/'+id); const o=d.order;
     if(!o||o.orderType!=='REMOTE'||o.status!=='SCHEDULED_REMOTE')return toast('این سفارش دیگر در وضعیت قابل ویرایش نیست.');
-    openModal('ویرایش برنامه سفارش آینده',`<form id="futureEditFormV25" class="schedule-approval-form"><div class="schedule-approval-hero"><div><span class="eyebrow">UPCOMING ORDER</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(fa(o.orderNo||'—'))} • ${esc(storeAwareOrderPhone(o))}</p></div>${badge(o.status)}</div><div class="store-approval-fields-v25">${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',o.scheduledDate||nextDayIso(),time24(o.scheduledAt)||'08:00',true)}<div class="field"><label>محل ارسال</label><div class="input-shell op-input"><span>${icon('truck',17)}</span><input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" required></div></div><div class="field"><label>یادداشت</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary" type="submit">${icon('check',17)} ذخیره برنامه</button></div></form>`);
+    openModal('ویرایش برنامه سفارش آینده',`<form id="futureEditFormV25" class="schedule-approval-form"><div class="schedule-approval-hero"><div><span class="eyebrow">UPCOMING ORDER</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(fa(o.orderNo||'—'))} • ${esc(storeAwareOrderPhone(o))}</p></div>${badge(o.status)}</div><div class="store-approval-fields-v25">${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',o.scheduledDate||nextDayIso(),time24(o.scheduledAt)||'08:00',true)}${jalaliInput('تاریخ تحویل','deliveryDate',o.deliveryDate||'',false)}<div class="field"><label>محل ارسال</label><div class="input-shell op-input"><span>${icon('truck',17)}</span><input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" required></div></div><div class="field"><label>یادداشت</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary" type="submit">${icon('check',17)} ذخیره برنامه</button></div></form>`);
     bindJalaliDates($('#futureEditFormV25')); bindTime24($('#futureEditFormV25'));
-    $('#futureEditFormV25')?.addEventListener('submit',async e=>{e.preventDefault();if(!e.target.reportValidity())return;const f=Object.fromEntries(new FormData(e.target));const tm=normalizeTime24(f.scheduledTime);if(!f.scheduledDate || f.scheduledDate<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');try{await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${f.scheduledDate}T${tm}`})});closeModal();toast('برنامه سفارش آینده به‌روزرسانی شد.');await renderSales('future')}catch(err){toast(err.message)}});
+    $('#futureEditFormV25')?.addEventListener('submit',async e=>{e.preventDefault();if(!e.target.reportValidity())return;const f=Object.fromEntries(new FormData(e.target));const tm=normalizeTime24(f.scheduledTime);if(!f.scheduledDate || f.scheduledDate<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');if(e.target.querySelector('[data-target=deliveryDate]')?.value.trim()&&!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر نیست.');if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');try{await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${f.scheduledDate}T${tm}`})});closeModal();toast('برنامه سفارش آینده به‌روزرسانی شد.');await renderSales('future')}catch(err){toast(err.message)}});
   }catch(e){toast(e.message)}
 }
 async function cancelFutureV25(id){if(!confirm('این سفارش آینده لغو شود؟'))return;try{await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast('سفارش آینده لغو شد.');await renderSales('future')}catch(e){toast(e.message)}}
@@ -2693,6 +2694,7 @@ function ensureSalesShellV29(){
                 <div class="field"><label>نام مشتری</label><div class="input-shell"><span>${icon('user',17)}</span><input name="name" required placeholder="نام و نام خانوادگی"></div></div>
                 <div class="field"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',17)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
                 ${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',nextDayIso(),'08:00',true)}
+                ${jalaliInput('تاریخ تحویل','deliveryDate','',true)}
               </div>
               <div class="field fx41-full"><label>محل ارسال</label><div class="input-shell"><span>${icon('truck',17)}</span><input name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
             </div>
@@ -3676,7 +3678,7 @@ function whhBody(d,opts){
     ${rows.map(r=>`<article class="whh-row">
       <div class="whh-time"><b>${whhTime(r.completedAt)}</b><small>ثبت وزن</small></div>
       <div class="whh-main"><div class="sd-chips"><span class="order-code">${esc(fa(r.orderNo))}</span>${sdTypeBadge(r)}${badge(r.status)}</div>
-        <h4>${esc(r.customerName)}</h4><p>${r.customerPhone?`<span dir="ltr">${esc(fa(r.customerPhone))}</span> • `:''}${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}</p></div>
+        <h4>${esc(r.customerName)}</h4><p>${r.customerPhone?`<span dir="ltr">${esc(fa(r.customerPhone))}</span> • `:''}${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}${r.deliveryDate?` • تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`:''}</p></div>
       <div class="whh-figs"><span><small>اقلام</small><b>${qty(r.itemCount)}</b></span><span><small>وزن تحویلی</small><b>${qty(r.deliveredKg)}</b></span>${r.outOfStock?`<span class="is-warn"><small>ناموجود</small><b>${qty(r.outOfStock)}</b></span>`:''}</div>
       <div class="whh-by"><small>ثبت‌کننده</small><b>${esc(r.completedBy)}</b>${r.acceptedAt?`<small>دریافت ${whhTime(r.acceptedAt)}</small>`:''}</div>
       ${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[]):''}
