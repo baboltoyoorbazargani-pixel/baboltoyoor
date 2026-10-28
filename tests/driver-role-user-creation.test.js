@@ -53,11 +53,13 @@ test('فرم‌های کاربر: هر هفت نقش، فیلد وابسته ب�
   const route = read('lib/routes/admin.js');
   assert.match(au, /data-role-fields="driver"/);
   assert.match(au, /data-role-fields="store"/);
-  // v37.40.0 — راننده با مشخصات خودرو/پوز هنگام ساخت کاربر ساخته می‌شود، نه با انتخاب رکورد
-  assert.match(au, /name="drvPlate"/);
+  // خودرو و پوز از فهرست‌های مستقل انتخاب می‌شوند.
+  assert.match(au, /name="vehicleId"/);
+  assert.match(au, /name="paymentDeviceId"/);
+  assert.match(au, /name="branchId"/);
   assert.match(au, /name="drvPhone"/);
-  assert.match(au, /کارتابل ترابری/);
-  assert.match(au, /b\.roleCode === 'driver' && !\(String\(b\.drvPhone/);
+  assert.match(au, /ترابری/);
+  assert.match(au, /b\.roleCode === 'driver' && !\(b\.drvPhone && b\.vehicleId && b\.paymentDeviceId\)/);
   assert.match(au, /syncRoleFields/);
   assert.doesNotMatch(app, /نگهبوش/);
   assert.match(app, /<option value="dispatch">واحد پخش<\/option><option value="driver">راننده<\/option>/);

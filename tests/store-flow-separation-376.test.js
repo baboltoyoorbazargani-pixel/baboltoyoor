@@ -11,7 +11,8 @@ test('شماره سفارش فروشگاه با پیشوند B و کد شعبه 
  assert.match(ordersSrv,/store\.nextStoreOrderNumber\(fields\.branchNo \?\? 1\)/);
  assert.match(adminSrv,/checkBranchNo|branchNo/);
  assert.match(adm,/name="branchNo"/);
- assert.match(adm,/branchNo = ''/);
+ assert.match(adm,/name="branchId"/);
+ assert.match(adminSrv,/branch\.branchNo/);
 });
 
 test('فلوی فروشگاه بدون قیمت در سرور (priceFree، مقدار فاینال فاکتور صفر)',()=>{

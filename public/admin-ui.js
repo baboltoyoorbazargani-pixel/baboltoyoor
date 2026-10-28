@@ -93,7 +93,7 @@ function paintUsers() {
         ${u.isActive ? `<button class="btn btn-secondary btn-sm" type="button" data-adm="user-delete" data-id="${admE(u.id)}">${icon('trash', 14)} حذف</button>` : ''}
       </div></article>`).join('') || sdEmpty('users', 'کاربری پیدا نشد', 'عبارت جستجو را تغییر دهید یا کاربر جدید بسازید.');
 }
-function userFormHtml(u, drivers = []) {
+function userFormHtml(u, drivers = [], vehicles = [], devices = [], branches = []) {
   const role = u?.roleCode || 'gate';
   // v37.39.0 — مشخصات راننده (خودرو/پوز/تماس) همین‌جا گرفته می‌شود؛ برای ویرایش از رکورد متصل پر می‌شود
   const myDrv = (drivers || []).find((d) => d.id === u?.driverId);
@@ -102,23 +102,20 @@ function userFormHtml(u, drivers = []) {
     <label class="cust-field"><span>نام کاربری (انگلیسی) *</span><input name="username" required dir="ltr" maxlength="40" value="${admE(u?.username)}"></label>
     <label class="cust-field"><span>سمت سازمانی *</span><input name="position" required maxlength="120" value="${admE(u?.position)}"></label>
     <label class="cust-field"><span>نقش *</span><select name="roleCode">${Object.entries(ADM_ROLES).map(([k, v]) => `<option value="${k}" ${k === role ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
-    <div data-role-fields="store"><label class="cust-field cust-span2"><span>نام فروشگاه *</span><input name="storeName" maxlength="120" value="${admE(u?.storeName)}"></label>
-    <label class="cust-field"><span>شعبهٔ فروشگاه</span><input name="branchNo" inputmode="numeric" maxlength="2" placeholder="۱" value="${admE(u?.branchNo ?? 1)}"><small>شماره سفارش‌های این فروشگاه با کد B۴۱ شروع می‌شود (شعبهٔ ۲ B۴۲، شعبهٔ ۳ B۴۳، …)</small></label></div>
+    <div data-role-fields="store"><label class="cust-field cust-span2"><span>شعبهٔ فروشگاه *</span><select name="branchId"><option value="">انتخاب شعبهٔ تعریف‌شده</option>${branches.filter(x=>x.isActive).map(x=>`<option value="${admE(x.id)}" data-branch-no="${admE(x.branchNo)}" ${x.id===u?.branchId?'selected':''}>${admE(x.name)} — شعبه ${admE(fa(x.branchNo))}</option>`).join('')}</select><small>ابتدا شعبه را در «شعب فروشگاه» تعریف کنید. حساب‌های قدیمی تا زمان انتخاب دستی بدون تغییر باقی می‌مانند.</small></label></div>
     <div data-role-fields="driver"><input type="hidden" name="driverId" value="${admE(u?.driverId || '')}">
-    <label class="cust-field"><span>شماره تماس راننده *</span><input name="drvPhone" maxlength="30" inputmode="tel" dir="ltr" placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰" value="${admE(myDrv?.phone)}"></label>
-    <label class="cust-field"><span>نوع خودرو *</span><input name="drvVehicleType" maxlength="60" list="drvVehicleTypes" placeholder="مثلاً وانت" value="${admE(myDrv?.vehicleType)}"><datalist id="drvVehicleTypes"><option value="وانت"></option><option value="کامیون"></option><option value="کامیونت"></option><option value="موتورسیکلت"></option><option value="پژو"></option></datalist></label>
-    <label class="cust-field"><span>پلاک خودرو *</span><input name="drvPlate" maxlength="30" placeholder="مثلاً ۱۲ ب ۳۴۵ - ۶۷" value="${admE(myDrv?.plate ? formatDispatchVehiclePlate(myDrv.plate, '') : '')}"></label>
-    <label class="cust-field"><span>پایانه پوز</span><input name="drvPosTerminal" maxlength="60" dir="ltr" placeholder="مثلاً POS-01" value="${admE(myDrv?.posTerminal)}"></label>
-    <label class="cust-field"><span>نام بانک پوز</span><input name="drvPosBank" maxlength="60" list="drvPosBanks" placeholder="مثلاً بانک ملت" value="${admE(myDrv?.posBank)}"><datalist id="drvPosBanks">${BT_POS_BANKS.map((x) => `<option value="${admE(x)}"></option>`).join('')}</datalist></label>
-    <div class="cust-span2 adm-driver-hint">راننده با همین مشخصات ساخته می‌شود و در «کارتابل ترابری ← رانندگان» دیده می‌شود؛ خودرو و پوزش را بعداً از همان‌جا هم می‌توانید ویرایش کنید.</div></div>
+    <label class="cust-field"><span>شماره تماس راننده *</span><input name="drvPhone" maxlength="30" inputmode="tel" dir="ltr" value="${admE(myDrv?.phone)}"></label>
+    <label class="cust-field"><span>خودرو *</span><select name="vehicleId"><option value="">انتخاب خودروی تعریف‌شده</option>${vehicles.filter(x=>x.isActive).map(x=>`<option value="${admE(x.id)}" ${x.id===myDrv?.vehicleId?'selected':''}>${admE(x.vehicleType)} — ${admE(x.plate)}</option>`).join('')}</select></label>
+    <label class="cust-field"><span>دستگاه پوز *</span><select name="paymentDeviceId"><option value="">انتخاب دستگاه تعریف‌شده</option>${devices.filter(x=>x.isActive).map(x=>`<option value="${admE(x.id)}" ${x.id===myDrv?.paymentDeviceId?'selected':''}>${admE(x.title)} — ${admE(x.terminalNumber)} — ${admE(x.bank)}</option>`).join('')}</select></label>
+    <div class="cust-span2 adm-driver-hint">ابتدا خودرو و دستگاه پوز را جداگانه تعریف کنید؛ راننده و رانندهٔ پخش یک حساب در ترابری هستند. مشخصات قدیمی بدون حذف باقی می‌ماند و در ویرایش باید دستی انتخاب شود.</div></div>
     <label class="cust-field cust-span2"><span>${u ? 'رمز جدید (اختیاری)' : 'رمز عبور *'}</span><input name="password" type="password" autocomplete="new-password" ${u ? '' : 'required'} minlength="8" maxlength="120"></label>
     ${u ? `<label class="cust-field"><span>وضعیت</span><select name="isActive"><option value="true" ${u.isActive ? 'selected' : ''}>فعال</option><option value="false" ${!u.isActive ? 'selected' : ''}>غیرفعال</option></select></label>`
       : `<label class="cust-field cust-span2 adm-check"><input type="checkbox" name="mustChangePassword" checked> تغییر رمز در اولین ورود</label>`}
   </div>`, u ? 'ذخیره تغییرات' : 'ساخت کاربر');
 }
 async function openUserForm(u) {
-  const list = await api('/api/drivers').then((r) => r.drivers || []).catch(() => []);
-  openModal(u ? `ویرایش کاربر ${u.username}` : 'کاربر جدید', userFormHtml(u, list));
+  const [drivers, vehicles, devices, branches] = await Promise.all([api('/api/drivers'),api('/api/admin/transport-vehicles'),api('/api/admin/payment-devices'),api('/api/admin/store-branches')]);
+  openModal(u ? `ویرایش کاربر ${u.username}` : 'کاربر جدید', userFormHtml(u, drivers.drivers || [], vehicles.vehicles || [], devices.devices || [], branches.branches || []));
   admBindClose();
   const form = $('#admUserForm');
   // v37.38.0 — فیلدهای هر نقش فقط وقتی همان نقش انتخاب است دیده و لازم می‌شوند
@@ -131,14 +128,14 @@ async function openUserForm(u) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const b = Object.fromEntries(new FormData(e.target));
-    // v37.38.0 — خطای نقش از همین‌جا و با راهنمای مسیر درست داده می‌شود، نه پیام مبهم سرور
-    if (b.roleCode === 'driver' && !(String(b.drvPhone || '').trim() && String(b.drvVehicleType || '').trim() && String(b.drvPlate || '').trim())) { $('#admFormMsg').textContent = 'برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید؛ راننده با همین مشخصات ساخته می‌شود.'; return; }
-    if (b.roleCode === 'store' && !String(b.storeName || '').trim()) { $('#admFormMsg').textContent = 'برای نقش فروشگاه، نام فروشگاه را وارد کنید.'; return; }
+    if (b.roleCode === 'driver' && !(b.drvPhone && b.vehicleId && b.paymentDeviceId)) { $('#admFormMsg').textContent = 'شماره تماس، خودرو و دستگاه پوز تعریف‌شده را انتخاب کنید.'; return; }
+    if (b.roleCode === 'store' && !b.branchId) { $('#admFormMsg').textContent = 'شعبهٔ تعریف‌شده را انتخاب کنید.'; return; }
+    if (u?.roleCode === 'store' && b.roleCode === 'store' && Number(u.branchNo ?? 1) !== Number(e.target.elements.branchId.selectedOptions[0]?.dataset.branchNo)) { if (!confirm('شماره شعبه تغییر می‌کند. شماره سفارش‌های قبلی حفظ می‌شود، اما سفارش‌های جدید با پیشوند شعبهٔ جدید ثبت خواهند شد. ادامه می‌دهید؟')) return; b.confirmBranchChange = true; }
     if (!b.password) delete b.password;
     b.mustChangePassword = !!e.target.elements.mustChangePassword?.checked;
     if (b.isActive !== undefined) b.isActive = b.isActive === 'true';
-    if (b.roleCode !== 'store') { b.storeName = ''; b.branchNo = ''; }
-    if (b.roleCode !== 'driver') b.driverId = '';
+    if (b.roleCode !== 'store') delete b.branchId;
+    if (b.roleCode !== 'driver') { delete b.driverId; delete b.vehicleId; delete b.paymentDeviceId; delete b.drvPhone; }
     try {
       if (u) await api('/api/admin/users/' + u.id, { method: 'PUT', body: JSON.stringify(b) });
       else await api('/api/admin/users', { method: 'POST', body: JSON.stringify(b) });
@@ -176,7 +173,7 @@ async function renderDriversPage() {
       ? '<div id="transportDispatch"></div>'
       : tab === 'records'
         ? '<div id="drvRecords"></div>'
-        : admHead('truck', 'رانندگان', 'رانندگان هنگام ساخت «کاربر راننده» ساخته می‌شوند؛ این‌جا مشخصات خودرو و پایانهٔ پوز (با نام بانک) آن‌ها قابل ویرایش است.', adm.drivers.length,
+        : admHead('truck', 'رانندگان', 'رانندگان هنگام ساخت «کاربر راننده» ساخته می‌شوند؛ خودرو و پوز از حساب کاربری انتخاب می‌شوند. سوابق قدیمی حفظ شده‌اند.', adm.drivers.length,
             `${admSearchBox('admDrvSearch', 'جستجوی نام، تماس، پلاک یا بانک', adm.q)}`)
           + `<div id="admList" class="adm-list"></div></section>`);
   if (tab === 'drivers') {
@@ -198,7 +195,7 @@ function paintDrivers() {
       <div class="adm-cell"><small>پایانه پوز / بانک</small>${driverPosHtml(x)}</div>
       <div class="adm-cell adm-actions">${admActiveBadge(x.isActive)}
         ${adm.canManage?`<button class="btn btn-secondary btn-sm" type="button" data-adm="drv-records" data-id="${admE(x.id)}">${icon('receipt', 14)} سوابق</button>`:''}
-        ${adm.canEditDrivers?`<button class="btn btn-secondary btn-sm" type="button" data-adm="drv-edit" data-id="${admE(x.id)}">${icon('edit', 14)} ویرایش</button>`:''}
+        ${adm.canEditDrivers && !x.vehicleId && !x.paymentDeviceId?`<button class="btn btn-secondary btn-sm" type="button" data-adm="drv-edit" data-id="${admE(x.id)}">${icon('edit', 14)} ویرایش</button>`:''}
         ${adm.canManage?`<button class="btn btn-secondary btn-sm" type="button" data-adm="drv-delete" data-id="${admE(x.id)}">${icon('trash', 14)} حذف</button>`:''}
       </div></article>`).join('') || sdEmpty('truck', 'هنوز راننده‌ای ساخته نشده است', 'از «مدیریت ← کاربران ← کاربر جدید» با نقش «راننده» اولین راننده را بسازید؛ مشخصات خودرو و پوزش همان‌جا وارد می‌شود.');
 }
@@ -541,6 +538,21 @@ async function renderPaymentDevicesPage(){
 }
 function openPaymentDeviceForm(device){const d=device||{};const body=`<div class="fields"><label class="cust-field"><span>عنوان دستگاه *</span><input name="title" required maxlength="80" value="${admE(d.title||'')}"></label><label class="cust-field"><span>شماره پایانه *</span><input name="terminalNumber" required maxlength="40" value="${admE(d.terminalNumber||'')}" dir="ltr"></label><label class="cust-field"><span>بانک مقصد *</span><input name="bank" required maxlength="80" value="${admE(d.bank||'')}"></label><label class="cust-field"><span>مدل دستگاه *</span><input name="model" required maxlength="80" value="${admE(d.model||'')}"></label><label class="cust-field"><span>نوع اتصال</span><select name="connection"><option value="wired" ${d.connection!=='wireless'?'selected':''}>سیمی</option><option value="wireless" ${d.connection==='wireless'?'selected':''}>بی‌سیم</option></select></label><label class="cust-field" id="posSimWrap" ${d.connection==='wireless'?'':'hidden'}><span>شماره سیم‌کارت *</span><input name="simNumber" maxlength="20" value="${admE(d.simNumber||'')}" dir="ltr" placeholder="09…"></label>${device?`<label class="adm-check"><input type="checkbox" name="isActive" ${d.isActive?'checked':''}> دستگاه فعال</label>`:''}</div>`;openModal(device?'ویرایش دستگاه پوز':'تعریف دستگاه پوز',admModalForm('posDeviceForm',body,device?'ذخیره تغییرات':'ثبت دستگاه'));admBindClose();const form=$('#posDeviceForm');form.querySelector('[name=connection]').onchange=e=>{form.querySelector('#posSimWrap').hidden=e.target.value!=='wireless'};form.onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(form));b.isActive=form.querySelector('[name=isActive]')?.checked??true;try{await api('/api/admin/payment-devices'+(device?'/'+device.id:''),{method:device?'PUT':'POST',body:JSON.stringify(b)});toast('دستگاه ذخیره شد.');closeModal();renderPaymentDevicesPage()}catch(err){$('#admFormMsg').textContent=err.message}};}
 
+/* دارایی‌های ترابری و شعب، مستقل از حساب‌های کاربران */
+async function renderResourcePage(kind){
+ const vehicle=kind==='vehicle', endpoint=vehicle?'transport-vehicles':'store-branches';
+ const data=await api('/api/admin/'+endpoint); const rows=vehicle?data.vehicles:data.branches;
+ adm.resources=rows; adm.resourceKind=kind;
+ $('#content').innerHTML=admHead(vehicle?'truck':'store',vehicle?'خودروهای ترابری':'شعب فروشگاه',vehicle?'خودروها را جداگانه تعریف کنید؛ خودروی باسکول از این فهرست مستقل است.':'شمارهٔ شعبه مبنای شماره‌گذاری سفارش‌های فروشگاه است.',rows.length,`<button class="btn btn-primary" data-adm="resource-new">＋ افزودن</button>`)+`<div class="notice">${vehicle?'پس از تعریف، خودرو را در حساب راننده انتخاب کنید.':'پس از تعریف، شعبه را در حساب فروشگاه انتخاب کنید. حساب‌های قدیمی خودکار ادغام نمی‌شوند.'}</div><div class="adm-list">${rows.map(x=>`<article class="adm-row"><div class="adm-cell"><b>${admE(vehicle?x.vehicleType:x.name)}</b><span>${admE(vehicle?x.plate:'شعبه '+fa(x.branchNo))}</span></div><div class="adm-cell adm-actions">${admActiveBadge(x.isActive)}<button class="btn btn-secondary btn-sm" data-adm="resource-edit" data-id="${admE(x.id)}">ویرایش</button></div></article>`).join('')||'<div class="empty">هنوز موردی تعریف نشده است.</div>'}</div></section>`;
+ bindAdm(endpoint);
+}
+function openResourceForm(item){
+ const vehicle=adm.resourceKind==='vehicle', x=item||{};
+ const fields=vehicle?`<label class="cust-field"><span>نوع خودرو *</span><input name="vehicleType" required maxlength="60" value="${admE(x.vehicleType)}" placeholder="مثلاً وانت"></label><label class="cust-field"><span>پلاک *</span><input name="plate" required maxlength="30" value="${admE(x.plate)}" placeholder="۱۲ ب ۳۴۵ - ۶۷"></label>`:`<label class="cust-field"><span>نام شعبه *</span><input name="name" required maxlength="120" value="${admE(x.name)}"></label><label class="cust-field"><span>شماره شعبه (۱ تا ۵۹) *</span><input name="branchNo" type="number" min="1" max="59" required value="${admE(x.branchNo)}"><small>برای حساب متصل، شماره شعبه دیگر قابل تغییر نیست.</small></label>`;
+ openModal(item?'ویرایش':'تعریف مورد جدید',admModalForm('resourceForm',`<div class="cust-form-grid">${fields}${item?`<label class="adm-check"><input name="isActive" type="checkbox" ${x.isActive?'checked':''}> فعال</label>`:''}</div>`,item?'ذخیره':'ثبت'));
+ admBindClose(); const form=$('#resourceForm');form.onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(form));if(item)b.isActive=!!form.elements.isActive.checked;const path=vehicle?'transport-vehicles':'store-branches';try{await api('/api/admin/'+path+(item?'/'+encodeURIComponent(item.id):''),{method:item?'PUT':'POST',body:JSON.stringify(b)});closeModal();toast('اطلاعات ثبت شد.');await renderResourcePage(adm.resourceKind)}catch(err){$('#admFormMsg').textContent=err.message}};
+}
+
 /* ---------- اتصال رویدادها ---------- */
 function admNorm(v) { return en(String(v || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
 function bindAdm(page) {
@@ -549,6 +561,8 @@ function bindAdm(page) {
     const el = e.target.closest('[data-adm]'); if (!el) return;
     const a = el.dataset.adm, id = el.dataset.id;
     const find = (arr) => arr.find((x) => x.id === id);
+    if (a === 'resource-new') return openResourceForm(null);
+    if (a === 'resource-edit') return openResourceForm(find(adm.resources));
     if (a === 'pos-new') return openPaymentDeviceForm(null);
     if (a === 'pos-edit') return openPaymentDeviceForm(adm.paymentDevices.find(x=>x.id===id));
     if (a === 'pos-toggle') { const d=adm.paymentDevices.find(x=>x.id===id);if(!d)return;try{await api('/api/admin/payment-devices/'+id,{method:'PUT',body:JSON.stringify({...d,isActive:el.dataset.active==='true'})});toast('وضعیت دستگاه به‌روزرسانی شد.');return renderPaymentDevicesPage()}catch(err){return toast(err.message)} }
