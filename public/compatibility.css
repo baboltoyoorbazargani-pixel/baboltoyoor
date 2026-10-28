@@ -812,3 +812,17 @@
 #futureOrderFormV25 .jalali-field .date-today-btn{flex:0 0 auto}
 .wh38-delivery-date{white-space:normal;overflow-wrap:anywhere}
 #appView #content .wh38-sheet-delivery-date{margin-top:6px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+
+/* ثبت بیعانه و خلاصهٔ مالی آن در فروش */
+.deposit-entry{margin:12px 0;padding:12px;border:1px solid var(--bt-line);border-radius:10px;background:var(--bt-panel-2)}
+.deposit-hint{display:inline-block;margin-inline-start:8px;font-size:12px;color:var(--bt-muted);line-height:1.7}
+.deposit-fields:not([hidden]){display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:9px;margin-top:10px}
+.deposit-fields label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;font-weight:700}
+.deposit-fields label[hidden]{display:none!important}
+.deposit-fields input,.deposit-fields select{box-sizing:border-box;width:100%;min-width:0}
+.deposit-summary{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:8px 0;color:var(--bt-ink);font-size:12px;overflow-wrap:anywhere}
+.deposit-summary strong{color:#a44716}
+.deposit-refund-panel{grid-column:1/-1;min-width:0}
+.deposit-refund-row{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--bt-line)}
+.deposit-dispatch-message{grid-column:1/2!important;grid-row:1!important;font-size:11px;line-height:1.5}
+.deposit-excess:not([hidden]){display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#9a3b13;font-size:12px}

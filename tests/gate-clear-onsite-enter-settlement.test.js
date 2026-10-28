@@ -76,7 +76,7 @@ test('settlement amounts default to the invoice total, then to the remaining bal
   // ردیف خالی هنگام اتصال، ماندهٔ فاکتور (برای ردیف اول: کل مبلغ) را می‌گیرد
   assert.match(app,/function stlPayAutoFill\(row\)/);
   assert.match(app,/row\.dataset\.autopay='1'/);
-  assert.match(app,/function stlPayBalance\(exceptRow\)[\s\S]*?stlTotal\(\)-paid/);
+  assert.match(app,/function stlPayBalance\(exceptRow\)[\s\S]*?stlDue\(\)-paid/);
   assert.match(bind,/if\(!amt\.value\.trim\(\)\)stlPayAutoFill\(r\)/);
   // انتخاب نوع پرداخت، مبلغ را با ماندهٔ فاکتور پر می‌کند
   assert.match(bind,/\[data-paytype\]'\)\.onchange=\(\)=>\{makeDetail\(r\);stlPayAutoFill\(r\);upd\(\);\}/);
@@ -87,6 +87,6 @@ test('settlement amounts default to the invoice total, then to the remaining bal
   // تغییر مبلغ فاکتور (قیمت/تخفیف/اضافات) هم ردیف‌های خودکار را هم‌گام می‌کند
   const recalc=slice(app,'function stlRecalc()','function stlUpdateSigState()');
   assert.match(recalc,/stlRefreshAutoPayments\(\)/);
-  // اعتبارسنجی نهایی بدون تغییر مانده است: جمع روش‌ها باید دقیقاً برابر مبلغ فاکتور باشد
-  assert.match(app,/if\(paid!==stlTotal\(\)\) errs\.push\('جمع روش‌های تسویه باید دقیقاً برابر مبلغ نهایی فاکتور باشد\.'\)/);
+  // جمع روش‌ها باید با ماندهٔ پس از کسر بیعانه برابر باشد.
+  assert.match(app,/if\(paid!==Math\.max\(0,stlDue\(\)\)\) errs\.push/);
 });

@@ -215,6 +215,7 @@ function renderSalesRemoteV32(orders){
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
       <div class="sd-note-box sales-phone-notes-v40"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>
+      ${depositEntryHtml()}
       <div class="sales-form-bottom-v25"><span class="form-helper-v32">واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</span><button type="submit" class="btn btn-primary btn-lg">${icon('send',18)} ثبت و ارسال به انبار</button></div>
     </form>
   </div><section class="sales-panel-v25 phone-queue-panel-v40"><div class="sales-section-title-v25"><div><span class="eyebrow">REMOTE ORDERS</span><h2>سفارش‌های تلفنی در روند</h2><p>فقط سفارش‌های غیرحضوری؛ برای ریز اقلام و گردش انبار، جزئیات را باز کنید.</p></div><div class="sales-section-count"><strong>${qty(phoneQueue.length)}</strong><span>سفارش</span></div></div><div class="phone-queue-list-v40">${queueHtml}</div></section></section>`;
@@ -345,6 +346,7 @@ function futureOrderRowsV25(orders){
         <div class="fx-row-info"><div class="fx-row-badges"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${sdTypeBadge(o)}</div><h3>${esc(storeAwareOrderName(o))}</h3><p>${esc(storeAwareOrderPhone(o))}</p></div>
         <div class="fx-row-status">${badge(o.status)}</div>
       </div>
+      ${depositSummaryHtml(o.deposit)}
       <div class="fx-row-meta"><span><b>تاریخ تحویل:</b> ${o.deliveryDate?esc(dateLabel(o.deliveryDate)):'ثبت نشده'}</span><span><b>مقصد:</b> ${esc(o.dispatchPlace||'ثبت نشده')}</span><span><b>اقلام:</b> ${qty(activeItemsOf(o).length)} قلم</span><span><b>ثبت:</b> ${formatDateTime24(o.createdAt)}</div>
       <div class="fx-row-actions">${actions}</div>
     </article>`;
@@ -372,6 +374,7 @@ function futureFormV38(orders){
             <small>واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</small>
           </div>
           <div class="field future-note-v40 fx-note"><label>یادداشت و توضیحات</label><textarea name="notes" maxlength="1000" rows="1" placeholder="هماهنگی، بسته‌بندی، محدودیت تحویل یا نکته مهم..."></textarea></div>
+          ${depositEntryHtml()}
           <div class="fx-foot fx-foot-compact">
             <button type="submit" class="btn btn-primary">${icon('send',16)} ثبت برنامه ارسال</button>
             <button type="reset" class="btn btn-secondary">${icon('refresh',15)} پاک کردن فرم</button>
@@ -382,7 +385,7 @@ function futureFormV38(orders){
   </section>
   <section class="fx-card" style="align-self:start"><div class="fx-card-head"><span class="fx-ico" style="background:var(--purple-bg);color:var(--purple)">${icon('calendar',16)}</span><h3>سفارش‌های ثبت‌شده</h3><span class="fx-list-count">${qty(future.length)} مورد</span></div>
     <div class="fx-card-body"><div id="futureOrderListV25" class="fx-list-grid">${futureOrderRowsV25(future)}</div></div>
-  </section></div>`;
+  </section><section class="fx-card deposit-refund-panel"><div class="fx-card-head"><h3>استرداد بیعانه سفارش‌های لغوشده</h3></div><div class="fx-card-body" id="depositRefundList">در حال دریافت…</div></section></div>`;
 }
 window.renderSalesFutureV25=function(orders){ return futureFormV38(orders); };
 function renderSalesDeliveryCardV38(o, finalized = false) {
@@ -532,6 +535,7 @@ function paintSalesPaneV29(tab,data){
     pane.innerHTML=renderSalesDeliveryV38(data.dispatchDeliveries||{});
   }else if(tab==='future'){
     const list=pane.querySelector('#futureOrderListV25'); if(list)list.innerHTML=futureOrderRowsV25(salesFutureOrders(data.orders||[]));
+    void refreshDepositRefunds();
   }
 }
 
@@ -1336,7 +1340,7 @@ function invoiceHtml(o,paySel){
   <div class="inv38-rule"></div>
   <div class="inv38-cust"><div><span>مشتری</span><b>${customerName}</b></div><div><span>شماره تماس</span><b class="inv38-phone" dir="ltr">${customerPhone}</b></div><div><span>وضعیت</span><b>تسویه نهایی و آماده خروج</b></div></div>
   <p class="inv38-scroll-hint">برای مشاهده همه ستون‌های اقلام، جدول را افقی پیمایش کنید.</p><div class="inv38-table-scroll" role="region" aria-label="اقلام فاکتور؛ برای مشاهده همه ستون‌ها افقی پیمایش کنید" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th><th>فی</th><th>مبلغ</th></tr></thead><tbody>${items.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.product?.name||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td><td>${money(i.unitPrice)}</td><td>${money(i.finalAmount)}</td></tr>`).join('')}</tbody></table></div>
-  <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
+  <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${p.deposit?`<div><span>بیعانه دریافت‌شده (${esc(({CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت'})[p.deposit?.type]||'')})${p.deposit?.reference?` • پیگیری ${esc(p.deposit.reference)}`:''}</span><b>${money(p.deposit.amount)}</b></div>${p.deposit.refundedAmount?`<div><span>استرداد دستی بیعانه</span><b>${money(p.deposit.refundedAmount)}</b></div><div><span>بیعانه لحاظ‌شده</span><b>${money(p.depositAmount)}</b></div>`:''}<div><span>مانده پس از کسر بیعانه</span><b>${money(p.amountDue)}</b></div>`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
   <div class="inv38-verify">
     <div class="inv38-verify-box"><div class="inv38-verify-title">تأیید مشتری</div>
       <div class="inv38-verify-grid">
