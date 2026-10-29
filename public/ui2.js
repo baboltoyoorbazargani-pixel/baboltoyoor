@@ -108,7 +108,7 @@ async function openOrder(visitId){
       </div>
       <div class="sd-oe-layout">
         <section class="sd-panel">
-          <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع انتخاب کنید؛ پس از مقدار، Enter ردیف بعدی را باز می‌کند. ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div><span class="sd-chip">کیلوگرم / بسته / عدد / کارتن</span></div>
+          <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع دو رقمی انتخاب کنید؛ توضیحات هر ردیف جداگانه ثبت می‌شود.</p></div><span class="sd-chip">کیلوگرم / بسته / عدد / کارتن</span></div>
           <div class="sd-lines-body"><div id="orderLines" class="sd-lines"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-secondary" data-action="add-line">${icon('plus',16)} افزودن ردیف محصول</button><span style="font-size:11.5px;color:var(--muted)">برای حذف هر ردیف از آیکن سطل استفاده کنید.</span></div>
           </div>
@@ -211,7 +211,7 @@ function renderSalesRemoteV32(orders){
         <div class="field contact-field-v41"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
         <div class="field sales-remote-place-v40"><label>محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
       </div>
-      <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع دو رقمی انتخاب کنید؛ توضیحات هر ردیف جداگانه ثبت می‌شود.</p></div></div>
+      <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>پس از انتخاب محصول و وارد کردن مقدار، کلید Insert ردیف بعدی را باز می‌کند. ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
       <div class="sd-note-box sales-phone-notes-v40"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>

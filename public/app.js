@@ -1768,18 +1768,24 @@ function bindOperationLines(prefix, draftKey){
     const idx=Number(inp.dataset.opDesc.split('-').pop()); app[draftKey][idx].description=inp.value;
   }));
 }
-// در سفارش تلفنی Enter هرگز سفارش را ارسال نمی‌کند. بعد از مقدارِ معتبر،
-// ردیف موجود بعدی یا یک ردیف تازه برای انتخاب محصول در دسترس قرار می‌گیرد.
+// در سفارش تلفنی Enter سفارش را ارسال نمی‌کند؛ Insert بعد از مقدار معتبر
+// ردیف موجود بعدی یا ردیف تازه را برای انتخاب محصول در دسترس قرار می‌دهد.
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || e.isComposing || !(e.target instanceof Element)) return;
+  if (e.isComposing || !(e.target instanceof Element)) return;
   const input = e.target, form = input.closest('#phoneOrderFormV25');
-  if (!form || input.tagName === 'TEXTAREA') return; // خط جدید یادداشت حفظ شود
-  if (input.tagName === 'BUTTON' && input.type !== 'submit') return;
-  if (!['INPUT', 'SELECT', 'BUTTON'].includes(input.tagName)) return;
-  e.preventDefault();
-  if (e.repeat) return;
+  if (!form) return;
+  if (e.key === 'Enter') {
+    if (input.tagName === 'TEXTAREA') return; // خط جدید یادداشت حفظ شود
+    if (input.tagName === 'BUTTON' && input.type !== 'submit') return;
+    if (['INPUT', 'SELECT', 'BUTTON'].includes(input.tagName)) e.preventDefault();
+    return;
+  }
+  // Ctrl+Insert و Shift+Insert میانبرهای معمول کپی و جای‌گذاری هستند.
+  if (e.key !== 'Insert' || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
   const raw = input.dataset.opQty;
   if (raw == null || !/^phone-\d+$/.test(raw)) return;
+  e.preventDefault();
+  if (e.repeat) return;
   const index = Number(raw.slice('phone-'.length));
   const rows = app.phoneDraft || [];
   const row = rows[index];

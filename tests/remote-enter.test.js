@@ -7,10 +7,10 @@ function harness(rows){
  class Element{constructor(tag,dataset={},inside=true,type=''){this.tagName=tag;this.dataset=dataset;this.type=type;this.inside=inside;}closest(){return this.inside?form:null;}}
  const context={Element,document:{addEventListener:(type,fn)=>{assert.equal(type,'keydown');handler=fn;}},app:{phoneDraft:rows},toast:m=>messages.push(m),n:v=>Number(v)||0,defaultOrderLine:()=>({productId:'',requestedQty:''}),renderOrderLineArea:()=>renders++};
  vm.createContext(context);vm.runInContext(source,context);
- const press=(target,extra={})=>{const event={key:'Enter',isComposing:false,repeat:false,target,prevented:false,preventDefault(){this.prevented=true;},...extra};handler(event);return event;};
+ const press=(target,extra={})=>{const event={key:'Insert',isComposing:false,repeat:false,target,prevented:false,preventDefault(){this.prevented=true;},...extra};handler(event);return event;};
  return {press,Element,rows,messages,get focused(){return focused;},get renders(){return renders;}};
 }
-test('Enter on quantity adds exactly one line, focuses the next product and reuses an existing row',()=>{
+test('Insert on quantity adds exactly one line, focuses the next product and reuses an existing row',()=>{
  const h=harness([{productId:'p01',requestedQty:'2'}]);let ev=h.press(new h.Element('INPUT',{opQty:'phone-0'}));assert(ev.prevented);assert.equal(h.rows.length,2);assert.equal(h.focused,1);assert.equal(h.renders,1);
  ev=h.press(new h.Element('INPUT',{opQty:'phone-0'}));assert(ev.prevented);assert.equal(h.rows.length,2);assert.equal(h.focused,1);assert.equal(h.renders,1);
 });
@@ -21,6 +21,13 @@ test('missing product, invalid quantity, repeating key and 100-line limit do not
 });
 test('Enter cannot submit from other fields or the submit button, but notes keep newlines and other forms are untouched',()=>{
  const h=harness([{productId:'p01',requestedQty:'1'}]);
- for(const el of [new h.Element('INPUT',{}),new h.Element('SELECT',{}),new h.Element('BUTTON',{},true,'submit')])assert(h.press(el).prevented);
- assert(!h.press(new h.Element('TEXTAREA')).prevented);assert(!h.press(new h.Element('BUTTON',{},true,'button')).prevented);assert(!h.press(new h.Element('INPUT',{},false)).prevented);assert(!h.press(new h.Element('INPUT'),{isComposing:true}).prevented);assert.equal(h.rows.length,1);
+ for(const el of [new h.Element('INPUT',{}),new h.Element('SELECT',{}),new h.Element('BUTTON',{},true,'submit')])assert(h.press(el,{key:'Enter'}).prevented);
+ assert(!h.press(new h.Element('TEXTAREA'),{key:'Enter'}).prevented);assert(!h.press(new h.Element('BUTTON',{},true,'button'),{key:'Enter'}).prevented);assert(!h.press(new h.Element('INPUT',{},false),{key:'Enter'}).prevented);assert(!h.press(new h.Element('INPUT'),{isComposing:true}).prevented);assert.equal(h.rows.length,1);
+});
+
+test('Enter on quantity neither adds a row nor submits, and modified Insert preserves clipboard shortcuts',()=>{
+ const h=harness([{productId:'p01',requestedQty:'2'}]);const q=new h.Element('INPUT',{opQty:'phone-0'});
+ assert(h.press(q,{key:'Enter'}).prevented);assert.equal(h.rows.length,1);
+ for(const mod of ['ctrlKey','shiftKey','altKey','metaKey'])assert(!h.press(q,{[mod]:true}).prevented);
+ assert(!h.press(new h.Element('INPUT',{})).prevented);assert(!h.press(new h.Element('TEXTAREA')).prevented);assert(!h.press(new h.Element('INPUT',{opQty:'phone-0'},false)).prevented);assert.equal(h.rows.length,1);
 });
