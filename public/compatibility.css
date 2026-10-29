@@ -831,3 +831,47 @@
 .sales-live-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}.sales-live-head h2,.sales-live-head h3{margin:0}.sales-live-head p{margin:5px 0 0;color:#6b7280;font-size:13px}
 .sales-live-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:22px}.sales-live-metrics>div{background:#f9f6f6;border:1px solid #f0e7e8;border-radius:12px;padding:14px;min-width:0}.sales-live-metrics small,.sales-live-metrics strong{display:block}.sales-live-metrics small{color:#69717d;margin-bottom:8px}.sales-live-metrics strong{font-size:20px;overflow-wrap:anywhere}
 .sales-history-list{display:grid;gap:8px}.sales-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid #eee4e5;border-radius:10px}.sales-history-row small,.sales-history-timeline small{display:block;color:#757b85;margin-top:4px}.sales-history-row>div{min-width:0;overflow-wrap:anywhere}.sales-history-search{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.sales-history-search input{flex:1 1 220px;min-width:0;padding:10px;border:1px solid #d7d7da;border-radius:8px}.sales-history-pages{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:15px}.sales-history-timeline{padding-inline-start:24px;display:grid;gap:12px}.sales-history-detail h3{margin:20px 0 10px}@media(max-width:480px){.sales-live,.sales-history-panel{padding:14px}.sales-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.sales-live-metrics strong{font-size:16px}}
+
+/* Desktop: fit order cards to the actual workspace, not a fixed monitor width.
+   The sidebar changes width at several breakpoints, so wrapping is driven by
+   available space rather than by the viewport alone. */
+#appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-card.sd-store-card-v42,
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .whsin22-card{
+  min-width:0;max-width:100%;box-sizing:border-box;flex-wrap:wrap;row-gap:8px;
+}
+#appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-actions,
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .whsin22-actions{
+  flex-wrap:wrap;max-width:100%;min-width:0;
+}
+#appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-actions .btn,
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .whsin22-actions .btn{
+  height:auto;min-height:32px;white-space:normal;text-align:center;line-height:1.5;
+}
+#appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-card .sd-store-identity-v42 h3,
+#appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-customer,
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .whsin22-store,
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .whsin22-customer{
+  max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
+}
+
+/* The four incoming-order facts can shrink into two columns on narrow cards. */
+#appView #content .wh38-incoming-summary-scroll{container:incoming-summary / inline-size}
+#appView #content .wh38-incoming-summary{min-width:0!important}
+#appView #content .wh38-incoming-cell>span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;line-height:1.6!important}
+@container incoming-summary (max-width:680px){
+  #appView #content .wh38-incoming-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* Audit trail has four columns; let text wrap in its half-width admin panel. */
+#appView #content .table-wrap table.audit-table{min-width:0;table-layout:fixed}
+#appView #content .audit-table th,#appView #content .audit-table td{padding:8px;overflow-wrap:anywhere}
+
+/* On short screens the sticky header would permanently take working space. */
+@media(max-height:750px){
+  #appView .workspace-header{position:static!important;padding-block:8px!important;min-height:0!important}
+  #appView .content{padding-top:14px!important;padding-bottom:28px!important}
+}
+
+/* A wide viewport can still have a narrow service pane beside the rail. */
+#appView #content .wh38-prep-item.sr318-row{flex-wrap:wrap!important}
+#appView #content .sr318-row>.sr318-ops{flex-wrap:wrap!important;max-width:100%!important;min-width:0!important}
