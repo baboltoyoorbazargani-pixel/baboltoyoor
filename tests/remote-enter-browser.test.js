@@ -13,18 +13,27 @@ test('مرورگر: Insert در سفارش غیرحضوری قلم بعدی را
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(()=>go('sales','remote'));const form=page.locator('#phoneOrderFormV25');await form.waitFor();
   await form.locator('[name=name]').fill('مشتری تست');await form.locator('[name=name]').press('Enter');await form.locator('[name=phone]').fill('09121112233');await form.locator('[name=phone]').press('Enter');await form.locator('[name=dispatchPlace]').fill('بابل');await form.locator('[name=dispatchPlace]').press('Enter');
-  const qty0=form.locator('[data-op-qty="phone-0"]');await qty0.fill('2');await qty0.press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),1,'no new line without selected product');
+  const qty0=form.locator('[data-op-qty="phone-0"]');
+  // میانبر حتی در ردیف ناقص باید مانند دکمه، ردیف تازه بسازد.
+  await qty0.fill('2');await qty0.press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');
+  await form.locator('[type=submit]').click();await page.waitForTimeout(150);assert.equal(writes.length,0,'partial row must not be silently dropped');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-0');
+  await form.locator('[data-action="op-remove-line"][data-index="1"]').click();
   const search0=form.locator('[data-op-product-search="phone-0"]');await search0.fill('01');await form.locator('[data-op-suggest="phone-0"] button').first().waitFor();await search0.press('ArrowDown');await search0.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opQty),'phone-0');
-  await qty0.fill('');await qty0.press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),1,'no new line with empty quantity');
   await qty0.fill('۲');await form.locator('[data-op-unit="phone-0"]').selectOption({label:'بسته'});await form.locator('[data-op-desc="phone-0"]').fill('ردیف نخست');await form.locator('[data-op-desc="phone-0"]').press('Enter');
   await qty0.press('Enter');assert.equal(await form.locator('[data-op-product-search]').count(),1,'Enter does not add a row');assert.equal(writes.length,0);
-  await qty0.press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');
+  // فوکوس روی توضیح، مقدار، واحد، دکمه یا فیلد دیگر نباید میانبر را غیرفعال کند.
+  await form.locator('[data-op-desc="phone-0"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');
   assert.equal(await form.locator('[data-op-qty="phone-0"]').inputValue(),'۲');assert.equal(await form.locator('[data-op-unit="phone-0"]').inputValue(),'بسته');assert.equal(await form.locator('[data-op-desc="phone-0"]').inputValue(),'ردیف نخست');
-  await form.locator('[data-op-qty="phone-0"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2,'reusing existing next row');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');
+  // روی ردیف قدیمی هم باید ردیف جدید بسازد، نه صرفاً فوکوس را جابه‌جا کند.
+  await form.locator('[data-op-qty="phone-0"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-2');
+  await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
   const search1=form.locator('[data-op-product-search="phone-1"]');await search1.fill('01');await form.locator('[data-op-suggest="phone-1"] button').first().waitFor();await search1.press('ArrowDown');await search1.press('Enter');await form.locator('[data-op-qty="phone-1"]').fill('3');
-  await form.locator('[data-op-qty="phone-1"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-2');
-  await form.locator('[data-action="op-remove-line"][data-index="2"]').click();assert.equal(await form.locator('[data-op-product-search]').count(),2);
+  await form.locator('[data-op-unit="phone-1"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-2');
+  await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
   await form.locator('[data-action="phone-add-line"]').click();assert.equal(await form.locator('[data-op-product-search]').count(),3,'manual add remains available');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
+  await form.locator('[name=dispatchPlace]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3,'Insert works elsewhere inside form');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
+  await form.locator('[data-op-qty="phone-1"]').focus();const cdp=await ctx.newCDPSession(page);await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Insert',code:'Numpad0',windowsVirtualKeyCode:45});await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Insert',code:'Numpad0',windowsVirtualKeyCode:45});assert.equal(await form.locator('[data-op-product-search]').count(),3,'numpad Insert with Num Lock off');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();await cdp.detach();
+  await form.locator('[data-op-qty="phone-1"]').press('Control+Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2,'clipboard shortcuts are preserved');
   await form.locator('[data-deposit-toggle]').click();await form.locator('[data-deposit-amount]').fill('1000');await form.locator('[data-deposit-amount]').press('Enter');
   const notes=form.locator('[name=notes]');await notes.fill('سطر اول');await notes.press('End');await notes.press('Enter');await notes.type('سطر دوم');assert.equal(await notes.inputValue(),'سطر اول\nسطر دوم');
   await form.locator('[type=submit]').focus();await page.keyboard.press('Enter');await page.waitForTimeout(200);assert.equal(writes.length,0,'Enter must not send any order, including when submit is focused');

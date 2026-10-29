@@ -1768,37 +1768,36 @@ function bindOperationLines(prefix, draftKey){
     const idx=Number(inp.dataset.opDesc.split('-').pop()); app[draftKey][idx].description=inp.value;
   }));
 }
-// در سفارش تلفنی Enter سفارش را ارسال نمی‌کند؛ Insert بعد از مقدار معتبر
-// ردیف موجود بعدی یا ردیف تازه را برای انتخاب محصول در دسترس قرار می‌دهد.
+// یک مسیر مشترک برای دکمه و میانبر؛ داده‌های ردیف‌های پیشین حفظ می‌شوند.
+function addPhoneOrderLine(form, focusProduct = false){
+  const rows = app.phoneDraft || (app.phoneDraft = [defaultOrderLine()]);
+  if (rows.length >= 100) { toast('حداکثر ۱۰۰ قلم در هر سفارش مجاز است.'); return; }
+  const index = rows.length;
+  rows.push(defaultOrderLine());
+  renderOrderLineArea('phone','phoneDraft');
+  if (focusProduct) {
+    const next = form?.querySelector(`[data-op-product-search="phone-${index}"]`);
+    if (next) { next.focus(); next.scrollIntoView?.({block:'nearest'}); }
+  }
+}
+// در سفارش تلفنی Enter ارسال نمی‌کند؛ Insert در خود فرم قلم تازه می‌افزاید.
 document.addEventListener('keydown', e => {
   if (e.isComposing || !(e.target instanceof Element)) return;
   const input = e.target, form = input.closest('#phoneOrderFormV25');
   if (!form) return;
   if (e.key === 'Enter') {
-    if (input.tagName === 'TEXTAREA') return; // خط جدید یادداشت حفظ شود
+    if (input.tagName === 'TEXTAREA') return;
     if (input.tagName === 'BUTTON' && input.type !== 'submit') return;
     if (['INPUT', 'SELECT', 'BUTTON'].includes(input.tagName)) e.preventDefault();
     return;
   }
-  // Ctrl+Insert و Shift+Insert میانبرهای معمول کپی و جای‌گذاری هستند.
-  if (e.key !== 'Insert' || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
-  const raw = input.dataset.opQty;
-  if (raw == null || !/^phone-\d+$/.test(raw)) return;
+  // Insert فیزیکی، Insert صفحه‌کلید عددی با Num Lock خاموش و مرورگرهای قدیمی؛
+  // عدد صفر با Num Lock روشن و میانبرهای کپی/چسباندن نباید تغییر کنند.
+  const isInsert = e.key === 'Insert' || e.code === 'Insert' || (e.keyCode === 45 && e.key !== '0');
+  if (!isInsert || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || input.tagName === 'TEXTAREA') return;
   e.preventDefault();
-  if (e.repeat) return;
-  const index = Number(raw.slice('phone-'.length));
-  const rows = app.phoneDraft || [];
-  const row = rows[index];
-  if (!row?.productId) { toast('ابتدا محصول این ردیف را انتخاب کنید.'); return; }
-  if (!(n(row.requestedQty) > 0)) { toast('مقدار معتبر برای این ردیف وارد کنید.'); return; }
-  if (index === rows.length - 1) {
-    if (rows.length >= 100) { toast('حداکثر ۱۰۰ قلم در هر سفارش مجاز است.'); return; }
-    rows.push(defaultOrderLine());
-    renderOrderLineArea('phone','phoneDraft');
-  }
-  const next = form.querySelector(`[data-op-product-search="phone-${index + 1}"]`);
-  if (next) { next.focus(); next.select?.(); next.scrollIntoView?.({block:'nearest'}); }
-});
+  if (!e.repeat) addPhoneOrderLine(form, true);
+}, true);
 // v37.6.0 — ناوبری Enter در فرم سفارش فروشگاه: محصول → مقدار → واحد → توضیح → ردیف جدید
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
@@ -2270,7 +2269,14 @@ async function refreshDepositRefunds(){const host=document.getElementById('depos
 async function markDepositRefunded(id){const reference=prompt('پس از استرداد واقعی وجه، شماره پیگیری یا توضیح استرداد دستی را وارد کنید:');if(reference===null)return;if(!reference.trim())return toast('شماره پیگیری یا توضیح استرداد الزامی است.');try{await api('/api/orders/'+encodeURIComponent(id)+'/deposit-refund',{method:'POST',body:JSON.stringify({reference})});toast('استرداد دستی ثبت شد.');await refreshDepositRefunds();}catch(e){toast(e.message);}}
 
 async function submitPhoneOrderV25(form){
-  const items=(app.phoneDraft||[]).filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
+  const rows=app.phoneDraft||[];
+  const incomplete=rows.findIndex(x=>(x.productId || String(x.productLabel||'').trim() || String(x.requestedQty??'').trim() || String(x.description||'').trim()) && (!x.productId || !(n(x.requestedQty)>0)));
+  if(incomplete>=0){
+    const field=rows[incomplete].productId?'op-qty':'op-product-search';
+    form.querySelector(`[data-${field}="phone-${incomplete}"]`)?.focus();
+    return toast('محصول و مقدار معتبر ردیف '+fa(String(incomplete+1))+' را تکمیل کنید یا آن را حذف کنید.');
+  }
+  const items=rows.filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
   if(!items.length)return toast('حداقل یک محصول معتبر برای سفارش تلفنی وارد کنید.');
   const f=Object.fromEntries(new FormData(form));
   try{
@@ -2875,9 +2881,7 @@ async function salesV29ClickHandler(e){
 
 
     if(a==='phone-add-line'){
-      app.phoneDraft=app.phoneDraft||[defaultOrderLine()];
-      app.phoneDraft.push(defaultOrderLine());
-      renderOrderLineArea('phone','phoneDraft');
+      addPhoneOrderLine(el.closest('#phoneOrderFormV25'));
       return;
     }
     if(a==='future-add-line'){
