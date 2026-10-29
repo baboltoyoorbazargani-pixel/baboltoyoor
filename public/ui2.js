@@ -211,7 +211,7 @@ function renderSalesRemoteV32(orders){
         <div class="field contact-field-v41"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
         <div class="field sales-remote-place-v40"><label>محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
       </div>
-      <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>پس از انتخاب محصول و وارد کردن مقدار، کلید Insert ردیف بعدی را باز می‌کند. ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
+      <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>در این فرم برای افزودن ردیف محصول کلید Insert را بزنید (به‌جز هنگام نوشتن یادداشت). ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
       <div class="sd-note-box sales-phone-notes-v40"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>
