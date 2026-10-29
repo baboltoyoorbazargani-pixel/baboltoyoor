@@ -16,7 +16,7 @@ const view = (() => {
   return ui.slice(start, end);
 })();
 
-test('کارت، تک‌خطی است و همهٔ دکمه‌های ورودی در همان ردیف‌اند', () => {
+test('کارت فشرده است و همهٔ دکمه‌ها در عرض محدود قابل چیدمان‌اند', () => {
   assert.match(view, /class="[^"]*ssin21-card/);
   assert.match(view, /class="ssin21-actions"/);
   for (const a of ['store-order-details-v25', 'sales-edit-store-order', 'store-approve-v25', 'store-quick-send-v40'])
@@ -25,7 +25,7 @@ test('کارت، تک‌خطی است و همهٔ دکمه‌های ورودی �
   const seg = css;
   assert.match(seg, /\.ssin21-card\.sd-store-card-v42\{display:flex;flex-direction:row;align-items:center;flex-wrap:nowrap/);
   assert.match(seg, /min-height:52px/, 'ارتفاع کارت باید کم باشد');
-  assert.match(seg, /\.sd-store-list-v40\{overflow-x:auto/, 'در صفحهٔ باریک ردیف باید افقی پیمایش شود، نه چندخطی');
+  assert.match(seg, /\.ssin21-card\.sd-store-card-v42,[\s\S]*?min-width:0;max-width:100%;box-sizing:border-box;flex-wrap:wrap/, 'کارت باید در فضای محدود شکسته شود');
 });
 
 test('نام فروشگاه مشخص است و زیر آن نام مشتری همان سفارش نمایش داده می‌شود', () => {

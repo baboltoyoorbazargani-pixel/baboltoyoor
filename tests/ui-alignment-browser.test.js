@@ -46,8 +46,8 @@ test('مرورگر: چیدمان ردیف‌های انبار، سرویس فر�
   }
   // Additional role/cartable sweep uses the real navigation and populated order lists.
   const views=[['dashboard'],['admin'],['users'],['drivers'],['transport-vehicles'],['store-branches'],['payment-devices'],['customers'],['products'],['activity'],['backups'],['reports'],['gate','entry'],['gate','waiting'],['gate','exit'],['gate','history'],['sales','onsite'],['sales','remote'],['sales','stores'],['sales','flow'],['sales','settlement'],['sales','future'],['warehouse','incoming'],['warehouse','preparing'],['warehouse','stores'],['warehouse','history'],['store','create'],['store','delivery']];
-  for(const width of [1440,768,320]){
-   await page.setViewportSize({width,height:850});
+  for(const [width,height] of [[1440,850],[1024,600],[1024,768],[1152,648],[1280,720],[1366,768],[1920,1080],[768,850],[320,850]]){
+   await page.setViewportSize({width,height});
    for(const view of views){
     await page.evaluate(v=>go(v[0],v[1]),view);await page.waitForTimeout(110);
     const result=await page.evaluate(()=>{
