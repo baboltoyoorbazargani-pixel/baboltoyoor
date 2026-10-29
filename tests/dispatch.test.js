@@ -50,7 +50,7 @@ test('راه‌اندازی: مدیر، رانندگان، کاربران پخش
   S.admin = (await login('admin', ADMIN_PASS, '10.7.0.1')).cookie;
   assert.ok(S.admin);
   assert.equal((await call('POST', '/api/account/password', { cookie: S.admin, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  S.admin = (await login('admin', PASS, '10.7.0.2')).cookie;
+  // The original session remains valid after changing its password.
 
   const d1 = await call('POST', '/api/drivers', { cookie: S.admin, body: { fullName: 'رضا محمدی', phone: '۰۹۱۲۱۲۳۴۵۶۷', vehicleType: 'وانت', plate: '12ب34567', posTerminal: 'POS-01', posBank: 'بانک ملت' } });
   assert.equal(d1.status, 201, JSON.stringify(d1.json));

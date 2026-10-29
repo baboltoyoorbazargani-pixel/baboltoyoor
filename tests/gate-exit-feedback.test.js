@@ -82,7 +82,6 @@ const SIG = `data:image/png;base64,${'A'.repeat(300)}`;
 test('چرخهٔ زنده: فاکتور تسویه‌شده در کنترل خروج دیده و با تأیید نگهبان خارج می‌شود', async () => {
   let admin = await login('admin', ADMIN_PASS);
   assert.equal((await call('POST', '/api/account/password', { cookie: admin, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS);
   const mk = (username, roleCode) => call('POST', '/api/admin/users', { cookie: admin, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false } });
   assert.equal((await mk('g-sales', 'sales')).status, 201);
   assert.equal((await mk('g-wh', 'warehouse')).status, 201);

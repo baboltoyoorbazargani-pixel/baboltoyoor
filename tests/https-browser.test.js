@@ -25,7 +25,7 @@ test('مرورگر: تنظیم دامنه و مشاهدهٔ وضعیت HTTPS د�
    await page.locator('#tlsDomain').fill('app.example.com');await page.locator('#tlsEmail').fill('admin@example.com');await page.locator('#tlsPassword').fill('Changed!2345');await page.locator('#tlsSettingsForm [name=terms]').check();
    await page.locator('#tlsSettingsForm button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#tlsStatus')?.textContent.includes('در حال صدور'));
    assert.equal(submitted.domain,'app.example.com');assert.equal(submitted.terms,true);assert.equal(await page.locator('#tlsPassword').inputValue(),'');assert.equal(await page.locator('#tlsSettingsForm button[type=submit]').isDisabled(),true);
-   assert.deepEqual(errors,[]);await ctx.close();
+   assert.deepEqual(errors,[]);assert.equal((await ctx.request.post(base+'/api/logout',{data:{}})).status(),200);await ctx.close();
   }
  }finally{if(browser)await browser.close();if(child.exitCode===null&&child.signalCode===null){const stopped=new Promise(r=>child.once('exit',r));child.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true});}
 });

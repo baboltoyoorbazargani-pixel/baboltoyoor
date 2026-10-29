@@ -64,7 +64,6 @@ test('UI: پنل «جریان عملیات» از داشبورد مدیریت ح
 test('API: آمار محصولات داشبورد — فروش خالص، سفارشات و تحویل انبار با ناموجودی؛ فقط مدیر', async () => {
   let admin = await login('admin', ADMIN_PASS, '10.8.0.1');
   assert.equal((await call('POST', '/api/account/password', { cookie: admin, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS, '10.8.0.2');
   const mk = (username, roleCode) => call('POST', '/api/admin/users', { cookie: admin, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false } });
   assert.equal((await mk('wh1', 'warehouse')).status, 201);
   assert.equal((await mk('sales1', 'sales')).status, 201);

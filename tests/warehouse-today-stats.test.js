@@ -60,7 +60,6 @@ test('UI: داشبورد انبار بخش سفارشات ورودی امروز 
 test('API: آمار امروز انبار — ورودی امروز با هر وضعیت نهایی، به تفکیک محصول و واحد؛ لغوشده‌ها حذف',async()=>{
   let admin=await login('admin',ADMIN_PASS,'10.9.0.1');
   assert.equal((await call('POST','/api/account/password',{cookie:admin,body:{currentPassword:ADMIN_PASS,newPassword:PASS}})).status,200);
-  admin=await login('admin',PASS,'10.9.0.2');
   const mk=(username,roleCode)=>call('POST','/api/admin/users',{cookie:admin,body:{username,fullName:username,position:'تست',roleCode,password:PASS,mustChangePassword:false}});
   assert.equal((await mk('wht1','warehouse')).status,201);
   assert.equal((await mk('salest1','sales')).status,201);

@@ -63,7 +63,7 @@ test('قرارداد UI: مشخصات راننده در فرم کاربر است
 test('ساخت کاربر راننده بدون هیچ رکورد از پیش‌ساخته، راننده را با خودرو و پوز می‌سازد', async () => {
   let boot = await login('admin', ADMIN_PASS, '10.40.0.1');
   assert.equal((await call('POST', '/api/account/password', { cookie: boot, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS, '10.40.0.2');
+  admin = boot;
   const before = (await call('GET', '/api/drivers', { cookie: admin })).json.drivers;
   assert.equal(before.length, 0, 'شروع بدون رکورد راننده است');
 

@@ -35,7 +35,7 @@ test('cookie renewal is bounded by absolute session lifetime; server rejects idl
  try{
   const sid=sec.createSession('test','127.0.0.1');clock+=1000;const s=sec.getSession(sid);assert(s);
   assert.match(sec.sessionCookie(sid,s),/HttpOnly; SameSite=Strict/);
-  clock=base+config.SESSION_MAX_MS-1500;assert.match(sec.sessionCookie(sid,s),/Max-Age=1(?:;|$)/);
+  clock=base+config.SESSION_MAX_MS-1500;assert.doesNotMatch(sec.sessionCookie(sid,s),/Max-Age|Expires/);
   clock=base+config.SESSION_MAX_MS+1;assert.equal(sec.getSession(sid),null);
   clock=base;const idle=sec.createSession('test','127.0.0.1');clock+=config.SESSION_IDLE_MS+1;assert.equal(sec.getSession(idle),null);
  }finally{Date.now=now}

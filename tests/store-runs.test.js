@@ -70,7 +70,7 @@ test('راه‌اندازی: کاربران نقش‌ها + گزارش scaffold'
   const newAdmin = 'Tb2!' + require('crypto').randomBytes(8).toString('hex');
   const ch = await call('POST', '/api/account/password', { cookie: boot, body: { currentPassword: ADMIN_PASS, newPassword: newAdmin } });
   assert.equal(ch.status, 200);
-  admin = await login('admin', newAdmin);
+  admin = boot;
   sales = await mkUser('sr-sales', 'sales');
   wh = await mkUser('sr-wh', 'warehouse');
   storeUser = await mkUser('sr-shop', 'store', { storeName: 'فروشگاه تست' });

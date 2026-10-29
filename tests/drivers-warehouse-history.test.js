@@ -65,7 +65,6 @@ test('سربرگ «سوابق و گزارش» در کارتابل انبار ب�
 test('API: راننده با تلفن و بانک؛ سوابق انبار با خلاصه، ناموجودی، ارجاع به فروش و کنترل دسترسی', async () => {
   let admin = await login('admin', ADMIN_PASS, '10.9.0.1');
   assert.equal((await call('POST', '/api/account/password', { cookie: admin, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS, '10.9.0.2');
 
   // راننده
   const d = await call('POST', '/api/drivers', { cookie: admin, body: { fullName: 'راننده آزمون', phone: '۰۹۱۲ ۳۴۵ ۶۷۸۹', vehicleType: 'وانت', plate: '12ب34567', posTerminal: 'POS-9', posBank: 'بانک سپه' } });

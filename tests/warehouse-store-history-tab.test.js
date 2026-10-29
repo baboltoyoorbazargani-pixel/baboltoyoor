@@ -74,7 +74,6 @@ test('اتصالات ایستا: سربرگ سوم، فیلتر نوع سفار�
 test('راه‌اندازی کاربران', async () => {
   let admin = await login('admin', ADMIN_PASS, '10.10.0.1');
   assert.equal((await call('POST', '/api/account/password', { cookie: admin, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS, '10.10.0.2');
   ADMIN = admin;
   const mk = async (username, roleCode, extra = {}) => {
     const r = await call('POST', '/api/admin/users', { cookie: admin, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false, ...extra } });

@@ -132,6 +132,7 @@ test('تغییر رمز مدیر انجام می‌شود و رمز قبلی د�
   assert.equal(r.json.user.mustChangePassword, false);
   const old = await login('admin', ADMIN_PASS, '10.9.9.2');
   assert.equal(old.status, 401);
+  await call('POST', '/api/logout', { cookie: adminCookie, body: {} });
   const fresh = await login('admin', newAdmin, '10.9.9.3');
   assert.equal(fresh.status, 200);
   adminCookie = fresh.cookie;
@@ -393,10 +394,11 @@ test('بدنه بیش از حد بزرگ با ۴۱۳ رد می‌شود', async 
 });
 
 test('خروج از سامانه نشست را باطل می‌کند', async () => {
-  const c = (await login('gate1', PASS, '10.9.8.9')).cookie;
+  const c = gateCookie;
   assert.equal((await call('GET', '/api/me', { cookie: c })).status, 200);
   await call('POST', '/api/logout', { cookie: c, body: {} });
   assert.equal((await call('GET', '/api/me', { cookie: c })).status, 401);
+  gateCookie = (await login('gate1', PASS, '10.9.8.9')).cookie;
 });
 
 test('پیام خطا هیچ جزئیات داخلی یا Stack را افشا نمی‌کند', async () => {

@@ -32,8 +32,8 @@ test('fingerprint bridge uses server-configured endpoint, enforces role, serial 
  assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin)).status,409);mode='real';releaseCapture();assert.equal((await pending).status,200);
 });
 test('authenticated API renews browser cookie on each successful activity, unauthenticated requests do not',async()=>{
- admin=await login('admin');const until=Date.now()+3600;
- while(Date.now()<until){await new Promise(r=>setTimeout(r,450));const r=await call('GET','/api/me',null,admin);assert.equal(r.status,200);assert.match(r.headers.get('set-cookie'),/Max-Age=3/);}
+ const until=Date.now()+3600;
+ while(Date.now()<until){await new Promise(r=>setTimeout(r,450));const r=await call('GET','/api/me',null,admin);assert.equal(r.status,200);assert.doesNotMatch(r.headers.get('set-cookie'),/Max-Age|Expires/);}
  const denied=await call('GET','/api/me');assert.equal(denied.status,401);assert.equal(denied.headers.get('set-cookie'),null);
  await new Promise(r=>setTimeout(r,3200));assert.equal((await call('GET','/api/me',null,admin)).status,401);
 });

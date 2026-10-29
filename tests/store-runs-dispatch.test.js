@@ -72,7 +72,7 @@ test('راه‌اندازی: کاربران، راننده و سفارش فرو�
   const boot = await login('admin', ADMIN_PASS);
   const newAdmin = 'Tb2!' + require('crypto').randomBytes(8).toString('hex');
   assert.equal((await call('POST', '/api/account/password', { cookie: boot, body: { currentPassword: ADMIN_PASS, newPassword: newAdmin } })).status, 200);
-  admin = await login('admin', newAdmin);
+  admin = boot;
   sales = await mkUser('srd-sales', 'sales');
   wh = await mkUser('srd-wh', 'warehouse');
   storeUser = await mkUser('srd-shop', 'store', { storeName: 'بابل طیور آزمایشی' });

@@ -72,7 +72,7 @@ test('فرم‌های کاربر: هر هفت نقش، فیلد وابسته ب�
 test('API: ساخت کاربر راننده بدون رکورد و بدون انتخاب خطای راهنما می‌دهد؛ با انتخاب موفق است', async () => {
   let boot = await login('admin', ADMIN_PASS, '10.30.0.1');
   assert.equal((await call('POST', '/api/account/password', { cookie: boot, body: { currentPassword: ADMIN_PASS, newPassword: PASS } })).status, 200);
-  admin = await login('admin', PASS, '10.30.0.2');
+  admin = boot;
   const mk = (body) => call('POST', '/api/admin/users', { cookie: admin, body: { fullName: 'شخص آزمون', position: 'آزمون', password: PASS, mustChangePassword: false, ...body } });
 
   const noDriver = await mk({ username: 'dr-none', roleCode: 'driver' });
