@@ -13,7 +13,7 @@ test('مرورگر: چیدمان ردیف‌های انبار، سرویس فر�
   const get=async(url)=>(await (await ctx.request.get(base+url)).json());
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   await post('/api/admin/users',{username:'layout-shop',roleCode:'store',fullName:'فروشگاه تست',storeName:'فروشگاه مرکزی با عنوان طولانی',position:'تست',password:'Changed!2345',mustChangePassword:false});
-  let regular=(await post('/api/orders/remote',{name:'مشتری با نام طولانی آزمایشی',phone:'09121112233',dispatchPlace:'نشانی ارسال آزمایشی با چند کلمه',items:[{productId:'p01',requestedQty:18,requestedUnit:'کیلوگرم',description:'توضیحات طولانی ردیف برای بررسی چیدمان در صفحه کوچک'}]})).order;
+  let regular=(await post('/api/orders/remote',{name:'مشتری با نام طولانی آزمایشی',phone:'09121112233',dispatchPlace:'نشانی ارسال آزمایشی با چند کلمه',scheduledTime:'00:00',items:[{productId:'p01',requestedQty:18,requestedUnit:'کیلوگرم',description:'توضیحات طولانی ردیف برای بررسی چیدمان در صفحه کوچک'}]})).order;
   await post(`/api/orders/${regular.id}/warehouse/accept`,{});await post(`/api/orders/${regular.id}/warehouse/start-preparing`,{});regular=(await get(`/api/orders/${regular.id}`)).order;
   const shopCtx=await browser.newContext();await post('/api/login',{username:'layout-shop',password:'Changed!2345'},shopCtx);
   let shop=(await post('/api/store/orders',{name:'مشتری فروشگاه',phone:'09121112233',items:[{productId:'p01',requestedQty:12,requestedUnit:'کیلوگرم'}]},shopCtx)).order;await shopCtx.close();

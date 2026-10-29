@@ -1768,6 +1768,31 @@ function bindOperationLines(prefix, draftKey){
     const idx=Number(inp.dataset.opDesc.split('-').pop()); app[draftKey][idx].description=inp.value;
   }));
 }
+// در سفارش تلفنی Enter هرگز سفارش را ارسال نمی‌کند. بعد از مقدارِ معتبر،
+// ردیف موجود بعدی یا یک ردیف تازه برای انتخاب محصول در دسترس قرار می‌گیرد.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing || !(e.target instanceof Element)) return;
+  const input = e.target, form = input.closest('#phoneOrderFormV25');
+  if (!form || input.tagName === 'TEXTAREA') return; // خط جدید یادداشت حفظ شود
+  if (input.tagName === 'BUTTON' && input.type !== 'submit') return;
+  if (!['INPUT', 'SELECT', 'BUTTON'].includes(input.tagName)) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  const raw = input.dataset.opQty;
+  if (raw == null || !/^phone-\d+$/.test(raw)) return;
+  const index = Number(raw.slice('phone-'.length));
+  const rows = app.phoneDraft || [];
+  const row = rows[index];
+  if (!row?.productId) { toast('ابتدا محصول این ردیف را انتخاب کنید.'); return; }
+  if (!(n(row.requestedQty) > 0)) { toast('مقدار معتبر برای این ردیف وارد کنید.'); return; }
+  if (index === rows.length - 1) {
+    if (rows.length >= 100) { toast('حداکثر ۱۰۰ قلم در هر سفارش مجاز است.'); return; }
+    rows.push(defaultOrderLine());
+    renderOrderLineArea('phone','phoneDraft');
+  }
+  const next = form.querySelector(`[data-op-product-search="phone-${index + 1}"]`);
+  if (next) { next.focus(); next.select?.(); next.scrollIntoView?.({block:'nearest'}); }
+});
 // v37.6.0 — ناوبری Enter در فرم سفارش فروشگاه: محصول → مقدار → واحد → توضیح → ردیف جدید
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
