@@ -83,7 +83,7 @@ before(async () => {
   adminCookie = (await login('admin', ADMIN_PASS)).cookie;
   const NEW_ADMIN = 'Tb2!' + require('crypto').randomBytes(8).toString('hex');
   assert.equal((await call('POST', '/api/account/password', { cookie: adminCookie, body: { currentPassword: ADMIN_PASS, newPassword: NEW_ADMIN } })).status, 200);
-  adminCookie = (await login('admin', NEW_ADMIN)).cookie;
+  // Continue using the existing authenticated session.
   const mk = async (username, roleCode, extra = {}) => {
     const r = await call('POST', '/api/admin/users', { cookie: adminCookie, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false, ...extra } });
     assert.equal(r.status, 201, JSON.stringify(r.json));

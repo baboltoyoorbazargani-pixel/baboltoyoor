@@ -123,7 +123,7 @@ test('راه‌اندازی کاربران و راننده', async () => {
   const boot = await login('admin', ADMIN_PASS);
   const newAdmin = 'Tb2!' + require('crypto').randomBytes(8).toString('hex');
   assert.equal((await call('POST', '/api/account/password', { cookie: boot, body: { currentPassword: ADMIN_PASS, newPassword: newAdmin } })).status, 200);
-  const admin = await login('admin', newAdmin);
+  const admin = boot;
   const mk = async (username, roleCode, extra = {}) => {
     const r = await call('POST', '/api/admin/users', { cookie: admin, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false, ...extra } });
     assert.equal(r.status, 201, JSON.stringify(r.json));

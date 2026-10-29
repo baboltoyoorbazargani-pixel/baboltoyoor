@@ -47,7 +47,7 @@ before(async () => {
   const first = await call('POST', '/api/login', { body: { username: 'admin', password: ADMIN_PASS }, ip: '10.7.0.1' });
   const changed = await call('POST', '/api/account/password', { cookie: first.cookie, body: { currentPassword: ADMIN_PASS, newPassword: ADMIN_NEW } });
   assert.equal(changed.status, 200, changed.text);
-  adminC = (await call('POST', '/api/login', { body: { username: 'admin', password: ADMIN_NEW }, ip: '10.7.0.4' })).cookie;
+  adminC = first.cookie;
   const mk = async (username, roleCode) => call('POST', '/api/admin/users', { cookie: adminC, body: { username, fullName: username, position: 'تست', roleCode, password: PASS, mustChangePassword: false } });
   await mk('gatewb', 'gate');
   await mk('salesWb', 'sales');

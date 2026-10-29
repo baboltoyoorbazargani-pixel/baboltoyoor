@@ -6,7 +6,7 @@ const {DatabaseSync}=require('node:sqlite');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-resources-'));
 const password='Ab1!'+crypto.randomBytes(8).toString('hex'), initial='Cd2!'+crypto.randomBytes(8).toString('hex');
-const base='http://127.0.0.1:5489';let proc,admin,driver,branch,vehicle,device,oldBackup;
+const base='http://127.0.0.1:5489';let proc,admin,driver,branch,vehicle,device,oldBackup,legacyCookie;
 async function start(){proc=spawn(process.execPath,[path.join(__dirname,'../server.js')],{env:{...process.env,PORT:'5489',HOST:'127.0.0.1',DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:initial},stdio:['ignore','pipe','pipe']});await new Promise((ok,fail)=>{const t=setTimeout(()=>fail(new Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);ok()}});proc.stderr.on('data',d=>process.stderr.write(d));proc.once('exit',c=>{clearTimeout(t);fail(new Error('exit '+c))});});}
 async function stop(){if(proc&&!proc.killed){const p=proc;p.kill('SIGTERM');await new Promise(r=>p.once('exit',r));}}
 before(start);after(async()=>{await stop();fs.rmSync(dir,{recursive:true,force:true})});
@@ -14,7 +14,7 @@ async function call(method,p,body,cookie=admin){const res=await fetch(base+p,{me
 async function login(user,pass){return (await call('POST','/api/login',{username:user,password:pass},null)).cookie}
 const mk=(username,roleCode,extra={})=>call('POST','/api/admin/users',{username,roleCode,fullName:'تست',position:'تست',password,mustChangePassword:false,...extra});
 test('create legacy data and an old-format backup',async()=>{
-  const boot=await login('admin',initial);assert.equal((await call('POST','/api/account/password',{currentPassword:initial,newPassword:password},boot)).status,200);admin=await login('admin',password);
+  const boot=await login('admin',initial);assert.equal((await call('POST','/api/account/password',{currentPassword:initial,newPassword:password},boot)).status,200);admin=boot;
   const legacy=await mk('legacy-shop','store',{storeName:'قدیمی',branchNo:7});assert.equal(legacy.status,201,JSON.stringify(legacy.json));
   const backup=await call('POST','/api/admin/backups',{});assert.equal(backup.status,201);oldBackup=backup.json.name;
   const db=new DatabaseSync(path.join(dir,'backups',oldBackup));db.exec('DROP TABLE store_branches');db.close();
@@ -41,7 +41,7 @@ test('independent catalogs, selections, permissions and no orphan records on err
 });
 test('legacy orders and account isolation remain intact when selecting the same branch',async()=>{
   const users=(await call('GET','/api/admin/users')).json.users;const legacy=users.find(u=>u.username==='legacy-shop');
-  const legacyCookie=await login('legacy-shop',password),newCookie=await login('store-new',password);
+  legacyCookie=await login('legacy-shop',password);const newCookie=await login('store-new',password);
   const body={name:'مشتری',phone:'09120000000',items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]};
   const first=await call('POST','/api/store/orders',body,legacyCookie);assert.equal(first.status,201,JSON.stringify(first.json));assert.match(first.json.order.orderNo,/^B47/);
   const second=await call('POST','/api/store/orders',body,newCookie);assert.equal(second.status,201,JSON.stringify(second.json));assert.notEqual(second.json.order.orderNo,first.json.order.orderNo);
@@ -67,7 +67,7 @@ test('updates synchronize current driver while validation failures do not mutate
   const user=(await call('GET','/api/admin/users')).json.users.find(u=>u.id===driver.id);assert.equal(user.fullName,'تست');
   assert.equal((await call('PUT','/api/admin/store-branches/'+branch.id,{name:'مرکزی تازه'})).status,200);
   const users=(await call('GET','/api/admin/users')).json.users;assert.equal(users.find(u=>u.username==='store-new').storeName,'مرکزی تازه');assert.equal(users.find(u=>u.username==='legacy-shop').storeName,'مرکزی تازه');
-  const oldOrders=(await call('GET','/api/store/orders',null,await login('legacy-shop',password))).json.orders;assert.ok(oldOrders.some(o=>o.storeName==='قدیمی' && o.orderNo.startsWith('B47')));
+  const oldOrders=(await call('GET','/api/store/orders',null,legacyCookie)).json.orders;assert.ok(oldOrders.some(o=>o.storeName==='قدیمی' && o.orderNo.startsWith('B47')));
 });
 test('catalog survives restart and pre-update backup restores safely',async()=>{
   await stop();await start();admin=await login('admin',password);
