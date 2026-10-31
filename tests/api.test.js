@@ -256,11 +256,6 @@ test('تسویه بدون قیمت برای قلم تحویلی رد می‌شو
   assert.equal(r.status, 400);
 });
 
-test('تسویه بدون امضا رد می‌شود', async () => {
-  const r = await call('POST', `/api/orders/${ids.order}/settle`, { cookie: salesCookie, body: { noFingerprintAllowed: true, items: [{ itemId: ids.item, unitPrice: 1000 }] } });
-  assert.equal(r.status, 400);
-});
-
 test('تخفیف نامعتبر بدون تغییر سفارش رد می‌شود', async () => {
  for(const discountAmount of [-1, 'abc', 999999, 1.5]){
   const res=await call('POST',`/api/orders/${ids.order}/settle`,{cookie:salesCookie,body:{signatureData:SIG,noFingerprintAllowed:true,discountAmount,items:[{itemId:ids.item,unitPrice:1000}]}});
@@ -272,12 +267,15 @@ test('تخفیف نامعتبر بدون تغییر سفارش رد می‌شو�
 });
 
 test('تسویه معتبر فاکتور با شماره یکتا صادر می‌کند', async () => {
-  const r = await call('POST', `/api/orders/${ids.order}/settle`, { cookie: salesCookie, body: { discountAmount: 5000, additionsAmount: 2000, signatureData: SIG, noFingerprintAllowed: true, items: [{ itemId: ids.item, unitPrice: 1000 }] } });
+  const r = await call('POST', `/api/orders/${ids.order}/settle`, { cookie: salesCookie, body: { discountAmount: 5000, additionsAmount: 2000, items: [{ itemId: ids.item, unitPrice: 1000 }] } });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   assert.equal(r.json.order.status, 'SETTLED');
   assert.equal(r.json.order.payment.totalAmount, 39000);
   assert.equal(r.json.order.payment.discountAmount,5000);
   assert.equal(r.json.order.payment.additionsAmount,2000);
+  assert.equal(r.json.order.payment.verificationMode,'CUSTOMER_CONTACT');
+  assert.equal(r.json.order.payment.signatureData,'');assert.equal(r.json.order.payment.fingerprintRef,'');assert.equal(r.json.order.payment.noFingerprintAllowed,false);
+  assert.equal(r.json.order.payment.customerName,'علی رضایی');assert.equal(r.json.order.payment.customerPhone,'09121234567');
   const saved=await call('GET',`/api/orders/${ids.order}`,{cookie:salesCookie});
   assert.equal(saved.json.order.payment.totalAmount,39000);
   assert.equal(saved.json.order.payment.discountAmount,5000);

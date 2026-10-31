@@ -105,7 +105,7 @@ test('کارت خروج قبل از حرکت دارای دکمهٔ تأیید ن
   assert.doesNotMatch(context.result, /data-gate="close"/);
 });
 
-test('کارت تحویل در فروش اقلام، امضا و دکمهٔ ثبت نهایی را نشان می‌دهد', () => {
+test('کارت تحویل در فروش اقلام و دکمهٔ ثبت نهایی را بدون نمایش امضا نشان می‌دهد', () => {
   const start = ui.indexOf('function renderSalesDeliveryCardV38(');
   const end = ui.indexOf('\nfunction renderSalesDeliveryV38', start);
   assert.ok(start >= 0 && end > start, 'renderer کارت فروش وجود داشته باشد');
@@ -120,7 +120,7 @@ test('کارت تحویل در فروش اقلام، امضا و دکمهٔ ثب
   assert.match(context.result, /راننده آزمایشی/);
   assert.match(context.result, /محصول آزمایشی/);
   assert.match(context.result, /مرجوع/);
-  assert.match(context.result, /مشاهدهٔ امضای مشتری/);
+  assert.doesNotMatch(context.result, /مشاهدهٔ امضای مشتری/);
   assert.match(context.result, /data-action="sales-finalize-driver-delivery"/);
   vm.runInContext('finalResult=renderSalesDeliveryCardV38(o,true)', context);
   assert.doesNotMatch(context.finalResult, /data-action="sales-finalize-driver-delivery"/);

@@ -260,8 +260,8 @@ test('سوابق راننده دو ردیف (سرویس اول و دوم) برا
   const hist = mine.json.history.filter((x) => x.id === ids.order);
   assert.equal(hist.length, 2);
   assert.deepEqual(hist.map((x) => x.dispatch.run || null).sort((a, b) => a - b), [1, 2]);
-  // نام‌ها و جزئیات سالم‌اند؛ امضا افشا نمی‌شود
-  for (const h of hist) assert.equal(h.dispatch.hasSignature, true);
+  // نام‌ها و جزئیات سالم‌اند؛ امضای جدید ثبت نمی‌شود
+  for (const h of hist) assert.equal(h.dispatch.hasSignature, false);
 });
 
 test('پایان روز: وزن ارسال‌نشده → 400؛ درخواست معلق نزد فروش → 409', async () => {

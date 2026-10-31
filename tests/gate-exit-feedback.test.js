@@ -95,7 +95,8 @@ test('چرخهٔ زنده: فاکتور تسویه‌شده در کنترل خر
   assert.equal((await call('POST', `/api/orders/${orderId}/warehouse/accept`, { cookie: wh, body: {} })).status, 200);
   assert.equal((await call('POST', `/api/orders/${orderId}/warehouse/start-preparing`, { cookie: wh, body: {} })).status, 200);
   assert.equal((await call('POST', `/api/orders/${orderId}/warehouse`, { cookie: wh, body: { items: [{ itemId, deliveredKg: 10 }] } })).status, 200);
-  assert.equal((await call('POST', `/api/orders/${orderId}/settle`, { cookie: sales, body: { signatureData: SIG, noFingerprintAllowed: true, items: [{ itemId, unitPrice: 3000 }] } })).status, 200);
+  const legacyClient=await call('POST', `/api/orders/${orderId}/settle`, { cookie: sales, body: { signatureData: SIG, fingerprintRef: 'old-client-ref', noFingerprintAllowed: true, items: [{ itemId, unitPrice: 3000 }] } });
+  assert.equal(legacyClient.status, 200);assert.equal(legacyClient.json.order.payment.signatureData,'');assert.equal(legacyClient.json.order.payment.fingerprintRef,'');assert.equal(legacyClient.json.order.payment.verificationMode,'CUSTOMER_CONTACT');
 
   const settled = await call('GET', '/api/orders?status=SETTLED', { cookie: gate });
   assert.ok((settled.json.orders || []).some((x) => x.id === orderId), 'فاکتور باید در کنترل خروج نگهبانی دیده شود');

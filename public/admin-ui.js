@@ -257,7 +257,6 @@ async function renderDriverRecords() {
             <tbody>${r.lines.map((l) => `<tr><td data-label="کالا">${admE(l.productName)}</td><td data-label="تحویلی">${qty(l.deliveredKg)}</td><td data-label="مرجوعی">${qty(l.returnKg)}</td><td data-label="کسری">${qty(l.shortageKg)}</td><td data-label="خالص">${qty(l.netKg)}</td><td data-label="علت">${admE(l.reason || '—')}</td></tr>`).join('')}</tbody></table></div>
             ${r.note ? `<p class="adm-note">یادداشت: ${admE(r.note)}</p>` : ''}
           </details>
-          ${r.hasSignature ? `<button class="btn btn-secondary btn-sm" type="button" data-adm="drv-sign" data-id="${admE(r.orderId)}">${icon('eye', 14)} امضای مشتری</button>` : ''}
         </div></article>`).join('')}
     </section>`).join('') || sdEmpty('receipt', 'سابقه‌ای در این بازه نیست', 'بازه تاریخ یا فیلترها را تغییر دهید.');
   $('#drvRecords').innerHTML = `<section class="sd-panel adm-panel">

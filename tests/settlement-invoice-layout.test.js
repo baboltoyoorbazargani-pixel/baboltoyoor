@@ -32,13 +32,17 @@ test('compact invoice preview and print share a served stylesheet; no sales appr
  assert.match(css,/\.inv38-bottom \{[\s\S]*?direction:rtl/);
  assert.match(css,/@media print/);
 });
-test('invoice retains order number, amounts, signature and fingerprint/manual verification',()=>{
- const source=ui.slice(ui.indexOf('function invoiceHtml(o,paySel){'),ui.indexOf('async function printInvoice(id,run)'));
- const c={esc:s=>String(s||''),n:Number,fa:String,qty:String,money:String,dt:String,todayText:()=> 'today'};
+for(const [name,text,end] of [['app',app,'function printCss()'],['ui',ui,'async function printInvoice(id,run)']]) test(`${name}: both invoices show escaped customer contact at the former signature position`,()=>{
+ const source=text.slice(text.indexOf('function invoiceHtml(o,paySel){'),text.indexOf(end,text.indexOf('function invoiceHtml(o,paySel){')));
+ const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+ const c={esc:escape,n:Number,fa:String,qty:String,money:String,dt:String,todayText:()=> 'today',storeRunInvoiceLines:()=>[{productName:'مرغ فروشگاه',deliveredKg:5}]};
  vm.createContext(c);vm.runInContext(source,c);
- const base={id:'uuid-internal',orderNo:'000456',customer:{name:'مشتری',phone:'0912'},items:[{product:{name:'مرغ'},deliveredKg:12,unitPrice:20,finalAmount:240},{product:{name:'لغوشده'},itemStatus:'CANCELLED',finalAmount:999}],payment:{totalAmount:240,signatureData:'data:image/png;base64,signature',fingerprintRef:'ref-123',verificationMode:'FINGERPRINT'}};
- const html=c.invoiceHtml(base);assert(html.includes('000456'));assert(!html.includes('uuid-internal'));assert(!html.includes('لغوشده'));
- assert(html.includes('>240<'));assert(html.includes('data:image/png;base64,signature'));assert(html.includes('ref-123'));
- const manual=c.invoiceHtml({...base,payment:{totalAmount:240,verificationMode:'MANUAL_NO_FINGERPRINT',noFingerprintAllowed:true}});
- assert(manual.includes('بدون اثرانگشت مجاز'));assert(!manual.includes('inv38-sales-sign'));
+ const base={id:'uuid-internal',orderNo:'000456',customer:{name:'جدید',phone:'0999'},items:[{product:{name:'مرغ'},deliveredKg:12,unitPrice:20,finalAmount:240},{product:{name:'لغوشده'},itemStatus:'CANCELLED',finalAmount:999}],payment:{totalAmount:240,customerName:'<مشتری>',customerPhone:'0912',signatureData:'data:image/png;base64,signature',fingerprintRef:'ref-123',verificationMode:'FINGERPRINT'}};
+ for(const o of [base,{...base,orderType:'STORE',storeName:'فروشگاه'}]){
+  const html=c.invoiceHtml(o);assert.match(html,/<div class="inv38-verify">[\s\S]*?<span>امضاء<\/span><strong>&lt;مشتری&gt; – 0912<\/strong>/);
+  assert(!html.includes('signature'));assert(!html.includes('ref-123'));assert(!html.includes('اثر انگشت'));assert(!html.includes('تأیید مشتری'));
+  assert(html.includes('000456'));assert(!html.includes('uuid-internal'));
+ }
+ const legacy=c.invoiceHtml({...base,payment:{totalAmount:240}});assert(legacy.includes('جدید – 0999'));
+ const missing=c.invoiceHtml({...base,customer:null,payment:{totalAmount:240,customerName:'',customerPhone:''}});assert(missing.includes('— – —'));
 });

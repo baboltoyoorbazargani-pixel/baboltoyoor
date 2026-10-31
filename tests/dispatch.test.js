@@ -220,9 +220,8 @@ test('نگهبان فقط پس از ثبت خروج توسط راننده اجا
   assert.equal((await call('POST', `/api/gate/dispatch/${ids.adminOrder}/exit`, { cookie: S.gate, body: {} })).status, 409);
 });
 
-test('ثبت تحویل: امضا و نوع تسویه الزامی است؛ کسری یا مرجوعی بدون علت و بیشتر از وزن رد می‌شود', async () => {
+test('ثبت تحویل: نوع تسویه الزامی است؛ کسری یا مرجوعی بدون علت و بیشتر از وزن رد می‌شود', async () => {
   const url = `/api/driver/orders/${ids.order}/deliver`;
-  assert.equal((await call('POST', url, { cookie: S.driver1, body: { settlementType: 'CASH', lines: [] } })).status, 400, 'بدون امضا');
   assert.equal((await call('POST', url, { cookie: S.driver1, body: { signatureData: SIG, lines: [] } })).status, 400, 'بدون نوع تسویه');
   const noReason = { signatureData: SIG, settlementType: 'CASH', lines: [{ itemId: ids.item, returnKg: 2 }] };
   assert.equal((await call('POST', url, { cookie: S.driver1, body: noReason })).status, 400, 'بدون علت');
@@ -232,7 +231,7 @@ test('ثبت تحویل: امضا و نوع تسویه الزامی است؛ ک�
 });
 
 test('تحویل موفق با مرجوعی ۵ کیلو و کسری ۱ کیلو، تسویه اعتباری', async () => {
-  const body = { signatureData: SIG, settlementType: 'CREDIT', note: 'تحویل در درب انبار مشتری', lines: [{ itemId: ids.item, returnKg: 5, shortageKg: 1, reason: 'بسته‌بندی آسیب‌دیده' }] };
+  const body = { settlementType: 'CREDIT', note: 'تحویل در درب انبار مشتری', lines: [{ itemId: ids.item, returnKg: 5, shortageKg: 1, reason: 'بسته‌بندی آسیب‌دیده' }] };
   const r = await call('POST', `/api/driver/orders/${ids.order}/deliver`, { cookie: S.driver1, body });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   const d = r.json.order.dispatch;
@@ -243,7 +242,7 @@ test('تحویل موفق با مرجوعی ۵ کیلو و کسری ۱ کیلو�
   assert.equal(d.lines[0].returnAmount, 10000, 'مرجوعی ۵ کیلو از فاکتور کسر شود');
   assert.equal(d.returnDeduction, 10000);
   assert.equal(d.amountDue, 74000, 'کسری یک کیلو به‌تنهایی مبلغ را کاهش ندهد');
-  assert.equal(d.hasSignature, true);
+  assert.equal(d.hasSignature, false);
   assert.equal(d.signatureData, undefined, 'تصویر امضا در فهرست‌ها برنمی‌گردد');
   const salesQueue = await call('GET', '/api/sales/dispatch-deliveries', { cookie: S.sales });
   assert(!salesQueue.json.active.some(o=>o.id===ids.order));
@@ -259,7 +258,7 @@ test('تحویل موفق با مرجوعی ۵ کیلو و کسری ۱ کیلو�
   assert.ok(salesNotifications.json.notifications.some((n) => n.type === 'DISPATCH_DELIVERY_PENDING_SALES' && n.entityId === ids.order));
   const signature = await call('GET', `/api/sales/dispatch-deliveries/${ids.order}`, { cookie: S.sales });
   assert.equal(signature.status, 200);
-  assert.match(signature.json.signatureData, /^data:image\/png;base64,/);
+  assert.equal(signature.json.signatureData, '');
   assert.equal((await call('POST', `/api/sales/dispatch-deliveries/${ids.order}/finalize`, { cookie: S.gate, body: {} })).status, 403, 'نگهبانی نمی‌تواند تحویل را نهایی کند');
   assert.equal((await call('POST', `/api/driver/orders/${ids.order}/deliver`, { cookie: S.driver1, body })).status, 409, 'تحویل دوباره');
 });
@@ -290,7 +289,7 @@ test('سفارش تحویل‌شده در فهرست امروز راننده ا�
   assert.equal((await call('GET', `/api/admin/driver-records/${ids.order}`, { cookie: S.driver1 })).status, 403);
   const det = await call('GET', `/api/admin/driver-records/${ids.order}`, { cookie: S.admin });
   assert.equal(det.status, 200);
-  assert.match(det.json.signatureData, /^data:image\/png;base64,/);
+  assert.equal(det.json.signatureData, '');
 });
 
 test('مدیر سوابق راننده را روزانه می‌بیند و با فیلتر مرجوعی/کسری جستجو می‌کند', async () => {

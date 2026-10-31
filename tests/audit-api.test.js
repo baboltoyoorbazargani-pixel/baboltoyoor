@@ -7,7 +7,7 @@ let proc,agent,base,admin,gate,captures=0,mode='real',releaseCapture;
 async function call(method,url,body,cookie){const res=await fetch(base+url,{method,headers:{...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const text=await res.text();let json;try{json=JSON.parse(text)}catch{}return {status:res.status,headers:res.headers,text,json};}
 async function login(name){const r=await call('POST','/api/login',{username:name,password});assert.equal(r.status,200,r.text);return r.headers.get('set-cookie').split(';')[0];}
 before(async()=>{
- const seed=spawnSync(process.execPath,['-e',`const s=require('./lib/store'),sec=require('./lib/security');s.init();const d=s.get();d.users[0].mustChangePassword=false;for(const role of ['gate','sales'])d.users.push({id:role,username:role,roleCode:role,isActive:true,passwordHash:sec.hashPassword(process.env.ADMIN_INITIAL_PASSWORD),mustChangePassword:false});d.customers=Array.from({length:11001},(_,i)=>({id:'c'+i,name:i===0?'=1+1':'نام '+i,phone:'09123456789',code:String(i+1).padStart(5,'0')}));d.orders.push({id:'capture-order',orderNo:'000001',status:'SETTLEMENT_PENDING'});s.save();`],{cwd:root,env:{...process.env,DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:password},encoding:'utf8'});assert.equal(seed.status,0,seed.stderr);
+ const seed=spawnSync(process.execPath,['-e',`const s=require('./lib/store'),sec=require('./lib/security');s.init();const d=s.get();d.users[0].mustChangePassword=false;for(const role of ['gate','sales'])d.users.push({id:role,username:role,roleCode:role,isActive:true,passwordHash:sec.hashPassword(process.env.ADMIN_INITIAL_PASSWORD),mustChangePassword:false});d.customers=Array.from({length:11001},(_,i)=>({id:'c'+i,name:i===0?'=1+1':'نام '+i,phone:'09123456789',code:String(i+1).padStart(5,'0')}));d.orders.push({id:'capture-order',orderNo:'000001',status:'SETTLEMENT_PENDING'},{id:'legacy-order',orderNo:'000002',status:'SETTLED',customerId:'c0',dispatch:{status:'SALES_FINALIZED',signatureData:'data:image/png;base64,legacy'}});d.payments.push({id:'legacy-pay',orderId:'legacy-order',signatureData:'data:image/png;base64,legacy',fingerprintRef:'legacy-ref',verificationMode:'FINGERPRINT'});s.save();`],{cwd:root,env:{...process.env,DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:password},encoding:'utf8'});assert.equal(seed.status,0,seed.stderr);
  agent=http.createServer(async(req,res)=>{assert.equal(req.headers.authorization,'Bearer audit-token');assert.equal(req.method,'POST');captures++;if(mode==='wait')await new Promise(resolve=>releaseCapture=resolve);if(mode==='bad'){res.end('bad');return;}res.setHeader('Content-Type','application/json');res.end(JSON.stringify({ok:true,fingerprintRef:mode==='mock'?'mock-untrusted':'hardware-test-reference'}));});await new Promise(resolve=>agent.listen(0,'127.0.0.1',resolve));
  const listener=http.createServer();await new Promise(resolve=>listener.listen(0,'127.0.0.1',resolve));const port=listener.address().port;await new Promise(resolve=>listener.close(resolve));
  proc=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,DATA_DIR:dir,HOST:'127.0.0.1',PORT:String(port),SESSION_IDLE_MINUTES:'0.05',FINGERPRINT_AGENT_URL:`http://127.0.0.1:${agent.address().port}/capture`,FINGERPRINT_AGENT_TOKEN:'audit-token',FINGERPRINT_ALLOW_MOCK:'false'},stdio:['ignore','pipe','pipe']});base=`http://127.0.0.1:${port}`;
@@ -22,14 +22,19 @@ test('full CSV endpoint exports >5000 rows, neutralizes formula and respects RBA
  assert.equal((await call('POST','/api/admin/reports/export',q,gate)).status,403);
  assert.equal((await call('POST','/api/admin/reports/export',{source:'__proto__'},admin)).status,400);
 });
-test('fingerprint bridge uses server-configured endpoint, enforces role, serial capture, valid response and rejects mock',async()=>{
- const count=captures;assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},gate)).status,403);assert.equal(captures,count);
- mode='real';const good=await call('POST','/api/fingerprint/capture',{orderId:'capture-order',url:'http://example.invalid'},admin);assert.equal(good.status,200,good.text);assert.equal(good.json.fingerprintRef,'hardware-test-reference');
- mode='mock';assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin)).status,502);
- mode='bad';assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin)).status,502);
- mode='wait';const pending=call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin);
- while(!releaseCapture)await new Promise(r=>setTimeout(r,5));
- assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin)).status,409);mode='real';releaseCapture();assert.equal((await pending).status,200);
+test('fingerprint capture is suspended without contacting the agent and still enforces roles',async()=>{
+ const count=captures;assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},gate)).status,403);
+ const disabled=await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin);
+ assert.equal(disabled.status,503);assert.equal(disabled.json.code,'FINGERPRINT_TEMPORARILY_DISABLED');assert.equal(captures,count);
+});
+test('historical biometric data survives unrelated writes',async()=>{
+ const before=await call('GET','/api/orders/legacy-order',null,admin);assert.equal(before.status,200);
+ assert.equal(before.json.order.payment.signatureData,'data:image/png;base64,legacy');assert.equal(before.json.order.payment.fingerprintRef,'legacy-ref');
+ assert.equal((await call('POST','/api/fingerprint/capture',{orderId:'capture-order'},admin)).status,503);
+ assert.equal((await call('PUT','/api/customers/c0',{name:'نام ویرایش شده'},admin)).status,200);
+ const after=await call('GET','/api/orders/legacy-order',null,admin);assert.equal(after.json.order.payment.signatureData,before.json.order.payment.signatureData);assert.equal(after.json.order.payment.fingerprintRef,'legacy-ref');assert.equal(after.json.order.dispatch.hasSignature,true);
+ const legacy=await call('GET','/api/admin/driver-records/legacy-order',null,admin);assert.equal(legacy.json.signatureData,'data:image/png;base64,legacy');
+ assert.equal((await call('GET','/api/admin/driver-records/legacy-order',null,gate)).status,403);
 });
 test('authenticated API renews browser cookie on each successful activity, unauthenticated requests do not',async()=>{
  const until=Date.now()+3600;
