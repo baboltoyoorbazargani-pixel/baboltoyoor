@@ -1001,17 +1001,24 @@ function productSearch(i,q){
 function pickProduct(i,id,label,quick){const p=app.orderDraft[i];if(!p)return;p.productId=id;p.productLabel=label;p.quickCode=quick||'';const list=$(`[data-suggest-for="${i}"]`);if(list)list.innerHTML='';renderOrderLines();updateOrderDraftSummary();const qtyInput=$(`#orderLines [data-qty="${i}"]`);if(qtyInput){qtyInput.focus();qtyInput.select?.();}toast('محصول انتخاب شد.')}
 function renderSalesOrders(orders){return `<section class="card card-pad sales-orders-container"><div class="panel-head"><div><span class="eyebrow">ORDER CONTROL</span><h2>سفارش‌های در جریان</h2><p>جزئیات کامل سفارش، وضعیت انبار و سفارش‌های برگشتی به فروش در این بخش قابل مشاهده است.</p></div><span class="pill"><span class="status-dot"></span> بروزرسانی زنده</span></div><div class="table-wrap section-space"><table class="table"><thead><tr><th>سفارش</th><th>مشتری</th><th>اقلام</th><th>وضعیت</th><th>زمان</th><th>عملیات</th></tr></thead><tbody class="sales-orders-body">${renderSalesOrdersBody(orders)}</tbody></table></div></section>`}
 function renderSalesOrdersBody(orders){return orders.map(o=>`<tr><td><b style="color:var(--brand)">${esc(fa(o.orderNo||'—'))}</b></td><td><strong>${esc(storeAwareOrderName(o))}</strong><div class="subtle">${esc(storeAwareOrderPhone(o))}</div></td><td>${qty(o.items.filter(i=>i.itemStatus!=='CANCELLED').length)} قلم<div class="subtle">${qty(o.items.reduce((s,i)=>s+n(i.requestedQty),0))} واحد درخواستی</div></td><td>${badge(o.status)}</td><td>${dt(o.updatedAt||o.createdAt)}</td><td><div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${o.id}">${icon('eye',15)} جزئیات</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',15)} اصلاح سفارش</button><button class="btn btn-primary btn-sm" data-action="resubmit-order" data-id="${o.id}">${icon('arrow',15)} ارسال مجدد به انبار</button>`:''}</div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">سفارشی در جریان نیست.</td></tr>'}
+// The return message is separate from customer notes and survives line edits.
+function warehouseReturnNoteHtml(o){
+  const note=o?.status==='RETURNED_TO_SALES'&&o.warehouseReturn;
+  if(!note?.reason)return '';
+  const item=note.itemId?(o.items||[]).find(i=>i.id===note.itemId):null;
+  return `<div class="warehouse-return-note"><b>پیام ارجاع به فروش${item?` — ${esc(item.product?.name||'قلم سفارش')}`:''}</b><span>${esc(note.reason)}</span></div>`;
+}
 async function openReturnedOrderEditor(id){
   try{
     const d=await api('/api/orders/'+id); const o=d.order;
     if(o.status!=='RETURNED_TO_SALES') return toast('این سفارش در وضعیت قابل اصلاح نیست.');
-    app.returnEdit={orderId:id,deletedIds:[],items:(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED').map(i=>({id:i.id,productId:i.productId,productLabel:i.product?.name||'',requestedQty:i.requestedQty,requestedUnit:i.requestedUnit,description:i.description||''}))};
+    app.returnEdit={orderId:id,orderType:o.orderType,deletedIds:[],items:(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED').map(i=>({id:i.id,productId:i.productId,productLabel:i.product?.name||'',requestedQty:i.requestedQty,requestedUnit:i.requestedUnit,description:i.description||''}))};
     renderReturnedOrderEditor(o);
   }catch(e){toast(e.message)}
 }
 function renderReturnedOrderEditor(o){
   const items=app.returnEdit?.items||[];
-  openModal('اصلاح سفارش برگشتی به فروش',`<div class="returned-editor"><div class="returned-editor-head"><div><span class="eyebrow">ORDER CORRECTION</span><h2>اصلاح سفارش ${esc(fa(o.orderNo||'—'))}</h2><p>${esc(storeAwareOrderName(o))} • ${esc(storeAwareOrderPhone(o))}</p></div><span class="badge orange">برگشتی از انبار</span></div><div class="returned-editor-note">در این بخش می‌توانید محصول، مقدار، واحد و توضیحات هر ردیف را ویرایش کنید، ردیف جدید اضافه کنید یا ردیف موجود را حذف کنید. همه تغییرات با نام کاربر در سوابق فعالیت ثبت می‌شود.</div><div id="returnedEditLines" class="returned-edit-lines"></div><div class="returned-editor-bottom"><button class="btn btn-secondary btn-lg" data-action="returned-add-line">${icon('plus',17)} افزودن ردیف</button><span class="subtle">تعداد ردیف فعال: ${qty(items.length)}</div><div class="modal-actions"><button class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary btn-lg" data-action="save-returned-order" data-id="${esc(o.id)}">ذخیره اصلاحات</button></div></div>`);
+  openModal('اصلاح سفارش برگشتی به فروش',`<div class="returned-editor"><div class="returned-editor-head"><div><span class="eyebrow">ORDER CORRECTION</span><h2>اصلاح سفارش ${esc(fa(o.orderNo||'—'))}</h2><p>${esc(storeAwareOrderName(o))} • ${esc(storeAwareOrderPhone(o))}</p></div><span class="badge orange">برگشتی از انبار</span></div>${warehouseReturnNoteHtml(o)}<div class="returned-editor-note">در این بخش می‌توانید محصول، مقدار، واحد و توضیحات هر ردیف را ویرایش کنید، ردیف جدید اضافه کنید یا ردیف موجود را حذف کنید. همه تغییرات با نام کاربر در سوابق فعالیت ثبت می‌شود.</div><div id="returnedEditLines" class="returned-edit-lines"></div><div class="returned-editor-bottom"><button class="btn btn-secondary btn-lg" data-action="returned-add-line">${icon('plus',17)} افزودن ردیف</button><span class="subtle">تعداد ردیف فعال: ${qty(items.length)}</div><div class="modal-actions"><button class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary btn-lg" data-action="save-returned-order" data-id="${esc(o.id)}">ذخیره اصلاحات</button></div></div>`);
   const modalCard=$('.modal-card'); if(modalCard) modalCard.classList.add('returned-modal-card');
   renderReturnedEditLines(o);
 }
@@ -1381,6 +1388,7 @@ async function bootstrap(){
     if(a==='close-modal')return closeModal();
     if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
+    if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
     if(a==='returned-add-line')return addReturnedLine();
     if(a==='returned-delete-line')return deleteReturnedLine(Number(el.dataset.index));
     if(a==='pick-return-product')return pickReturnedProduct(Number(el.dataset.index),el.dataset.productId,el.dataset.label);
@@ -2100,6 +2108,7 @@ async function openOrderDetails(id){
         <div><span>وزن تحویلی</span><b>${qty(totalDelivered)} کیلوگرم</b></div>
       </div>
       ${depositSummaryHtml(o.deposit)}
+      ${warehouseReturnNoteHtml(o)}
       ${o.notes?`<div class="detail-note"><span>${icon('info',16)}</span><div><b>یادداشت سفارش</b><p>${esc(o.notes)}</p></div></div>`:''}
       <div class="table-wrap section-space"><table class="table v21-detail-table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>واحد</th><th>توضیحات</th>${showRunCols?'<th>وزن سرویس اول</th><th>وزن سرویس دوم</th>':''}<th>وزن تحویلی</th><th>وضعیت</th></tr></thead><tbody>${items.map((i,k)=>`<tr class="${i.itemStatus==='CANCELLED'?'row-cancelled':''}"><td>${fa(String(k+1))}</td><td><strong>${esc(i.product?.name||'—')}</strong></td><td>${qty(i.requestedQty)}</td><td>${esc(i.requestedUnit||'—')}</td><td>${esc(i.description||'—')}</td>${showRunCols?`<td>${runView[i.id]&&n(runView[i.id].r1Kg)>0?qty(runView[i.id].r1Kg)+' کیلوگرم':'—'}</td><td>${runView[i.id]&&n(runView[i.id].r2Kg)>0?qty(runView[i.id].r2Kg)+' کیلوگرم':'—'}</td>`:''}<td>${i.deliveredKg==null?'—':qty(i.deliveredKg)+' کیلوگرم'}</td><td>${badge(i.itemStatus)}</td></tr>`).join('')}</tbody></table></div>
       <div class="sticky-actions"><span class="subtle">تمام تغییرات و ارجاع‌ها در سوابق مدیریتی ثبت می‌شوند.</span><div class="toolbar"><button class="btn btn-secondary" data-action="close-modal">بستن</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',16)} اصلاح سفارش</button><button class="btn btn-primary" data-action="resubmit-order" data-id="${o.id}">${icon('send',16)} ارسال مجدد به انبار</button>`:''}${o.orderType==='STORE'&&o.status==='STORE_PENDING_SALES'?`<button class="btn btn-primary" data-action="sales-edit-store-order" data-id="${o.id}">${icon('edit',16)} ویرایش سفارش</button>`:''}</div></div>
@@ -2401,7 +2410,7 @@ async function submitOrder(visitId){
   finally{app.onsiteSubmitting=false;buttons.forEach(b=>b.disabled=false);}
 }
 const _legacyResubmitOrderV25=resubmitOrder;
-async function resubmitOrder(id){try{await api('/api/orders/'+id+'/resubmit-sales',{method:'POST',body:'{}'});toast('سفارش دوباره به صف انبار ارسال شد.');closeModal();await renderSales('flow')}catch(e){toast(e.message)}}
+async function resubmitOrder(id){try{const result=await api('/api/orders/'+id+'/resubmit-sales',{method:'POST',body:'{}'});toast('سفارش دوباره به صف انبار ارسال شد.');closeModal();if(app.salesCache)app.salesCache.fetchedAt=0;const isStore=result.order?.orderType==='STORE';if(isStore)app.salesStoreTab='processing';await renderSales(isStore?'stores':'flow')}catch(e){toast(e.message)}}
 const _legacySaveReturnedOrderV25=saveReturnedOrder;
 async function saveReturnedOrder(id){
   const items=(app.returnEdit?.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
@@ -2411,7 +2420,7 @@ async function saveReturnedOrder(id){
     const payload={items:items.map(item=>({id:item.id||null,productId:item.productId,requestedQty:n(item.requestedQty),requestedUnit:item.requestedUnit,description:String(item.description||'').trim()}))};
     await api('/api/orders/'+id+'/returned-edit',{method:'PUT',body:JSON.stringify(payload)});
     toast('اصلاحات سفارش ثبت شد و در سوابق فعالیت ذخیره گردید.');
-    closeModal(); app.returnEdit=null; await renderSales('flow');
+    const isStore=app.returnEdit?.orderType==='STORE'; closeModal(); app.returnEdit=null; if(app.salesCache)app.salesCache.fetchedAt=0; if(isStore)app.salesStoreTab='processing'; await renderSales(isStore?'stores':'flow');
   }catch(e){toast(e.message)}
 }
 
