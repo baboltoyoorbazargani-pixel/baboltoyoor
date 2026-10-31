@@ -55,6 +55,11 @@ await first.click();await pages.store.locator('#modal.open .st38-delivered-items
 assert.match(await pages.store.locator('#modal').innerText(),/سرویس اول/);
 pages.store.once('dialog',d=>d.accept());const confirmFirst=pages.store.waitForResponse(r=>r.url().endsWith('/confirm-receipt')&&r.request().method()==='POST');
 await pages.store.locator('#modal [data-action=store-confirm-delivery][data-run="1"]').click();assert.equal((await confirmFirst).status(),200);
+// Receipt of an unfinished order appears once, on that order's history summary.
+await pages.sales.evaluate(async()=>{app.salesStoreTab='history';await go('sales','stores');if(app.salesFetchPromise)await app.salesFetchPromise;const d=await fetchSalesCache(true);paintSalesPaneV29('stores',d)});
+const receiptRow=pages.sales.locator(`[data-store-section=history] [data-store-summary-id="${order.id}"]`);await receiptRow.waitFor();assert.equal(await receiptRow.count(),1);assert.match(await receiptRow.innerText(),/سرویس اول: دریافت فروشگاه تأیید شد/);assert.equal(await pages.sales.locator('.store-receipt-history-v43').count(),0);
+await receiptRow.locator('[data-action=store-order-details-v25]').click();await pages.sales.locator('#modal.open .v21-detail-table').waitFor();await pages.sales.locator('#modal .modal-close').click();
+await pages.sales.evaluate(()=>go('sales','delivery'));
 await pages.sales.evaluate(async()=>{if(app.salesFetchPromise)await app.salesFetchPromise;const d=await fetchSalesCache(true);paintSalesPaneV29('delivery',d)});
 await pages.sales.locator('[data-delivery-tab=delivered]').click();
 await pages.sales.locator(`[data-delivery-section=delivered] [data-delivery-order="${order.id}"] [data-action=sales-delivery-details]`).click();
@@ -79,4 +84,6 @@ await pages.store.locator(`[data-action=store-delivery-details][data-id="${order
 assert.match(await pages.store.locator('#modal').innerText(),/سرویس دوم/);
 pages.store.once('dialog',d=>d.accept());const confirmSecond=pages.store.waitForResponse(r=>r.url().endsWith('/confirm-receipt')&&r.request().method()==='POST');
 await pages.store.locator('#modal [data-action=store-confirm-delivery][data-run="2"]').click();assert.equal((await confirmSecond).status(),200);
+await pages.sales.evaluate(async()=>{app.salesStoreTab='history';await go('sales','stores');if(app.salesFetchPromise)await app.salesFetchPromise;const d=await fetchSalesCache(true);paintSalesPaneV29('stores',d)});
+const both=pages.sales.locator(`[data-store-section=history] [data-store-summary-id="${order.id}"]`);await both.waitFor();assert.equal(await both.count(),1);assert.match(await both.innerText(),/سرویس اول: دریافت فروشگاه تأیید شد/);assert.match(await both.innerText(),/سرویس دوم: دریافت فروشگاه تأیید شد/);
 }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const stopped=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true})}});
