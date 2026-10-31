@@ -777,7 +777,7 @@ async function go(page,sub){
   try{
     if(page==='dashboard'){setHeader('مرکز کنترل','داشبورد مدیریتی','نمای کامل وضعیت عملیات و جریان مشتریان');await renderDashboard()}
     else if(page==='gate'){if(['dashboard','reports'].includes(app.sub.gate)){setHeader('نگهبانی',app.sub.gate==='reports'?'گزارش‌های نگهبانی':'داشبورد نگهبانی','نمای خلاصه کارتابل نگهبانی');await renderRoleCartableDashboard('gate',app.sub.gate);return}setHeader('نگهبانی','کارتابل نگهبانی','ورود مشتری، سوابق مراجعه و کنترل خروج در یک فضای عملیاتی');await renderGate(app.sub.gate||'entry')}
-    else if(page==='sales'){if(app.sub.sales==='history'){setHeader('فروش','سوابق سفارش و فاکتور','جستجو و پیگیری گردش سفارش‌ها');await renderSalesHistory();return}if(['dashboard','reports'].includes(app.sub.sales)){setHeader('فروش',app.sub.sales==='reports'?'گزارش‌های فروش':'داشبورد فروش','نمای خلاصه کارتابل فروش');await renderRoleCartableDashboard('sales',app.sub.sales);return}setHeader('فروش','کارتابل فروش','شش بخش عملیاتی، از ثبت سفارش تا بازبینی نهایی تحویل راننده');await renderSales(app.sub.sales==='intake'?'onsite':(app.sub.sales||'onsite'))}
+    else if(page==='sales'){if(app.sub.sales==='products'){setHeader('فروش','محصولات و قیمت‌ها','جستجو و به‌روزرسانی قیمت روز محصولات');await renderProductsPage();return}if(app.sub.sales==='history'){setHeader('فروش','سوابق سفارش و فاکتور','جستجو و پیگیری گردش سفارش‌ها');await renderSalesHistory();return}if(['dashboard','reports'].includes(app.sub.sales)){setHeader('فروش',app.sub.sales==='reports'?'گزارش‌های فروش':'داشبورد فروش','نمای خلاصه کارتابل فروش');await renderRoleCartableDashboard('sales',app.sub.sales);return}setHeader('فروش','کارتابل فروش','شش بخش عملیاتی، از ثبت سفارش تا بازبینی نهایی تحویل راننده');await renderSales(app.sub.sales==='intake'?'onsite':(app.sub.sales||'onsite'))}
     else if(page==='warehouse'){if(['dashboard','reports'].includes(app.sub.warehouse)){setHeader('انبار',app.sub.warehouse==='reports'?'گزارش‌های انبار':'داشبورد انبار','نمای خلاصه کارتابل انبار');await renderRoleCartableDashboard('warehouse',app.sub.warehouse);return}if(app.sub.warehouse==='history'){setHeader('انبار','سوابق مراجعه','سوابق مراجعه و وضعیت مشتریان ثبت‌شده');const v=await api('/api/visits');$('#content').innerHTML=renderGateHistory(v.visits||[],true);return}if(app.wh38)app.wh38.phase=['incoming','preparing','stores'].includes(app.sub.warehouse)?app.sub.warehouse:'incoming';setHeader('انبار','کارتابل انبار','صف سفارش‌ها، آماده‌سازی و پیگیری فروشگاه‌ها');await renderWarehouse()}
     else if(page==='store'){if(['dashboard','reports'].includes(app.sub.store)){setHeader('فروشگاه',app.sub.store==='reports'?'گزارش‌های فروشگاه':'داشبورد فروشگاه','خلاصه وضعیت سفارش‌ها');await renderRoleCartableDashboard('store',app.sub.store);return}setHeader('فروشگاه','کارتابل فروشگاه','ثبت سفارش و پیگیری تایید فروش تا زمان ورود به انبار');await renderStorePortal()}
     else if(page==='scale'){setHeader('باسکول','کارتابل باسکول','ثبت ورود و خروج وسیله‌ها، محاسبه خالص بار و ثبت کالا');await renderScale()}
@@ -1107,7 +1107,7 @@ function auditLabel(a){return AUDIT_LABELS[a]||a||'—'}
 function auditDetails(x){const d=x.details||{};const parts=[];if(d.orderId)parts.push('سفارش '+String(d.orderId).slice(0,8).toUpperCase());if(d.itemCount!=null)parts.push('تعداد قلم '+d.itemCount);if(d.requestedQty!=null)parts.push('مقدار '+qty(d.requestedQty)+' '+(d.requestedUnit||''));if(d.reason)parts.push('دلیل: '+d.reason);if(d.invoiceNumber)parts.push('فاکتور '+d.invoiceNumber);return parts.join(' • ')||'ثبت شد'}
 
 /* ---------- Admin ---------- */
-const ADMIN_SETTINGS_TABS=[['https','دامنه و HTTPS'],['users','کاربران و سمت‌ها'],['prices','قیمت روز'],['products','کاتالوگ محصولات'],['audit','ردپای فعالیت‌ها']];
+const ADMIN_SETTINGS_TABS=[['https','دامنه و HTTPS'],['users','کاربران و سمت‌ها'],['products','محصولات'],['audit','ردپای فعالیت‌ها']];
 function adminSettingsTabsHtml(){
   return `<nav class="settings-tabs" role="tablist" aria-label="بخش‌های تنظیمات سیستم">${ADMIN_SETTINGS_TABS.map(([id,label])=>`<button type="button" role="tab" id="settings-tab-${id}" aria-controls="settings-panel-${id}" data-settings-tab="${id}">${label}</button>`).join('')}</nav>`;
 }
@@ -1125,9 +1125,9 @@ function initAdminSettingsTabs(){
   select(app.adminSettingsTab);
 }
 async function renderAdmin(){
-  const [u,a,p,pr,dr]=await Promise.all([api('/api/admin/users'),api('/api/admin/audit'),api('/api/admin/products'),api('/api/prices'),api('/api/drivers').catch(()=>({drivers:[]}))]);
-  const admDrivers=dr.drivers||[];
-  const users=u.users||[]; const products=p.products||[]; const active=products.filter(x=>x.isActive);
+  const [u,a]=await Promise.all([api('/api/admin/users'),api('/api/admin/audit')]);
+  if(app.page!=='admin')return;
+  const users=u.users||[];
   $('#content').innerHTML=`
   ${adminSettingsTabsHtml()}
   <div class="settings-panel" id="settings-panel-https" role="tabpanel" aria-labelledby="settings-tab-https" tabindex="0">
@@ -1169,15 +1169,8 @@ async function renderAdmin(){
     </div>${pagerHtml('users',users.length)}
   </section>
   </div>
-  <div class="settings-panel" id="settings-panel-prices" role="tabpanel" aria-labelledby="settings-tab-prices" tabindex="0">
-    <section class="card admin-form">
-      <div class="panel-head"><div><span class="eyebrow">TODAY PRICE</span><h2>ثبت قیمت روز</h2><p>قیمت هر کیلوگرم برای استفاده در تسویه فروش.</p></div></div>
-      <form id="priceForm"><div class="form-grid section-space"><div class="field"><label>محصول</label><div class="input-shell"><select name="productId">${active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div></div><div class="field"><label>قیمت هر کیلوگرم (ریال)</label><div class="input-shell"><input name="price" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۲۵۰٬۰۰۰" required data-rial></div></div>${jalaliInput('تاریخ','date',today(),false)}</div><div class="sticky-actions"><span></span><button class="btn btn-secondary">ثبت قیمت</button></div></form>
-    </section>
-  </div>
-
   <div class="settings-panel" id="settings-panel-products" role="tabpanel" aria-labelledby="settings-tab-products" tabindex="0">
-  <section class="card card-pad section-space"><div class="panel-head"><div><span class="eyebrow">PRODUCT CATALOG</span><h2>کاتالوگ محصولات</h2><p>کاتالوگ ۶۳ محصول شرکت با کد سریع در سامانه نگهداری می‌شود و قابل ویرایش است.</p></div><div class="toolbar"><span class="pill">${qty(products.length)} محصول • ${qty(active.length)} فعال</span><button class="btn btn-secondary btn-sm" data-action="sync-catalog">${icon('receipt',14)} همگام‌سازی کاتالوگ</button></div></div><form id="productForm" class="form-grid-3 section-space"><div class="field"><label>کد سریع</label><div class="input-shell"><input name="quickCode" maxlength="2" inputmode="numeric" pattern="[0-9]{2}" required></div></div><div class="field"><label>نام محصول</label><div class="input-shell"><input name="name" required></div></div><div class="field"><label>واحد پیش‌فرض</label><div class="input-shell"><select name="defaultUnit"><option>کیلوگرم</option><option>بسته</option><option>عدد</option><option>کارتن</option></select></div></div><div><button class="btn btn-primary" type="submit">${icon('plus',15)} افزودن محصول</button></div></form><div class="product-list">${pageItems('products',products).map(x=>`<div class="product-row"><div class="product-code">${esc(x.quickCode)}</div><div><strong>${esc(x.name)}</strong><span>${esc(x.id.slice(0,8))}</span></div><div><span>واحد</span><strong>${esc(x.defaultUnit)}</strong></div><div>${x.isActive?'<span class="badge green">فعال</span>':'<span class="badge gray">غیرفعال</span>'}</div><button class="btn btn-secondary btn-sm" data-action="edit-product" data-id="${x.id}">${icon('edit',14)} ویرایش</button></div>`).join('')||'<div class="empty">محصولی ثبت نشده است.</div>'}</div>${pagerHtml('products',products.length)}</section>
+    <div id="settings-products-content"></div>
   </div>
   <div class="settings-panel" id="settings-panel-audit" role="tabpanel" aria-labelledby="settings-tab-audit" tabindex="0">
   <div class="admin-grid section-space"><section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">AUDIT TRAIL</span><h2>ردپای فعالیت‌ها</h2></div></div><div class="table-wrap section-space"><table class="table audit-table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>موجودیت</th></tr></thead><tbody>${pageItems('audit',a.audit).map(x=>`<tr><td>${dt(x.createdAt)}</td><td><strong>${esc(x.username||'—')}</strong></td><td><b>${esc(auditLabel(x.action))}</b><div class="subtle">${esc(auditDetails(x))}</div></td><td>${esc(x.entityType||'—')}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">لاگی وجود ندارد.</td></tr>'}</tbody></table></div>${pagerHtml('audit',a.audit.length)}</section></div>
@@ -1186,6 +1179,7 @@ async function renderAdmin(){
   enhanceAdminCollapsible();
   initAdminSettingsTabs();
   startTlsSettings();
+  await renderProductsPage();
 }
 function showTlsStatus(data){
   const el=$('#tlsStatus');if(!el)return;
@@ -1213,7 +1207,6 @@ function bindAdmin(){
   $('#content').onclick=async e=>{
     const el=e.target.closest('[data-action]'); const a=el?.dataset.action;
     if(a==='edit-product')return openProductEdit(el.dataset.id);
-    if(a==='sync-catalog'){try{const d=await api('/api/admin/products/sync-catalog',{method:'POST'});toast(`کاتالوگ همگام شد؛ ${qty(d.total)} محصول بررسی شد.`);await renderAdmin()}catch(err){toast(err.message)}}
     if(a==='manage-users'||a==='edit-user')return go('users');
     if(a==='delete-user')return deleteUser(el.dataset.id);
     if(a==='print-page')window.print();
@@ -1224,8 +1217,6 @@ function bindAdmin(){
     const usync=()=>{uf.querySelectorAll('[data-legacy-driver-field]').forEach(f=>{f.style.display=rsel.value==='driver'?'':'none';});};
     rsel?.addEventListener('change',usync); usync();}
   $('#userForm')?.addEventListener('submit',async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.roleCode=normalizeRole(b.roleCode);b.username=String(b.username||'').trim();b.fullName=String(b.fullName||'').trim();b.position=String(b.position||'').trim();b.storeName=String(b.storeName||'').trim();if(b.roleCode==='driver'){try{b.drvPlate=plateEditorValue(e.target,{required:true});}catch(err){return toast(err.message);}}if(b.roleCode==='store'&&!b.storeName)return toast('برای کاربر فروشگاه، نام فروشگاه را وارد کنید.');if(b.roleCode==='driver'&&!(String(b.drvPhone||'').trim()&&String(b.drvVehicleType||'').trim()&&String(b.drvPlate||'').trim()))return toast('برای نقش راننده، شماره تماس، نوع خودرو و پلاک را کامل وارد کنید؛ راننده با همین مشخصات ساخته می‌شود.');try{await api('/api/admin/users',{method:'POST',body:JSON.stringify(b)});toast('حساب کاربری با موفقیت ساخته شد.');await renderAdmin()}catch(err){toast(err.message)}});
-  $('#productForm')?.addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/admin/products',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});toast('محصول اضافه شد.');await renderAdmin()}catch(err){toast(err.message)}});
-  $('#priceForm')?.addEventListener('submit',async e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target)); fd.price=String(parseRial(fd.price||'')); if(!fd.price || Number(fd.price)<=0) return toast('قیمت معتبر وارد کنید.'); try{await api('/api/admin/prices',{method:'POST',body:JSON.stringify(fd)});toast('قیمت ثبت شد.'); e.target.reset(); bindRialInputs(e.target);}catch(err){toast(err.message)}});
   bindRialInputs($('#content'));
 }
 async function openUserEdit(id){
@@ -2717,7 +2708,7 @@ function renderNav(){
   // v37.10.0 — هر ورودی: [کلید، عنوان، آیکن موضوعی بخش، کلید شمارنده]؛ آیکن و شمارنده دیگر قاطی نمی‌شوند.
   const entries={
     gate:[['entry','ثبت ورود','entry',null],['waiting','در انتظار اقدام فروش','bell','gateEntry'],['exit','کنترل خروج','exitDoor','gateExit'],['dispatch','تحویل راننده','truck','gateDispatchPending'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
-    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['reports','گزارش‌ها','reports',null]],
+    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['products','محصولات','package',null],['reports','گزارش‌ها','reports',null]],
     warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['stores','فروشگاه‌ها','store','warehouseStores'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     dispatch:[['dashboard','داشبورد','dashboard',null],['drivers','رانندگان','driver',null],['orders','سفارشات','route','dispatchPending'],['reports','گزارشات','reports',null]],
     store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]],
@@ -2729,7 +2720,7 @@ function renderNav(){
       const list=entries[role];
       $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${typeof badgeKey==='string'&&badgeCount(badgeKey)?navBadge(badgeCount(badgeKey)):''}</button>`).join('');return;
     }
-    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['products','محصولات','package',0],['users','کاربران','user',0],['transport-vehicles','خودروهای ترابری','truck',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
+    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['users','کاربران','user',0],['transport-vehicles','خودروهای ترابری','truck',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
     $('#railNav').innerHTML='<div class="cartable-nav-title admin-root-title">مدیریت سامانه</div>'+items.map(([p,l,i,c])=>p==='gate'||p==='sales'||p==='warehouse'||p==='dispatch'||p==='store'?`<button type="button" class="cartable-nav-item" data-admin-cartable="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`:`<button type="button" class="cartable-nav-item ${app.page===p?'active':''}" data-page="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`).join('');return;
   }
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];

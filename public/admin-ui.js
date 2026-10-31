@@ -300,8 +300,11 @@ async function deleteDriver(id) {
    فروش: ویرایش محصول و تعیین قیمت روز (ایجاد و حذف محصول فقط با مدیر؛ سرور هم همین را کنترل می‌کند). */
 function admIsCatalogAdmin() { return (typeof normalizeRole === 'function' ? normalizeRole(app.user?.roleCode) : app.user?.roleCode) === 'admin'; }
 async function renderProductsPage() {
+  const page = app.page, sub = app.sub?.sales;
+  const host = page === 'admin' ? $('#settings-products-content') : $('#content');
+  if (!host || !(page === 'admin' || page === 'products' || (page === 'sales' && sub === 'products'))) return;
   const [p, pr] = await Promise.all([api('/api/admin/products'), api('/api/prices?date=' + admToday())]);
-  if (app.page !== 'products') return;
+  if (app.page !== page || (page === 'sales' && app.sub?.sales !== sub) || !host.isConnected) return;
   const isAdmin = admIsCatalogAdmin();
   adm.products = p.products || [];
   adm.todayPrices = Object.fromEntries((pr.prices || []).map((x) => [x.productId, x.price]));
@@ -310,13 +313,13 @@ async function renderProductsPage() {
   const desc = isAdmin
     ? `هر محصول را ثبت، ویرایش یا حذف کنید و قیمت امروز (${admTodayLabel()}) را جلوی آن تعیین کنید.`
     : `قیمت امروز (${admTodayLabel()}) را جلوی هر محصول وارد و ثبت کنید (Enter هم ثبت می‌کند). نام، کد سریع، واحد و وضعیت محصول با «ویرایش» قابل تغییر است.`;
-  $('#content').innerHTML = admHead('receipt', isAdmin ? 'محصولات و قیمت‌ها' : 'کارتابل محصولات و قیمت‌ها', desc, adm.products.length,
+  host.innerHTML = admHead('receipt', isAdmin ? 'محصولات و قیمت‌ها' : 'کارتابل محصولات و قیمت‌ها', desc, adm.products.length,
     `${admSearchBox('admProdSearch', 'جستجوی نام یا کد سریع', adm.q)}
      <span class="adm-count">${fa(priced)} از ${fa(active.length)} محصول فعال قیمت امروز دارند</span>
      ${isAdmin ? `<button class="btn btn-primary" type="button" data-adm="prod-new">${icon('plus', 16)} محصول جدید</button>` : ''}`)
     + `<div id="admList" class="adm-list"></div></section>`;
   $('#admProdSearch').addEventListener('input', (e) => { adm.q = e.target.value; paintProducts(); });
-  bindAdm('products');
+  bindAdm('products', host);
   paintProducts();
 }
 function paintProducts() {
@@ -565,8 +568,8 @@ function openResourceForm(item){
 
 /* ---------- اتصال رویدادها ---------- */
 function admNorm(v) { return en(String(v || '')).toLowerCase().replace(/\s+/g, ' ').trim(); }
-function bindAdm(page) {
-  const c = $('#content');
+function bindAdm(page, root = $('#content')) {
+  const c = root;
   c.onclick = async (e) => {
     const el = e.target.closest('[data-adm]'); if (!el) return;
     const a = el.dataset.adm, id = el.dataset.id;

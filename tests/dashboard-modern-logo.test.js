@@ -58,7 +58,7 @@ test('every rail section carries a thematic icon separate from its badge key',()
   assert.match(app,/\['gate','کارتابل نگهبانی','shield'/);
   assert.match(app,/\['store','کارتابل فروشگاه','store'/);
   assert.match(app,/\['customers','مشتریان','users',0\]/);
-  assert.match(app,/\['products','محصولات','package',0\]/);
+  assert.match(app,/\['products','محصولات','package',null\]/); // در کارتابل فروش؛ صفحهٔ مدیر در تنظیمات است
   assert.match(app,/\['users','کاربران','user',0\]/);
   assert.match(app,/\['payment-devices','دستگاه‌های پوز','pos',0\]/);
   assert.match(app,/\['activity','سوابق فعالیت','activity',0\]/);

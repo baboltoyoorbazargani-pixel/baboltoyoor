@@ -13,7 +13,7 @@ test('مرورگر: سربرگ‌های تنظیمات، جابه‌جایی، �
   const products=(await (await ctx.request.get(base+'/api/admin/products')).json()).products;
   const code=Array.from({length:100},(_,i)=>String(i).padStart(2,'0')).find(n=>!products.some(p=>p.quickCode===n));assert.ok(code);
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base,{waitUntil:'networkidle'});await page.evaluate(()=>go('admin'));await page.locator('#settings-tab-https').waitFor();
-  const ids=['https','users','prices','products','audit'];
+  const ids=['https','users','products','audit'];
   for(const [width,height] of [[1920,1080],[1024,600],[390,844],[320,700]]){
    await page.setViewportSize({width,height});
    for(const selected of ids){
@@ -23,13 +23,19 @@ test('مرورگر: سربرگ‌های تنظیمات، جابه‌جایی، �
     assert.equal(await page.locator('.settings-tabs').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true,`tabs overflow ${width}`);
    }
   }
-  await page.locator('#settings-tab-https').click();await page.locator('#tlsDomain').fill('example.com');await page.locator('#settings-tab-prices').click();await page.locator('#settings-tab-https').click();assert.equal(await page.locator('#tlsDomain').inputValue(),'example.com','switching tabs preserves unsubmitted input');
+  await page.locator('#settings-tab-https').click();await page.locator('#tlsDomain').fill('example.com');await page.locator('#settings-tab-products').click();await page.locator('#settings-tab-https').click();assert.equal(await page.locator('#tlsDomain').inputValue(),'example.com','switching tabs preserves unsubmitted input');
   await page.locator('#settings-tab-https').focus();await page.keyboard.press('ArrowLeft');assert.equal(await page.locator('#settings-tab-users').getAttribute('aria-selected'),'true');assert.equal(await page.evaluate(()=>document.activeElement.id),'settings-tab-users');await page.keyboard.press('End');assert.equal(await page.locator('#settings-tab-audit').getAttribute('aria-selected'),'true');await page.keyboard.press('Home');assert.equal(await page.locator('#settings-tab-https').getAttribute('aria-selected'),'true');
-  await page.locator('#settings-tab-prices').click();await page.locator('#priceForm [name=price]').fill('250000');let responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/prices')&&r.request().method()==='POST');await page.locator('#priceForm .sticky-actions button').click();let response=await responsePromise;assert.equal(response.status(),201);assert.equal((await response.json()).price.price,250000);
+  assert.equal(await page.locator('#settings-tab-prices').count(),0);
   await page.locator('#settings-tab-users').click();assert.equal(await page.locator('.user-directory').isVisible(),true);assert.equal(await page.locator('[data-action=manage-users]').isVisible(),true);
-  await page.locator('#settings-tab-products').click();await page.locator('#settings-panel-products [data-pager=products][data-to="2"]').click();await page.waitForFunction(()=>document.querySelector('#settings-tab-products')?.getAttribute('aria-selected')==='true'&&document.querySelector('#settings-panel-products [data-pager=products][data-to="1"]'));
-  await page.locator('#productForm [name=quickCode]').fill(code);await page.locator('#productForm [name=name]').fill('محصول آزمایشی سربرگ');responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/products')&&r.request().method()==='POST');await page.locator('#productForm button').click();response=await responsePromise;assert.equal(response.status(),201);await page.waitForFunction(()=>document.querySelector('#settings-tab-products')?.getAttribute('aria-selected')==='true'&&document.querySelector('#productForm [name=name]')?.value==='');
-  const updated=(await (await ctx.request.get(base+'/api/admin/products')).json()).products;assert.ok(updated.some(p=>p.quickCode===code&&p.name==='محصول آزمایشی سربرگ'));
+  await page.locator('#settings-tab-products').click();await page.locator('#admList [data-price-for]').first().waitFor();
+  await page.locator('#admProdSearch').fill(products[0].quickCode);assert.ok(await page.locator('#admList .adm-row').count()>0);await page.locator('#admProdSearch').fill('');
+  const price=page.locator('#admList [data-price-for]').first();const productId=await price.getAttribute('data-price-for');await price.fill('250000');let responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/prices')&&r.request().method()==='POST');await price.press('Enter');let response=await responsePromise;assert.equal(response.status(),201);assert.equal((await response.json()).price.price,250000);
+  await page.locator('[data-adm=prod-new]').click();await page.locator('#admProductForm [name=quickCode]').fill(code);await page.locator('#admProductForm [name=name]').fill('محصول آزمایشی سربرگ');responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/products')&&r.request().method()==='POST');await page.locator('#admProductForm button[type=submit]').click();response=await responsePromise;assert.equal(response.status(),201);const newProduct=(await response.json()).product;
+  await page.waitForSelector(`[data-adm=prod-edit][data-id="${newProduct.id}"]`);assert.equal(await page.locator('#settings-tab-products').getAttribute('aria-selected'),'true');
+  await page.locator(`[data-adm=prod-edit][data-id="${newProduct.id}"]`).click();await page.locator('#admProductForm [name=name]').fill('محصول ویرایش‌شده');responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/products/'+newProduct.id)&&r.request().method()==='PUT');await page.locator('#admProductForm button[type=submit]').click();response=await responsePromise;assert.equal(response.status(),200);await page.waitForSelector(`[data-adm=prod-delete][data-id="${newProduct.id}"]`);
+  const updated=(await (await ctx.request.get(base+'/api/admin/products')).json()).products;assert.ok(updated.some(p=>p.quickCode===code&&p.name==='محصول ویرایش‌شده'));
+  page.once('dialog',d=>d.accept());responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/admin/products/'+newProduct.id)&&r.request().method()==='DELETE');await page.locator(`[data-adm=prod-delete][data-id="${newProduct.id}"]`).click();response=await responsePromise;assert.equal(response.status(),200);
+  assert.ok(productId);
   assert.deepEqual(errors,[]);await ctx.close();
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const stopped=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true});}
 });
