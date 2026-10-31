@@ -613,9 +613,19 @@ function adminNavItems() {
 
 // مدیریت نسخه‌های پشتیبان SQLite؛ فقط مدیر. بازیابی، تمام داده‌های فعلی را جایگزین می‌کند.
 async function renderBackupsPage() {
-  const { backups } = await api('/api/admin/backups');
+  const { backups, schedule, automaticCount } = await api('/api/admin/backups');
   $('#content').innerHTML = admHead('backups', 'پشتیبان‌گیری و بازیابی', 'ساخت، بارگذاری و بازیابی نسخهٔ پشتیبان داده‌ها.', undefined) + `
     <div class="adm-report"><div class="adm-rep-side">
+      <form id="auto-backup-form" class="auto-backup-settings">
+        <h3>پشتیبان‌گیری خودکار ساعتی</h3>
+        <label class="auto-backup-toggle"><input type="checkbox" name="enabled" ${schedule.enabled?'checked':''}> فعال‌سازی پشتیبان خودکار</label>
+        <label class="cust-field"><span>مسیر پوشه روی سرور</span><input name="directory" dir="ltr" maxlength="1024" value="${admE(schedule.directory||'')}" placeholder="D:&#92;BabolToyor-Backups" autocomplete="off"></label>
+        <p>مسیر مربوط به سرور است، نه رایانهٔ شما. حساب سرویس برنامه باید مجوز نوشتن در آن را داشته باشد و پوشه از پیوند امن فایل پشتیبانی کند (مانند NTFS). با فعال‌سازی، یک پشتیبان فوراً و سپس هر ساعت هنگام روشن‌بودن سرور ساخته می‌شود.</p>
+        <p>پشتیبان‌ها خودکار حذف نمی‌شوند؛ فضای دیسک را کنترل کنید. این فایل شامل کلید گواهی HTTPS نیست. مسیر امن با دسترسی محدود انتخاب کنید و نسخه‌ای جدا از سرور نگه دارید.</p>
+        <button class="btn btn-primary" type="submit">ذخیره تنظیمات</button>
+        <div class="auto-backup-status" role="status"><strong>وضعیت: ${schedule.enabled?'فعال':'غیرفعال'}</strong><span>آخرین پشتیبان موفق: ${schedule.lastSuccessAt?admE(dt(schedule.lastSuccessAt)):'هنوز ساخته نشده'}</span>${schedule.lastBackup?`<span>فایل: <b dir="ltr">${admE(schedule.lastBackup)}</b></span>`:''}${schedule.enabled&&schedule.nextRunAt?`<span>نوبت بعدی${schedule.lastError?' (تلاش مجدد)':''}: ${admE(dt(schedule.nextRunAt))}</span>`:''}${schedule.lastError?`<span class="auto-backup-error">${admE(schedule.lastError)}</span>`:''}</div>
+        <div id="auto-backup-message" role="alert"></div>
+      </form>
       <p>نسخهٔ پشتیبان شامل اطلاعات کاربران و هش رمزهاست؛ فایل دانلودشده را در محل امن و جدا از سرور نگه دارید.</p>
       <button class="btn btn-primary" type="button" id="backup-create">ایجاد نسخهٔ پشتیبان</button>
       <p>بازیابی داده‌های فعلی را جایگزین می‌کند. پیش از آن یک نسخهٔ ایمنی خودکار ساخته می‌شود و همه کاربران باید دوباره وارد شوند.</p>
@@ -624,8 +634,18 @@ async function renderBackupsPage() {
       <p>فایل دانلودشدهٔ پشتیبان را انتخاب کنید. پس از بررسی، فایل به فهرست اضافه می‌شود؛ بازیابی جداگانه با دکمهٔ «بازیابی» و تأیید رمز انجام می‌شود.</p>
       <div id="backup-message" role="status"></div>
     </div><div class="adm-rep-main"><div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>نام نسخه</th><th>زمان</th><th>حجم (بایت)</th><th>عملیات</th></tr></thead><tbody>
-      ${backups.map(b => `<tr><td>${admE(b.name)}</td><td>${admE(dt(b.createdAt))}</td><td>${admE(b.size)}</td><td><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
-    </tbody></table></div><div id="backup-confirm"></div></div></div></section>`;
+      ${backups.map(b => `<tr><td>${admE(b.name)}${b.automatic?' <small>(خودکار)</small>':''}</td><td>${admE(dt(b.createdAt))}</td><td>${admE(b.size)}</td><td><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
+    </tbody></table></div>${automaticCount>200?`<p>فهرست فقط ۲۰۰ پشتیبان خودکار جدیدتر را نشان می‌دهد؛ بقیه در پوشهٔ مقصد محفوظ‌اند و با بارگذاری قابل بازیابی هستند.</p>`:''}<div id="backup-confirm"></div></div></div></section>`;
+  $('#auto-backup-form').onsubmit = async e => {
+    e.preventDefault(); const form=e.currentTarget, button=form.querySelector('button[type=submit]'), message=$('#auto-backup-message');
+    button.disabled=true; message.textContent='در حال ذخیره و بررسی مسیر…';
+    try {
+      const result=await api('/api/admin/backups/schedule',{method:'PUT',body:JSON.stringify({enabled:form.elements.enabled.checked,directory:form.elements.directory.value})});
+      await renderBackupsPage();
+      if(result.schedule.lastError) $('#auto-backup-message').textContent=result.schedule.lastError;
+      else toast('تنظیمات پشتیبان خودکار ذخیره شد.');
+    } catch(err) { message.textContent=err.message; button.disabled=false; }
+  };
   $('#backup-create').onclick = async e => { e.currentTarget.disabled = true; try { await api('/api/admin/backups', { method:'POST', body:'{}' }); await renderBackupsPage(); toast('نسخهٔ پشتیبان ساخته شد.'); } catch (err) { $('#backup-message').textContent = err.message; e.currentTarget.disabled = false; } };
   $('#backup-upload').onclick = async e => {
     const button = e.currentTarget, file = $('#backup-file').files[0], message = $('#backup-message');

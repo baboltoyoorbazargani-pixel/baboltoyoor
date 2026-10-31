@@ -10,6 +10,7 @@ const { createHandler } = require('./lib/http');
 const { manager: tlsManager } = require('./lib/tls-manager');
 require('./lib/routes');
 const { activateDueRemoteOrders } = require('./lib/domain');
+const autoBackup = require('./lib/auto-backup');
 
 const release = store.acquireLock();
 store.init();
@@ -20,10 +21,14 @@ server.requestTimeout = 30000;
 server.headersTimeout = 15000;
 server.keepAliveTimeout = 5000;
 
+// Run missed backups on restart; the schedule is independent of browser sessions.
+try { autoBackup.runDue(); } catch (e) { log.error('auto-backup', 'scheduler startup failed', {error:e.message}); }
+
 // وظایف زمان‌بندی‌شده: فعال‌سازی سفارش‌های آینده و پاک‌سازی نشست‌های منقضی
 const timers = [
   setInterval(() => { try { activateDueRemoteOrders(); } catch (e) { log.error('scheduler', 'activation failed', { error: e.message }); } }, 15000),
   setInterval(() => sec.pruneSessions(), 5 * 60 * 1000),
+  setInterval(() => { try { autoBackup.runDue(); } catch (e) { log.error('auto-backup', 'scheduler failed', {error:e.message}); } }, 60 * 1000),
 ];
 timers.forEach((t) => t.unref());
 
