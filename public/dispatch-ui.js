@@ -314,7 +314,7 @@ function dspDriverCard(o) { // v37.27.0 — کارت فشردهٔ تک‌ردی�
 }
 function dspDoneCard(o) {
  const d=o.dispatch||{};
- return `<article class="dsp-card order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${dspBadge(d.status)}<span>${esc(formatDateTime24(d.deliveredAt))}</span><span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات محموله</button></article>`;
+ return `<article class="dsp-card order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${dspBadge(d.status)}<span class="dsp-order-date">تاریخ سفارش: ${esc(formatDateTime24(o.createdAt))}</span><span class="dsp-delivered-date">تاریخ تحویل: ${esc(formatDateTime24(d.deliveredAt))}</span><span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات محموله</button></article>`;
 }
 async function dspDriverClick(e) {
   const tab=e.target.closest('[data-dsp-driver-tab]');

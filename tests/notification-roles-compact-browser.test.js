@@ -55,9 +55,14 @@ await first.click();await pages.store.locator('#modal.open .st38-delivered-items
 assert.match(await pages.store.locator('#modal').innerText(),/سرویس اول/);
 pages.store.once('dialog',d=>d.accept());const confirmFirst=pages.store.waitForResponse(r=>r.url().endsWith('/confirm-receipt')&&r.request().method()==='POST');
 await pages.store.locator('#modal [data-action=store-confirm-delivery][data-run="1"]').click();assert.equal((await confirmFirst).status(),200);
+// Delivery navigation counts unread notifications, not historic orders or workload.
+await pages.sales.evaluate(()=>refreshIndicators());const unreadDelivery=(await get('sales','/api/notifications')).notifications.filter(n=>!n.isRead&&n.navSection==='delivery'&&n.entityId===order.id);assert.equal(unreadDelivery.length,2);assert.equal(await pages.sales.locator('[data-role-page=sales][data-cartable=delivery] .nav-badge').innerText(),'۲');
+await pages.sales.evaluate(id=>markNotificationsRead(id),unreadDelivery[0].id);assert.equal(await pages.sales.locator('[data-role-page=sales][data-cartable=delivery] .nav-badge').innerText(),'۱');
+await pages.sales.evaluate(id=>markNotificationsRead(id),unreadDelivery[1].id);assert.equal(await pages.sales.locator('[data-role-page=sales][data-cartable=delivery] .nav-badge').count(),0);assert.ok((await get('sales','/api/workload')).counts.salesDeliveryPending>0,'reading an alert must not erase pending work');
 // Receipt of an unfinished order appears once, on that order's history summary.
 await pages.sales.evaluate(async()=>{app.salesStoreTab='history';await go('sales','stores');if(app.salesFetchPromise)await app.salesFetchPromise;const d=await fetchSalesCache(true);paintSalesPaneV29('stores',d)});
 const receiptRow=pages.sales.locator(`[data-store-section=history] [data-store-summary-id="${order.id}"]`);await receiptRow.waitFor();assert.equal(await receiptRow.count(),1);assert.match(await receiptRow.innerText(),/سرویس اول: دریافت فروشگاه تأیید شد/);assert.equal(await pages.sales.locator('.store-receipt-history-v43').count(),0);
+await pages.sales.setViewportSize({width:320,height:850});const receiptGeometry=await receiptRow.evaluate(e=>{const d=e.querySelector('[data-action=store-order-details-v25]').getBoundingClientRect(),r=e.querySelector('.store-receipt-summary').getBoundingClientRect();return{below:r.top>=d.bottom-1,overflow:e.scrollWidth-e.clientWidth,list:e.parentElement.scrollWidth-e.parentElement.clientWidth}});assert.equal(receiptGeometry.below,true);assert.ok(receiptGeometry.overflow<=1&&receiptGeometry.list<=1,JSON.stringify(receiptGeometry));await pages.sales.setViewportSize({width:1440,height:850});
 await receiptRow.locator('[data-action=store-order-details-v25]').click();await pages.sales.locator('#modal.open .v21-detail-table').waitFor();await pages.sales.locator('#modal .modal-close').click();
 await pages.sales.evaluate(()=>go('sales','delivery'));
 await pages.sales.evaluate(async()=>{if(app.salesFetchPromise)await app.salesFetchPromise;const d=await fetchSalesCache(true);paintSalesPaneV29('delivery',d)});
@@ -67,6 +72,7 @@ await pages.sales.locator('#modal.open .sales-store-delivery-details').waitFor()
 const finalized=pages.sales.waitForResponse(r=>r.url().endsWith('/finalize')&&r.request().method()==='POST');await pages.sales.locator('#modal [data-action=sales-finalize-driver-delivery]').click();assert.equal((await finalized).status(),200);
 await pages.sales.waitForFunction(()=>!document.querySelector('#modal.open'));
 await pages.sales.locator('[data-delivery-tab=history]').click();
+assert.equal(await pages.sales.locator('[data-delivery-tab=history] b').count(),0,'history total is not a pending-work badge');
 await pages.sales.locator(`[data-delivery-section=history] [data-delivery-order="${order.id}"]`).waitFor();
 await post('warehouse',`/api/orders/${order.id}/store-run/weights`,{run:2,items:[{itemId,deliveredKg:6}]});
 await post('warehouse',`/api/orders/${order.id}/store-run/send-run`,{run:2});

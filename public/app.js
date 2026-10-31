@@ -1622,6 +1622,8 @@ function applyNotifSnapshot(d){
   app.notifSnapshot=d;
   notifyNewArrivals(d);
   const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
+  updateSalesDeliveryUnread();
+  renderNav();
 }
 async function toggleNotifications(){
   const panel=$('#notificationPanel'); if(!panel) return;
@@ -1654,6 +1656,7 @@ async function acknowledgeNotifications(id=''){
     if(app.notifUnread) startNotifReminder(false);
     closeNotifPanel();
     renderNav();
+    updateSalesDeliveryUnread();
     return true;
   }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}
 }
@@ -2729,11 +2732,16 @@ async function refreshIndicators(){
   if(w){app.workload=w.counts||{};
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
     const keys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
-    $$('[data-sales-count]').forEach(el=>{const n=Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0)+(el.dataset.salesCount==='delivery'?Number(app.workload?.salesDeliveryActive||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
+    $$('[data-sales-count]').forEach(el=>{if(el.dataset.salesCount==='delivery')return;const n=Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
   }
   if(noti && seq>(app.notifAppliedSeq||0)){app.notifAppliedSeq=seq;applyNotifSnapshot(noti);}
+  updateSalesDeliveryUnread();
   const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
   renderNav();
+}
+function updateSalesDeliveryUnread(){
+  const n=navUnread('sales','delivery');
+  $$('[data-sales-count="delivery"]').forEach(el=>{el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
 }
 function navUnread(role,section){
   return (app.notifSnapshot?.notifications||[]).filter(n=>!n.isRead&&normalizeRole(n.targetRole)===role&&(!section||n.navSection===section)).length;
@@ -2798,7 +2806,7 @@ function renderSalesTabsV29(tab){
     stores:Number((app.workload?.store||0)+(app.workload?.storeScheduled||0)),
     flow:Number(app.workload?.salesFlow||0),
     settlement:Number(app.workload?.salesSettlement||0),
-    delivery:(Number(app.workload?.salesDeliveryPending||0)+Number(app.workload?.salesDeliveryActive||0)),
+    delivery:navUnread('sales','delivery'),
     future:Number(app.workload?.salesFuture||0)
   };
   return `<nav class="v26-sales-tabs v30-sales-tabs" aria-label="هفت بخش کارتابل فروش">${SALES_TABS_V29.map((id,i)=>{
