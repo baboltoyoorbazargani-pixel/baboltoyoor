@@ -43,7 +43,7 @@ test('پنل فروش: فقط وقتی درخواست ارسال هست؛ کار
 });
 
 test('کارت تحویل فروشگاه: هر محموله چیپ سرویس و دکمهٔ تأیید همان محموله را دارد',()=>{
- const c=ctx('st38DeliveredRow','st38ViewsOf');
+ const c=ctx('st38DeliveredRow','st38DeliveredDetails','st38ViewsOf');
  const base={id:'o',orderNo:'0007',storeName:'فروشگاه تست',items:[],
   dispatch:{status:'SALES_FINALIZED',run:2,deliveredAt:'2026-10-17T10:00',driverName:'راننده',lines:[{productName:'مرغ',deliveredKg:80,unitPrice:7000,grossAmount:560000,returnKg:0,shortageKg:0,netKg:75}],settlementType:'CASH',storeReceiptConfirmedAt:null},
   dispatchRuns:[{status:'SALES_FINALIZED',run:1,deliveredAt:'2026-10-17T08:00',driverName:'راننده۱',lines:[],storeReceiptConfirmedAt:'2026-10-17T09:00'}],
@@ -52,10 +52,11 @@ test('کارت تحویل فروشگاه: هر محموله چیپ سرویس و
  assert.equal(views.length,2,'دو محموله');
  assert.equal(views[0].payment.invoiceNumber,'I-1','فاکتور سرویس اول');
  assert.equal(views[1].dispatch.run,2);
- const html2=c.st38DeliveredRow(views[1]);
+ const row2=c.st38DeliveredRow(views[1]);assert(row2.includes('data-action="store-delivery-details"'));assert(row2.includes('data-run="2"'));
+ const html2=c.st38DeliveredDetails(views[1]);
  assert(html2.includes('محمولهٔ سرویس دوم'));
  assert(html2.includes('data-run="2"'),'بدنهٔ تأیید با run ارسال می‌شود');
- const html1=c.st38DeliveredRow(views[0]);
+ const html1=c.st38DeliveredDetails(views[0]);
  assert(html1.includes('تأیید شما:'),'محمولهٔ تأییدشده مهر می‌خورد');
  assert(!html1.includes('data-action="store-confirm-delivery"'),'دوباره دکمهٔ تأیید ندارد');
 });

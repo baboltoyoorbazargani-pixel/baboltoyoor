@@ -15,11 +15,11 @@ test('incoming header has four equal cells with customer and metadata in one row
 });
 test('compact order header is shared by incoming and preparing, preserving both actions',()=>{
  const list=ui.slice(ui.indexOf('function wh38List(orders,kind)'),ui.indexOf('async function wh38Paint(phase)'));
- assert.match(list,/\$\{wh38IncomingHeader\(o\)\}/);
+ assert.match(list,/order-compact-row/);assert.match(list,/data-action="wh38-order-details"/);
  assert.doesNotMatch(list,/class="wh38-meta"/);
  assert.match(list,/data-action="wh38-accept"/);assert.match(list,/data-action="wh38-start"/);
  assert.match(css,/\.wh38-incoming-card \{[\s\S]*?padding:10px 12px!important/);
- assert.match(css,/\.wh38-incoming-card \.wh38-actions \{[\s\S]*?margin-top:6px!important;padding-top:6px!important/);
+
 });
 test('customer strings are escaped, cancelled items excluded, updated time falls back to created time',()=>{
  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

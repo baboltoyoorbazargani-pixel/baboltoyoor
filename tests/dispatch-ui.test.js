@@ -90,10 +90,10 @@ test('کارت خروج قبل از حرکت دارای دکمهٔ تأیید ن
   const context = {
     esc: (v) => String(v ?? ''), fa: (v) => String(v), icon: () => '<svg></svg>',
     formatDateTime24: () => '08:33', dspCustomer: (o) => o.customer?.name || '—',
-    dspBadge: (status) => `<b>${status}</b>`,
+    dspBadge: (status) => `<b>${status}</b>`, qty: String, dspScopedItems: o=>o.items||[],
     dspItems: (o) => (o.items || []).map((i) => `<li>${i.product?.name || '—'}</li>`).join(''),
     dspEvents: () => '<li>event</li>', formatDispatchVehiclePlate: (v) => v || '—',
-    plateViewHtml: (v,f,c) => `<div class="iran-plate is-compact"><div class="plate-part"><span>${String(v||f||'')}</span></div></div>`, plateMarkup: (v)=>`<div class="iran-plate"><span>${v}</span></div>`, 
+    plateViewHtml: (v,f,c) => `<div class="iran-plate is-compact"><div class="plate-part"><span>${String(v||f||'')}</span></div></div>`, plateMarkup: (v)=>`<div class="iran-plate"><span>${v}</span></div>`,
     data: { leaving: [{ id: 'order-id', orderNo: 'SO-TEST-0002', customer: { name: 'مشتری آزمایشی' }, dispatch: { status: 'DRIVER_EXIT_REPORTED', driverName: 'راننده آزمایشی', driverPlate: 'AA-1', driverExitAt: '2026-10-11T08:33:00.000Z', events: [] }, items: [{ product: { name: 'محصول آزمایشی' }, deliveredKg: 25 }] }] },
   };
   vm.createContext(context);
@@ -175,8 +175,8 @@ test('کارتابل پخش کارت راننده، مشخصات وسیله و �
   const context = {
     esc: (v) => String(v ?? ''), fa: (v) => String(v ?? ''), formatDateTime24: () => '۱۰:۲۰',
     formatDispatchVehiclePlate: (v) => v === '۱۲ب۳۴۵۶۷' ? '۱۲ ب ۳۴۵ - ۶۷' : (v || '—'),
-    plateViewHtml: (v,f,c) => `<div class="iran-plate is-compact"><div class="plate-part"><span>${String(v||f||'')}</span></div></div>`, plateMarkup: (v)=>`<div class="iran-plate"><span>${v}</span></div>`, 
-    dspBadge: (status) => `<b>${status}</b>`, 
+    plateViewHtml: (v,f,c) => `<div class="iran-plate is-compact"><div class="plate-part"><span>${String(v||f||'')}</span></div></div>`, plateMarkup: (v)=>`<div class="iran-plate"><span>${v}</span></div>`,
+    dspBadge: (status) => `<b>${status}</b>`, qty: String, dspScopedItems: o=>o.items||[],
     drivers: [{ id: 'd1', fullName: 'راننده آزمون', vehicleType: 'وانت', plate: '۱۲ب۳۴۵۶۷', activeOrderCount: 1, waitingGateCount: 1, inTransitCount: 0, deliveredTodayCount: 0, liveOrders: [{ customerName: 'مشتری آزمون', orderNo: 'SO-42', status: 'DRIVER_EXIT_REPORTED', updatedAt: '2026-10-12T10:20:00Z' }] }],
   };
   vm.createContext(context);

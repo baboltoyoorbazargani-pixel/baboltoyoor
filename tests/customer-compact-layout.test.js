@@ -35,7 +35,7 @@ test('return is beside driver, in the same visual and keyboard order, preserving
 });
 test('preparing headers are unchanged and settlement queue shows customer/order cards',()=>{
  const list=ui.slice(ui.indexOf('function wh38List(orders,kind)'),ui.indexOf('async function wh38Paint(phase)'));
- assert.match(list,/\$\{wh38IncomingHeader\(o\)\}/);assert.doesNotMatch(list,/class="wh38-meta"/);
+ assert.match(list,/order-compact-row/);assert.match(list,/data-action="wh38-order-details"/);assert.doesNotMatch(list,/class="wh38-meta"/);
  assert.match(list,/wh38-list wh38-incoming-list/);assert.match(list,/data-action="wh38-start"/);
  assert.match(ui,/stl-queue-item-card/);
  assert.match(css,/overflow-x:hidden!important;overflow-y:auto!important/);

@@ -422,7 +422,7 @@ function renderSalesDeliveryTrackingV18(o) {
 function renderStoreRunShipmentsPanel(shipments){ // v37.5.0
   const list=Array.isArray(shipments)?shipments:[];
   if(!list.length)return '';
-  const chips=list.map(s=>`<div class="sr-ship-row order-compact-row"><span class="order-code">${esc(fa(s.orderNo||'—'))}</span><b>${esc(s.storeName||'فروشگاه')}</b><span>سرویس ${s.run===2?'دوم':'اول'}</span><span>${qty((s.items||[]).length)} قلم</span><span>${esc(formatDateTime24(s.sentAt||''))}</span><button type="button" class="btn btn-primary btn-sm" data-action="sr-ship-open" data-order="${esc(s.orderId)}" data-run="${s.run}">جزئیات و تعیین راننده</button></div>`).join('');
+  const chips=list.map(s=>`<div class="sr-ship-row order-compact-row"><span class="order-code">${esc(fa(s.orderNo||'—'))}</span><b>${esc(s.storeName||'فروشگاه')}</b><span>سرویس ${s.run===2?'دوم':'اول'}</span><span>${qty((s.items||[]).length)} قلم</span><span>وزن سرویس: ${qty((s.items||[]).reduce((sum,l)=>sum+Number(l.serviceKg??l.deliveredKg??0),0))} کیلوگرم</span><span>${esc(formatDateTime24(s.sentAt||''))}</span><button type="button" class="btn btn-primary btn-sm" data-action="sr-ship-open" data-order="${esc(s.orderId)}" data-run="${s.run}">جزئیات و تعیین راننده</button></div>`).join('');
   return `<section class="sr-ship-panel" data-delivery-section="storeRunShipments"><header><div><span class="sales-delivery-column-index">۰۰</span><h2>اقلام سرویس ارسال‌شده از انبار</h2><p>انبار اقلام وزن‌شدهٔ همان سرویس را فرستاده است؛ برای هر محموله راننده تعیین کنید تا سند تحویل وزنی همان سرویس صادر شود.</p></div><span class="sd-count"><strong>${qty(list.length)}</strong><span>درخواست</span></span></header><div class="sr-ship-list">${chips}</div></section>`;
 }
 
@@ -436,7 +436,6 @@ async function openSalesDeliveryDetails(id,run){
  const completed=['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status);
  openModal('جزئیات تحویل سفارش',completed?renderSalesDeliveryCardV38(o,o.dispatch.status!=='DELIVERED'):renderSalesDeliveryTrackingV18(o)+`<button type="button" class="btn btn-secondary" data-action="order-details" data-id="${esc(o.id)}">جزئیات اقلام سفارش</button>`);
 }
-document.addEventListener('click',e=>{const el=e.target.closest('#modal [data-action]');if(!el)return;const a=el.dataset.action;if(a==='sales-finalize-driver-delivery')void salesFinalizeDeliveryV38(el.dataset.id,el).then(ok=>{if(ok)closeModal()});else if(a==='sales-view-driver-signature')void salesViewDeliverySignatureV38(el.dataset.id);else if(a==='order-details')void openOrderDetails(el.dataset.id);});
 function renderSalesDeliveryV38(data={}) {
   const active=Array.isArray(data.active)?data.active:[];
   const regularOnly=(o)=>o.orderType!=='STORE'; // v37.6.0 — حرکت فروشگاه‌ها به تب مستقل
@@ -461,6 +460,7 @@ async function salesViewDeliverySignatureV38(id) {
     openModal(`امضای مشتری — سفارش ${data.order?.orderNo||''}`,`<div class="sales-delivery-signature"><img src="${esc(data.signatureData)}" alt="امضای ثبت‌شدهٔ مشتری"><small>ثبت‌شده توسط ${esc(d.deliveredBy||'راننده')} • ${esc(formatDateTime24(d.deliveredAt))}</small></div>`);
   } catch(err) { toast(err.message); }
 }
+document.addEventListener('click',e=>{const el=e.target.closest('#modal [data-action]');if(!el)return;const a=el.dataset.action;if(a==='sales-finalize-driver-delivery')void salesFinalizeDeliveryV38(el.dataset.id,el).then(ok=>{if(ok)closeModal()});else if(a==='sales-view-driver-signature')void salesViewDeliverySignatureV38(el.dataset.id);else if(a==='order-details')void openOrderDetails(el.dataset.id);});
 async function srSalesOpenShip(orderId, run) { // v37.6.0
   try {
     const [det, drv] = await Promise.all([api('/api/orders/'+encodeURIComponent(orderId)), api('/api/dispatch/drivers')]);
@@ -476,7 +476,7 @@ async function srSalesOpenShip(orderId, run) { // v37.6.0
     openModal(`تعیین رانندهٔ محمولهٔ سرویس ${label}`, `<form id="srShipForm" class="sr-ship-form">
       <div class="sr-ship-modal-order"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><b>${esc(o.storeName||'فروشگاه')}</b><span class="st-run-chip st-run-r${run===2?2:1}">سرویس ${label}</span></div>
       <p class="sr-ship-hint">این محموله با رانندهٔ همین سرویس به فروشگاه ارسال می‌شود؛ فاکتور سرویس به‌صورت سند تحویل وزنی (بدون مبلغ) صادر می‌گردد.</p>
-      <div class="sr-ship-items">${items.map((i) => `<div class="sr-ship-item"><div class="sr-ship-item-info"><b>${esc(i.product?.name || 'قلم')}</b><span>وزن سرویس: <b>${qty(runKgOf(i))} کیلوگرم</b></span></div></div>`).join('')}</div>
+      <div class="sr-ship-items">${items.map((i) => `<div class="sr-ship-item"><div class="sr-ship-item-info"><b>${esc(i.product?.name || 'قلم')}</b><span>وزن سرویس: <b>${qty(runKgOf(i))} کیلوگرم</b></span>${run===2?`<span>ماندهٔ سرویس دوم: <b>${qty(Math.max(0,Number(i.requestedQty||0)-Number(((o.storeRun?.items||[]).find(x=>x.itemId===i.id)?.r1Kg)||0)))} ${esc(i.requestedUnit||'')}</b></span>`:''}</div></div>`).join('')}</div>
       <div class="field"><label>رانندهٔ محمولهٔ سرویس ${label}</label><div class="input-shell"><select id="srShipDriver" required><option value="">— انتخاب راننده —</option>${(drv.drivers || []).map((d) => `<option value="${esc(d.id)}">${esc(d.fullName)} — ${esc(d.plate || 'بدون پلاک')}</option>`).join('')}</select></div><div id="srShipPlate">${plateViewHtml('','—',true)}</div></div>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button type="submit" class="btn btn-primary">${icon('send',16)} واگذاری به راننده</button></div>
     </form>`);
@@ -822,7 +822,7 @@ async function wh38AcceptFromDetails(id,btn){
 function wh38List(orders,kind){
   if(!orders.length) return sdEmpty(kind==='incoming'?'truck':'scale',kind==='incoming'?'سفارش ورودی جدیدی نیست':'سفارشی در مرحله آماده‌سازی نیست','');
   return `<div class="wh38-list wh38-incoming-list order-compact-scroll">${orders.map((o,i)=>`<article class="wh38-card wh38-incoming-card order-compact-row" data-order="${esc(o.id)}">
-    <span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(storeAwareOrderName(o))}</strong>${badge(o.status)}<span>${qty(activeItemsOf(o).length)} قلم</span><span>${esc(formatDateTime24(o.createdAt))}</span>
+    <span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(storeAwareOrderName(o))}</strong>${badge(o.status)}<span>${qty(activeItemsOf(o).length)} قلم</span>${o.deliveryDate?`<span>تاریخ تحویل: ${esc(dateLabel(o.deliveryDate))}</span>`:''}<span>${esc(formatDateTime24(o.createdAt))}</span>
     <button type="button" class="btn btn-secondary btn-sm" data-action="wh38-order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات</button>
     ${kind==='incoming'?`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-accept" data-id="${esc(o.id)}">تأیید دریافت</button>`:`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-start" data-id="${esc(o.id)}">شروع آماده‌سازی</button>`}
   </article>`).join('')}</div>`;

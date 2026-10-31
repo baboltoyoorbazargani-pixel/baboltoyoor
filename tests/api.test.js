@@ -377,7 +377,8 @@ test('سفارش زمان‌بندی‌شدهٔ REMOTE در شمارندهٔ ر�
   assert.equal(created.json.order.orderType, 'REMOTE');
   const workload = await call('GET', '/api/workload', { cookie: adminCookie });
   assert.equal(workload.json.counts.salesFuture, 1);
-  assert.equal(workload.json.counts.salesRemote, 1);
+  // سفارش آینده در صف فعال تلفنی نیست؛ شمار سربرگ با فهرست همان تب تطبیق دارد.
+  assert.equal(workload.json.counts.salesRemote, 0);
   assert.equal(workload.json.counts.storeScheduled, 1);
 });
 
