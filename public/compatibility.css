@@ -898,3 +898,26 @@
 .auto-backup-toggle{display:flex;align-items:center;gap:8px;font-weight:700}.auto-backup-toggle input{width:18px;height:18px}
 .auto-backup-settings .cust-field{display:grid;gap:5px;min-width:0}.auto-backup-settings input[name=directory]{width:100%;min-width:0;box-sizing:border-box}
 .auto-backup-status{display:grid;gap:4px;overflow-wrap:anywhere;font-size:12px}.auto-backup-error,#auto-backup-message{color:#a51d2f;overflow-wrap:anywhere}
+
+/* جزئیات سفارش فروشگاه: متن بلند و اقلام باید در محدودهٔ پنجره بمانند. */
+#modal .store-detail-modal,#modal .store-detail-modal *{min-width:0}
+#modal .store-detail-modal :is(p,small,strong,b,span){overflow-wrap:anywhere;word-break:normal}
+#modal .store-detail-modal .detail-modal-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
+#modal .store-detail-modal .detail-modal-grid>div,#modal .store-detail-modal .detail-item-row>div{min-width:0}
+#modal .store-detail-modal .detail-item-row{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#modal .store-detail-modal .detail-item-row>div{flex:1 1 180px}
+#modal .store-detail-modal .detail-item-row b{white-space:normal}
+#modal .store-detail-modal .st-run-chip{white-space:normal;max-width:100%;overflow-wrap:anywhere}
+#modal .store-detail-note{padding:10px 12px;background:#f8f9fa;border:1px solid var(--line);border-radius:10px;margin:10px 0}
+#modal .store-detail-note p{margin:4px 0 0;white-space:pre-wrap}
+#modal .store-detail-items-title{font-size:15px;margin:14px 0 8px}
+
+/* نام‌های بدون فاصله در کارت‌ها و نمودارها نباید از کادر بیرون بزنند. */
+#appView #content .wh38-incoming-card .wh38-items>div>span:nth-child(2){min-width:0;white-space:normal!important;word-break:normal!important;overflow-wrap:anywhere!important}
+#appView #content .sd-flow-1line-id strong{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#appView #content .sd-fmeta{max-width:100%;white-space:normal}
+#appView #content .sd-fmeta b{min-width:0;overflow-wrap:anywhere}
+#appView #content .st38-hero-badge{min-width:0;max-width:100%}
+#appView #content .st38-hero-badge span{min-width:0;overflow-wrap:anywhere}
+#appView #content .dbc-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.5}
+#modal .store-detail-modal .detail-item-row strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
