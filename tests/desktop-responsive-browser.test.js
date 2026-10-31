@@ -57,7 +57,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    await page.setViewportSize({width,height});await page.evaluate(()=>go('warehouse','preparing'));await page.locator('#wh38Body').waitFor();await page.evaluate(o=>wh38Sheet(o),regular);await check('.wh38-prep-item:not(.sr318-row)',`warehouse form ${width}`);
    await page.evaluate(o=>sr38Sheet(o),shop);await check('.sr318-row',`store service ${width}`);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`page overflow ${width}`);
-   await page.evaluate(()=>go('admin'));await page.locator('#priceForm').waitFor();
+   await page.evaluate(()=>go('admin'));await page.locator('#settings-tab-audit').click();await page.locator('.audit-table').waitFor();
    assert.equal(await page.locator('.audit-table').evaluate(e=>e.closest('.table-wrap').scrollWidth<=e.closest('.table-wrap').clientWidth+1),true,`audit table ${width}`);
    if(width>=800){
     const nav=page.locator('#railNav button:visible');assert.ok(await nav.count()>0,`navigation ${width}`);

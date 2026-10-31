@@ -875,3 +875,13 @@
 /* A wide viewport can still have a narrow service pane beside the rail. */
 #appView #content .wh38-prep-item.sr318-row{flex-wrap:wrap!important}
 #appView #content .sr318-row>.sr318-ops{flex-wrap:wrap!important;max-width:100%!important;min-width:0!important}
+
+/* بخش‌های تنظیمات در سربرگ‌های جدا؛ بدون پیمایش افقی در صفحه‌های کوچک. */
+#appView #content .settings-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:8px;border:1px solid var(--bt-line,#dce4eb);border-radius:15px;background:var(--bt-panel,#fff);margin-bottom:16px}
+#appView #content .settings-tabs [role="tab"]{flex:1 1 150px;min-width:0;min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--bt-ink,#263746);font:inherit;font-size:13px;font-weight:800;line-height:1.5;cursor:pointer}
+#appView #content .settings-tabs [role="tab"]:hover{background:var(--bt-brand-50,#fdf3f4)}
+#appView #content .settings-tabs [role="tab"][aria-selected="true"]{background:var(--bt-brand,#b40f23);color:#fff;border-color:var(--bt-brand,#b40f23)}
+#appView #content .settings-tabs [role="tab"]:focus-visible{outline:3px solid #365fba;outline-offset:2px}
+#appView #content .settings-panel[hidden]{display:none!important}
+#appView #content .settings-panel>.section-space:first-child{margin-top:0}
+@media(max-width:600px){#appView #content .settings-tabs [role="tab"]{flex-basis:120px}}

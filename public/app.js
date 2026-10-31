@@ -1107,11 +1107,30 @@ function auditLabel(a){return AUDIT_LABELS[a]||a||'—'}
 function auditDetails(x){const d=x.details||{};const parts=[];if(d.orderId)parts.push('سفارش '+String(d.orderId).slice(0,8).toUpperCase());if(d.itemCount!=null)parts.push('تعداد قلم '+d.itemCount);if(d.requestedQty!=null)parts.push('مقدار '+qty(d.requestedQty)+' '+(d.requestedUnit||''));if(d.reason)parts.push('دلیل: '+d.reason);if(d.invoiceNumber)parts.push('فاکتور '+d.invoiceNumber);return parts.join(' • ')||'ثبت شد'}
 
 /* ---------- Admin ---------- */
+const ADMIN_SETTINGS_TABS=[['https','دامنه و HTTPS'],['users','کاربران و سمت‌ها'],['prices','قیمت روز'],['products','کاتالوگ محصولات'],['audit','ردپای فعالیت‌ها']];
+function adminSettingsTabsHtml(){
+  return `<nav class="settings-tabs" role="tablist" aria-label="بخش‌های تنظیمات سیستم">${ADMIN_SETTINGS_TABS.map(([id,label])=>`<button type="button" role="tab" id="settings-tab-${id}" aria-controls="settings-panel-${id}" data-settings-tab="${id}">${label}</button>`).join('')}</nav>`;
+}
+function initAdminSettingsTabs(){
+  const root=$('#content'),tabs=[...root.querySelectorAll('[data-settings-tab]')];
+  const select=(id,focus=false)=>{
+    if(!ADMIN_SETTINGS_TABS.some(([key])=>key===id))id=ADMIN_SETTINGS_TABS[0][0];
+    app.adminSettingsTab=id;
+    tabs.forEach(tab=>{const selected=tab.dataset.settingsTab===id;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;const panel=document.getElementById(tab.getAttribute('aria-controls'));if(panel)panel.hidden=!selected;if(selected&&focus)tab.focus();});
+  };
+  tabs.forEach((tab,i)=>{
+    tab.addEventListener('click',()=>select(tab.dataset.settingsTab));
+    tab.addEventListener('keydown',e=>{let next;if(e.key==='ArrowLeft')next=(i+1)%tabs.length;else if(e.key==='ArrowRight')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();select(tabs[next].dataset.settingsTab,true);});
+  });
+  select(app.adminSettingsTab);
+}
 async function renderAdmin(){
   const [u,a,p,pr,dr]=await Promise.all([api('/api/admin/users'),api('/api/admin/audit'),api('/api/admin/products'),api('/api/prices'),api('/api/drivers').catch(()=>({drivers:[]}))]);
   const admDrivers=dr.drivers||[];
   const users=u.users||[]; const products=p.products||[]; const active=products.filter(x=>x.isActive);
   $('#content').innerHTML=`
+  ${adminSettingsTabsHtml()}
+  <div class="settings-panel" id="settings-panel-https" role="tabpanel" aria-labelledby="settings-tab-https" tabindex="0">
   <section class="card card-pad section-space tls-settings" id="tlsSettings">
     <div class="panel-head"><div><span class="eyebrow">DOMAIN &amp; HTTPS</span><h2>دامنه و گواهی HTTPS</h2><p>اتصال یک دامنهٔ عمومی و دریافت و تمدید خودکار گواهی رایگان Let’s Encrypt</p></div></div>
     <div class="notice">پیش از شروع، در پنل دامنه رکورد DNS را به IP عمومی این سرور وصل کنید و پورت‌های ۸۰ و ۴۴۳ را از اینترنت تا سرور باز و هدایت کنید. دامنهٔ داخلی، IP و wildcard پشتیبانی نمی‌شوند. باز کردن سامانه روی اینترنت آن را در دسترس عموم قرار می‌دهد؛ رمزهای قوی و محدودیت‌های شبکه را بررسی کنید.</div>
@@ -1124,7 +1143,8 @@ async function renderAdmin(){
       <div class="sticky-actions" style="grid-column:1/-1"><span class="subtle">گواهی خودکار نگهداری می‌شود. دسترسی HTTP با IP داخلی برای سازگاری باقی می‌ماند و رمزگذاری‌شده نیست.</span><button class="btn btn-primary" type="submit">دریافت و فعال‌سازی HTTPS</button></div>
     </form>
   </section>
-  <div class="admin-grid">
+  </div>
+  <div class="settings-panel" id="settings-panel-users" role="tabpanel" aria-labelledby="settings-tab-users" tabindex="0">
     <section class="card admin-form">
       <div class="panel-head"><div><span class="eyebrow">USER DIRECTORY</span><h2>ایجاد حساب کاربری</h2><p>برای هر شخص، نام کامل، سمت سازمانی و سطح دسترسی را مشخص کنید.</p></div><span class="pill">${qty(users.filter(x=>x.isActive).length)} حساب فعال</span></div>
       <p>ساخت و ویرایش حساب‌ها از بخش «کاربران» انجام می‌شود.</p><button class="btn btn-primary" type="button" data-action="manage-users">مدیریت کاربران</button><form id="userForm" class="form-grid section-space" style="display:none">
@@ -1142,24 +1162,29 @@ async function renderAdmin(){
         <div class="sticky-actions" style="grid-column:1/-1"><span class="subtle">سطح دسترسی مشخص می‌کند کاربر کدام کارتابل را ببیند.</span><button class="btn btn-primary" type="submit">${icon('plus',15)} ایجاد حساب</button></div>
       </form>
     </section>
-    <section class="card admin-form">
-      <div class="panel-head"><div><span class="eyebrow">TODAY PRICE</span><h2>ثبت قیمت روز</h2><p>قیمت هر کیلوگرم برای استفاده در تسویه فروش.</p></div></div>
-      <form id="priceForm"><div class="form-grid section-space"><div class="field"><label>محصول</label><div class="input-shell"><select name="productId">${active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div></div><div class="field"><label>قیمت هر کیلوگرم (ریال)</label><div class="input-shell"><input name="price" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۲۵۰٬۰۰۰" required data-rial></div></div>${jalaliInput('تاریخ','date',today(),false)}</div><div class="sticky-actions"><span></span><button class="btn btn-secondary">ثبت قیمت</button></div></form>
-    </section>
-  </div>
-
   <section class="card card-pad section-space">
     <div class="panel-head"><div><span class="eyebrow">USER MANAGEMENT</span><h2>مدیریت کاربران و سمت‌ها</h2><p>فهرست کامل حساب‌ها؛ ویرایش مشخصات، تغییر دسترسی و غیرفعال‌سازی از همین صفحه.</p></div><div class="toolbar"><span class="pill">${qty(users.length)} حساب ثبت‌شده</span></div></div>
     <div class="user-directory">
       ${pageItems('users',users).map(x=>`<article class="user-card ${x.isActive?'':'inactive'}"><div class="user-card-main"><div class="avatar avatar-lg">${esc(initials(x.fullName||x.username))}</div><div class="user-card-copy"><div class="user-card-title"><strong>${esc(x.fullName)}</strong>${x.isActive?'<span class="badge green">فعال</span>':'<span class="badge gray">غیرفعال</span>'}</div><div class="user-meta"><span>نام کاربری: <b dir="ltr">${esc(x.username)}</b></span><span>سمت: <b>${esc(x.position||'—')}</b></span><span>دسترسی: <b>${esc(ROLE[normalizeRole(x.roleCode)]||x.roleCode)}</b></span>${x.storeName?`<span>فروشگاه: <b>${esc(x.storeName)}</b></span>`:``}</div></div></div><div class="user-card-actions"><button class="btn btn-secondary btn-sm" data-action="edit-user" data-id="${x.id}">${icon('edit',14)} ویرایش</button>${x.id===app.user?.id?'<span class="subtle">حساب فعلی</span>':x.isActive?`<button class="btn btn-danger btn-sm" data-action="delete-user" data-id="${x.id}">${icon('trash',14)} حذف</button>`:`<span class="subtle">حذف/غیرفعال شده</span>`}</div></article>`).join('')||'<div class="empty">کاربری ثبت نشده است.</div>'}
     </div>${pagerHtml('users',users.length)}
   </section>
+  </div>
+  <div class="settings-panel" id="settings-panel-prices" role="tabpanel" aria-labelledby="settings-tab-prices" tabindex="0">
+    <section class="card admin-form">
+      <div class="panel-head"><div><span class="eyebrow">TODAY PRICE</span><h2>ثبت قیمت روز</h2><p>قیمت هر کیلوگرم برای استفاده در تسویه فروش.</p></div></div>
+      <form id="priceForm"><div class="form-grid section-space"><div class="field"><label>محصول</label><div class="input-shell"><select name="productId">${active.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div></div><div class="field"><label>قیمت هر کیلوگرم (ریال)</label><div class="input-shell"><input name="price" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۲۵۰٬۰۰۰" required data-rial></div></div>${jalaliInput('تاریخ','date',today(),false)}</div><div class="sticky-actions"><span></span><button class="btn btn-secondary">ثبت قیمت</button></div></form>
+    </section>
+  </div>
 
-  <section class="card card-pad section-space"><div class="panel-head"><div><span class="eyebrow">PRODUCT CATALOG</span><h2>کاتالوگ محصولات</h2><p>کاتالوگ ۶۳ محصول شرکت با کد سریع در سامانه نگهداری می‌شود و قابل ویرایش است.</p></div><div class="toolbar"><span class="pill">${qty(products.length)} محصول • ${qty(active.length)} فعال</span><button class="btn btn-secondary btn-sm" data-action="sync-catalog">${icon('receipt',14)} همگام‌سازی کاتالوگ</button></div></div><form id="productForm" class="form-grid-3 section-space"><div class="field"><label>کد سریع</label><div class="input-shell"><input name="quickCode" maxlength="2" inputmode="numeric" pattern="\d{2}" required></div></div><div class="field"><label>نام محصول</label><div class="input-shell"><input name="name" required></div></div><div class="field"><label>واحد پیش‌فرض</label><div class="input-shell"><select name="defaultUnit"><option>کیلوگرم</option><option>بسته</option><option>عدد</option><option>کارتن</option></select></div></div><div><button class="btn btn-primary" type="submit">${icon('plus',15)} افزودن محصول</button></div></form><div class="product-list">${pageItems('products',products).map(x=>`<div class="product-row"><div class="product-code">${esc(x.quickCode)}</div><div><strong>${esc(x.name)}</strong><span>${esc(x.id.slice(0,8))}</span></div><div><span>واحد</span><strong>${esc(x.defaultUnit)}</strong></div><div>${x.isActive?'<span class="badge green">فعال</span>':'<span class="badge gray">غیرفعال</span>'}</div><button class="btn btn-secondary btn-sm" data-action="edit-product" data-id="${x.id}">${icon('edit',14)} ویرایش</button></div>`).join('')||'<div class="empty">محصولی ثبت نشده است.</div>'}</div>${pagerHtml('products',products.length)}</section>
-
-  <div class="admin-grid section-space"><section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">AUDIT TRAIL</span><h2>ردپای فعالیت‌ها</h2></div></div><div class="table-wrap section-space"><table class="table audit-table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>موجودیت</th></tr></thead><tbody>${pageItems('audit',a.audit).map(x=>`<tr><td>${dt(x.createdAt)}</td><td><strong>${esc(x.username||'—')}</strong></td><td><b>${esc(auditLabel(x.action))}</b><div class="subtle">${esc(auditDetails(x))}</div></td><td>${esc(x.entityType||'—')}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">لاگی وجود ندارد.</td></tr>'}</tbody></table></div>${pagerHtml('audit',a.audit.length)}</section></div>`;
+  <div class="settings-panel" id="settings-panel-products" role="tabpanel" aria-labelledby="settings-tab-products" tabindex="0">
+  <section class="card card-pad section-space"><div class="panel-head"><div><span class="eyebrow">PRODUCT CATALOG</span><h2>کاتالوگ محصولات</h2><p>کاتالوگ ۶۳ محصول شرکت با کد سریع در سامانه نگهداری می‌شود و قابل ویرایش است.</p></div><div class="toolbar"><span class="pill">${qty(products.length)} محصول • ${qty(active.length)} فعال</span><button class="btn btn-secondary btn-sm" data-action="sync-catalog">${icon('receipt',14)} همگام‌سازی کاتالوگ</button></div></div><form id="productForm" class="form-grid-3 section-space"><div class="field"><label>کد سریع</label><div class="input-shell"><input name="quickCode" maxlength="2" inputmode="numeric" pattern="[0-9]{2}" required></div></div><div class="field"><label>نام محصول</label><div class="input-shell"><input name="name" required></div></div><div class="field"><label>واحد پیش‌فرض</label><div class="input-shell"><select name="defaultUnit"><option>کیلوگرم</option><option>بسته</option><option>عدد</option><option>کارتن</option></select></div></div><div><button class="btn btn-primary" type="submit">${icon('plus',15)} افزودن محصول</button></div></form><div class="product-list">${pageItems('products',products).map(x=>`<div class="product-row"><div class="product-code">${esc(x.quickCode)}</div><div><strong>${esc(x.name)}</strong><span>${esc(x.id.slice(0,8))}</span></div><div><span>واحد</span><strong>${esc(x.defaultUnit)}</strong></div><div>${x.isActive?'<span class="badge green">فعال</span>':'<span class="badge gray">غیرفعال</span>'}</div><button class="btn btn-secondary btn-sm" data-action="edit-product" data-id="${x.id}">${icon('edit',14)} ویرایش</button></div>`).join('')||'<div class="empty">محصولی ثبت نشده است.</div>'}</div>${pagerHtml('products',products.length)}</section>
+  </div>
+  <div class="settings-panel" id="settings-panel-audit" role="tabpanel" aria-labelledby="settings-tab-audit" tabindex="0">
+  <div class="admin-grid section-space"><section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">AUDIT TRAIL</span><h2>ردپای فعالیت‌ها</h2></div></div><div class="table-wrap section-space"><table class="table audit-table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>موجودیت</th></tr></thead><tbody>${pageItems('audit',a.audit).map(x=>`<tr><td>${dt(x.createdAt)}</td><td><strong>${esc(x.username||'—')}</strong></td><td><b>${esc(auditLabel(x.action))}</b><div class="subtle">${esc(auditDetails(x))}</div></td><td>${esc(x.entityType||'—')}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">لاگی وجود ندارد.</td></tr>'}</tbody></table></div>${pagerHtml('audit',a.audit.length)}</section></div>
+  </div>`;
   bindAdmin(); bindJalaliDates($('#content')); bindRialInputs($('#content'));
   enhanceAdminCollapsible();
+  initAdminSettingsTabs();
   startTlsSettings();
 }
 function showTlsStatus(data){

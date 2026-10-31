@@ -22,7 +22,7 @@ test('مرورگر: چیدمان ردیف‌های انبار، سرویس فر�
   const contained=async(selector,parent)=>page.locator(selector).evaluateAll((nodes,parentSelector)=>nodes.map(n=>{const r=n.getBoundingClientRect(),p=n.closest(parentSelector)?.getBoundingClientRect();return p&&{left:r.left-p.left,right:p.right-r.right,top:r.top-p.top,bottom:p.bottom-r.bottom};}),parent);
   for(const width of [1440,1024,768,390,320]){
    await page.setViewportSize({width,height:850});
-   await page.evaluate(()=>go('admin'));await page.locator('#priceForm').waitFor();
+   await page.evaluate(()=>go('admin'));await page.locator('#settings-tab-prices').click();await page.locator('#priceForm').waitFor();
    // Sticky action previously covered the price input when the page was scrolled.
    assert.equal(await page.locator('#priceForm .sticky-actions').evaluate(e=>getComputedStyle(e).position),'static',`price action at ${width}`);
    await page.locator('#priceForm [name=price]').fill('250000');
