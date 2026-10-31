@@ -86,8 +86,20 @@ function dspQtyInvoiceMarkup(o, compact = false) { // v37.6.0 — پنل وزن�
 }
 async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیات محموله (وزن‌محور برای فروشگاه)
   try {
-    const det = await api('/api/orders/' + encodeURIComponent(orderId) + (run ? '?run=' + encodeURIComponent(run) : '')); // v37.27.0
-    let o = det.order || {};
+    // Gate and dispatch have deliberately restricted access to the generic order
+    // endpoint. Use their own live, authorization-scoped lists instead.
+    let o;
+    if (app.page === 'gate') {
+      const data = await api('/api/gate/dispatch');
+      o = [...(data.awaitingDriver || []), ...(data.leaving || []), ...(data.inTransit || [])].find(v => v.id === orderId && (!run || Number(v.dispatch?.run) === run));
+    } else if (app.page === 'drivers' || normalizeRole(app.user?.roleCode) === 'dispatch') {
+      const data = await api(dspDispatchUrl());
+      o = (data.orders || []).find(v => v.id === orderId && Number(v.dispatch?.run || 0) === Number(run || 0));
+    } else {
+      const det = await api('/api/orders/' + encodeURIComponent(orderId) + (run ? '?run=' + encodeURIComponent(run) : ''));
+      o = det.order;
+    }
+    if (!o) return toast('این محموله دیگر در فهرست جاری نیست.');
     // v37.17.0 — جزئیات هر محموله با پروندهٔ همان سرویس (حتی پس از آرشیوشدن سرویس اول)
     if (run) {
       const all = [...(Array.isArray(o.dispatchRuns) ? o.dispatchRuns : []), ...(o.dispatch ? [o.dispatch] : [])];
@@ -108,9 +120,12 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
     const opsLine = (sh, label) => sh ? `<div class="dsp-ops-line"><span class="st-run-chip st-run-r${label === 'دوم' ? 2 : 1}">سرویس ${label}</span> وضعیت: <b>${esc(labels[sh.status] || sh.status || '—')}</b>${sh.sentAt ? ` • ارسال انبار: ${esc(formatDateTime24(sh.sentAt))}` : ''}</div>` : '';
     openModal(`جزئیات محموله — ${esc(store ? (o.storeName || 'فروشگاه') : dspCustomer(o))}`, `<div class="dsp-order-details">
       <div class="dsp-delivery-head"><div class="dsp-head-cell"><span>${store ? 'فروشگاه' : 'مشتری'}</span><b>${esc(dspCustomer(o))}</b><small>${esc(dspPhone(o) || (o.dispatchPlace || ''))}</small></div><div class="dsp-head-cell"><span>شماره سفارش</span><b>${esc(fa(o.orderNo || '—'))}</b><small>${o.dispatch?.run ? `سرویس ${o.dispatch.run === 2 ? 'دوم' : 'اول'}` : 'محموله تکی'}</small></div></div>
+      ${o.dispatch?.driverName ? `<div class="dsp-driver">راننده: <b>${esc(o.dispatch.driverName)}</b> ${plateViewHtml(o.dispatch.driverPlate, '—', true)}</div>` : ''}
       ${store ? opsLine(ops.r1Shipment, 'اول') + opsLine(ops.r2Shipment, 'دوم') : ''}
       ${(o.dispatch?.events?.length) ? `<details class="dsp-log"><summary>سوابق این سفارش</summary><ol>${dspEvents(o.dispatch)}</ol></details>` : ''}
       <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن محموله</th><th>توضیحات</th>${store ? '' : '<th>مبلغ</th>'}</tr></thead><tbody>${rows || `<tr><td colspan="5">قلمی ثبت نشده است.</td></tr>`}</tbody></table></div>
+      ${o.dispatch?.priceApprovedAt?(store?dspQtyInvoiceMarkup(o,true):dspInvoiceMarkup(o,true)):''}
+      ${['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch):''}
       <p class="adm-note">${store ? 'محمولهٔ فروشگاه‌ها کاملاً بدون مبلغ است؛ سند این تحویل «سند تحویل وزنی» است.' : 'ارزش ریالی فقط برای مشتریان عادی نمایش داده می‌شود.'}</p>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div></div>`);
   } catch (err) { toast(err.message); }
@@ -239,21 +254,13 @@ function paintDispatch(data) {
   host.onclick = dspDispatchClick;
 }
 function dspDispatchCard(o) {
-  const d = o.dispatch;
-  return `<article class="dsp-card" data-order="${esc(o.id)}">
-    <header class="dsp-card-head"><div><b>${esc(dspCustomer(o))}</b><small>${esc(dspPhone(o))} • سفارش ${esc(fa(o.orderNo || ''))}</small></div>${dspBadge(d.status)}</header>
-    <ul class="dsp-items">${dspItems(o)}</ul>${d.priceApprovedAt?dspInvoiceMarkup(o,true):'<div class="dsp-wait">قیمت‌ها هنوز توسط فروش تأیید نشده‌اند.</div>'}
-    ${d.driverName ? `<div class="dsp-driver">راننده: <b>${esc(d.driverName)}</b> ${plateViewHtml(d.driverPlate, '—', true)}</div>` : '<div class="dsp-driver muted">راننده تخصیص داده نشده است</div>'}
-    ${d.status === 'PENDING_ASSIGN' ? '<div class="dsp-wait">تخصیص این سفارش از کارتابل فروش انجام می‌شود.</div>' : ''}
-    ${d.status === 'ASSIGNED' ? '<div class="dsp-wait">منتظر ثبت خروج توسط راننده است.</div>' : ''}
-    ${d.status === 'DRIVER_EXIT_REPORTED' ? '<div class="dsp-wait">راننده خروج را ثبت کرده؛ تأیید نگهبانی لازم است.</div>' : ''}
-    ${['DELIVERED', 'SALES_FINALIZED', 'CLOSED'].includes(d.status) ? dspDeliverySummary(d) : ''}
-    <details class="dsp-log"><summary>سوابق این سفارش (${fa((d.events || []).length)})</summary><ol>${dspEvents(d)}</ol></details>
-  </article>`;
+ const d=o.dispatch||{};
+ return `<article class="dsp-card order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${dspBadge(d.status)}<span>راننده: ${esc(d.driverName||'تعیین نشده')}</span><span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات</button></article>`;
 }
 async function dspDispatchClick(e) {
   const el = e.target.closest('[data-dsp]'); if (!el) return;
   if (el.dataset.dsp === 'tab') { dsp.tab = el.dataset.tab; return renderDispatchPage(); }
+  if (el.dataset.dsp === 'details') return dspOrderDetails(el.dataset.id, Number(el.dataset.run)||null);
 }
 
 /* ---------- کارتابل راننده ---------- */
@@ -301,9 +308,8 @@ function dspDriverCard(o) { // v37.27.0 — کارت فشردهٔ تک‌ردی�
   </article>`;
 }
 function dspDoneCard(o) {
-  const d = o.dispatch;
-  return `<article class="dsp-card"><header class="dsp-card-head"><div><b>${esc(dspCustomer(o))}</b>${o.orderType==='STORE'?`<div class="dsp-store-customer-box"><small>نام مشتری</small><strong>${esc(o.customer?.name||'—')}</strong></div>`:''}<small>سفارش ${esc(fa(o.orderNo || ''))} • ${esc(formatDateTime24(d.deliveredAt))}</small></div>${dspBadge(d.status)}</header>
-    ${dspPriceFree(o) ? dspQtyInvoiceMarkup(o, true) : `${dspInvoiceMarkup(o, true)}<ul class="dsp-items">${dspItems(o)}</ul>${dspDeliverySummary(d)}`}<button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run || ''}">${icon('eye', 14)} جزئیات محموله</button></article>`;
+ const d=o.dispatch||{};
+ return `<article class="dsp-card order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${dspBadge(d.status)}<span>${esc(formatDateTime24(d.deliveredAt))}</span><span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات محموله</button></article>`;
 }
 async function dspDriverClick(e) {
   const tab=e.target.closest('[data-dsp-driver-tab]');
@@ -424,15 +430,8 @@ async function renderGateDispatchPage() {
   dspLive('gate', () => api('/api/gate/dispatch'), (d) => paintGateDispatch(d));
 }
 function gateDispatchCard(o, action = '') {
-  const d = o.dispatch || {};
-  const storeFree = o.orderType === 'STORE'; // v37.6.0 — برچسب و کارت سادهٔ فروشگاه برای نگهبانی
-  const button = action === 'exit'
-    ? `<button class="btn btn-primary btn-lg adm-full" type="button" data-gate="exit" data-id="${esc(o.id)}">${icon('check', 16)} تأیید خروج راننده</button>`
-    : '';
-  return `<article class="dsp-card ${storeFree ? 'dsp-card-storefree' : ''}" data-order="${esc(o.id)}"><header class="dsp-card-head gate-dispatch-card-head"><div class="gate-dispatch-card-id"><b>${esc(d.driverName || '—')}</b>${storeFree ? '<span class="badge green">فروشگاه — بدون مبلغ</span>' : ''}${dspBadge(d.status)}</div><div class="gate-dispatch-card-sub">${plateViewHtml(d.driverPlate, '—', true)}<small>${esc(dspCustomer(o))} • سفارش ${esc(fa(o.orderNo || ''))}</small></div></header>
-    <ul class="dsp-items">${dspItems(o)}</ul>${button}${storeFree ? `<button class="btn btn-secondary btn-sm" type="button" data-gate="details" data-id="${esc(o.id)}">${icon('eye', 14)} جزئیات محموله</button>` : ''}
-    ${d.driverExitAt ? `<small class="adm-note">اعلام خروج راننده: ${esc(formatDateTime24(d.driverExitAt))}</small>` : ''}
-    <details class="dsp-log"><summary>سوابق این سفارش</summary><ol>${dspEvents(d)}</ol></details></article>`;
+ const d=o.dispatch||{};
+ return `<article class="dsp-card ${o.orderType==='STORE'?'dsp-card-storefree':''} order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${o.orderType==='STORE'?'<span class="badge green">فروشگاه — بدون مبلغ</span>':''}<span>راننده: ${esc(d.driverName||'—')}</span>${plateViewHtml(d.driverPlate, '—', true)}${dspBadge(d.status)}<span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}">جزئیات محموله</button>${action==='exit'?`<button class="btn btn-primary btn-sm" type="button" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`:''}</article>`;
 }
 function gateHomeDispatchMarkup(data) {
   const leaving = data.leaving || [];

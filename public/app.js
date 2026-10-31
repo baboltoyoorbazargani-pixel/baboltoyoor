@@ -1410,7 +1410,7 @@ async function bootstrap(){
     const adminHome=e.target.closest('[data-admin-home]');
     if(adminHome){e.preventDefault();app.adminActiveRole=null;await go('dashboard');return;}
     const cartableBtn=e.target.closest('[data-cartable]');
-    if(cartableBtn){e.preventDefault();const key=cartableBtn.dataset.cartable,p=cartableBtn.dataset.rolePage;app.sub[p]=key;renderNav();if(key==='dashboard'||key==='reports'){app.cartableDashView=key;await go(p,key)}else if(p==='gate'&&(key==='dispatch'||key==='dispatch-leaving')){app.gateDispatchTab=key==='dispatch-leaving'?'leaving':(['awaiting','leaving','transit'].includes(app.gateDispatchTab)?app.gateDispatchTab:'awaiting');await go('gate','dispatch')}else if(p==='warehouse'){if(key==='history')await go('warehouse','history');else{if(app.wh38)app.wh38.phase=key;await go('warehouse',key)}}else if(p==='drivers'&&(normalizeRole(app.user?.roleCode)==='dispatch'||app.adminActiveRole==='dispatch')){if(key==='dashboard'||key==='reports'){await go('drivers',key)}else{adm.tab=key==='drivers'?'drivers':'dispatch';if(key==='orders')dsp.tab='pending';await go('drivers',key)}}else if(p==='store'&&['delivery','registered','create'].includes(key)){app.storePortalTab=key;await go('store',key)}else await go(p,key);return;}
+    if(cartableBtn){e.preventDefault();const key=cartableBtn.dataset.cartable,p=cartableBtn.dataset.rolePage;app.sub[p]=key;renderNav();if(p==='warehouse'&&key==='returns'){await go('returns');return;}if(key==='dashboard'||key==='reports'){app.cartableDashView=key;await go(p,key)}else if(p==='gate'&&(key==='dispatch'||key==='dispatch-leaving')){app.gateDispatchTab=key==='dispatch-leaving'?'leaving':(['awaiting','leaving','transit'].includes(app.gateDispatchTab)?app.gateDispatchTab:'awaiting');await go('gate','dispatch')}else if(p==='warehouse'){if(key==='history')await go('warehouse','history');else{if(app.wh38)app.wh38.phase=key;await go('warehouse',key)}}else if(p==='drivers'&&(normalizeRole(app.user?.roleCode)==='dispatch'||app.adminActiveRole==='dispatch')){if(key==='dashboard'||key==='reports'){await go('drivers',key)}else{adm.tab=key==='drivers'?'drivers':'dispatch';if(key==='orders')dsp.tab='pending';await go('drivers',key)}}else if(p==='store'&&['delivery','registered','create'].includes(key)){app.storePortalTab=key;await go('store',key)}else await go(p,key);return;}
     const pageBtn=e.target.closest('[data-page]');
     if(pageBtn && !pageBtn.closest('#content')){e.preventDefault();await go(pageBtn.dataset.page);return;}
     const actionEl=e.target.closest('[data-action]');
@@ -1502,6 +1502,10 @@ const NOTIF_ROUTES={
   STORE_RUN_R2_SENT:{page:'sales',sub:'stores'},
   DISPATCH_RETURN:{page:'sales',sub:'delivery'},
   RETURN_TO_WAREHOUSE:{page:'returns'},
+  STORE_ORDER_UPDATE:{page:'store',sub:'registered'},
+  STORE_DELIVERY_UPDATE:{page:'store',sub:'delivery'},
+  DRIVER_ASSIGNMENT:{page:'driver'},
+  DRIVER_GATE_EXIT:{page:'driver'},
   ORDER_CLOSED:{page:'gate',sub:'dispatch'}
 };
 function notifRoute(type,targetRole){
@@ -1646,6 +1650,7 @@ async function acknowledgeNotifications(id=''){
     const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
     if(app.notifUnread) startNotifReminder(false);
     closeNotifPanel();
+    renderNav();
     return true;
   }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}
 }
@@ -1689,6 +1694,8 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       if(!found||!focusNotificationElement(document.querySelector(`[data-order="${CSS.escape(entityId)}"]`)))toast('این محموله دیگر در صف جاری نگهبانی نیست.');
       return;
     }
+    if(route.page==='store'){await go('store',route.sub);return openStoreOrderDetails(entityId);}
+    if(route.page==='driver'){await go('driver');return dspOrderDetails(entityId);}
     const order=(await api('/api/orders/'+encodeURIComponent(entityId))).order;
     if(route.page==='warehouse'){
       const phase=order.orderType==='STORE'?'stores':(order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming');
@@ -2520,7 +2527,7 @@ function salesHistoryRow(o){
 }
 async function refreshSalesOverview(){
  const host=$('#salesLiveOverview');if(!host)return;
- try{const [d,work]=await Promise.all([api('/api/sales/overview'),api('/api/workload')]);if(!host.isConnected)return;const keys=['salesIntake','salesRemote','salesFlow','store','salesSettlement','salesFuture'],counts=keys.map(k=>Number(work.counts?.[k]||0)),max=Math.max(1,...counts);document.querySelectorAll('[data-dash-role="sales"] .role-dash-card').forEach((card,i)=>{const number=card.querySelector('.role-dash-num'),bar=card.querySelector('.role-dash-bar i');if(number)number.textContent=qty(counts[i]);if(bar)bar.style.width=Math.max(6,Math.round(counts[i]*100/max))+'%';});host.innerHTML=`<div class="sales-live-head"><div><h3>فروش امروز</h3><p>بر اساس تاریخ سرور · بروزرسانی هر ۶ ثانیه</p></div><span class="badge green">زنده</span></div><div class="sales-live-metrics"><div><small>سفارش‌های ثبت‌شده امروز</small><strong>${qty(d.ordersToday)}</strong></div><div><small>فاکتورهای صادرشده امروز</small><strong>${qty(d.invoicesToday)}</strong></div><div><small>جمع فاکتورهای امروز پس از مرجوعی</small><strong>${money(d.salesTotal)}</strong></div><div><small>در انتظار تسویه</small><strong>${qty(d.pendingSettlement)}</strong></div><div><small>برگشتی به فروش</small><strong>${qty(d.returned)}</strong></div><div><small>سفارش‌های لغوشده از ثبت‌های امروز</small><strong>${qty(d.cancelledToday)}</strong></div></div><div class="sales-live-head"><h3>آخرین سفارش‌ها</h3><button type="button" class="btn btn-secondary btn-sm" data-cartable="history" data-role-page="sales">همه سوابق</button></div><div class="sales-history-list">${d.recent.map(salesHistoryRow).join('')||'<div class="empty">هنوز سفارشی ثبت نشده است.</div>'}</div>`;}catch(e){if(host.isConnected)host.innerHTML=`<div class="empty">خطا در دریافت اطلاعات فروش: ${esc(e.message)}</div>`;}
+ try{const [d,work]=await Promise.all([api('/api/sales/overview'),api('/api/workload')]);if(!host.isConnected)return;const keys=['salesIntake','salesRemote','salesFlow','store','salesSettlement','salesFuture'],counts=keys.map(k=>Number(work.counts?.[k]||0)),max=Math.max(1,...counts);document.querySelectorAll('[data-dash-role="sales"] .role-dash-card').forEach((card,i)=>{const number=card.querySelector(':scope > strong'),bar=card.querySelector('.role-dash-bar i');if(number)number.textContent=qty(counts[i]);if(bar)bar.style.width=Math.max(6,Math.round(counts[i]*100/max))+'%';});host.innerHTML=`<div class="sales-live-head"><div><h3>فروش امروز</h3><p>بر اساس تاریخ سرور · بروزرسانی هر ۶ ثانیه</p></div><span class="badge green">زنده</span></div><div class="sales-live-metrics"><div><small>سفارش‌های ثبت‌شده امروز</small><strong>${qty(d.ordersToday)}</strong></div><div><small>فاکتورهای صادرشده امروز</small><strong>${qty(d.invoicesToday)}</strong></div><div><small>جمع فاکتورهای امروز پس از مرجوعی</small><strong>${money(d.salesTotal)}</strong></div><div><small>در انتظار تسویه</small><strong>${qty(d.pendingSettlement)}</strong></div><div><small>برگشتی به فروش</small><strong>${qty(d.returned)}</strong></div><div><small>سفارش‌های لغوشده از ثبت‌های امروز</small><strong>${qty(d.cancelledToday)}</strong></div></div><div class="sales-live-head"><h3>آخرین سفارش‌ها</h3><button type="button" class="btn btn-secondary btn-sm" data-cartable="history" data-role-page="sales">همه سوابق</button></div><div class="sales-history-list">${d.recent.map(salesHistoryRow).join('')||'<div class="empty">هنوز سفارشی ثبت نشده است.</div>'}</div>`;}catch(e){if(host.isConnected)host.innerHTML=`<div class="empty">خطا در دریافت اطلاعات فروش: ${esc(e.message)}</div>`;}
 }
 const SALES_EVENT_LABELS={CREATE_ORDER:'ثبت سفارش حضوری',CREATE_REMOTE_ORDER:'ثبت سفارش غیرحضوری',CREATE_STORE_ORDER:'ثبت سفارش فروشگاه',UPDATE_STORE_ORDER:'ویرایش سفارش فروشگاه',SALES_EDIT_STORE_ORDER:'اصلاح سفارش فروشگاه',APPROVE_STORE_ORDER:'تأیید سفارش فروشگاه',QUICK_SEND_STORE_ORDER:'ارسال سریع سفارش فروشگاه',UPDATE_REMOTE_ORDER:'ویرایش برنامه سفارش',CANCEL_REMOTE_ORDER:'لغو سفارش',CANCEL_STORE_ORDER:'لغو سفارش فروشگاه',ACTIVATE_REMOTE_ORDER:'ارسال زمان‌بندی‌شده به انبار',WAREHOUSE_ACCEPT_ORDER:'دریافت در انبار',WAREHOUSE_START_PREPARING:'شروع آماده‌سازی',WAREHOUSE_FINALIZE:'ثبت تحویل انبار',RETURN_TO_SALES:'ارجاع به فروش',REOPEN_WAREHOUSE_PREPARING:'بازگشت به آماده‌سازی',ADD_ORDER_ITEM:'افزودن قلم',UPDATE_ORDER_ITEM:'ویرایش قلم',DELETE_ORDER_ITEM:'حذف قلم',SAVE_RETURNED_ORDER_EDIT:'ثبت اصلاح سفارش',RESUBMIT_TO_WAREHOUSE:'ارسال مجدد به انبار',FINAL_SETTLEMENT:'تسویه و صدور فاکتور',FINAL_EXIT:'ثبت خروج',DEPOSIT_REFUNDED_MANUALLY:'ثبت استرداد بیعانه',DEPOSIT_PARTIAL_REFUND_MANUALLY:'ثبت استرداد بخشی از بیعانه',SEND_TO_DISPATCH:'ارسال به پخش',DISPATCH_ASSIGN:'تخصیص راننده',DISPATCH_DRIVER_EXIT:'ثبت خروج راننده',DISPATCH_GATE_EXIT:'تأیید خروج راننده',DISPATCH_DELIVERED:'تحویل راننده',DISPATCH_SALES_FINALIZE:'تأیید تحویل و صدور فاکتور',DISPATCH_PRICE_APPROVE:'تأیید قیمت پخش',DISPATCH_PRICE_ADJUST:'اصلاح قیمت پخش',RETURN_REFERRED_TO_WAREHOUSE:'ارجاع مرجوعی به انبار',RETURN_RECEIVED:'دریافت مرجوعی',STORE_RUN_R1_WEIGHT:'ثبت وزن سرویس اول',STORE_RUN_R2_WEIGHT:'ثبت وزن سرویس دوم',STORE_RUN_R1_SEND:'ارسال سرویس اول',STORE_RUN_R2_SEND:'ارسال سرویس دوم',STORE_RUN_R1_SEND_APPEND:'ارسال تکمیلی سرویس اول',STORE_RUN_R2_SEND_APPEND:'ارسال تکمیلی سرویس دوم',STORE_RUN_R1_DISPATCHED:'تخصیص سرویس اول',STORE_RUN_R2_DISPATCHED:'تخصیص سرویس دوم',STORE_RUN_MOVE_R2:'انتقال به سرویس دوم',STORE_RUN_DAY_FINALIZED:'پایان عملیات روز فروشگاه',STORE_RUN_OUT_OF_STOCK:'ثبت عدم موجودی',STORE_RUN_ITEM_COMPLETED:'تکمیل قلم فروشگاه',STORE_RUN_RECEIPT_CONFIRMED:'تأیید دریافت فروشگاه'};
 async function openSalesHistory(id){
@@ -2710,19 +2717,22 @@ function invoiceRowsV27(rows){
 
 /* faster global indicator cadence — sales tab switches must never wait for the live badge refresh */
 async function refreshIndicators(){
-  try{
-    const userId=app.user?.id; if(!userId) return;
-    const seq=app.notifRequestSeq=(app.notifRequestSeq||0)+1;
-    const [noti,w]=await Promise.all([api('/api/notifications'),api('/api/workload').catch(()=>null)]);
-    if(!app.user || app.user.id!==userId || seq<=(app.notifAppliedSeq||0)) return;
-    app.notifAppliedSeq=seq;
-    if(w) app.workload=w.counts||{};applyNotifSnapshot(noti);
-    const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
+  const userId=app.user?.id; if(!userId) return;
+  const seq=app.notifRequestSeq=(app.notifRequestSeq||0)+1;
+  const [noti,w]=await Promise.all([api('/api/notifications').catch(()=>null),api('/api/workload').catch(()=>null)]);
+  if(!app.user || app.user.id!==userId) return;
+  // Workload and unread notifications have different meanings and independent failures.
+  if(w){app.workload=w.counts||{};
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
-    const salesCountKeys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
-    $$('[data-sales-count]').forEach(el=>{const key=salesCountKeys[el.dataset.salesCount];const n=Number(app.workload?.[key]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0)+(el.dataset.salesCount==='delivery'?Number(app.workload?.salesDeliveryActive||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
-    renderNav();
-  }catch{}
+    const keys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
+    $$('[data-sales-count]').forEach(el=>{const n=Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0)+(el.dataset.salesCount==='delivery'?Number(app.workload?.salesDeliveryActive||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
+  }
+  if(noti && seq>(app.notifAppliedSeq||0)){app.notifAppliedSeq=seq;applyNotifSnapshot(noti);}
+  const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
+  renderNav();
+}
+function navUnread(role,section){
+  return (app.notifSnapshot?.notifications||[]).filter(n=>!n.isRead&&normalizeRole(n.targetRole)===role&&(!section||n.navSection===section)).length;
 }
 
 /* larger dashboard / navigation icons + restore the previous red right rail */
@@ -2731,8 +2741,8 @@ function renderNav(){
   // v37.10.0 — هر ورودی: [کلید، عنوان، آیکن موضوعی بخش، کلید شمارنده]؛ آیکن و شمارنده دیگر قاطی نمی‌شوند.
   const entries={
     gate:[['entry','ثبت ورود','entry',null],['waiting','در انتظار اقدام فروش','bell','gateEntry'],['exit','کنترل خروج','exitDoor','gateExit'],['dispatch','تحویل راننده','truck','gateDispatchPending'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
-    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['products','محصولات','package',null],['reports','گزارش‌ها','reports',null]],
-    warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['stores','فروشگاه‌ها','store','warehouseStores'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
+    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['delivery','تحویل راننده','truck',null],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['products','محصولات','package',null],['reports','گزارش‌ها','reports',null]],
+    warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['stores','فروشگاه‌ها','store','warehouseStores'],['returns','مرجوعی‌ها','receipt',null],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     dispatch:[['dashboard','داشبورد','dashboard',null],['drivers','رانندگان','driver',null],['orders','سفارشات','route','dispatchPending'],['reports','گزارشات','reports',null]],
     store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['registered','ثبت‌شده','history',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]],
     driver:[['dashboard','کارتابل راننده','driver','driverOpen'],['reports','گزارش‌ها','reports',null]]
@@ -2741,16 +2751,16 @@ function renderNav(){
     if(app.adminActiveRole&&entries[app.adminActiveRole]){
       const role=app.adminActiveRole,railPage=role==='dispatch'?'drivers':role;
       const list=entries[role];
-      $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${typeof badgeKey==='string'&&badgeCount(badgeKey)?navBadge(badgeCount(badgeKey)):''}</button>`).join('');return;
+      $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${navUnread(role,key)?navBadge(navUnread(role,key)):''}</button>`).join('');return;
     }
-    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',badgeCount('gateEntry')+badgeCount('gateExit')],['sales','کارتابل فروش','sales',badgeCount('salesIntake')+badgeCount('salesOrders')],['warehouse','کارتابل انبار','warehouse',badgeCount('warehouse')],['dispatch','کارتابل ترابری','truck',badgeCount('dispatchPending')],['store','کارتابل فروشگاه','store',badgeCount('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['users','کاربران','user',0],['transport-vehicles','خودروهای ترابری','truck',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
+    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',navUnread('gate')],['sales','کارتابل فروش','sales',navUnread('sales')],['warehouse','کارتابل انبار','warehouse',navUnread('warehouse')],['dispatch','کارتابل ترابری','truck',navUnread('dispatch')],['store','کارتابل فروشگاه','store',navUnread('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['users','کاربران','user',0],['transport-vehicles','خودروهای ترابری','truck',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
     $('#railNav').innerHTML='<div class="cartable-nav-title admin-root-title">مدیریت سامانه</div>'+items.map(([p,l,i,c])=>p==='gate'||p==='sales'||p==='warehouse'||p==='dispatch'||p==='store'?`<button type="button" class="cartable-nav-item" data-admin-cartable="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`:`<button type="button" class="cartable-nav-item ${app.page===p?'active':''}" data-page="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`).join('');return;
   }
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];
   const sub=app.sub?.[page]||'dashboard';
   $('#railNav').innerHTML=`<div class="cartable-nav-title">${esc(ROLE[r]||'کارتابل')}</div>`+list.map(([key,label,ico,badgeKey])=>{
     const active=sub===key || (key==='delivery'&&sub==='gate-dispatch') || (key==='orders'&&['dispatch','records'].includes(adm.tab));
-    const count=typeof badgeKey==='string'?badgeCount(badgeKey):0;
+    const count=navUnread(r,key);
     return `<button type="button" class="cartable-nav-item ${active?'active':''}" data-cartable="${key}" data-role-page="${page}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${count?navBadge(count):''}</button>`;
   }).join('');
 }
@@ -2945,6 +2955,7 @@ async function salesV29ClickHandler(e){
     if(a==='invoice')return previewInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-store-service')return printStoreService(el.dataset.id,Number(el.dataset.run));
+    if(a==='sales-delivery-details')return openSalesDeliveryDetails(el.dataset.id,Number(el.dataset.run)||0);
     if(a==='sales-finalize-driver-delivery')return salesFinalizeDeliveryV38(el.dataset.id,el);
     if(a==='sales-view-driver-signature')return salesViewDeliverySignatureV38(el.dataset.id);
     if(a==='sr-ship-open')return srSalesOpenShip(el.dataset.order,Number(el.dataset.run)||1); // v37.5.0

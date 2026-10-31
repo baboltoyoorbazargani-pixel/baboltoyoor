@@ -1,0 +1,32 @@
+'use strict';const {test}=require('node:test'),assert=require('node:assert/strict');const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');const {chromium}=require('playwright-core');
+test('محموله و نشانگرهای نقش‌ها با فروشگاه مجزا و جزئیات پخش و نگهبانی', {skip:!process.env.BT_CHROMIUM_PATH,timeout:90000}, async()=>{const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-notif-audit-')),base=`http://127.0.0.1:${port}`;const proc=spawn(process.execPath,['server.js'],{cwd:'/home/user/baboltoyoor',env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','inherit']});let browser;
+try{await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('server exit '+c)));});
+browser=await chromium.launch({executablePath:process.env.BT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});const contexts={};for(const k of ['admin','sales','gate','warehouse','store','other','driver','dispatch'])contexts[k]=await browser.newContext();const post=async(c,url,data={})=>{const r=await contexts[c].request.post(base+url,{data});if(!r.ok())throw Error(`${c} ${url} ${r.status()} ${await r.text()}`);return r.json()};const get=async(c,url)=>{const r=await contexts[c].request.get(base+url);if(!r.ok())throw Error(`${url} ${r.status()} ${await r.text()}`);return r.json()};
+await post('admin','/api/login',{username:'admin',password:'Initial!2345'});await post('admin','/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});for(const [username,roleCode,extra] of [['sales1','sales',{}],['gate1','gate',{}],['wh1','warehouse',{}],['shop1','store',{storeName:'فروشگاه اول'}],['shop2','store',{storeName:'فروشگاه دوم'}],['dispatch1','dispatch',{}]])await post('admin','/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:'Changed!2345',mustChangePassword:false,...extra});
+for(const [c,username] of [['sales','sales1'],['gate','gate1'],['warehouse','wh1'],['store','shop1'],['other','shop2'],['dispatch','dispatch1']])await post(c,'/api/login',{username,password:'Changed!2345'});
+const pages={};for(const c of ['admin','sales','gate','warehouse','store','other','dispatch']){pages[c]=await contexts[c].newPage();await pages[c].goto(base+'/',{waitUntil:'networkidle'});}const badge=async(c,sel)=>pages[c].locator(sel+' .nav-badge').allInnerTexts();const refresh=async(...roles)=>{for(const c of roles)await pages[c].evaluate(()=>refreshIndicators());};
+const order=(await post('store','/api/store/orders',{name:'مشتری فروشگاه',phone:'09121112233',items:[{productId:'p01',requestedQty:10,requestedUnit:'کیلوگرم'}]})).order;
+await pages.sales.route('**/api/notifications',route=>route.abort());await pages.sales.evaluate(()=>refreshIndicators());await pages.sales.unroute('**/api/notifications');
+await refresh('sales','admin','store','other');await pages.sales.evaluate(()=>refreshSalesOverview());
+await post('sales',`/api/store/orders/${order.id}/quick-send`);await post('warehouse',`/api/orders/${order.id}/warehouse/accept`);await post('warehouse',`/api/orders/${order.id}/warehouse/start-preparing`);const itemId=order.items[0].id;await post('warehouse',`/api/orders/${order.id}/store-run/weights`,{run:1,items:[{itemId,deliveredKg:4}]});await post('warehouse',`/api/orders/${order.id}/store-run/move`,{itemId});await post('warehouse',`/api/orders/${order.id}/store-run/send-run`,{run:1});await refresh('sales','admin');await pages.sales.evaluate(()=>go('sales','stores'));await pages.sales.locator('[data-store-subtab=incoming]').waitFor();
+const driver=(await post('admin','/api/drivers',{fullName:'راننده',phone:'09129998877',vehicleType:'وانت',plate:'12ب34567'})).driver;await post('admin','/api/admin/users',{username:'driver1',roleCode:'driver',fullName:'راننده',position:'تست',password:'Changed!2345',mustChangePassword:false,driverId:driver.id});await post('driver','/api/login',{username:'driver1',password:'Changed!2345'});pages.driver=await contexts.driver.newPage();await pages.driver.goto(base+'/',{waitUntil:'networkidle'});await post('sales',`/api/orders/${order.id}/send-dispatch`,{driverId:driver.id,run:1});await refresh('gate','driver','store','dispatch','admin');
+await post('driver',`/api/driver/orders/${order.id}/exit`);await refresh('gate','admin');
+
+assert.equal((await get('other','/api/notifications')).notifications.some(n=>n.entityId===order.id),false);
+assert.ok((await get('driver','/api/notifications')).notifications.some(n=>n.entityId===order.id));
+for(const width of [1440,390]){
+  await pages.gate.setViewportSize({width,height:850});
+  await pages.gate.evaluate(()=>{app.gateDispatchTab='leaving';return go('gate','dispatch')});
+  const gateRow=pages.gate.locator(`[data-order="${order.id}"]`).first();await gateRow.locator('[data-gate=details]').click();
+  await pages.gate.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.gate.locator('#modal').innerText()).includes('فروشگاه اول'));
+  await pages.gate.locator('#modal .modal-close').click();
+  await pages.dispatch.setViewportSize({width,height:850});
+  await pages.dispatch.evaluate(()=>{adm.tab='dispatch';dsp.tab='assigned';return go('drivers','orders')});
+  const dispatchRow=pages.dispatch.locator(`[data-order="${order.id}"]`).first();await dispatchRow.locator('[data-dsp=details]').click();
+  await pages.dispatch.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.dispatch.locator('#modal').innerText()).includes('فروشگاه اول'));
+  await pages.dispatch.locator('#modal .modal-close').click();
+  await pages.driver.setViewportSize({width,height:850});await pages.driver.evaluate(()=>go('driver'));
+  await pages.driver.locator(`[data-order="${order.id}"] [data-dsp=details]`).first().click();await pages.driver.locator('#modal.open .dsp-order-details').waitFor();
+  await pages.driver.locator('#modal .modal-close').click();
+}
+}finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const stopped=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true})}});
