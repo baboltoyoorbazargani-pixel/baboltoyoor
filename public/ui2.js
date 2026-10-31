@@ -1088,8 +1088,69 @@ function st38Row(o){
       <div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${o.id}">${icon('eye',13)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${o.id}">${icon('edit',13)} ویرایش</button><button class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${o.id}">${icon('trash',13)} لغو</button>`:''}</div></div>
   </article>`;
 }
+// All orders remain visible as one order even when their two services progress separately.
+const ST_REGISTERED_LABELS={
+  STORE_PENDING_SALES:'در انتظار بررسی فروش', SCHEDULED_REMOTE:'تأیید شده، در انتظار زمان ارسال به انبار',
+  WAREHOUSE_PENDING:'در صف دریافت انبار', WAREHOUSE_PREPARING:'در حال آماده‌سازی در انبار',
+  RETURNED_TO_SALES:'برگشت به فروش برای اصلاح', SETTLEMENT_PENDING:'آماده بررسی فروش',
+  SETTLED:'تأیید شده', EXITED:'خروج ثبت شده', CLOSED:'تکمیل و بسته‌شده',
+  CANCELLED:'لغو شده', OUT_OF_STOCK:'عدم موجودی', DELIVERED:'تحویل ثبت شده'
+};
+function stRegisteredRow(o){
+  const views=new Map((o.storeRun?.items||[]).map(i=>[i.itemId,i]));
+  const showProgress=!['STORE_PENDING_SALES','CANCELLED'].includes(o.status);
+  const items=(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
+  const status=ST_REGISTERED_LABELS[o.status]||o.status||'نامشخص';
+  return `<article class="st-registered-card" data-store-order-id="${esc(o.id)}">
+    <header class="st-registered-card-head"><div><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><span class="st-registered-time">ثبت: ${esc(formatDateTime24(o.createdAt))}</span></div><span class="badge ${o.status==='CANCELLED'?'gray':o.status==='CLOSED'?'green':'blue'}">${esc(status)}</span></header>
+    <div class="st-registered-meta"><span>زمان ارسال به انبار: <b>${o.scheduledAt?esc(formatDateTime24(o.scheduledAt)):'هنوز تعیین نشده'}</b></span>${o.dispatchPlace?`<span>مقصد: <b>${esc(o.dispatchPlace)}</b></span>`:''}</div>
+    ${o.status==='RETURNED_TO_SALES'&&o.warehouseReturn?.reason?`<p class="st-registered-note">علت ارجاع به فروش: ${esc(o.warehouseReturn.reason)}</p>`:''}
+    ${o.status==='CANCELLED'&&o.cancelReason?`<p class="st-registered-note">علت لغو: ${esc(o.cancelReason)}</p>`:''}
+    ${showProgress&&o.storeRun?.enabled?`<div class="st-run-chips"><span class="st-run-chip st-run-r1">سرویس اول: ${esc(o.storeRun.r1StageLabel||'هنوز به فروش ارسال نشده')}</span><span class="st-run-chip st-run-r2">سرویس دوم: ${esc(o.storeRun.r2StageLabel||'هنوز به فروش ارسال نشده')}</span></div>`:''}
+    <div class="st-registered-items">${items.map(it=>{const v=views.get(it.id);return `<div class="st-registered-item"><div><strong>${esc(it.product?.name||'قلم')}</strong>${it.description?`<small>${esc(it.description)}</small>`:''}</div><span>درخواست: <b>${qty(it.requestedQty)} ${esc(it.requestedUnit||'')}</b></span>${showProgress&&v?`<span>${esc(v.runStatus==='IN_SHIPPING'?'وزن‌کشی ثبت شده':(v.runStatusLabel||SR38_STATUS_LABEL[v.runStatus]||'در انتظار'))}</span>${v.r1Kg||v.r2Kg?`<span>وزن ثبت‌شده: سرویس اول <b>${qty(v.r1Kg||0)}</b> · سرویس دوم <b>${qty(v.r2Kg||0)}</b> کیلوگرم</span>`:''}`:''}</div>`;}).join('')||'<p class="subtle">اقلام فعال برای نمایش وجود ندارد.</p>'}</div>
+    <footer class="st-registered-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button type="button" class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش</button><button type="button" class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:''}</footer>
+  </article>`;
+}
+async function renderStoreRegistered(){
+  const root=$('#content'),limit=25;
+  let offset=Math.max(0,Math.floor(Number(app.storeRegisteredOffset)||0)),seq=0,signature='';
+  root.innerHTML=`<section class="sd-panel st-registered-panel"><header class="st-registered-head"><div><h2>سفارش‌های ثبت‌شده</h2><p>از بررسی فروش تا آماده‌سازی انبار و تحویل؛ هر سفارش و سرویس‌های آن را اینجا پیگیری کنید.</p></div><span class="st-registered-live" role="status">در حال دریافت اطلاعات…</span></header><div id="storeRegisteredList" class="st-registered-list"><div class="empty">در حال دریافت سفارش‌ها…</div></div><div id="storeRegisteredPages" class="st-registered-pages"></div></section>`;
+  const current=()=>root.isConnected && app.page==='store' && app.sub.store==='registered';
+  async function refresh(force=false){
+    const request=++seq;
+    try{
+      const data=await api(`/api/store/orders?offset=${offset}&limit=${limit}`);
+      if(!current()||request!==seq)return;
+      if(offset>0&&offset>=data.total){offset=data.total?Math.floor((data.total-1)/limit)*limit:0;app.storeRegisteredOffset=offset;return refresh(true);}
+      const nextSignature=JSON.stringify([data.orders,data.total,offset]);
+      if(force||nextSignature!==signature){
+        const focused=document.activeElement, focusedCard=focused?.closest?.('[data-store-order-id]');
+        const focusOrder=focusedCard?.dataset.storeOrderId, focusAction=focused?.dataset?.action;
+        const focusPage=focused?.dataset?.registeredPage;
+        signature=nextSignature;
+        $('#storeRegisteredList').innerHTML=(data.orders||[]).map(stRegisteredRow).join('')||sdEmpty('receipt','هنوز سفارشی ثبت نشده است','سفارش‌های ثبت‌شدهٔ همین حساب فروشگاه در این بخش نمایش داده می‌شوند.');
+        $('#storeRegisteredPages').innerHTML=`<button type="button" class="btn btn-secondary btn-sm" data-registered-page="previous" ${offset===0?'disabled':''}>صفحه قبل</button><span>${data.total?`${qty(offset+1)} تا ${qty(Math.min(offset+limit,data.total))} از ${qty(data.total)} سفارش`:'۰ سفارش'}</span><button type="button" class="btn btn-secondary btn-sm" data-registered-page="next" ${offset+limit>=data.total?'disabled':''}>صفحه بعد</button>`;
+        if(focusOrder){const card=[...root.querySelectorAll('[data-store-order-id]')].find(x=>x.dataset.storeOrderId===focusOrder);const button=[...(card?.querySelectorAll('[data-action]')||[])].find(x=>x.dataset.action===focusAction)||card?.querySelector('[data-action=store-order-details]');button?.focus({preventScroll:true});}
+        else if(focusPage){const button=[...root.querySelectorAll('[data-registered-page]')].find(x=>x.dataset.registeredPage===focusPage&&!x.disabled);button?.focus({preventScroll:true});}
+      }
+      root.querySelector('.st-registered-live').textContent='به‌روزرسانی خودکار • '+formatDateTime24(new Date().toISOString());
+    }catch(e){if(current()&&request===seq){root.querySelector('.st-registered-live').textContent='به‌روزرسانی ناموفق؛ تلاش مجدد خودکار';if(!signature)$('#storeRegisteredList').innerHTML=`<div class="empty">دریافت سفارش‌ها ناموفق بود: ${esc(e.message)}</div>`;}}
+  }
+  root.onclick=async e=>{
+    const page=e.target.closest('[data-registered-page]');
+    if(page){offset=Math.max(0,offset+(page.dataset.registeredPage==='next'?limit:-limit));app.storeRegisteredOffset=offset;signature='';await refresh(true);return;}
+    const el=e.target.closest('[data-action]');if(!el)return;
+    if(el.dataset.action==='store-order-details')return openStoreOrderDetails(el.dataset.id);
+    if(el.dataset.action==='edit-store-order')return openStoreOrderEdit(el.dataset.id);
+    if(el.dataset.action==='cancel-store-order'&&confirm('این سفارش لغو شود؟')){el.disabled=true;try{await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/cancel',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروشگاه'})});toast('سفارش لغو شد.');el.blur();await refresh(true);}catch(err){el.disabled=false;toast(err.message);}}
+  };
+  await refresh(true);
+  if(current()){let polling=false;app.timer=setInterval(()=>{if(polling)return;polling=true;refresh().finally(()=>{polling=false;});},3500);}
+}
+
 async function renderStorePortal(){
   if(app.timer){clearInterval(app.timer);app.timer=null}
+  if(app.sub.store==='registered')return renderStoreRegistered();
   const d=await api('/api/store/orders'); const orders=d.orders||[];const isDeliveryView=app.sub.store==='delivery';app.storePortalTab=isDeliveryView?'delivery':'create';app.storeDeliveryTab=app.storeDeliveryTab==='delivered'?'delivered':'inProgress';
   const deliveredViews=orders.flatMap((o)=>st38ViewsOf(o)).filter((v)=>v.dispatch&&['DELIVERED','SALES_FINALIZED','CLOSED'].includes(v.dispatch.status)).sort((a,b)=>String(b.dispatch.deliveredAt||'').localeCompare(String(a.dispatch.deliveredAt||''))); // v37.5.0 — هر محموله کارت جدا
   const transitOrders=orders.flatMap(o=>st38ViewsOf(o)).filter(v=>v.dispatch&&['ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(v.dispatch.status)).sort((a,b)=>String(b.dispatch.assignedAt||b.updatedAt||'').localeCompare(String(a.dispatch.assignedAt||a.updatedAt||'')));
@@ -1137,7 +1198,7 @@ async function renderStorePortal(){
     e.preventDefault(); const f=Object.fromEntries(new FormData(e.target));
     const items=app.storeDraft.filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
     if(!items.length)return toast('حداقل یک محصول معتبر وارد کنید.');
-    try{ await api('/api/store/orders',{method:'POST',body:JSON.stringify({...f,items})}); toast('سفارش برای تأیید واحد فروش ارسال شد. زمان ارسال بعداً توسط فروش تعیین می‌شود.'); await renderStorePortal(); }catch(err){ toast(err.message); }
+    try{ await api('/api/store/orders',{method:'POST',body:JSON.stringify({...f,items})}); toast('سفارش ثبت و برای بررسی فروش ارسال شد.'); app.storeRegisteredOffset=0; await go('store','registered'); }catch(err){ toast(err.message); }
   });
   app.timer=setInterval(async()=>{try{const x=(await api('/api/store/orders')).orders||[];if(document.activeElement?.closest?.('#storeOrderForm'))return;const done=x.flatMap((o)=>st38ViewsOf(o)).filter(v=>v.dispatch&&['DELIVERED','SALES_FINALIZED','CLOSED'].includes(v.dispatch.status)).sort((a,b)=>String(b.dispatch.deliveredAt||'').localeCompare(String(a.dispatch.deliveredAt||'')));const moving=x.filter(o=>o.dispatch&&['ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(o.dispatch.status)).sort((a,b)=>String(b.dispatch.assignedAt||b.updatedAt||'').localeCompare(String(a.dispatch.assignedAt||a.updatedAt||'')));const staged=new Set(x.filter((o)=>{const vs=st38ViewsOf(o);return vs.some(v=>v.dispatch&&['DELIVERED','SALES_FINALIZED','CLOSED','ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(v.dispatch.status))||(o.dispatch&&['ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(o.dispatch.status));}));const incoming=x.filter(o=>!staged.has(o)&&o.status!=='CANCELLED'&&o.approvalStatus!=='CANCELLED').sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));const deliveryEl=$('#storeDeliveryRows');if(deliveryEl){const transitViews=x.flatMap(o=>st38ViewsOf(o)).filter(v=>v.dispatch&&['ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(v.dispatch.status));const deliveredNow=x.flatMap(o=>st38ViewsOf(o)).filter(v=>v.dispatch&&['DELIVERED','SALES_FINALIZED','CLOSED'].includes(v.dispatch.status));deliveryEl.innerHTML=app.storeDeliveryTab==='delivered'?(deliveredNow.map(st38DeliveredRow).join('')||sdEmpty('check','محموله‌ای تحویل نشده است','پس از ثبت تحویل راننده در این بخش نمایش داده می‌شود.')):(transitViews.map(st38Row).join('')||sdEmpty('truck','سفارشی در حال تحویل نیست','سفارش پس از واگذاری به راننده در این بخش قرار می‌گیرد.'));const dtabs=$$('.store-delivery-tabs b');if(dtabs[0])dtabs[0].textContent=qty(transitViews.length);if(dtabs[1])dtabs[1].textContent=qty(deliveredNow.length);}const inEl=$('#storeIncomingList'),movingEl=$('#storeTransitList'),doneEl=$('#storeDeliveredList');if(inEl)inEl.innerHTML=incoming.map(st38Row).join('')||sdEmpty('receipt','سفارش ورودی ندارید','سفارش‌های تازه پس از ثبت در این ستون دیده می‌شوند.');if(movingEl)movingEl.innerHTML=moving.map(st38Row).join('')||sdEmpty('truck','سفارشی در مسیر نیست','پس از واگذاری سفارش به راننده در این ستون ظاهر می‌شود.');if(doneEl)doneEl.innerHTML=done.map(st38DeliveredRow).join('')||sdEmpty('check','سفارشی تحویل نشده است','پس از ثبت تحویل راننده در این ستون نمایش داده می‌شود.');const counts=$$('.st38-store-stage .sd-count strong');if(counts[0])counts[0].textContent=qty(incoming.length);if(counts[1])counts[1].textContent=qty(moving.length);if(counts[2])counts[2].textContent=qty(done.length);}catch{}},3500);
 }
