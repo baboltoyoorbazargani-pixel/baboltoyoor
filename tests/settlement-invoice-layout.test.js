@@ -27,7 +27,8 @@ test('compact invoice preview and print share a served stylesheet; no sales appr
   assert.match(invoice,/شماره سفارش[\s\S]*?o\.orderNo/);
   assert.doesNotMatch(invoice,/کد سریع|quickCode/,'کد سریع محصول نباید در پیش‌نمایش یا چاپ فاکتور باشد');
  assert.match(read('public/index.html'),/href="\/invoice-compact\.css\?v=37\.3\.18"/);
- assert.match(ui.slice(ui.indexOf('async function printInvoice(id,run)')),/href="\/invoice-compact\.css\?v=37\.3\.18"/);
+ assert.match(read('public/invoice-print.html'),/href="\/invoice-compact\.css\?v=37\.3\.18"/);
+ assert.match(ui.slice(ui.indexOf('async function printInvoice(id,run)')),/openInvoicePrint/);
  assert.match(read('lib/http.js'),/'\/invoice-compact\.css': \{ file: 'invoice-compact\.css'/);
  assert.match(css,/\.inv38-bottom \{[\s\S]*?direction:rtl/);
  assert.match(css,/@media print/);
@@ -41,7 +42,7 @@ for(const [name,text,end] of [['app',app,'function printCss()'],['ui',ui,'async 
  for(const o of [base,{...base,orderType:'STORE',storeName:'فروشگاه'}]){
   const html=c.invoiceHtml(o);assert.match(html,/<div class="inv38-verify">[\s\S]*?<span>امضاء<\/span><strong>&lt;مشتری&gt; – 0912<\/strong>/);
   assert(!html.includes('signature'));assert(!html.includes('ref-123'));assert(!html.includes('اثر انگشت'));assert(!html.includes('تأیید مشتری'));
-  assert(html.includes('000456'));assert(!html.includes('uuid-internal'));
+  assert(html.includes('000456'));assert(!html.includes('uuid-internal'));assert(!html.includes('inv38-foot'));assert(!html.includes('تاریخ صدور'));
  }
  const legacy=c.invoiceHtml({...base,payment:{totalAmount:240}});assert(legacy.includes('جدید – 0999'));
  const missing=c.invoiceHtml({...base,customer:null,payment:{totalAmount:240,customerName:'',customerPhone:''}});assert(missing.includes('— – —'));
