@@ -379,15 +379,21 @@ test('تغییر قیمت در نقطهٔ نهایی‌سازی: فروش فی �
   const cur = await call('GET', `/api/orders/${oid}`, { cookie: S.wh });
   const itemId = cur.json.order.items[0].id;
   assert.equal((await call('POST', `/api/orders/${oid}/warehouse`, { cookie: S.wh, body: { items: [{ itemId, deliveredKg: 28 }] } })).status, 200);
-  assert.equal((await call('POST', `/api/orders/${oid}/send-dispatch`, { cookie: S.sales, body: { driverId: ids.driver1, items: [{ itemId, unitPrice: 1000 }] } })).status, 200);
+  assert.equal((await call('POST', `/api/orders/${oid}/send-dispatch`, { cookie: S.sales, body: { driverId: ids.driver1, items: [{ itemId, unitPrice: 1000 }], discountAmount: 5000, additionsAmount: 1000 } })).status, 200);
   assert.equal((await call('POST', `/api/driver/orders/${oid}/exit`, { cookie: S.driver1, body: {} })).status, 200);
   assert.equal((await call('POST', `/api/gate/dispatch/${oid}/exit`, { cookie: S.gate, body: {} })).status, 200);
-  const deliver = await call('POST', `/api/driver/orders/${oid}/deliver`, { cookie: S.driver1, body: { signatureData: SIG, settlementType: 'CASH', lines: [{ itemId, returnKg: 0, shortageKg: 0 }] } });
+  const deliver = await call('POST', `/api/driver/orders/${oid}/deliver`, { cookie: S.driver1, body: { signatureData: SIG, settlementType: 'CASH', lines: [{ itemId, returnKg: 5, shortageKg: 0, reason: 'مرجوعی' }] } });
   assert.equal(deliver.status, 200, JSON.stringify(deliver.json));
+  assert.equal(deliver.json.order.dispatch.settlementMethods[0].amount,19000,'payment incorporates discounts, additions and return');
+  const mismatch = await call('POST', `/api/sales/dispatch-deliveries/${oid}/finalize`, { cookie: S.sales, body: { items: [{ itemId, unitPrice: 2600 }] } });
+  assert.equal(mismatch.status, 409, 'روش پرداخت باید مجدداً تأیید شود');
+  assert.equal((await call('GET', `/api/orders/${oid}`, { cookie: S.sales })).json.order.items[0].unitPrice, 1000);
   // نهایی‌سازی همراه با اصلاح فی: اصلاح باید همان لحظه روی جزئیات فاکتور اعمال شود
-  const fin = await call('POST', `/api/sales/dispatch-deliveries/${oid}/finalize`, { cookie: S.sales, body: { items: [{ itemId, unitPrice: 2600 }] } });
+  const fin = await call('POST', `/api/sales/dispatch-deliveries/${oid}/finalize`, { cookie: S.sales, body: { items: [{ itemId, unitPrice: 2600 }], settlementMethods: [{type:'CASH',amount:23*2600-4000}] } });
   assert.equal(fin.status, 200, JSON.stringify(fin.json));
-  assert.equal(fin.json.order.payment.totalAmount, 28 * 2600, 'فاکتور با قیمت اصلاح‌شده صادر شد');
+  assert.equal(fin.json.order.payment.totalAmount, 23 * 2600 - 4000, 'فاکتور با قیمت و مرجوعی اصلاح‌شده صادر شد');
+  assert.equal(fin.json.order.payment.returnDeduction, 5 * 2600);
+  assert.equal(fin.json.order.payment.settlementMethods[0].amount, 23 * 2600 - 4000);
   assert.equal(fin.json.order.payment.priceLines[0].unitPrice, 2600);
   assert.equal(fin.json.order.items.find((x) => x.id === itemId).unitPrice, 2600, 'فی قلم به‌روز شد');
   const au = await call('GET', `/api/admin/audit?entityType=order&entityId=${oid}&limit=200`, { cookie: S.admin });
