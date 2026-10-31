@@ -31,7 +31,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    assert.ok(result.scroll<=1,`${tag}: horizontal overflow ${JSON.stringify(result)}`);assert.deepEqual(result.bad,[],`${tag}: controls outside card`);assert.deepEqual(result.overlap,[],`${tag}: overlapping controls`);
   };
   for(const [width,height] of sizes){
-   await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();await page.evaluate(()=>{clearInterval(app.timer);app.timer=null});
+   await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();await page.evaluate(async()=>{clearInterval(app.timer);app.timer=null;if(app.salesFetchPromise)await app.salesFetchPromise;});
    assert.equal(await page.locator('.sd-store-card-v42').locator('..').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true,`sales list ${width}`);
    await check('.sd-store-card-v42',`sales ${width}x${height}`);
    for(const action of ['store-order-details-v25','sales-edit-store-order','store-approve-v25','store-quick-send-v40']){

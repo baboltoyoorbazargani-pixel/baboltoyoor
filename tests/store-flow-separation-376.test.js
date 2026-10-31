@@ -31,11 +31,13 @@ test('مودال ارسال فروش به راننده بدون ورودی قی�
  assert.match(fn,/driverId, run \}/);
 });
 
-test('تفکیک سفارش فروشگاه از تب‌های فروش، پخش‌تحویل و تسویه',()=>{
+test('سفارش فروشگاه از تسویهٔ عادی جدا و در تحویل راننده قابل مشاهده است',()=>{
  assert.match(ui2,/function renderSalesStoresV41\(orders,deliveries=\{\}\)/);
  assert.match(app,/salesFlowOrders\(orders\)\{return orders\.filter\(o=>o\.orderType!=='STORE'/);
  assert.match(app,/salesAllInSettlement\(orders\)\{return orders\.filter\(o=>o\.orderType!=='STORE'/);
- assert.match(ui2,/const regularOnly=\(o\)=>o\.orderType!=='STORE'/);
+ const delivery=ui2.slice(ui2.indexOf('function renderSalesDeliveryV38'),ui2.indexOf('async function salesViewDeliverySignatureV38'));
+ assert.doesNotMatch(delivery,/filter\(regularOnly\)/);assert.match(ui2,/function renderSalesStoreDeliveryDetails/);
+ assert.match(ui2,/سرویس .*بدون مبلغ/);
  assert.match(core,/warehouseIncomingRegular|warehousePreparingRegular|warehouseStores/);
 });
 
@@ -79,7 +81,7 @@ test('سند فاکتور فروشگاه وزنی است (چاپ و پیش‌ن�
  assert.match(ui2,/سند تحویل وزنی فروشگاه — بدون مبلغ/);
  assert.match(app,/سند تحویل وزنی فروشگاه/);
  assert.match(ui2,/جمع وزن محموله/);
- assert.doesNotMatch(ui2.slice(ui2.indexOf("if(o.orderType==='STORE')"),ui2.indexOf("if(o.orderType==='STORE')")+2600),/money\(/);
+ assert.doesNotMatch(ui2.slice(ui2.indexOf('function renderSalesStoreDeliveryDetails'),ui2.indexOf('function renderSalesDeliveryCardV38')),/money\(/);
  assert.match(ui2,/سند وزنی — بدون مبلغ/); // سلول مبلغ جدول‌ها
  assert.match(app,/سند وزنی — بدون مبلغ/);
  const row=ui2.slice(ui2.indexOf('function st38DeliveredDetails'),ui2.indexOf('function st38DeliveredRow'));

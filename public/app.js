@@ -6,6 +6,8 @@ function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':(o?.customer?.
 
 const app = {
   salesStoreTab: 'incoming',
+  salesDeliveryTab: 'assigned',
+  salesDeliveryHistoryOffset: 0,
   user: null,
   page: 'dashboard',
   sub: { gate:'entry', sales:'dashboard', warehouse:'dashboard', drivers:'dashboard', store:'dashboard' },
@@ -1443,6 +1445,7 @@ function resetClientState(){
   if(app.indicatorTimer){clearInterval(app.indicatorTimer);app.indicatorTimer=null}
   if(app.timer){clearInterval(app.timer);app.timer=null}
   stopNotifReminder(); closeNotifPanel();
+  app.salesDeliveryTab='assigned'; app.salesDeliveryHistoryOffset=0;
   app.notifRequestSeq=(app.notifRequestSeq||0)+1; app.notifAppliedSeq=app.notifRequestSeq;
   app.user=null; app.notifSnapshot=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
 }
@@ -2686,14 +2689,15 @@ async function fetchSalesCache(force=false){
   const fresh=!force && app.salesCache && app.salesCache.fetchedAt && (Date.now()-app.salesCache.fetchedAt<5000);
   if(fresh) return app.salesCache;
   if(app.salesFetchPromise) return app.salesFetchPromise;
+  const historyOffset=Math.max(0,Number(app.salesDeliveryHistoryOffset)||0);
   app.salesFetchPromise=Promise.all([
     api('/api/orders'),
     api('/api/visits').catch(()=>({visits:[]})),
-    api('/api/sales/dispatch-deliveries').catch(()=>null),
+    (historyOffset?api('/api/sales/dispatch-deliveries?historyOffset='+historyOffset):api('/api/sales/dispatch-deliveries')).catch(()=>null),
     api('/api/sales/store-run-shipments').catch(()=>null) // v37.5.0 — «اقلام سرویس باید ارسال شوند»
   ]).then(([ordersResp,visitsResp,deliveryResp,shipResp])=>{
     const ships=shipResp?shipResp.shipments||[]:(app.salesCache?.dispatchDeliveries?.storeRunShipments||[]);
-    app.salesCache={orders:ordersResp.orders||[],visits:visitsResp.visits||[],dispatchDeliveries:deliveryResp?{active:deliveryResp.active||[],assigned:deliveryResp.assigned||[],inTransit:deliveryResp.inTransit||[],pending:deliveryResp.pending||[],finalized:deliveryResp.finalized||[],finalizedTotal:deliveryResp.finalizedTotal??(deliveryResp.finalized||[]).length,storeRunShipments:ships,error:false}:{...(app.salesCache?.dispatchDeliveries||{}),storeRunShipments:ships,error:true},fetchedAt:Date.now()};
+    app.salesCache={orders:ordersResp.orders||[],visits:visitsResp.visits||[],dispatchDeliveries:deliveryResp?{active:deliveryResp.active||[],assigned:deliveryResp.assigned||[],inTransit:deliveryResp.inTransit||[],pending:deliveryResp.pending||[],finalized:deliveryResp.finalized||[],finalizedTotal:deliveryResp.finalizedTotal??(deliveryResp.finalized||[]).length,finalizedOffset:deliveryResp.finalizedOffset??0,finalizedLimit:deliveryResp.finalizedLimit??30,storeRunShipments:ships,error:false}:{...(app.salesCache?.dispatchDeliveries||{}),storeRunShipments:ships,error:true},fetchedAt:Date.now()};
     return app.salesCache;
   }).finally(()=>{app.salesFetchPromise=null;});
   return app.salesFetchPromise;
@@ -2923,6 +2927,7 @@ function bindSalesRootV29(){
   if(!root || root.dataset.salesV29Bound==='1')return;
   root.dataset.salesV29Bound='1';
   root.addEventListener('click',salesV29ClickHandler);
+  root.addEventListener('keydown',e=>{const b=e.target.closest('[data-delivery-tab]');if(!b||!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;const tabs=[...b.closest('[role=tablist]').querySelectorAll('[data-delivery-tab]')];const i=tabs.indexOf(b);const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowLeft'?1:-1)+tabs.length)%tabs.length;e.preventDefault();tabs[next].click();tabs[next].focus();});
   root.addEventListener('change',salesV29ChangeHandler);
   root.addEventListener('submit',salesV29SubmitHandler);
 }
@@ -2930,6 +2935,14 @@ function bindSalesRootV29(){
 async function salesV29ClickHandler(e){
   const content=$('#content');
   if(!content || !content.contains(e.target))return;
+  const deliveryTab=e.target.closest('[data-delivery-tab]');
+  if(deliveryTab){
+    e.preventDefault();app.salesDeliveryTab=deliveryTab.dataset.deliveryTab;
+    const pane=deliveryTab.closest('.sales-delivery-pane');
+    pane.querySelectorAll('[data-delivery-tab]').forEach(b=>{const active=b===deliveryTab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});
+    pane.querySelectorAll('[data-delivery-section]').forEach(p=>{p.hidden=p.dataset.deliverySection!==app.salesDeliveryTab;});
+    return;
+  }
   const storeSubtab=e.target.closest('[data-store-subtab]');
   if(storeSubtab){ e.preventDefault(); e.stopPropagation(); app.salesStoreTab=storeSubtab.dataset.storeSubtab; const storePane=storeSubtab.closest('.sales-store-pane-v43'); if(storePane){ storePane.querySelectorAll('[data-store-subtab]').forEach(b=>{const active=b===storeSubtab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));}); storePane.querySelectorAll('[data-store-section]').forEach(p=>{p.hidden=p.dataset.storeSection!==app.salesStoreTab;}); } return; }
   const tab=e.target.closest('[data-sales-tab]');
@@ -2955,6 +2968,7 @@ async function salesV29ClickHandler(e){
     if(a==='invoice')return previewInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-store-service')return printStoreService(el.dataset.id,Number(el.dataset.run));
+    if(a==='sales-delivery-history-page')return salesDeliveryHistoryPage(el);
     if(a==='sales-delivery-details')return openSalesDeliveryDetails(el.dataset.id,Number(el.dataset.run)||0);
     if(a==='sales-finalize-driver-delivery')return salesFinalizeDeliveryV38(el.dataset.id,el);
     if(a==='sales-view-driver-signature')return salesViewDeliverySignatureV38(el.dataset.id);

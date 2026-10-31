@@ -936,3 +936,21 @@
 #appView #content .dsp-card-compact .dsp-card-head>div{display:flex;align-items:center;gap:8px;white-space:nowrap}
 #appView #content .dsp-card-compact .dsp-card-actions{flex-wrap:nowrap;flex-shrink:0}
 #modal .v21-detail-table strong{white-space:normal;overflow-wrap:anywhere}
+
+/* تحویل راننده: چهار سربرگ مستقل و فهرست کامل‌عرض. */
+#appView #content .sales-delivery-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;min-width:0}
+#appView #content .sales-delivery-tab{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:13px 16px;border:1px solid var(--line,#dce4eb);border-radius:12px;background:#fff;color:var(--ink,#202a34);font:inherit;font-weight:800;cursor:pointer}
+#appView #content .sales-delivery-tab.active{border-color:var(--brand,#a91129);background:#fff2f3;color:var(--brand,#a91129)}
+#appView #content .sales-delivery-tab:focus-visible{outline:3px solid #678fce;outline-offset:2px}
+#appView #content .sales-delivery-tab b{display:grid;place-items:center;min-width:29px;height:29px;padding:0 6px;border-radius:9px;background:#f1f4f7}
+#appView #content .sales-delivery-panel{min-width:0;border:1px solid var(--line,#dce4eb);border-radius:14px;background:#fff;padding:14px}
+#appView #content .sales-delivery-panel[hidden]{display:none!important}
+#appView #content .sales-delivery-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#appView #content .sales-delivery-panel-head h2{margin:0;font-size:17px}
+#appView #content .sales-delivery-panel-head p{margin:5px 0 0;color:var(--muted);font-size:12px}
+#appView #content .sales-delivery-panel-head>span{font-size:12px;color:var(--muted)}
+#appView #content .sales-delivery-panel .sales-delivery-column-list{min-height:80px;overflow-x:auto;max-width:100%;min-width:0}
+#appView #content .sales-delivery-pages{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding-top:12px}
+#modal .sales-store-delivery-lines{display:grid;gap:8px;padding:12px 18px}
+#modal .sales-store-delivery-line{display:flex;gap:8px 16px;flex-wrap:wrap;border:1px solid var(--line,#dce4eb);border-radius:9px;padding:10px;overflow-wrap:anywhere}
+@media(max-width:700px){#appView #content .sales-delivery-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#appView #content .sales-delivery-tab{padding:10px 12px;font-size:12px}}
