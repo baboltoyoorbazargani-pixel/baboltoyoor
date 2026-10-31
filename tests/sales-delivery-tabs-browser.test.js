@@ -20,7 +20,7 @@ test('مرورگر: چهار سربرگ تحویل، سفارش عادی و فر
    await page.setViewportSize({width,height:850});await page.locator('[data-delivery-tab=inTransit]').click();
    assert.equal(await page.locator('[data-delivery-section]:visible').count(),1);assert.equal(await page.locator('[data-delivery-section=inTransit] [data-delivery-order=transit]').count(),1);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`page ${width}`);
-   await page.locator('[data-delivery-tab=history]').click();assert.equal(await page.locator('[data-delivery-section=history] [data-delivery-order]').count(),30);
+   await page.locator('[data-delivery-tab=history]').click();assert.equal(await page.locator('[data-delivery-tab=history] b').count(),0);assert.equal(await page.locator('[data-delivery-section=history] [data-delivery-order]').count(),30);
    assert.match(await page.locator('[data-delivery-section=history] .sales-delivery-pages').innerText(),/۳۲/);
   }
   await page.locator('[data-delivery-section=history] [data-offset="30"]').click();
