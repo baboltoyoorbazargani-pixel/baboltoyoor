@@ -31,7 +31,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    assert.ok(result.scroll<=1,`${tag}: horizontal overflow ${JSON.stringify(result)}`);assert.deepEqual(result.bad,[],`${tag}: controls outside card`);assert.deepEqual(result.overlap,[],`${tag}: overlapping controls`);
   };
   for(const [width,height] of sizes){
-   await page.setViewportSize({width,height});await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();
+   await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();
    assert.equal(await page.locator('.sd-store-card-v42').locator('..').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true,`sales list ${width}`);
    await check('.sd-store-card-v42',`sales ${width}x${height}`);
    for(const action of ['store-order-details-v25','sales-edit-store-order','store-approve-v25','store-quick-send-v40']){
@@ -57,7 +57,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    await page.setViewportSize({width,height});await page.evaluate(()=>go('warehouse','preparing'));await page.locator('#wh38Body').waitFor();await page.evaluate(o=>wh38Sheet(o),regular);await check('.wh38-prep-item:not(.sr318-row)',`warehouse form ${width}`);
    await page.evaluate(o=>sr38Sheet(o),shop);await check('.sr318-row',`store service ${width}`);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`page overflow ${width}`);
-   await page.evaluate(()=>go('admin'));await page.locator('#settings-tab-audit').click();await page.locator('.audit-table').waitFor();
+   await page.evaluate(()=>go('admin'));await page.evaluate(()=>{clearInterval(app.indicatorTimer);app.indicatorTimer=null;});await page.locator('#settings-tab-audit').click();await page.locator('.audit-table').waitFor();
    assert.equal(await page.locator('.audit-table').evaluate(e=>e.closest('.table-wrap').scrollWidth<=e.closest('.table-wrap').clientWidth+1),true,`audit table ${width}`);
    if(width>=800){
     const nav=page.locator('#railNav button:visible');assert.ok(await nav.count()>0,`navigation ${width}`);

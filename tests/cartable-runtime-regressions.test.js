@@ -48,6 +48,7 @@ test('quick codes render only in the product catalog and order-entry pickers, no
  assert.doesNotMatch(warehouse,/quickCode|کد سریع/);
  assert.doesNotMatch(forms,/quickCode|کد سریع/);
  assert.doesNotMatch(dispatchCards,/quickCode|کد سریع/);
- assert.match(app,/class="product-code">\$\{esc\(x\.quickCode\)\}/);
+ const admin=read('public/admin-ui.js');
+ assert.match(admin,/class="cust-code">\$\{admE\(x\.quickCode\)\}/);
  assert.match(app,/class="op-product-option"[\s\S]*?\$\{esc\(p\.quickCode\)\}/);
 });
