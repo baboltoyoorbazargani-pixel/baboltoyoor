@@ -82,7 +82,7 @@ test('سند فاکتور فروشگاه وزنی است (چاپ و پیش‌ن�
  assert.doesNotMatch(ui2.slice(ui2.indexOf("if(o.orderType==='STORE')"),ui2.indexOf("if(o.orderType==='STORE')")+2600),/money\(/);
  assert.match(ui2,/سند وزنی — بدون مبلغ/); // سلول مبلغ جدول‌ها
  assert.match(app,/سند وزنی — بدون مبلغ/);
- const row=ui2.slice(ui2.indexOf('function st38DeliveredRow'),ui2.indexOf('function st38OrderBadge'));
+ const row=ui2.slice(ui2.indexOf('function st38DeliveredDetails'),ui2.indexOf('function st38DeliveredRow'));
  assert.match(row,/freeFlow/);
  assert.match(row,/freeFlow\?lines\.map/); // مپ فروشگاه‌ای ردیف‌ها فقط وزن است
 });

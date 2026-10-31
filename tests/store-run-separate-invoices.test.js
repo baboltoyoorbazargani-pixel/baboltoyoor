@@ -71,9 +71,9 @@ test('کارتابل فروش: وزن نمایشی هر سرویس فقط وزن
   const b = ui.indexOf('\nfunction ', a + 10);
   vm.runInContext(ui.slice(a, b), c);
   const html = c.renderStoreRunShipmentsPanel([{ orderId: 'o', orderNo: '9', storeName: 'فروشگاه تست', run: 2, sentAt: '2026-10-18T12:00', items: [{ productName: 'مرغ', requestedQty: 100, serviceKg: 40, previousRunKg: 60, plannedRunKg: 40, deliveredKg: 40 }] }]);
-  assert(html.includes('تحویل سرویس دوم'));
+  assert(html.includes('سرویس دوم'));assert(html.includes('وزن سرویس'));
   assert(html.includes(fa('40')), 'وزن سرویس دوم');
-  assert(html.includes('ماندهٔ سرویس دوم'));
+  assert(ui.includes('ماندهٔ سرویس دوم'), 'ماندهٔ هر قلم در مودال جزئیات در دسترس است');
   assert(!html.includes(fa('100')), 'جمع دو سرویس (۱۰۰) نمایش داده نمی‌شود');
 });
 

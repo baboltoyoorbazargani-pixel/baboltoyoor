@@ -31,7 +31,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    assert.ok(result.scroll<=1,`${tag}: horizontal overflow ${JSON.stringify(result)}`);assert.deepEqual(result.bad,[],`${tag}: controls outside card`);assert.deepEqual(result.overlap,[],`${tag}: overlapping controls`);
   };
   for(const [width,height] of sizes){
-   await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();
+   await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();await page.evaluate(()=>{clearInterval(app.timer);app.timer=null});
    assert.equal(await page.locator('.sd-store-card-v42').locator('..').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true,`sales list ${width}`);
    await check('.sd-store-card-v42',`sales ${width}x${height}`);
    for(const action of ['store-order-details-v25','sales-edit-store-order','store-approve-v25','store-quick-send-v40']){
@@ -39,9 +39,15 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    }
    await page.locator('.sd-store-card-v42 [data-action=store-order-details-v25]').click();await page.locator('#modal.open .modal-card').waitFor();
    assert.ok(await page.locator('#modal .modal-card').evaluate(e=>e.scrollWidth<=e.clientWidth+1),`sales modal ${width}`);await page.locator('#modal .modal-close').click();
-   await page.evaluate(()=>go('warehouse','incoming'));await page.locator('.wh38-incoming-summary').waitFor();
-   await check('.wh38-incoming-summary-scroll',`incoming ${width}x${height}`);
-   assert.equal(await page.locator('.wh38-incoming-customer h3').evaluate(e=>getComputedStyle(e).overflow),'visible');
+   await page.evaluate(()=>go('warehouse','incoming'));const row=page.locator('.wh38-incoming-card').first();await row.waitFor();await page.evaluate(()=>{clearInterval(app.wh38.timer);app.wh38.timer=null});
+   await check('.wh38-incoming-card',`incoming ${width}x${height}`);
+   assert.equal(await row.evaluate(e=>getComputedStyle(e).flexWrap),'nowrap');
+   for(const action of ['wh38-order-details','wh38-accept']){
+    const button=row.locator(`[data-action=${action}]`);await button.scrollIntoViewIfNeeded();assert.equal(await button.isVisible(),true);
+    assert.equal(await button.evaluate(e=>{const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return r.left>=-1&&r.right<=innerWidth+1&&!!hit&&(hit===e||e.contains(hit));}),true,`incoming ${action} ${width}`);
+   }
+   await row.locator('[data-action=wh38-order-details]').click();await page.locator('#modal.open .v21-detail-table').waitFor();await page.locator('#modal .modal-close').click();
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`incoming page overflow ${width}`);
   }
   await post(`/api/store/orders/${shop.id}/quick-send`,{});
   for(const [width,height] of sizes){

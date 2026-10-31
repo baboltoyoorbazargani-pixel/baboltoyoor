@@ -30,8 +30,8 @@ test('نشان سربرگ «ورودی» محموله‌های در انتظار
 
 test('چیپ هر محموله اقلام و وزن همان سرویس و دکمهٔ تعیین راننده دارد', () => {
   assert.match(panelFn, /data-action="sr-ship-open" data-order="\$\{esc\(s\.orderId\)\}" data-run="\$\{s\.run\}"/);
-  assert.match(panelFn, /qty\(l\.serviceKg\?\?l\.deliveredKg\)/, 'وزن نمایشی چیپ باید وزن همان سرویس باشد');
-  assert.match(panelFn, /s\.run===2\?` • ماندهٔ سرویس دوم/, 'برای سرویس دوم ماندهٔ سرویس دوم هم نمایش داده شود');
+  assert.match(panelFn, /l\.serviceKg\?\?l\.deliveredKg/, 'جمع وزن ردیف باید از وزن همان سرویس باشد');
+  assert.match(shipFn, /ماندهٔ سرویس دوم/, 'ماندهٔ سرویس در جزئیات محموله نمایش داده شود');
   assert.match(panelFn, /const list=Array\.isArray\(shipments\)\?shipments:\[\];/, 'هر دو سرویس در یک فهرست رندر می‌شوند');
 });
 
