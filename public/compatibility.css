@@ -921,3 +921,18 @@
 #appView #content .st38-hero-badge span{min-width:0;overflow-wrap:anywhere}
 #appView #content .dbc-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.5}
 #modal .store-detail-modal .detail-item-row strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* خلاصهٔ افقی سفارش؛ فقط فهرست خودش در نمایش باریک جابه‌جا می‌شود. */
+#appView #content :is(.order-compact-scroll,.st38-delivery-list){overflow-x:auto;max-width:100%;min-width:0}
+#appView #content .order-compact-row{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:nowrap!important;width:max-content!important;min-width:100%!important;padding:10px 12px!important;white-space:nowrap!important}
+#appView #content .order-compact-row>*{flex-shrink:0}
+#appView #content .order-compact-row>.badge{white-space:nowrap!important}
+#appView #content .dsp-list{overflow-x:auto;max-width:100%;min-width:0}
+#appView #content .dsp-card-compact{min-width:650px}
+#appView #content :is(.sales-delivery-column-list,.sr-ship-list){overflow-x:auto;max-width:100%;min-width:0}
+/* راننده: هویت، خلاصه و دکمه‌ها در یک ردیف قابل پیمایش بمانند. */
+#appView #content .dsp-list .dsp-card.dsp-card-compact{flex-direction:row!important;align-items:center!important;flex-wrap:nowrap!important;width:max-content;min-width:100%;white-space:nowrap}
+#appView #content .dsp-card-compact .dsp-card-head{border:0;padding:0;gap:12px;align-items:center;flex-shrink:0}
+#appView #content .dsp-card-compact .dsp-card-head>div{display:flex;align-items:center;gap:8px;white-space:nowrap}
+#appView #content .dsp-card-compact .dsp-card-actions{flex-wrap:nowrap;flex-shrink:0}
+#modal .v21-detail-table strong{white-space:normal;overflow-wrap:anywhere}
