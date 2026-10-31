@@ -12,10 +12,10 @@ const compat = read('public/compatibility.css');
 const block = compat.slice(compat.indexOf('.sr318-rows{overflow-x:visible'));
 const sheet = ui.slice(ui.indexOf('function sr38Sheet(o)'), ui.indexOf('async function sr38Post'));
 
-test('ردیف برگهٔ سرویس حداقل‌عرض اجباری ندارد و اسکرول افقی نمی‌خواهد', () => {
-  assert.match(block, /\.sr318-rows\{overflow-x:visible/, 'محفظهٔ ردیف‌ها نباید اسکرول افقی داشته باشد');
-  assert.match(block, /\.sr318-row\{min-width:0;width:100%;flex-wrap:wrap/, 'ردیف باید در عرض صفحه جا شود');
-  assert.match(block, /\.sr318-sendline\{flex-wrap:wrap;overflow-x:visible/, 'نوار ارسال سرویس‌ها هم نباید اسکرول افقی بخواهد');
+test('ردیف تک‌خطی و پیمایش افقی مستقل در عرض کوچک', () => {
+  const final=compat.slice(compat.lastIndexOf('/* وزن و عملیات'));
+  assert.match(final, /\.sr318-rows\{display:block!important;overflow-x:auto!important/);
+  assert.match(final, /\.wh38-prep-item\.sr318-row\{width:max-content!important;min-width:100%!important;flex-wrap:nowrap!important/);
 });
 
 test('کادر کیلوگرم و بقیهٔ کنترل‌ها جمع‌وجور و هم‌اندازه‌اند', () => {

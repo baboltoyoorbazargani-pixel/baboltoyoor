@@ -50,6 +50,9 @@ function dspScopedItems(o) {
   if (ids.length) {
     const set = new Set(ids); const w = d.shipmentWeights || {};
     items = items.filter((i) => set.has(i.id)).map((i) => ({ ...i, deliveredKg: Number(w[i.id] ?? i.deliveredKg ?? 0) }));
+  } else if (d.run) {
+    const w=d.shipmentWeights||{};
+    items=items.map(i=>{const entries=(d.run===2?i.runR2:i.runR1)||[];const kg=Object.prototype.hasOwnProperty.call(w,i.id)?Number(w[i.id]):entries.reduce((sum,e)=>sum+Number(e.kg||0),0);return {...i,deliveredKg:kg};}).filter(i=>i.deliveredKg>0);
   }
   return items;
 }
@@ -119,13 +122,13 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
     const labels = { PENDING_SALES: 'منتظر تعیین راننده', DISPATCHED: 'واگذارشده', FINALIZED: 'نهایی‌شده' };
     const opsLine = (sh, label) => sh ? `<div class="dsp-ops-line"><span class="st-run-chip st-run-r${label === 'دوم' ? 2 : 1}">سرویس ${label}</span> وضعیت: <b>${esc(labels[sh.status] || sh.status || '—')}</b>${sh.sentAt ? ` • ارسال انبار: ${esc(formatDateTime24(sh.sentAt))}` : ''}</div>` : '';
     openModal(`جزئیات محموله — ${esc(store ? (o.storeName || 'فروشگاه') : dspCustomer(o))}`, `<div class="dsp-order-details">
-      <div class="dsp-delivery-head"><div class="dsp-head-cell"><span>${store ? 'فروشگاه' : 'مشتری'}</span><b>${esc(dspCustomer(o))}</b><small>${esc(dspPhone(o) || (o.dispatchPlace || ''))}</small></div><div class="dsp-head-cell"><span>شماره سفارش</span><b>${esc(fa(o.orderNo || '—'))}</b><small>${o.dispatch?.run ? `سرویس ${o.dispatch.run === 2 ? 'دوم' : 'اول'}` : 'محموله تکی'}</small></div></div>
+      <div class="dsp-delivery-head dsp-detail-head"><div class="dsp-head-cell"><span>${store ? 'فروشگاه' : 'مشتری'}</span><b>${esc(dspCustomer(o))}</b><small>${esc(dspPhone(o) || (o.dispatchPlace || ''))}</small></div><div class="dsp-head-cell"><span>شماره سفارش</span><b>${esc(fa(o.orderNo || '—'))}</b><small>${o.dispatch?.run ? `سرویس ${o.dispatch.run === 2 ? 'دوم' : 'اول'}` : 'محموله تکی'}</small></div></div>
       ${o.dispatch?.driverName ? `<div class="dsp-driver">راننده: <b>${esc(o.dispatch.driverName)}</b> ${plateViewHtml(o.dispatch.driverPlate, '—', true)}</div>` : ''}
       ${store ? opsLine(ops.r1Shipment, 'اول') + opsLine(ops.r2Shipment, 'دوم') : ''}
       ${(o.dispatch?.events?.length) ? `<details class="dsp-log"><summary>سوابق این سفارش</summary><ol>${dspEvents(o.dispatch)}</ol></details>` : ''}
       <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن محموله</th><th>توضیحات</th>${store ? '' : '<th>مبلغ</th>'}</tr></thead><tbody>${rows || `<tr><td colspan="5">قلمی ثبت نشده است.</td></tr>`}</tbody></table></div>
       ${o.dispatch?.priceApprovedAt?(store?dspQtyInvoiceMarkup(o,true):dspInvoiceMarkup(o,true)):''}
-      ${['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch):''}
+      ${['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch,store):''}
       <p class="adm-note">${store ? 'محمولهٔ فروشگاه‌ها کاملاً بدون مبلغ است؛ سند این تحویل «سند تحویل وزنی» است.' : 'ارزش ریالی فقط برای مشتریان عادی نمایش داده می‌شود.'}</p>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div></div>`);
   } catch (err) { toast(err.message); }
@@ -153,8 +156,10 @@ function dspParseAmount(value) {
 function dspEvents(d) {
   return (d.events || []).map((e) => `<li><small>${esc(formatDateTime24(e.at))} • ${esc(e.actor)}</small><span>${esc(e.text)}</span></li>`).join('') || '<li><span>رویدادی ثبت نشده است</span></li>';
 }
-function dspDeliverySummary(d) {
+function dspDeliverySummary(d, priceFree = false) {
   const lines = d.lines || [];
+  if(priceFree){const sum=k=>lines.reduce((s,l)=>s+Number(l[k]||0),0);return `<div class="dsp-summary"><span>مرجوعی ${dspKg(sum('returnKg'))}</span><span>کسری ${dspKg(sum('shortageKg'))}</span><span>خالص ${dspKg(sum('netKg'))}</span>${d.note?`<small>یادداشت: ${esc(d.note)}</small>`:''}</div>`;}
+
   const payLabels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'اعتباری'};
   const paymentRows=(d.settlementMethods||[]).map(m=>`<span>${esc(payLabels[m.type]||m.type)}${m.deviceSnapshot?` • ${esc(m.deviceSnapshot.title)} (${esc(m.deviceSnapshot.terminalNumber)})`:''}${m.checkNumber?` • چک ${esc(m.checkNumber)}`:''}${m.reference?` • پیگیری ${esc(m.reference)}`:''}: <b>${money(m.amount)}</b></span>`).join('');
   const sum = (k) => lines.reduce((s, l) => s + Number(l[k] || 0), 0);
@@ -431,7 +436,7 @@ async function renderGateDispatchPage() {
 }
 function gateDispatchCard(o, action = '') {
  const d=o.dispatch||{};
- return `<article class="dsp-card ${o.orderType==='STORE'?'dsp-card-storefree':''} order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${o.orderType==='STORE'?'<span class="badge green">فروشگاه — بدون مبلغ</span>':''}<span>راننده: ${esc(d.driverName||'—')}</span>${plateViewHtml(d.driverPlate, '—', true)}${dspBadge(d.status)}<span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}">جزئیات محموله</button>${action==='exit'?`<button class="btn btn-primary btn-sm" type="button" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`:''}</article>`;
+ return `<article class="dsp-card ${o.orderType==='STORE'?'dsp-card-storefree':''} order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${o.orderType==='STORE'?'<span class="badge green">فروشگاه — بدون مبلغ</span>':''}<span>راننده: ${esc(d.driverName||'—')}</span>${plateViewHtml(d.driverPlate, '—', true)}${dspBadge(d.status)}<span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}" data-run="${Number(d.run)||0}">جزئیات محموله</button>${action==='exit'?`<button class="btn btn-primary btn-sm" type="button" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`:''}</article>`;
 }
 function gateHomeDispatchMarkup(data) {
   const leaving = data.leaving || [];
@@ -502,7 +507,7 @@ function paintGateDispatch(data) {
   };
 }
 async function handleGateDispatchAction(el) {
-  if (el.dataset.gate === 'details') return dspOrderDetails(el.dataset.id);
+  if (el.dataset.gate === 'details') return dspOrderDetails(el.dataset.id, Number(el.dataset.run)||null);
   if (el.dataset.gate !== 'exit') {
     return toast('پس از تحویل راننده، تأیید نهایی را واحد فروش انجام می‌دهد.');
   }

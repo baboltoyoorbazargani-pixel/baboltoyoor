@@ -954,3 +954,27 @@
 #modal .sales-store-delivery-lines{display:grid;gap:8px;padding:12px 18px}
 #modal .sales-store-delivery-line{display:flex;gap:8px 16px;flex-wrap:wrap;border:1px solid var(--line,#dce4eb);border-radius:9px;padding:10px;overflow-wrap:anywhere}
 @media(max-width:700px){#appView #content .sales-delivery-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#appView #content .sales-delivery-tab{padding:10px 12px;font-size:12px}}
+
+/* وزن و عملیات در یک سطر؛ در نمایش باریک فقط همان فهرست اسکرول می‌شود. */
+#appView #content .sr318-rows{display:block!important;overflow-x:auto!important;max-width:100%;padding-bottom:4px!important}
+#appView #content .wh38-prep-item.sr318-row{width:max-content!important;min-width:100%!important;flex-wrap:nowrap!important;gap:6px!important;margin-bottom:4px}
+#appView #content .sr318-row>.sr318-name{flex:0 0 150px!important;max-width:150px!important}
+#appView #content .sr318-row>.sr318-weights{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;padding:3px 6px;border:1px solid #dce4eb;border-radius:8px;background:#f7fafb}
+#appView #content .sr318-history-button{height:28px;min-height:28px!important;padding:2px 7px;font-size:11px;white-space:nowrap}
+#appView #content .sr318-row>.sr318-ops{flex:0 0 auto!important;max-width:none!important;flex-wrap:nowrap!important}
+#appView #content .sr318-row>.sr318-ops .btn{height:30px!important;white-space:nowrap!important}
+#appView #content .wh38-store-sheet-head{overflow-x:auto}
+#appView #content .wh38-store-sheet-head .wh38-store-head{width:max-content;min-width:100%;flex-wrap:nowrap;white-space:nowrap}
+#appView #content .wh38-store-sheet-head .wh38-store-name,#appView #content .wh38-store-sheet-head .wh38-store-meta{flex:0 0 auto;max-width:none;overflow:visible}
+#appView #content .gate-dispatch-vertical-list>.order-compact-row{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;width:max-content!important;min-width:100%!important}
+/* جزئیات راننده و فروشگاه: مشخصات در یک ردیف و جدول با پیمایش مستقل. */
+#modal .dsp-detail-head{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;gap:6px}
+#modal .dsp-detail-head .dsp-head-cell{display:flex;flex-direction:row;align-items:center;gap:6px;min-width:max-content;min-height:0;padding:6px 9px}
+#modal .dsp-detail-head .dsp-head-cell>*{white-space:nowrap}
+#modal .store-shipment-meta{display:flex;align-items:center;gap:12px;overflow-x:auto;white-space:nowrap;padding:6px 0 10px}
+#modal .st38-delivered-items.table-wrap{display:block;overflow-x:auto;max-width:100%;margin:12px 0}
+#modal .store-shipment-table{min-width:620px;width:100%;border-collapse:collapse}
+#modal .store-shipment-table th,#modal .store-shipment-table td{padding:8px;border:1px solid #dce4eb;text-align:right;vertical-align:middle}
+#modal .store-shipment-table th{background:#f4f7f9;white-space:nowrap}
+#modal .sr38-hist{position:static;list-style:none;margin:0;padding:0;display:grid;gap:6px}
+#modal .sr38-hist li{display:flex;gap:10px;flex-wrap:wrap;padding:8px;border:1px solid #dce4eb;border-radius:8px}

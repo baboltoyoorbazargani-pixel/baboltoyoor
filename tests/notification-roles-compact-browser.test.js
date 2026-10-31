@@ -29,17 +29,17 @@ assert.ok((await get('driver','/api/notifications')).notifications.some(n=>n.ent
 for(const width of [1440,390]){
   await pages.gate.setViewportSize({width,height:850});
   await pages.gate.evaluate(()=>{app.gateDispatchTab='leaving';return go('gate','dispatch')});
-  const gateRow=pages.gate.locator(`[data-order="${order.id}"]`).first();await gateRow.locator('[data-gate=details]').click();
-  await pages.gate.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.gate.locator('#modal').innerText()).includes('فروشگاه اول'));
+  const gateRow=pages.gate.locator(`[data-order="${order.id}"]`).first();assert.equal(await gateRow.evaluate(e=>getComputedStyle(e).flexDirection),'row');assert.equal(await gateRow.evaluate(e=>getComputedStyle(e).flexWrap),'nowrap');await gateRow.locator('[data-gate=details]').click();
+  await pages.gate.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.gate.locator('#modal').innerText()).includes('فروشگاه شعبه 1 اول'));
   await pages.gate.locator('#modal .modal-close').click();
   await pages.dispatch.setViewportSize({width,height:850});
   await pages.dispatch.evaluate(()=>{adm.tab='dispatch';dsp.tab='assigned';return go('drivers','orders')});
   const dispatchRow=pages.dispatch.locator(`[data-order="${order.id}"]`).first();await dispatchRow.locator('[data-dsp=details]').click();
-  await pages.dispatch.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.dispatch.locator('#modal').innerText()).includes('فروشگاه اول'));
+  await pages.dispatch.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.dispatch.locator('#modal').innerText()).includes('فروشگاه شعبه 1 اول'));
   await pages.dispatch.locator('#modal .modal-close').click();
   await pages.driver.setViewportSize({width,height:850});await pages.driver.evaluate(()=>go('driver'));
   await pages.driver.locator(`[data-order="${order.id}"] [data-dsp=details]`).first().click();await pages.driver.locator('#modal.open .dsp-order-details').waitFor();
-  await pages.driver.locator('#modal .modal-close').click();
+  assert.equal(await pages.driver.locator('#modal .dsp-detail-head').evaluate(e=>getComputedStyle(e).flexWrap),'nowrap');await pages.driver.locator('#modal .modal-close').click();
 }
 // Confirm both separate deliveries in a real store browser; archived run 1
 // must not be mistaken for the current second shipment.

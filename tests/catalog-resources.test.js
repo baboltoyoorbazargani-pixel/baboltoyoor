@@ -29,7 +29,7 @@ test('independent catalogs, selections, permissions and no orphan records on err
   assert.equal((await call('GET','/api/drivers')).json.drivers.length,0);
   r=await mk('driver-new','driver',{drvPhone:'09121234567',vehicleId:vehicle.id,paymentDeviceId:device.id});assert.equal(r.status,201,JSON.stringify(r.json));driver=r.json.user;
   let d=(await call('GET','/api/drivers')).json.drivers[0];assert.equal(d.id,driver.driverId);assert.equal(d.vehicleId,vehicle.id);assert.equal(d.paymentDeviceId,device.id);assert.equal(d.posTerminal,'1234');
-  r=await mk('store-new','store',{branchId:branch.id,storeName:'رد شود',branchNo:1});assert.equal(r.status,201,JSON.stringify(r.json));assert.equal(r.json.user.branchNo,7);assert.equal(r.json.user.storeName,branch.name);assert.equal(r.json.user.branchId,branch.id);
+  r=await mk('store-new','store',{branchId:branch.id,storeName:'رد شود',branchNo:1});assert.equal(r.status,201,JSON.stringify(r.json));assert.equal(r.json.user.branchNo,7);assert.equal(r.json.user.storeName,'فروشگاه شعبه 7 مرکزی');assert.equal(r.json.user.storeNameRaw,branch.name);assert.equal(r.json.user.branchId,branch.id);
   assert.equal((await mk('invalid-shop','store',{branchId:'invalid'})).status,400);
   assert.equal((await call('PUT','/api/admin/store-branches/'+branch.id,{branchNo:8})).status,409);
   assert.equal((await call('PUT','/api/admin/store-branches/'+branch.id,{isActive:false})).status,409);
@@ -48,7 +48,7 @@ test('legacy orders and account isolation remain intact when selecting the same 
   assert.equal((await call('PUT','/api/admin/users/'+legacy.id,{branchId:branch.id})).status,200);
   const legacyOrders=(await call('GET','/api/store/orders',null,legacyCookie)).json.orders;const newOrders=(await call('GET','/api/store/orders',null,newCookie)).json.orders;
   assert.deepEqual(legacyOrders.map(x=>x.id),[first.json.order.id]);assert.deepEqual(newOrders.map(x=>x.id),[second.json.order.id]);
-  assert.equal(legacyOrders[0].storeName,'قدیمی');
+  assert.equal(legacyOrders[0].storeName,'فروشگاه شعبه 7 قدیمی');
   const other=await call('POST','/api/admin/store-branches',{name:'شعبه ۸',branchNo:8});assert.equal(other.status,201);
   assert.equal((await call('PUT','/api/admin/users/'+legacy.id,{branchId:other.json.branch.id})).status,409);
   assert.equal((await call('GET','/api/admin/users')).json.users.find(u=>u.id===legacy.id).branchNo,7);
@@ -66,8 +66,8 @@ test('updates synchronize current driver while validation failures do not mutate
   const after=(await call('GET','/api/drivers')).json.drivers[0];assert.deepEqual(after,before);
   const user=(await call('GET','/api/admin/users')).json.users.find(u=>u.id===driver.id);assert.equal(user.fullName,'تست');
   assert.equal((await call('PUT','/api/admin/store-branches/'+branch.id,{name:'مرکزی تازه'})).status,200);
-  const users=(await call('GET','/api/admin/users')).json.users;assert.equal(users.find(u=>u.username==='store-new').storeName,'مرکزی تازه');assert.equal(users.find(u=>u.username==='legacy-shop').storeName,'مرکزی تازه');
-  const oldOrders=(await call('GET','/api/store/orders',null,legacyCookie)).json.orders;assert.ok(oldOrders.some(o=>o.storeName==='قدیمی' && o.orderNo.startsWith('B47')));
+  const users=(await call('GET','/api/admin/users')).json.users;assert.equal(users.find(u=>u.username==='store-new').storeName,'فروشگاه شعبه 7 مرکزی تازه');assert.equal(users.find(u=>u.username==='legacy-shop').storeName,'فروشگاه شعبه 7 مرکزی تازه');
+  const oldOrders=(await call('GET','/api/store/orders',null,legacyCookie)).json.orders;assert.ok(oldOrders.some(o=>o.storeName==='فروشگاه شعبه 7 قدیمی' && o.orderNo.startsWith('B47')));
 });
 test('catalog survives restart and pre-update backup restores safely',async()=>{
   await stop();await start();admin=await login('admin',password);
