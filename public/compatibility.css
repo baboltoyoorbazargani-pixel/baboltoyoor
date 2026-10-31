@@ -978,3 +978,19 @@
 #modal .store-shipment-table th{background:#f4f7f9;white-space:nowrap}
 #modal .sr38-hist{position:static;list-style:none;margin:0;padding:0;display:grid;gap:6px}
 #modal .sr38-hist li{display:flex;gap:10px;flex-wrap:wrap;padding:8px;border:1px solid #dce4eb;border-radius:8px}
+
+/* Every driver tab uses the same horizontal, independently scrollable row. */
+#appView #content .dsp-driver-stage .dsp-list{display:block!important;overflow-x:auto!important;max-width:100%;min-width:0}
+#appView #content .dsp-driver-stage .dsp-list>.dsp-card{display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:nowrap!important;width:max-content!important;min-width:100%!important;white-space:nowrap!important;margin-bottom:8px}
+#appView #content .dsp-driver-stage .dsp-list>.dsp-card>*{flex-shrink:0}
+#appView #content .dsp-driver-stage .dsp-card-head,#appView #content .dsp-driver-stage .dsp-card-head>div,#appView #content .dsp-driver-stage .dsp-card-actions{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;white-space:nowrap!important}
+/* Receipt statuses belong to the same order summary, not a duplicate panel. */
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .sd-store-list-v40{display:block;overflow-x:auto;max-width:100%;min-width:0}
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .ssin21-card.sd-store-card-v42{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;width:max-content!important;min-width:100%!important;max-width:none!important;white-space:nowrap!important;margin-bottom:8px}
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .store-receipt-summary{display:inline-flex;flex:0 0 auto;flex-wrap:nowrap;align-items:center;gap:6px;margin:0;white-space:nowrap}
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .store-receipt-summary .badge{white-space:nowrap}
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .ssin21-actions{flex-wrap:nowrap;max-width:none}
+#appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .ssin21-actions .btn{white-space:nowrap}
+#appView #content .dsp-driver-stage .dsp-card-head>div{overflow:visible!important}
+#appView #content .dsp-driver-stage .dsp-card-head b{max-width:none!important;overflow:visible!important;text-overflow:clip!important}
+#appView #content .dsp-driver-stage .dsp-store-customer-box{max-width:none!important;white-space:nowrap!important}

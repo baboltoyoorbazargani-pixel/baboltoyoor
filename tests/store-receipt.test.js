@@ -6,7 +6,7 @@ test('store portal has a dedicated delivered-orders inbox and explicit store rec
  assert.match(ui,/سفارش ورودی/);assert.match(ui,/تحویل شده/);
  assert.match(ui,/data-action="store-confirm-delivery"/);
  assert.match(ui,/confirm-receipt/);
- assert.match(ui,/تأیید دریافت از سوی فروشگاه/);
+ assert.match(ui,/دریافت فروشگاه تأیید شد/);
  assert.match(ui,/storeReceiptConfirmedAt/);
  assert.match(ui,/line\.deliveredKg/);
  assert.match(ui,/o\.payment\?\.invoiceNumber/);

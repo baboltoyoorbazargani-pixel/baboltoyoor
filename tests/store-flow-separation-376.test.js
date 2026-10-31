@@ -54,7 +54,7 @@ test('بورد کامل چرخهٔ حیات در تب فروشگاهِ فروش 
  assert.match(fn,/renderStoreRunShipmentsPanel/);
  assert.match(fn,/تأیید نهایی تحویل\$/);
  assert.match(fn,/sd-store-card-compact-v41/);
- assert.match(fn,/تأیید دریافت از سوی فروشگاه/);
+ assert.match(fn,/دریافت فروشگاه تأیید شد/);
 });
 
 test('راننده: کارت سادهٔ فروشگاه بدون اقلام، با جزئیات محموله و فاکتور وزنی',()=>{
