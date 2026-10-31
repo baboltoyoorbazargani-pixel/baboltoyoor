@@ -785,7 +785,7 @@ async function go(page,sub){
     else if(page==='scale'){setHeader('باسکول','کارتابل باسکول','ثبت ورود و خروج وسیله‌ها، محاسبه خالص بار و ثبت کالا');await renderScale()}
     else if(page==='customers'){setHeader('مشتریان','پرونده مشتریان','کد مشتری، اطلاعات کامل و سوابق مراجعه و سفارش');await renderCustomers()}
     else if(page==='dispatch'){if(r!=='admin'&&r!=='dispatch')return go(own);setHeader('پخش','کارتابل واحد پخش','مشاهده سفارش‌ها؛ تخصیص راننده از کارتابل فروش و پیگیری تحویل');await renderDispatchPage(true)}
-    else if(page==='driver'){if(r!=='admin'&&r!=='driver')return go(own);if(app.sub.driver==='reports'){setHeader('راننده','گزارش‌های راننده','گزارش ارسال‌های اختصاصی شما');await renderReportsPage('driver');return}setHeader('راننده','کارتابل راننده','سفارش‌های تخصیص‌یافته و ثبت تحویل با امضای مشتری');await renderDriverPage()}
+    else if(page==='driver'){if(r!=='admin'&&r!=='driver')return go(own);if(app.sub.driver==='reports'){setHeader('راننده','گزارش‌های راننده','گزارش ارسال‌های اختصاصی شما');await renderReportsPage('driver');return}setHeader('راننده','کارتابل راننده','سفارش‌های تخصیص‌یافته و ثبت تحویل');await renderDriverPage()}
     else if(page==='gate-dispatch'){if(r!=='admin'&&r!=='gate')return go(own);setHeader('نگهبانی','خروج ارسالی','ابتدا خروج اعلام‌شده توسط راننده را تأیید کنید؛ پس از تحویل مقصد، خروج نهایی را ثبت کنید');await renderGateDispatchPage()}
     else if(page==='returns'){if(r!=='admin'&&r!=='sales'&&r!=='warehouse')return go(own);setHeader('مرجوعی','برگه‌های مرجوعی','مرجوعی‌های راننده: فروش ارجاع می‌دهد و انبار دریافت می‌کند');await renderReturnsPage()}
     else if(page==='users'){if(r!=='admin')return go(own);setHeader('مدیریت','مدیریت کاربران','افزودن، ویرایش و غیرفعال‌سازی حساب‌های کاربری');await renderUsersPage()}
@@ -1083,10 +1083,10 @@ function updateVerificationUI(){
   else if(app.settlementNoFingerprintAllowed){if(status){status.className='verify-badge allowed';status.textContent='بدون اثر انگشت'}if(text)text.textContent='این تسویه با مجوز بدون اثر انگشت انجام می‌شود.';if(result)result.textContent='تسویه دستی فعال است.';if(summary)summary.textContent='امضا + مجوز بدون اثر انگشت'}
   else {if(status){status.className='verify-badge pending';status.textContent='نیازمند اثر انگشت'}if(text)text.textContent='برای نهایی‌سازی، احراز اثر انگشت لازم است.';if(result)result.textContent='اثر انگشت ثبت نشده است.';if(summary)summary.textContent='منتظر احراز اثر انگشت'}
 }
-async function fingerprintCapture(){const result=$('#fingerResult');try{if(result)result.textContent='در حال اتصال به سنسور...';const r=await fetch('http://127.0.0.1:17890/capture',{cache:'no-store'});const d=await r.json();if(!d.ok||!d.fingerprintRef)throw new Error();app.settlementFingerprintRef=d.fingerprintRef;app.settlementNoFingerprintAllowed=false;if($('#allowNoFingerprint'))$('#allowNoFingerprint').checked=false;updateVerificationUI();toast('احراز اثرانگشت با موفقیت ثبت شد.')}catch{app.settlementFingerprintRef='';if(result)result.textContent='سنسور در دسترس نیست؛ می‌توانید گزینه «بدون اثر انگشت مجاز است» را فعال کنید.';app.settlementNoFingerprintAllowed=!!$('#allowNoFingerprint')?.checked;updateVerificationUI()}}
+async function fingerprintCapture(){toast('ثبت اثر انگشت موقتاً غیرفعال است.');}
 function clearSignature(){const c=$('#signatureCanvas');const ctx=c?.getContext('2d');if(c&&ctx){ctx.clearRect(0,0,c.width,c.height);app.signature.has=false}updateVerificationUI()}
-function renderInvoices(orders){return `<section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">INVOICE CENTER</span><h2>فاکتورهای صادرشده</h2><p>نمایش، چاپ و پیگیری فاکتورهای نهایی</p></div><span class="pill">${qty(orders.length)} فاکتور</span></div><div class="table-wrap section-space"><table class="table"><thead><tr><th>شماره فاکتور</th><th>مشتری</th><th>پلاک</th><th>مبلغ</th><th>احراز</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${orders.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{const run=pay.deliveryRun||null;return `<tr><td><b style="color:var(--brand)">${esc(fa(pay.invoiceNumber||'—'))}${run?` <span class="st-run-chip st-run-r${run}">سرویس ${run===2?'دوم':'اول'}</span>`:''}</b></td><td>${esc(storeAwareOrderName(o))}</td><td>${plateViewHtml(o.customer?.plate, 'بدون پلاک', true)}</td><td>${o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount)}</td><td>${verificationBadges(pay)}</td><td>${badge(o.status)}</td><td><div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('eye',15)} مشاهده</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('receipt',15)} چاپ</button></div></td></tr>`})).join('')||'<tr><td colspan="7" class="empty">فاکتور نهایی ندارید.</td></tr>'}</tbody></table></div></section>`}
-function verificationBadges(p){if(!p)return '—';const fp=p.verificationMode==='FINGERPRINT'||!!p.fingerprintRef;const sig=!!p.signatureData;const manual=p.verificationMode==='MANUAL_NO_FINGERPRINT'||!!p.noFingerprintAllowed;return `<div class="verify-inline"><span class="mini-verify ${sig?'ok':'bad'}">امضاء ${sig?'ثبت':'ناقص'}</span><span class="mini-verify ${fp?'ok':manual?'manual':'bad'}">${fp?'اثر انگشت ثبت شد':manual?'بدون اثر انگشت مجاز':'اثر انگشت ثبت نشده'}</div>`}
+function renderInvoices(orders){return `<section class="card card-pad"><div class="panel-head"><div><span class="eyebrow">INVOICE CENTER</span><h2>فاکتورهای صادرشده</h2><p>نمایش، چاپ و پیگیری فاکتورهای نهایی</p></div><span class="pill">${qty(orders.length)} فاکتور</span></div><div class="table-wrap section-space"><table class="table"><thead><tr><th>شماره فاکتور</th><th>مشتری</th><th>پلاک</th><th>مبلغ</th><th>اطلاعات</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${orders.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{const run=pay.deliveryRun||null;return `<tr><td><b style="color:var(--brand)">${esc(fa(pay.invoiceNumber||'—'))}${run?` <span class="st-run-chip st-run-r${run}">سرویس ${run===2?'دوم':'اول'}</span>`:''}</b></td><td>${esc(storeAwareOrderName(o))}</td><td>${plateViewHtml(o.customer?.plate, 'بدون پلاک', true)}</td><td>${o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount)}</td><td>${verificationBadges(pay)}</td><td>${badge(o.status)}</td><td><div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('eye',15)} مشاهده</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('receipt',15)} چاپ</button></div></td></tr>`})).join('')||'<tr><td colspan="7" class="empty">فاکتور نهایی ندارید.</td></tr>'}</tbody></table></div></section>`}
+function verificationBadges(p){return p ? '<span class="mini-verify">اطلاعات مشتری</span>' : '—';}
 function bindSales(tab){$('#content').onclick=async e=>{const sub=e.target.closest('[data-sub]');if(sub){const [k,v]=sub.dataset.sub.split(':');app.sub[k]=v;await renderSales(v);return}const el=e.target.closest('[data-action]');if(!el)return;const a=el.dataset.action;if(a==='open-order')return openOrder(el.dataset.id);if(a==='back-order-intake'){app.orderDraft=[];return renderSales('onsite');}if(a==='order-details')return openOrderDetails(el.dataset.id);if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);if(a==='resubmit-order')return resubmitOrder(el.dataset.id);if(a==='add-line'){app.orderDraft.push({productId:'',requestedQty:'',requestedUnit:'کیلوگرم',description:''});renderOrderLines();return}if(a==='remove-line'){app.orderDraft.splice(Number(el.dataset.index),1);if(!app.orderDraft.length)app.orderDraft=[{productId:'',requestedQty:'',requestedUnit:'کیلوگرم',description:''}];renderOrderLines();return}if(a==='pick-product'){return pickProduct(Number(el.dataset.index),el.dataset.productId,el.dataset.label)}if(a==='submit-order')return submitOrder(el.dataset.id);if(a==='select-settlement')return selectSettlement(el.dataset.id);if(a==='back-settlement')return renderSales('settlement');if(a==='final-settle')return finalSettle(el.dataset.id);if(a==='fingerprint-capture')return fingerprintCapture();if(a==='clear-signature'){clearSignature();return}if(a==='invoice')return previewInvoice(el.dataset.id,Number(el.dataset.run)||null);if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null)};
   const search=$('#salesSearch');if(search)search.addEventListener('input',async()=>{const q=search.value.trim().toLowerCase();const visits=(await api('/api/visits')).visits||[];const filtered=visits.filter(v=>v.status==='WAITING_SALES' && [v.customer?.name,v.customer?.phone,v.customer?.plate].some(x=>String(x||'').toLowerCase().includes(q)));$('#salesVisitList').innerHTML=salesVisitRows(filtered)});
 }
@@ -1269,6 +1269,7 @@ function storeRunInvoiceLines(o,p){
 }
 function invoiceHtml(o,paySel){
   const p=paySel||o.payment||{}; // v37.5.0 — هر سرویس سفارش فروشگاه فاکتور خودش را دارد (payment.priceLines)
+  const signatureContact=esc((p.customerName ?? o.customer?.name) || '—')+' – '+esc((p.customerPhone ?? o.customer?.phone) || '—');
   const priceLines=Array.isArray(p.priceLines)?p.priceLines:[];
   const items=priceLines.length?priceLines.map(x=>({product:{name:x.productName},deliveredKg:x.deliveredKg,unitPrice:x.unitPrice,finalAmount:x.amount})):(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
   const storeDoc = o.orderType === 'STORE'; // v37.6.0 — سند تحویل وزنی فروشگاه: هیچ مبلغی نمایش داده نمی‌شود
@@ -1276,7 +1277,6 @@ function invoiceHtml(o,paySel){
     const run=p.deliveryRun||null;
     const lines=storeRunInvoiceLines(o,p); // v37.17.0 — فقط اقلام و وزن همان سرویس
     const totalKg=lines.reduce((sum,x)=>sum+Number(x.deliveredKg??0),0);
-    const signature=!!p.signatureData;
     return `<div class="inv38-sheet inv38-compact">
   <div class="inv38-head"><div class="inv38-brand"><img src="/logo.png" alt="بابل طیور"><div><b>بابل طیور</b><span>سند تحویل وزنی فروشگاه</span></div></div>
     <div class="inv38-meta"><div><span>شماره سند</span><b>${esc(fa(p.invoiceNumber||'—'))}</b></div><div><span>تاریخ ثبت</span><b>${esc(dt(p.verifiedAt||o.createdAt))}</b></div><div><span>شماره سفارش</span><b>${esc(fa(o.orderNo||'—'))}${run?` · سرویس ${run===2?'دوم':'اول'}`:''}</b></div></div></div>
@@ -1284,16 +1284,15 @@ function invoiceHtml(o,paySel){
   <div class="inv38-cust"><div><span>فروشگاه</span><b>${esc(o.storeName||'—')}</b></div><div><span>محل تحویل</span><b>${esc(o.dispatchPlace||'—')}</b></div><div><span>وضعیت</span><b>سند وزنی — بدون مبلغ</b></div></div>
   <div class="inv38-table-scroll" role="region" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th></tr></thead><tbody>${lines.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.productName||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td></tr>`).join('')}</tbody></table></div>
   <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع وزن محموله</span><b>${qty(totalKg)} کیلوگرم</b></div><div class="grand"><span>نوع سند</span><b>خارج از مسیر پرداخت</b></div><div style="margin-top:6px"><small>این سند صرفاً وزن تحویل‌شده را اعلام می‌کند و ارزش ریالی ندارد.</small></div></div></div>
-  <div class="inv38-verify"><div class="inv38-verify-box"><div class="inv38-verify-title">تأیید تحویل</div><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضای گیرنده</span><strong class="${signature?'ok':'bad'}">${signature?'✓ ثبت شد':'—'}</strong>${signature?`<img class="inv38-sign-img" src="${p.signatureData}" alt="امضای گیرنده">`:''}</div></div></div></div></div>
+  <div class="inv38-verify"><div class="inv38-verify-box"><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضاء</span><strong>${signatureContact}</strong></div></div></div></div></div>
   <div class="inv38-foot">بابل طیور • تاریخ صدور ${esc(todayText())}</div></div>`;
   }
-  const fp=p.verificationMode==='FINGERPRINT'||!!p.fingerprintRef;const manual=p.verificationMode==='MANUAL_NO_FINGERPRINT'||!!p.noFingerprintAllowed;const signature=!!p.signatureData;
   const subtotal=items.reduce((sum,i)=>sum+n(i.finalAmount),0);
   const returns=Math.max(0,n(p.returnDeduction||0));
   const difference=n(p.totalAmount)-subtotal+returns;
   const discount=p.discountAmount != null ? n(p.discountAmount) : Math.max(0,-difference);
   const additions=p.additionsAmount != null ? n(p.additionsAmount) : Math.max(0,difference);
-  const customerName=esc(o.customer?.name||'—');const customerPhone=esc(o.customer?.phone||'—');
+  const customerName=esc((p.customerName ?? o.customer?.name)||'—');const customerPhone=esc((p.customerPhone ?? o.customer?.phone)||'—');
   const settleLabels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'اعتباری'};
   const methodHtml=(p.settlementMethods||[]).map(m=>`<div><span>${esc(settleLabels[m.type]||m.type)}${m.deviceSnapshot?` • ${esc(m.deviceSnapshot.title)} / ${esc(m.deviceSnapshot.bank)}`:''}${m.checkNumber?` • چک ${esc(m.checkNumber)}`:''}${m.reference?` • پیگیری ${esc(m.reference)}`:''}</span><b>${money(m.amount)}</b></div>`).join('');
   return `<div class="inv38-sheet inv38-compact">
@@ -1306,12 +1305,7 @@ function invoiceHtml(o,paySel){
   <p class="inv38-scroll-hint">برای مشاهده همه ستون‌های اقلام، جدول را افقی پیمایش کنید.</p><div class="inv38-table-scroll" role="region" aria-label="اقلام فاکتور؛ برای مشاهده همه ستون‌ها افقی پیمایش کنید" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th><th>فی</th><th>مبلغ</th></tr></thead><tbody>${items.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.product?.name||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td><td>${money(i.unitPrice)}</td><td>${money(i.finalAmount)}</td></tr>`).join('')}</tbody></table></div>
   <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${p.deposit?`<div><span>بیعانه دریافت‌شده (${esc(settleLabels[p.deposit?.type]||'')})${p.deposit?.reference?` • پیگیری ${esc(p.deposit.reference)}`:''}</span><b>${money(p.deposit.amount)}</b></div>${p.deposit.refundedAmount?`<div><span>استرداد دستی بیعانه</span><b>${money(p.deposit.refundedAmount)}</b></div><div><span>بیعانه لحاظ‌شده</span><b>${money(p.depositAmount)}</b></div>`:''}<div><span>مانده پس از کسر بیعانه</span><b>${money(p.amountDue)}</b></div>`:''}${methodHtml?`<div class="inv38-payment-title"><span>روش‌های تسویه</span></div>${methodHtml}`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
   <div class="inv38-verify">
-    <div class="inv38-verify-box"><div class="inv38-verify-title">تأیید مشتری</div>
-      <div class="inv38-verify-grid">
-        <div class="inv38-vitem"><span>امضای الکترونیکی</span><strong class="${signature?'ok':'bad'}">${signature?'✓ ثبت و تأیید شد':'! ثبت نشده'}</strong>${signature?`<img class="inv38-sign-img" src="${p.signatureData}" alt="امضاء مشتری">`:''}</div>
-        <div class="inv38-vitem"><span>احراز اثرانگشت</span><strong class="${fp?'ok':manual?'manual':'bad'}">${fp?'✓ احراز شد':manual?'✓ بدون اثرانگشت مجاز':'! ثبت نشده'}</strong>${fp&&p.fingerprintRef?`<small>مرجع: ${esc(p.fingerprintRef)}</small>`:''}</div>
-      </div>
-    </div>
+    <div class="inv38-verify-box"><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضاء</span><strong>${signatureContact}</strong></div></div></div>
   </div>
   </div>
   <div class="inv38-foot">بابل طیور • تاریخ صدور ${esc(todayText())}</div>
@@ -2403,12 +2397,8 @@ async function cancelFutureV25(id){const order=(app.salesCache?.orders||[]).find
 
 // Return to the five-part sales desk after final settlement, not the removed invoice tab.
 async function finalSettle(id){
-  const allowNoFp=$('#allowNoFingerprint')?.checked||false; app.settlementNoFingerprintAllowed=allowNoFp;
-  if(!app.signature?.has)return toast('امضای الکترونیکی مشتری الزامی است.');
-  if(!app.settlementFingerprintRef&&!allowNoFp)return toast('برای نهایی‌سازی، اثرانگشت ثبت کنید یا گزینه «بدون اثر انگشت مجاز است» را فعال کنید.');
-  const signatureData=app.signature?.canvas?.toDataURL('image/png')||'';
   try{
-    const d=await api('/api/orders/'+id+'/settle',{method:'POST',body:JSON.stringify({items:(app.settleDraft||[]).map(i=>({itemId:i.id,unitPrice:n(i.unitPrice),cancelled:!!i.cancelled})),signatureData,fingerprintRef:app.settlementFingerprintRef||'',noFingerprintAllowed:allowNoFp})});
+    const d=await api('/api/orders/'+id+'/settle',{method:'POST',body:JSON.stringify({items:(app.settleDraft||[]).map(i=>({itemId:i.id,unitPrice:n(i.unitPrice),cancelled:!!i.cancelled}))})});
     toast(`تسویه نهایی شد؛ فاکتور ${d.order?.payment?.invoiceNumber||''} صادر شد.`);app.selectedSettlement=null;app.settlementFingerprintRef='';await renderSales('settlement');
   }catch(e){toast(e.message)}
 }
@@ -2642,7 +2632,7 @@ function renderSalesFlowV25(orders){
 
 function renderSalesSettlementV25(orders){
   const pending=orders.filter(o=>o.status==='SETTLEMENT_PENDING'); const finalized=orders.filter(o=>['SETTLED','EXITED'].includes(o.status)||((o.payments||[]).length&&!['SETTLEMENT_PENDING','CANCELLED'].includes(o.status))); // v37.5.0 — سفارش‌های فروشگاهِ بسته‌شده با فاکتور سرویس
-  return `<section class="v26-sales-pane"><div class="v26-settlement-layout"><section class="v26-panel">${salesSectionTitle('04 / SETTLEMENT','تسویه سفارش‌ها','قیمت‌گذاری، امضای مشتری، احراز اثرانگشت و صدور فاکتور در این بخش انجام می‌شود.',pending.length)}<div class="v26-settlement-list">${pending.map(o=>`<button class="v26-settlement-row" data-action="select-settlement" data-id="${o.id}"><span class="v26-settlement-icon">${icon('receipt',18)}</span><span class="v26-settlement-main"><strong>${esc(storeAwareOrderName(o))}</strong><small>${esc(storeAwareOrderPhone(o))} <i>•</i> ${qty(activeItemsOf(o).length)} قلم</small></span><span class="v26-settlement-time"><small>تحویل</small>${formatDateTime24(o.updatedAt||o.createdAt)}</span><span class="badge blue">آماده تسویه</span><span class="toolbar inline"><button type="button" class="btn btn-secondary btn-sm" data-action="settlement-reopen-prep" data-id="${o.id}">${icon('scale',14)} ارجاع به آماده‌سازی</button>${icon('arrow',17)}</span></button>`).join('')||salesEmptyV25('receipt','صف تسویه خالی است','بعد از تأیید تحویل در انبار، سفارش در این بخش قرار می‌گیرد.')}</div></section>
+  return `<section class="v26-sales-pane"><div class="v26-settlement-layout"><section class="v26-panel">${salesSectionTitle('04 / SETTLEMENT','تسویه سفارش‌ها','قیمت‌گذاری، ثبت تسویه و صدور فاکتور در این بخش انجام می‌شود.',pending.length)}<div class="v26-settlement-list">${pending.map(o=>`<button class="v26-settlement-row" data-action="select-settlement" data-id="${o.id}"><span class="v26-settlement-icon">${icon('receipt',18)}</span><span class="v26-settlement-main"><strong>${esc(storeAwareOrderName(o))}</strong><small>${esc(storeAwareOrderPhone(o))} <i>•</i> ${qty(activeItemsOf(o).length)} قلم</small></span><span class="v26-settlement-time"><small>تحویل</small>${formatDateTime24(o.updatedAt||o.createdAt)}</span><span class="badge blue">آماده تسویه</span><span class="toolbar inline"><button type="button" class="btn btn-secondary btn-sm" data-action="settlement-reopen-prep" data-id="${o.id}">${icon('scale',14)} ارجاع به آماده‌سازی</button>${icon('arrow',17)}</span></button>`).join('')||salesEmptyV25('receipt','صف تسویه خالی است','بعد از تأیید تحویل در انبار، سفارش در این بخش قرار می‌گیرد.')}</div></section>
   <section class="v26-panel">${salesSectionTitle('INVOICE & EXIT','فاکتور و تأییدیه خروج','فاکتورهای نهایی و وضعیت ارسال تأیید خروج برای نگهبانی.',finalized.length)}<div class="v26-invoice-list">${finalized.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{const run=pay.deliveryRun||null;return `<article class="v26-invoice-row"><div><span class="v26-invoice-no">${esc(fa(pay.invoiceNumber||'—'))}${run?` <span class="st-run-chip st-run-r${run}">سرویس ${run===2?'دوم':'اول'}</span>`:''}</span><strong>${esc(storeAwareOrderName(o))}</strong><small>${esc(storeAwareOrderPhone(o))}</small></div><b class="v26-invoice-amount">${o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount||0)}</b><div>${verificationBadges(pay)}</div><div>${o.status==='EXITED'?'<span class="badge green">خروج ثبت شد</span>':(run&&o.status==='CLOSED')?'<span class="badge green">نهایی و بسته‌شده</span>':'<span class="badge orange">آماده خروج</span>'}<small>${formatDateTime24(pay.verifiedAt||o.updatedAt||o.createdAt)}</small></div><div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('eye',14)} فاکتور</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('receipt',14)} چاپ</button></div></article>`})).join('')||salesEmptyV25('receipt','فاکتور نهایی‌شده‌ای وجود ندارد','پس از تسویه، فاکتور در این فهرست قرار می‌گیرد.')}</div></section></div></section>`;
 }
 
@@ -3211,7 +3201,7 @@ document.addEventListener('click',e=>{
 /* ================================================================
    v37.0.4 — تسویه (فروش ۰۴) بازطراحی‌شده
    - فرم تسویه در ستون راست؛ فهرست در ستون چپ (به‌روزرسانی زنده فقط فهرست را عوض می‌کند و فرم باز را پاک نمی‌کند)
-   - قیمت هر کیلو برای هر قلم تحویلی الزامی است؛ امضا و احراز (اثر انگشت یا تسویه دستی) قبل از ارسال بررسی می‌شود
+   - قیمت هر کیلو برای هر قلم تحویلی الزامی است؛ روش‌های پرداخت قبل از ارسال بررسی می‌شوند
    - تعریف‌های قبلی این بخش (از جمله بازگشت بی‌پایان renderSettlementForm) جایگزین شده‌اند
    ================================================================ */
 app.stl = app.stl || {orderId:null, order:null, items:[], drivers:[], devices:[], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false, dispatchBusy:false, paymentRows:[{type:'CASH',amount:''}]};
@@ -3284,7 +3274,7 @@ function stlFooterHtml(o){
     ${dispatched?'':`<button type="button" class="stl-submit" id="stlSubmitBtn" data-stl="submit">${icon('receipt',18)} تأیید و صدور فاکتور</button>`}
   </div></div>${dispatched?`<div class="stl-dispatch-lock"><b>مرحلهٔ بعد</b><span>تأیید خروج راننده توسط نگهبان؛ سپس ثبت تحویل و بازبینی نهایی فروش در تب تحویل راننده.</span></div>`:''}</footer>`;
 }
-function stlEmptyHtml(){ return `<div class="stl-empty"><div class="stl-empty-ico">${icon('receipt',24)}</div><b>یک سفارش از فهرست انتخاب کنید</b><span>بعد از انتخاب، اقلام و قیمت‌ها، امضای مشتری و احراز هویت در این بخش انجام می‌شود.</span></div>`; }
+function stlEmptyHtml(){ return `<div class="stl-empty"><div class="stl-empty-ico">${icon('receipt',24)}</div><b>یک سفارش از فهرست انتخاب کنید</b><span>بعد از انتخاب، اقلام، قیمت‌ها و ثبت تسویه در این بخش انجام می‌شود.</span></div>`; }
 function renderSalesSettlementV25(orders){
   const pending = orders.filter(o=>o.status==='SETTLEMENT_PENDING');
   const finalized = orders.filter(o=>['SETTLED','EXITED'].includes(o.status)||((o.payments||[]).length&&!['SETTLEMENT_PENDING','CANCELLED'].includes(o.status)&&!o.payment?.archived)); // v37.5.0 — فاکتور هر سرویس هم در فهرست است
@@ -3362,10 +3352,7 @@ function stlFormHtml(o){
       <div class="stl-weight-summary">جمع وزن تحویلی: <b id="stlTotalKg">${qty(stlKg())} کیلوگرم</b></div>
     </div>
     <div class="stl-invoice-bottom"><div class="stl-totals stl-financial-column">${stlAdjustmentsHtml(o)}</div><div class="stl-verification-column">
-    ${dispatchStarted?`<div class="stl-dispatch-lock"><b>سفارش به پخش واگذار شده است.</b><span>از این فرم برای صدور فاکتور یا برگشت به انبار استفاده نمی‌شود. راننده مبلغ و وزن را می‌بیند؛ پس از تحویل، بازبینی نهایی در تب «تحویل راننده» انجام می‌شود.</span></div>`:`<div class="stl-grid2">
-      <div class="stl-section"><div class="stl-section-head"><h3>${icon('edit',17)} امضای مشتری</h3></div><canvas id="stlSig" class="stl-sig"></canvas><div class="stl-sig-foot"><span id="stlSigState" class="stl-state"></span><button type="button" class="btn btn-secondary btn-sm" data-stl="sig-clear">${icon('trash',13)} پاک کردن امضا</button></div></div>
-      <div class="stl-section"><div class="stl-section-head"><h3>${icon('fingerprint',17)} احراز هویت</h3></div><div id="stlFpState" class="stl-state"></div><div class="stl-fp-actions"><button type="button" class="btn btn-secondary" data-stl="fp">${icon('fingerprint',16)} ثبت اثر انگشت از سنسور</button></div><label class="stl-check stl-manual"><input type="checkbox" data-stl-manual ${stl.manual?'checked':''}> بدون اثر انگشت مجاز است (تسویه دستی)</label></div>
-    </div>`}
+    ${dispatchStarted?`<div class="stl-dispatch-lock"><b>سفارش به پخش واگذار شده است.</b><span>از این فرم برای صدور فاکتور یا برگشت به انبار استفاده نمی‌شود. راننده مبلغ و وزن را می‌بیند؛ پس از تحویل، بازبینی نهایی در تب «تحویل راننده» انجام می‌شود.</span></div>`:`<div class="stl-section"><div class="stl-section-head"><h3>اطلاعات مشتری</h3></div><div>${esc(o.customer?.name||'—')} – ${esc(o.customer?.phone||'—')}</div></div>`}
     </div></div>
     ${dispatchStarted?'':`<div class="stl-section stl-payment-section"><div class="stl-section-head"><h3>${icon('receipt',17)} روش‌های تسویه</h3><span class="stl-hint-inline">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مانده پس از کسر بیعانه برابر باشد.</span></div>${stlPaymentRowsHtml()}</div>`}
     <div id="stlErrors" class="stl-errors" hidden style="margin-top:8px"></div>
@@ -3377,7 +3364,7 @@ function stlPaintForm(){
   const host = $('#stlMain'); if(!host || !stl.order) return;
   host.innerHTML = stlFormHtml(stl.order);
   const driverSelect=host.querySelector('[data-stl-driver]');if(driverSelect)driverSelect.addEventListener('change',()=>{host.querySelector('[data-stl-plate]').innerHTML=plateViewHtml(stl.drivers.find(x=>x.id===driverSelect.value)?.plate,'—',true);});
-  stlBindSig(); stlRecalc(); stlUpdateSigState(); stlUpdateFpState(); stlBindPayments();
+  stlRecalc(); stlBindPayments();
 }
 function stlRecalc(){
   stl.items.forEach(it=>{
@@ -3450,8 +3437,6 @@ function stlValidate(){
   const noPrice=act.filter(i=>i.delivered>0 && !(i.price>0)).map(i=>i.name);
   if(noPrice.length) errs.push('قیمت هر کیلو را برای این اقلام وارد کنید: '+noPrice.join('، ')+'.');
   if(!Number.isSafeInteger(stlTotal())||stlTotal()<=0||stlTotal()>1e12) errs.push('مبلغ نهایی پس از تخفیف و اضافات معتبر نیست.');
-  if(!stl.sig) errs.push('امضای مشتری را ثبت کنید.');
-  if(!stl.fp && !stl.manual) errs.push('اثر انگشت را ثبت کنید یا گزینه «بدون اثر انگشت» را فعال کنید.');
   const payments=stlCollectPayments();
   if(stlDue()<0) errs.push('بیعانه از مبلغ نهایی بیشتر است؛ ابتدا اضافه‌پرداخت را دستی تعیین تکلیف کنید.');
   if((stlDue()>0&&!payments.length)||payments.some(p=>!p.type||p.amount<=0)) errs.push('برای هر روش تسویه، روش و مبلغ معتبر وارد کنید.');
@@ -3478,11 +3463,10 @@ async function stlRefundExcess(){
 async function stlSubmit(){
   if(!stl.orderId || stl.busy) return;
   const errs=stlValidate(); stlShowErrors(errs); if(errs.length) return;
-  const c=document.getElementById('stlSig'); const signatureData=c?c.toDataURL('image/png'):'';
   const items=stl.items.map(it=>({ itemId:it.id, unitPrice: (it.voided||it.skip)?0:Number(it.price||0), cancelled: !!(it.voided||it.skip) }));
   const btn=document.getElementById('stlSubmitBtn'); stl.busy=true; if(btn){ btn.disabled=true; btn.textContent='در حال صدور فاکتور...'; }
   try{
-    const d=await api('/api/orders/'+stl.orderId+'/settle',{method:'POST',body:JSON.stringify({items,discountAmount:stl.discountAmount,additionsAmount:stl.additionsAmount,settlementMethods:stlCollectPayments(),signatureData,fingerprintRef:stl.fp||'',noFingerprintAllowed:!stl.fp && !!stl.manual})});
+    const d=await api('/api/orders/'+stl.orderId+'/settle',{method:'POST',body:JSON.stringify({items,discountAmount:stl.discountAmount,additionsAmount:stl.additionsAmount,settlementMethods:stlCollectPayments()})});
     const no=d.order?.payment?.invoiceNumber||'';
     toast(`تسویه نهایی شد؛ فاکتور ${no} صادر شد.`);
     const doneId=d.order?.id;

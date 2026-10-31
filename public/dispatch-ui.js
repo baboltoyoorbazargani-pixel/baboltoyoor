@@ -356,13 +356,11 @@ async function openDeliveryForm(orderId) {
     ${itemsTable}
     ${priceFree ? '' : `<section class="dsp-payable-preview"><div><span>مبلغ اولیهٔ فاکتور</span><b>${money(approvedTotal)}</b></div><div><span>کسر مرجوعی</span><b id="dspReturnDeduction">${money(0)}</b></div><div class="dsp-payable-final"><span>مبلغ قابل تسویه</span><strong id="dspPayableAmount">${money(approvedTotal)}</strong></div><small>کسری وزن فقط ثبت می‌شود و به‌تنهایی مبلغ را کاهش نمی‌دهد.</small></section>`}
     ${priceFree ? '' : `<section class="dsp-block"><h4>روش‌های دریافت وجه *</h4><p class="adm-note">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مبلغ قابل تسویه برابر باشد.</p><div id="dspPayRows"><div class="dsp-pay-row"><label class="cust-field"><span>روش دریافت</span><select data-pay-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">اعتباری / مانده</option></select></label><label class="cust-field"><span>مبلغ (ریال)</span><input inputmode="numeric" data-pay-amount value="${Number(approvedTotal).toLocaleString('fa-IR')}"></label><div class="dsp-pay-detail"></div><button type="button" class="btn btn-secondary btn-sm" data-pay-del>حذف</button></div></div><button type="button" class="btn btn-secondary btn-sm" id="dspPayAdd">＋ افزودن روش پرداخت</button><div class="dsp-pay-summary">جمع پرداخت: <b id="dspPaySum">${money(approvedTotal)}</b>　•　مانده: <b id="dspPayBalance">${money(0)}</b></div></section>`}
-    <section class="dsp-block"><h4>امضای مشتری *</h4><canvas id="dspSig" class="dsp-sig" aria-label="امضای مشتری"></canvas><div class="dsp-sig-foot"><span id="dspSigState" class="adm-note">با انگشت یا ماوس امضا کنید.</span><button type="button" class="btn btn-secondary btn-sm" id="dspSigClear">پاک کردن امضا</button></div></section>
     <label class="cust-field"><span>یادداشت تحویل</span><input name="note" maxlength="500"></label>
   </div>`;
   openModal(`ثبت تحویل — سفارش ${o.orderNo || ''}`, admModalForm('dspDeliverForm', body, priceFree ? 'ثبت تحویل محموله' : 'ثبت تحویل و ثبت تسویه'));
   const modalCard=$('#modal .modal-card'); if(modalCard) modalCard.classList.add('dsp-delivery-modal-card');
   admBindClose();
-  dspBindSignature();
   const full = $('#dspFull');
   const getField=(name,id)=>$('#dspDeliverForm')?.querySelector(`[data-f="${name}"][data-id="${CSS.escape(id)}"]`)?.value??'';
   const refreshAmounts=()=>{
@@ -397,14 +395,12 @@ async function openDeliveryForm(orderId) {
     if(settlementMethods.some(x=>x.type==='CHECK'&&(!x.bank||!x.checkNumber||!x.dueDate)))return fail('برای چک، بانک، شماره و سررسید الزامی است.');
     if(settlementMethods.some(x=>x.type==='CREDIT'&&!x.reason))return fail('علت مانده اعتباری را ثبت کنید.');
     const settlementType=settlementMethods.some(x=>x.type==='CREDIT')?'CREDIT':'CASH';
-    if (!dsp.sig || !dsp.sig.isInk()) return fail('امضای مشتری را ثبت کنید.');
     const fullReturn = full.checked;
     const fullReason = $('#dspFullReason').value.trim();
     if (fullReturn && !fullReason) return fail('علت مرجوعی کلی را بنویسید.');
     const field = (name, id) => form.querySelector(`[data-f="${name}"][data-id="${CSS.escape(id)}"]`)?.value ?? '';
     const payload = {
       settlementType, settlementMethods, fullReturn,
-      signatureData: dsp.sig.data(),
       note: form.querySelector('[name="note"]').value || '',
       lines: items.map((i) => ({
         itemId: i.id,
