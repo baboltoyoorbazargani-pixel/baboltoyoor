@@ -1929,12 +1929,21 @@ body{background:var(--bt-bg)!important;color:var(--bt-ink);font-size:var(--bt-fs
   #appView .sd-line-compact .sd-line-del{width:36px!important;height:36px!important}
 }
 
-/* سفارش‌های ثبت‌شدهٔ فروشگاه: پیگیری جدا از فرم و تحویل */
-.st-registered-panel{padding:22px;display:grid;gap:16px;min-width:0}
-.st-registered-head,.st-registered-card-head,.st-registered-pages{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.st-registered-head h2{margin:0;font-size:22px}.st-registered-head p{margin:6px 0 0;color:var(--muted);font-size:13px}
-.st-registered-live{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
-.st-registered-list{display:grid;gap:12px}.st-registered-card{border:1px solid var(--line);border-radius:15px;padding:16px;background:#fff;display:grid;gap:12px;min-width:0}
-.st-registered-card-head>div,.st-registered-meta,.st-registered-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.st-registered-time,.st-registered-meta{font-size:12px;color:var(--muted)}
-.st-registered-note{margin:0;padding:10px 12px;background:#fff5e8;border-radius:9px;overflow-wrap:anywhere}.st-registered-items{display:grid;gap:6px}.st-registered-item{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;background:#f8f9fa;border-radius:9px;padding:10px 12px;font-size:12px}.st-registered-item>div{min-width:140px;flex:1}.st-registered-item small{display:block;color:var(--muted);overflow-wrap:anywhere}.st-registered-pages{justify-content:center;font-size:12px;color:var(--muted)}
-@media(max-width:700px){.st-registered-panel{padding:13px}.st-registered-card{padding:12px}.st-registered-item{align-items:flex-start;flex-direction:column;gap:5px}.st-registered-item>div{min-width:0}.st-registered-card-head{align-items:flex-start}}
+/* فهرست خلاصهٔ سفارش‌ها: هر سفارش یک خط؛ صفحهٔ کوچک در ناحیهٔ خودش اسکرول می‌شود. */
+.st-registered-panel{padding:22px;display:grid;gap:12px;min-width:0}
+.st-registered-head,.st-registered-pages{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-width:0}
+.st-registered-head h2{margin:0;font-size:22px}.st-registered-head p{margin:6px 0 0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.st-registered-live{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:7px 10px;max-width:100%;overflow-wrap:anywhere}
+.st-registered-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;border-radius:12px}
+.st-registered-scroll:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.st-registered-scroll-hint{display:none;margin:0;color:var(--muted);font-size:11px}
+.st-registered-list{display:grid;gap:8px;width:max-content;min-width:100%}
+.st-registered-card{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;display:flex;align-items:center;gap:12px;white-space:nowrap;min-width:100%}
+.st-registered-time,.st-registered-count{font-size:12px;color:var(--muted)}
+.st-registered-card>.badge{white-space:nowrap!important}
+.st-registered-services,.st-registered-actions{display:flex;align-items:center;gap:8px}.st-registered-actions{margin-inline-start:auto}
+.st-registered-service{font-size:11px;background:#f3f5f7;border-radius:8px;padding:6px 8px}
+.st-registered-actions .btn{white-space:nowrap;flex-shrink:0}
+.st-registered-pages{justify-content:center;font-size:12px;color:var(--muted)}
+@media(max-width:1100px){.st-registered-scroll-hint{display:block}}
+@media(max-width:700px){.st-registered-panel{padding:13px}.st-registered-card{padding:9px 10px}}

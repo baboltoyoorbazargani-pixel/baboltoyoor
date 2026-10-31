@@ -1097,24 +1097,24 @@ const ST_REGISTERED_LABELS={
   CANCELLED:'لغو شده', OUT_OF_STOCK:'عدم موجودی', DELIVERED:'تحویل ثبت شده'
 };
 function stRegisteredRow(o){
-  const views=new Map((o.storeRun?.items||[]).map(i=>[i.itemId,i]));
   const showProgress=!['STORE_PENDING_SALES','CANCELLED'].includes(o.status);
   const items=(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
   const status=ST_REGISTERED_LABELS[o.status]||o.status||'نامشخص';
+  const stageLabels={SENT_TO_SALES:'منتظر راننده',ASSIGNED:'راننده تعیین شد',DRIVER_EXIT_REPORTED:'منتظر خروج',IN_TRANSIT:'در مسیر',DELIVERED:'تحویل ثبت شد',SALES_FINALIZED:'نهایی‌شده نزد فروش',CLOSED:'نهایی‌شده نزد فروش',RECEIPT_CONFIRMED:'دریافت تأیید شد'};
+  const service=(run)=>{const sr=o.storeRun||{},stage=run===1?sr.r1Stage:sr.r2Stage,full=run===1?sr.r1StageLabel:sr.r2StageLabel;const weights=(sr.items||[]).some(v=>Number(run===1?v.r1Kg:v.r2Kg)>0);const label=stage?(stageLabels[stage]||full||stage):(weights?'وزن‌کشی ثبت شده':'در انتظار');return `<span class="st-registered-service" title="${esc(full||label)}">سرویس ${run===1?'اول':'دوم'}: ${esc(label)}</span>`;};
   return `<article class="st-registered-card" data-store-order-id="${esc(o.id)}">
-    <header class="st-registered-card-head"><div><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><span class="st-registered-time">ثبت: ${esc(formatDateTime24(o.createdAt))}</span></div><span class="badge ${o.status==='CANCELLED'?'gray':o.status==='CLOSED'?'green':'blue'}">${esc(status)}</span></header>
-    <div class="st-registered-meta"><span>زمان ارسال به انبار: <b>${o.scheduledAt?esc(formatDateTime24(o.scheduledAt)):'هنوز تعیین نشده'}</b></span>${o.dispatchPlace?`<span>مقصد: <b>${esc(o.dispatchPlace)}</b></span>`:''}</div>
-    ${o.status==='RETURNED_TO_SALES'&&o.warehouseReturn?.reason?`<p class="st-registered-note">علت ارجاع به فروش: ${esc(o.warehouseReturn.reason)}</p>`:''}
-    ${o.status==='CANCELLED'&&o.cancelReason?`<p class="st-registered-note">علت لغو: ${esc(o.cancelReason)}</p>`:''}
-    ${showProgress&&o.storeRun?.enabled?`<div class="st-run-chips"><span class="st-run-chip st-run-r1">سرویس اول: ${esc(o.storeRun.r1StageLabel||'هنوز به فروش ارسال نشده')}</span><span class="st-run-chip st-run-r2">سرویس دوم: ${esc(o.storeRun.r2StageLabel||'هنوز به فروش ارسال نشده')}</span></div>`:''}
-    <div class="st-registered-items">${items.map(it=>{const v=views.get(it.id);return `<div class="st-registered-item"><div><strong>${esc(it.product?.name||'قلم')}</strong>${it.description?`<small>${esc(it.description)}</small>`:''}</div><span>درخواست: <b>${qty(it.requestedQty)} ${esc(it.requestedUnit||'')}</b></span>${showProgress&&v?`<span>${esc(v.runStatus==='IN_SHIPPING'?'وزن‌کشی ثبت شده':(v.runStatusLabel||SR38_STATUS_LABEL[v.runStatus]||'در انتظار'))}</span>${v.r1Kg||v.r2Kg?`<span>وزن ثبت‌شده: سرویس اول <b>${qty(v.r1Kg||0)}</b> · سرویس دوم <b>${qty(v.r2Kg||0)}</b> کیلوگرم</span>`:''}`:''}</div>`;}).join('')||'<p class="subtle">اقلام فعال برای نمایش وجود ندارد.</p>'}</div>
-    <footer class="st-registered-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button type="button" class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش</button><button type="button" class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:''}</footer>
+    <span class="order-code" aria-label="شماره سفارش">${esc(fa(o.orderNo||'—'))}</span>
+    <span class="st-registered-time">ثبت: ${esc(formatDateTime24(o.createdAt))}</span>
+    <span class="badge ${o.status==='CANCELLED'?'gray':o.status==='CLOSED'?'green':'blue'}">${esc(status)}</span>
+    <span class="st-registered-count">${qty(items.length)} قلم فعال</span>
+    ${showProgress&&o.storeRun?.enabled?`<span class="st-registered-services">${service(1)}${service(2)}</span>`:''}
+    <span class="st-registered-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button type="button" class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش</button><button type="button" class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:''}</span>
   </article>`;
 }
 async function renderStoreRegistered(){
   const root=$('#content'),limit=25;
   let offset=Math.max(0,Math.floor(Number(app.storeRegisteredOffset)||0)),seq=0,signature='';
-  root.innerHTML=`<section class="sd-panel st-registered-panel"><header class="st-registered-head"><div><h2>سفارش‌های ثبت‌شده</h2><p>از بررسی فروش تا آماده‌سازی انبار و تحویل؛ هر سفارش و سرویس‌های آن را اینجا پیگیری کنید.</p></div><span class="st-registered-live" role="status">در حال دریافت اطلاعات…</span></header><div id="storeRegisteredList" class="st-registered-list"><div class="empty">در حال دریافت سفارش‌ها…</div></div><div id="storeRegisteredPages" class="st-registered-pages"></div></section>`;
+  root.innerHTML=`<section class="sd-panel st-registered-panel"><header class="st-registered-head"><div><h2>سفارش‌های ثبت‌شده</h2><p>از بررسی فروش تا آماده‌سازی انبار و تحویل؛ هر سفارش و سرویس‌های آن را اینجا پیگیری کنید.</p></div><span class="st-registered-live" role="status">در حال دریافت اطلاعات…</span></header><p class="st-registered-scroll-hint">برای دیدن تمام ستون‌ها در صفحهٔ کوچک، فهرست را افقی جابه‌جا کنید.</p><div class="st-registered-scroll" tabindex="0" role="region" aria-label="فهرست افقی سفارش‌ها"><div id="storeRegisteredList" class="st-registered-list"><div class="empty">در حال دریافت سفارش‌ها…</div></div></div><div id="storeRegisteredPages" class="st-registered-pages"></div></section>`;
   const current=()=>root.isConnected && app.page==='store' && app.sub.store==='registered';
   async function refresh(force=false){
     const request=++seq;
