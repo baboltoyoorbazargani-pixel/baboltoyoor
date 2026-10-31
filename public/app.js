@@ -1249,7 +1249,19 @@ async function deleteUser(id){
 /* ---------- Invoice ---------- */
 function pickInvoicePayment(o,run){ if(run){ const hit=(o.payments||[]).find(p=>(p.deliveryRun||null)===run); return hit||null; } return o.payment||null; } // v37.17.0 — سند سرویس دیگر هرگز جای سند این سرویس نمایش داده نمی‌شود
 async function previewInvoice(id,run){try{const d=await api('/api/orders/'+id);const pay=pickInvoicePayment(d.order,run);if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');openModal('پیش‌نمایش فاکتور'+(run?` — سرویس ${run===2?'دوم':'اول'}`:''),invoiceHtml(d.order,pay)+`<div class="toolbar" style="justify-content:flex-end;margin-top:15px"><button class="btn btn-secondary" data-action="close-modal">بستن</button><button class="btn btn-primary" data-action="print-invoice" data-id="${id}"${run?` data-run="${run}"`:''}>${icon('receipt',16)} چاپ فاکتور</button></div>`)}catch(e){toast(e.message)}}
-async function printInvoice(id,run){try{const d=await api('/api/orders/'+id);const pay=pickInvoicePayment(d.order,run);if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');const w=window.open('','_blank','width=950,height=900');if(!w)return toast('مرورگر اجازه پنجره چاپ را نداد.');w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>فاکتور ${esc(fa(pay?.invoiceNumber||''))}</title><link rel="stylesheet" href="/design.css"><link rel="stylesheet" href="/invoice-compact.css?v=37.3.18"><style>${printCss()}</style></head><body>${invoiceHtml(d.order,pay)}<script src="/print-ready.js"><\/script></body></html>`);w.document.close()}catch(e){toast(e.message)}}
+async function openInvoicePrint(id,run){
+  const key='invoice-print-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  try{
+    const d=await api('/api/orders/'+encodeURIComponent(id));
+    const pay=pickInvoicePayment(d.order,run);
+    if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');
+    sessionStorage.setItem(key,JSON.stringify({title:(d.order?.orderType==='STORE'?'سند تحویل وزنی':'فاکتور')+' '+fa(pay?.invoiceNumber||''),html:invoiceHtml(d.order,pay)}));
+    const w=window.open('/invoice-print.html#'+encodeURIComponent(key),'_blank','width=950,height=900');
+    sessionStorage.removeItem(key);
+    if(!w)toast('مرورگر اجازه پنجره چاپ را نداد.');
+  }catch(e){sessionStorage.removeItem(key);toast(e.message)}
+}
+async function printInvoice(id,run){return openInvoicePrint(id,run)}
 /* v37.17.0 — سطرهای سند هر سرویس فقط از دادهٔ همان سرویس ساخته می‌شوند.
    وزن کل قلم (مجموع سرویس اول و دوم) هرگز نباید در سند یک سرویس نمایش داده شود. */
 function storeRunInvoiceLines(o,p){
@@ -1285,7 +1297,7 @@ function invoiceHtml(o,paySel){
   <div class="inv38-table-scroll" role="region" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th></tr></thead><tbody>${lines.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.productName||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td></tr>`).join('')}</tbody></table></div>
   <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع وزن محموله</span><b>${qty(totalKg)} کیلوگرم</b></div><div class="grand"><span>نوع سند</span><b>خارج از مسیر پرداخت</b></div><div style="margin-top:6px"><small>این سند صرفاً وزن تحویل‌شده را اعلام می‌کند و ارزش ریالی ندارد.</small></div></div></div>
   <div class="inv38-verify"><div class="inv38-verify-box"><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضاء</span><strong>${signatureContact}</strong></div></div></div></div></div>
-  <div class="inv38-foot">بابل طیور • تاریخ صدور ${esc(todayText())}</div></div>`;
+  </div>`;
   }
   const subtotal=items.reduce((sum,i)=>sum+n(i.finalAmount),0);
   const returns=Math.max(0,n(p.returnDeduction||0));
@@ -1308,7 +1320,6 @@ function invoiceHtml(o,paySel){
     <div class="inv38-verify-box"><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضاء</span><strong>${signatureContact}</strong></div></div></div>
   </div>
   </div>
-  <div class="inv38-foot">بابل طیور • تاریخ صدور ${esc(todayText())}</div>
   </div>`;
 }
 function printCss(){return `*{box-sizing:border-box}body{margin:0;padding:18px;font-family:"B Yekan","B Yekan+","BYekan",Tahoma,Arial,sans-serif;color:#1d222a;background:#fff}.print-sheet{max-width:900px;margin:auto}.print-head{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #b40f23;padding-bottom:14px}.print-brand{display:flex;align-items:center;gap:10px}.print-brand img{width:58px;height:58px;object-fit:contain}.print-brand b{font-size:21px}.print-brand span,.print-brand small{display:block;color:#777;font-size:10px}.print-meta{text-align:left;font-size:10px;color:#777;line-height:2}.print-customer{display:grid;grid-template-columns:1.2fr 1fr 1.1fr;gap:10px;margin-top:14px}.print-box{border:1px solid #ddd;border-radius:10px;padding:10px}.print-box span{display:block;color:#777;font-size:9px}.print-box b{display:block;margin-top:3px;font-size:12px}.print-table{width:100%;border-collapse:collapse;margin-top:14px}.print-table th,.print-table td{border:1px solid #ddd;padding:8px 7px;font-size:10px}.print-table th{background:#f5f5f6}.print-table td small{display:block;color:#777;margin-top:2px}.print-total{display:flex;justify-content:flex-end;margin-top:14px}.print-total-box{width:300px;border:1px solid #ddd;border-radius:10px;padding:10px}.print-total-box div{display:flex;justify-content:space-between;padding:4px 0;font-size:10px}.print-total-box .grand{border-top:1px solid #ddd;margin-top:4px;padding-top:8px;font-size:14px;font-weight:1000}.invoice-bottom{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:end;margin-top:22px;direction:ltr}.invoice-bottom>*{direction:rtl}.invoice-verification-bottom{border:1px solid #d8dce0;border-radius:12px;padding:11px;background:#fafbfc}.invoice-verify-title{font-size:12px;font-weight:1000;margin-bottom:8px}.invoice-verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.invoice-verify-box{border:1px solid #ddd;border-radius:9px;background:#fff;padding:8px;min-height:72px}.invoice-verify-box>span{display:block;font-size:9px;color:#777}.invoice-verify-box>strong{display:block;margin-top:4px;font-size:10px}.invoice-verify-box .ok{color:#168149}.invoice-verify-box .manual{color:#ad7110}.invoice-verify-box .bad{color:#b40f23}.invoice-verify-box small{display:block;color:#777;margin-top:5px;font-size:7px}.invoice-signature{display:block;max-width:150px;max-height:44px;margin:5px auto 0}.invoice-customer-under{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 8px;margin-top:9px;align-items:center}.invoice-customer-under span{font-size:8px;color:#777}.invoice-customer-under b{font-size:10px}.invoice-sales-sign{border-top:1px solid #bbb;min-height:92px;padding-top:8px;font-size:9px;color:#777}.invoice-sales-sign span{display:block;font-size:11px;font-weight:1000;color:#555}.invoice-sales-sign div{height:32px}.invoice-sales-sign small{font-size:8px;color:#999}@media print{body{padding:0}.print-sheet{max-width:none}.invoice-bottom{break-inside:avoid}.print-table{break-inside:auto}.print-table tr{break-inside:avoid;break-after:auto}}`}
@@ -1382,7 +1393,7 @@ async function bootstrap(){
     if(e.target.id==='modal'){closeModal();return;}
     const el=e.target.closest('[data-action]'); if(!el)return; const a=el.dataset.action;
     if(a==='close-modal')return closeModal();
-    if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
+    if(a==='print-invoice'){e.stopPropagation();return printInvoice(el.dataset.id,Number(el.dataset.run)||null);}
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
     if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
     if(a==='returned-add-line')return addReturnedLine();

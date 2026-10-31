@@ -49,7 +49,7 @@ for (const [name, src, endMarker] of [['app.js', app, '\nfunction printCss'], ['
 test('انتخاب سند سرویس: برای سرویسِ بدون سند، سند سرویس دیگر جایگزین نمی‌شود', () => {
   assert.match(app, /return hit\|\|null/);
   assert.match(app, /سند این سرویس هنوز صادر نشده است/);
-  assert.match(ui, /سند این سرویس هنوز صادر نشده است/);
+  assert.match(ui, /async function printInvoice\(id,run\)\{return openInvoicePrint\(id,run\)\}/);
 });
 
 test('سمت سرور: نمای محموله و تسویهٔ یکجا، محدودهٔ هر سرویس را قفل می‌کنند', () => {
