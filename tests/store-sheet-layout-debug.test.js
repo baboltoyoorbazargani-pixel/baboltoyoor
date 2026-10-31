@@ -21,7 +21,9 @@ test('ردیف برگهٔ سرویس از گرید عمومی فرم‌ها آز
   assert.ok(compat.indexOf('v37.24.0') > compat.indexOf('v37.18.0'), 'ترتیب بلوک‌های اصلاحی به‌هم ریخته است');
 });
 
-test('در صفحهٔ باریک دکمه‌ها منظم به خط دوم می‌روند، نه اسکرول افقی', () => {
-  assert.match(block, /@media \(max-width:1150px\)\{\s*#appView #content \.wh38-prep-item\.sr318-row\{flex-wrap:wrap!important\}/);
-  assert.match(block, /\.sr318-row>\.sr318-ops\{flex:1 1 100%!important/);
+test('در صفحهٔ باریک ردیف و دکمه‌ها تک‌خطی و فهرست قابل پیمایش است', () => {
+  const final=compat.slice(compat.lastIndexOf('/* وزن و عملیات'));
+  assert.match(final, /\.sr318-rows\{display:block!important;overflow-x:auto!important/);
+  assert.match(final, /\.wh38-prep-item\.sr318-row\{width:max-content!important;min-width:100%!important;flex-wrap:nowrap!important/);
+  assert.match(final, /\.sr318-row>\.sr318-ops\{flex:0 0 auto!important;max-width:none!important;flex-wrap:nowrap!important/);
 });

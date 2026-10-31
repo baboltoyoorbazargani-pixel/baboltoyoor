@@ -13,3 +13,10 @@ body{margin:0;background:#eef1f5;color:#1e2934;direction:rtl;font-family:Vazirma
 [hidden]{display:none!important}.service-col-row{width:7%}.service-col-name{width:33%}.service-col-weight{width:15%}
 .service-tools{display:flex;justify-content:center;padding:12px}.service-tools button{font:inherit;padding:8px 20px;cursor:pointer}#service-message{text-align:center;padding:20px}
 @media print{.service-tools{display:none!important}}
+/* مشخصات در یک نوار افقی؛ متن کامل حتی برای نام و مقصد طولانی چاپ می‌شود. */
+.service-info{display:grid;grid-template-columns:1fr 1.5fr 1.2fr 1.7fr .7fr;gap:3px;margin:6px 0 8px;align-items:stretch}
+.service-info .destination{grid-column:auto}
+.service-info div{padding:3px 4px;min-width:0}
+.service-info span{font-size:8px;line-height:1.2}
+.service-info strong{font-size:9px;line-height:1.35;overflow-wrap:anywhere}
+@media screen and (max-width:650px){.service-info{grid-template-columns:1fr 1.5fr 1.2fr 1.7fr .7fr}}

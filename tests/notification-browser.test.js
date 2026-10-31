@@ -32,7 +32,7 @@ test('مرورگر: اعلان، مقصد دقیق، شمارنده و پاسخ 
   unblock();await page.waitForTimeout(300);assert.equal(await page.locator('#bellCount').innerText(),'۱');
   await page.unroute('**/api/notifications');
   await page.locator('#bell').click();await page.locator(`[data-action="open-notification"][data-entity-id="${order.id}"]`).click();
-  await page.waitForSelector('#modal.open');assert.ok((await page.locator('#modal').innerText()).includes('فروشگاه تست'));
+  await page.waitForSelector('#modal.open');assert.ok((await page.locator('#modal').innerText()).includes('فروشگاه شعبه 1 تست'));
   assert.equal(await page.locator('#bellCount').evaluate(e=>e.classList.contains('hidden')),true);
   const apiState=await (await sales.request.get(base+'/api/notifications')).json();assert.equal(apiState.unread,0);
   await page.evaluate(()=>closeModal());

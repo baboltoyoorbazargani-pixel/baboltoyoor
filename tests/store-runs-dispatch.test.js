@@ -290,7 +290,7 @@ test('فروش: endpoint فهرست ارسال‌های سرویس در انتظ
   const hit = list.json.shipments.find((x) => x.orderId === o.id);
   assert.ok(hit, 'سفارش در فهرست انتظار است');
   assert.equal(hit.run, 1);
-  assert.equal(hit.storeName, 'بابل طیور آزمایشی');
+  assert.equal(hit.storeName, 'فروشگاه شعبه 1 بابل طیور آزمایشی');
   assert.equal(hit.items.length, 1);
   assert.equal(hit.items[0].deliveredKg, 12.5);
   assert.equal((await call('GET', '/api/sales/store-run-shipments', { cookie: wh })).status, 403, 'نقش نامجاز');
