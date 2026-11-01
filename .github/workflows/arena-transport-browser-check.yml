@@ -31,3 +31,4 @@ jobs:
           exit "$failed"
 
 # Re-run after browser fixture fixes.
+# Recheck legacy desk refresh.

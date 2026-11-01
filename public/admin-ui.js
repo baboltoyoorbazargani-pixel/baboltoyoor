@@ -161,13 +161,22 @@ async function renderDriversPage() {
     const host=$('#content');host.innerHTML='<div id="transportPlans"></div><div id="legacyTransport"></div>';
     await renderTransportPlanQueue();
     if($('#content')!==host||app.page!=='drivers')return;
-    try{
-      const old=await api('/api/dispatch/orders?status=open');
-      const count=Number(old.counts?.pending||0)+Number(old.counts?.assigned||0);
-      if(count){$('#legacyTransport').innerHTML=`<details data-legacy-dispatch><summary>سفارش‌های باز از گردش قبلی (${qty(count)})</summary><p>این موارد پیش از تغییر ثبت شده‌اند و برای جلوگیری از توقف، تا پایان در دسترس‌اند.</p><div id="transportDispatch"></div></details>`;await renderDispatchPage();}
-    }catch(e){$('#legacyTransport').innerHTML='<p role="alert">بررسی سفارش‌های قبلی ناموفق بود؛ صفحه را تازه کنید.</p>';}
-    if(app.timer)clearInterval(app.timer);
-    app.timer=setInterval(async()=>{if(app.page!=='drivers'||dspBusy())return;await renderTransportPlanQueue();if(document.querySelector('[data-legacy-dispatch]')?.open){try{paintDispatch(await api(dspDispatchUrl()));}catch{}}},8000);
+    const legacy=$('#legacyTransport');
+    async function refreshLegacy(){
+      try{
+        const old=await api('/api/dispatch/orders?status=open');
+        if($('#legacyTransport')!==legacy)return;
+        const count=Number(old.counts?.pending||0)+Number(old.counts?.assigned||0);
+        let details=legacy.querySelector('[data-legacy-dispatch]');
+        if(!count){legacy.innerHTML='';return;}
+        if(!details){legacy.innerHTML=`<details data-legacy-dispatch><summary></summary><p>این موارد پیش از تغییر ثبت شده‌اند و برای جلوگیری از توقف، تا پایان در دسترس‌اند.</p><div id="transportDispatch"></div></details>`;details=legacy.querySelector('[data-legacy-dispatch]');}
+        details.querySelector('summary').textContent=`سفارش‌های باز از گردش قبلی (${qty(count)})`;
+        if(details.open||!$('#transportDispatch').innerHTML){const data=await api(dspDispatchUrl());if($('#legacyTransport')===legacy)paintDispatch(data);}
+      }catch(e){if($('#legacyTransport')===legacy&&!legacy.querySelector('[data-legacy-dispatch]'))legacy.innerHTML='<p role="alert">بررسی سفارش‌های قبلی ناموفق بود؛ تلاش مجدد خودکار انجام می‌شود.</p>';}
+    }
+    await refreshLegacy();
+    if($('#content')!==host||app.page!=='drivers')return;
+    app.timer=setInterval(async()=>{if(app.page!=='drivers'||dspBusy())return;await renderTransportPlanQueue();await refreshLegacy();},8000);
     return;
   }
   const canManage=normalizeRole(app.user?.roleCode)==='admin';
