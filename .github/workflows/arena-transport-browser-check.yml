@@ -33,3 +33,4 @@ jobs:
 # Re-run after browser fixture fixes.
 # Recheck legacy desk refresh.
 # Recheck dashboard counts and navigation.
+# Recheck asynchronous print loading.
