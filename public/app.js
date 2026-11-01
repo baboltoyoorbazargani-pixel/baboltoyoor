@@ -2392,8 +2392,8 @@ function futureOrderRowsV25(orders){
 }
 
 // بیعانه صرفاً هنگام ثبت سفارش دریافت می‌شود؛ اطلاعات آن پس از ثبت قابل حذف پنهانی نیست.
-// The incomplete new workflow is opt-in at the server and never silently
-// inferred from an absent choice. Legacy forms are unchanged when disabled.
+// A delivery choice is mandatory in the default workflow. The explicitly
+// disabled compatibility mode keeps the old forms available for emergencies.
 function deliveryModeInputHtml(prefix){
  const id="delivery-mode-"+String(prefix||"order");
  return `<div class="field transport-delivery-choice"><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
