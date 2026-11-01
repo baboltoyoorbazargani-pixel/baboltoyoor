@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.33.0 — کارتابل راننده:
    ۱) «جزئیات محموله» برای سفارش فروشگاه باز نمی‌شد چون GET /api/orders/:id نقش driver را نداشت
       و کارت فروشگاه جز خلاصه چیزی نشان نمی‌داد. حالا راننده فقط محمولهٔ خودش را می‌بیند.

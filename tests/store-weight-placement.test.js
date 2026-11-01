@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.33.0 — قواعد ثبت وزن در برگهٔ آماده‌سازی فروشگاه (انبار):
    ۱) وزن کامل → قلم وارد فاکتور سرویس اول می‌شود.
    ۲) وزن ناقص → فقط مقدار ثبت‌شده وارد فاکتور می‌شود.

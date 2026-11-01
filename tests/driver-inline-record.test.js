@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.40.0 — راننده هنگام ساخت «کاربر راننده» با مشخصات خودرو و دستگاه پوز ساخته می‌شود
    (دیگر تعریف جدای راننده در کارتابل ترابری نیست) و در کارتابل ترابری، مدیر و واحد پخش
    مشخصات خودرو/پوز را می‌بینند و ویرایش می‌کنند. ساخت و حذف رکورد از آن صفحه برداشته شده است. */

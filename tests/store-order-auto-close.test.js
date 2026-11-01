@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.33.0 — دو گزارش گره‌خورده: (۱) در کارتابل فروش، سفارش پس از «تأیید نهایی تحویل» واحد فروش
    در سربرگ «در جریان» می‌ماند و به «سوابق» نمی‌رود؛ (۲) انبار با «ثبت وزن» و «تکمیل محصول» هم
    نمی‌تواند سفارش را از فهرست آماده‌سازی خارج کند و «هیچ اقدامی انجام نمی‌شود».

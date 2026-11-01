@@ -1,0 +1,21 @@
+name: Transport browser check
+on:
+  push:
+    branches: [arena/6943520f-baboltoyoor]
+    paths: [.github/workflows/arena-transport-browser-check.yml]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright-core@1.50.1
+      - name: Real Chromium integration
+        shell: bash
+        run: |
+          CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          test -x "$CHROME"
+          BT_CHROMIUM_PATH="$CHROME" node --test tests/transport-desk-browser.test.js tests/transport-handover-browser.test.js tests/sales-delivery-tabs-browser.test.js tests/notification-roles-compact-browser.test.js

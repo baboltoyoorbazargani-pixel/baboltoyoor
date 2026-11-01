@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.36.0 — سربرگ «سوابق و گزارشات» فروشگاه‌ها در کارتابل انبار:
    سربرگ سوم کنار «ورودی» و «آماده‌سازی و سرویس‌ها»؛ گزارش سفارش‌های فروشگاهیِ پایان‌یافتهٔ انبار
    از همان دادهٔ ‎/api/warehouse/history‎ با فیلتر ‎orderType=STORE‎، همراه وزن سرویس اول/دوم هر قلم،

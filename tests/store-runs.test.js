@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 // v37.4.0 — سفارش فروشگاه: دو سرویس ارسال در یک سفارش واحد (سناریوهای بند ۱۹ سند + قفل‌های سند)
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
