@@ -1,24 +1,34 @@
-/* Shared by the warehouse modal and the print document. */
-.whd-doc{color:#20242a;font-family:'Vazirmatn',Tahoma,sans-serif;box-sizing:border-box}
+/* Warehouse document: the same compact table language as the sales invoice. */
+.whd-doc{color:#1d222a;font-family:'Vazirmatn',Tahoma,sans-serif;box-sizing:border-box;direction:rtl;line-height:1.4}
 .whd-doc *{box-sizing:border-box}
-.whd-head{display:flex;direction:rtl;align-items:stretch;gap:8px;margin-bottom:10px}
-.whd-document-number{flex:0 0 112px;border:1px solid #555;padding:5px;text-align:center;font-size:11px;font-weight:700}
-.whd-document-number span,.whd-document-number b{display:block}.whd-document-number b{font-size:16px}
-.whd-meta{display:grid;flex:1;min-width:0;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:0;border:1px solid #999;font-size:10px}
-.whd-meta span{min-width:0;padding:5px 4px;overflow-wrap:anywhere;border-left:1px solid #bbb}
-.whd-meta span:last-child{border-left:0}.whd-meta b{font-weight:700}
-.whd-table-scroll{overflow:auto}
-.whd-doc table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
+.whd-head{display:flex;direction:rtl;align-items:stretch;gap:5px;margin-bottom:4px;break-inside:avoid}
+.whd-document-number{flex:0 0 130px;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;border:1px solid #e3e6ea;border-radius:6px;padding:3px 4px;text-align:center;font-size:9px;font-weight:700}
+.whd-document-number span{white-space:nowrap;flex-shrink:0}.whd-document-number b{font-size:13px;line-height:1.35;white-space:nowrap;unicode-bidi:isolate}
+.whd-meta{display:grid;flex:1;min-width:0;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:5px;font-size:9px}
+.whd-meta>span{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;padding:3px 4px;border:1px solid #e3e6ea;border-radius:6px;overflow-wrap:anywhere}
+.whd-meta .whd-label{flex:0 0 auto;white-space:nowrap}
+.whd-meta>span b{font-size:10px;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.whd-meta>span b[dir=ltr]{white-space:nowrap;overflow-wrap:normal;unicode-bidi:isolate}
+.whd-table-scroll{max-width:100%;overflow-x:auto}
+.whd-doc table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid #e3e6ea;border-radius:6px;font-size:11px}
 .whd-col-number{width:34px}.whd-col-product{width:38%}.whd-col-request{width:27%}
-.whd-doc th,.whd-doc td{border:1px solid #999;padding:5px;text-align:right;vertical-align:middle;overflow-wrap:anywhere}
-.whd-doc th{background:#f4f6f8}.whd-doc th:first-child,.whd-number{text-align:center!important;padding:5px 1px!important;white-space:nowrap}
+.whd-doc th,.whd-doc td{line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;text-align:right}
+.whd-doc th{background:#f6f7f9;color:#67707d;font-size:10px;padding:4px 6px;border-bottom:1px solid #e3e6ea}
+.whd-doc td{font-size:11px;padding:3px 6px;border-bottom:1px solid #eef0f3}
+.whd-doc tbody tr:last-child td{border-bottom:0}
+.whd-doc th:first-child,.whd-number{text-align:center!important;padding-right:1px!important;padding-left:1px!important;white-space:nowrap}
 .whd-doc th:nth-child(3),.whd-doc th:nth-child(4),.whd-doc td.whd-quantity{text-align:center}
-.whd-doc tr{break-inside:avoid;page-break-inside:avoid}
+.whd-doc thead{display:table-header-group}.whd-doc tr{break-inside:avoid;page-break-inside:avoid}
 .whd-acknowledgement{break-inside:avoid;page-break-inside:avoid;margin-top:15px}
 .whd-declaration{margin:0;white-space:normal;overflow-wrap:anywhere;font-size:12px;font-weight:700;line-height:1.8}
 .whd-signature{margin-right:auto;margin-top:32px;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;width:220px;max-width:100%;font-size:11px;overflow-wrap:anywhere}
 @media screen and (max-width:700px){
- .whd-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.whd-meta span:nth-child(2){border-left:0}.whd-meta span:nth-child(-n+2){border-bottom:1px solid #bbb}
+ .whd-head{flex-wrap:wrap}.whd-document-number{flex:0 0 auto}
+ .whd-meta{flex:1 0 100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .whd-meta>span{justify-content:flex-start;flex-wrap:wrap}
  .whd-doc table{min-width:600px}
 }
-@media print{.whd-table-scroll{overflow:visible}.whd-meta span{font-size:10px}}
+@media print{
+ .whd-doc{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .whd-table-scroll{overflow:visible}.whd-doc table{min-width:0}
+}
