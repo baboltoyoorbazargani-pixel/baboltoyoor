@@ -2656,7 +2656,7 @@ async function renderRoleCartableDashboard(role,view='dashboard'){
   if (view === 'reports') return renderReportsPage(role);
   const names={gate:'نگهبانی',sales:'فروش',warehouse:'انبار',dispatch:'ترابری',store:'فروشگاه'};let w={...(app.workload||{})};
   if(role==='dispatch'){
-    try{const [pending,assigned,delivered,drivers]=await Promise.all([api('/api/dispatch/orders?status=pending'),api('/api/dispatch/orders?status=assigned'),api('/api/dispatch/orders?status=delivered'),api('/api/dispatch/drivers')]);w.dispatchIncoming=pending.orders?.length||0;w.dispatchTransit=assigned.orders?.length||0;w.dispatchDelivered=delivered.orders?.length||0;w.activeDrivers=drivers.drivers?.length||0;}catch{}
+    try{const [resources,plans,work]=await Promise.all([api('/api/transport/resources'),api('/api/transport/plans'),api('/api/workload')]);w.activeDrivers=(resources.drivers||[]).filter(d=>d.isActive).length;w.dispatchIncoming=Number(work.counts?.dispatchPending||0);w.dispatchPlanned=(plans.orders||[]).length;}catch{}
   }
   if(role==='store'){
     try{const rows=(await api('/api/store/orders')).orders||[],views=rows.flatMap(o=>st38ViewsOf(o));w.store=rows.filter(o=>o.status==='STORE_PENDING_SALES').length;w.storeDelivery=views.filter(v=>v.dispatch&&['ASSIGNED','DRIVER_EXIT_REPORTED','IN_TRANSIT'].includes(v.dispatch.status)).length;w.storeDelivered=views.filter(v=>v.dispatch&&['DELIVERED','SALES_FINALIZED','CLOSED'].includes(v.dispatch.status)).length;}catch{}
@@ -2671,7 +2671,7 @@ async function renderRoleCartableDashboard(role,view='dashboard'){
     gate:[['در انتظار فروش',w.gateEntry||0,'waiting','user','red'],['آماده خروج',w.gateExit||0,'exit','exitDoor','green'],['تحویل راننده',w.gateDispatchPending||0,'dispatch-leaving','truck','blue'],['سوابق مراجعه',w.visitsTotal||0,'history','history','purple']],
     sales:[['ورودی حضوری',w.salesIntake||0,'onsite','user','red'],['سفارش غیرحضوری',w.salesRemote||0,'remote','phone','blue'],['در جریان',w.salesFlow||0,'flow','flow','orange'],['فروشگاه‌ها',w.store||0,'stores','store','purple'],['آماده تسویه',w.salesSettlement||0,'settlement','receipt','green'],['روزهای آتی',w.salesFuture||0,'future','calendar','teal']],
     warehouse:[['سفارش‌های ورودی',w.warehouseIncoming||0,'incoming','inbox','red'],['تحویل و آماده‌سازی',w.warehousePreparing||0,'preparing','scale','orange'],['فروشگاه‌ها',w.warehouseStores||0,'stores','store','purple'],['سوابق مراجعه',w.visitsTotal||0,'history','history','blue']],
-    dispatch:[['رانندگان فعال',w.activeDrivers||0,'drivers','driver','blue'],['سفارش ورودی',w.dispatchIncoming||0,'orders','inbox','red'],['در حال ارسال',w.dispatchTransit||0,'orders','route','orange'],['تحویل‌شده',w.dispatchDelivered||0,'orders','check','green']],
+    dispatch:[['رانندگان فعال',w.activeDrivers||0,'transport-resources','driver','blue'],['اقدام‌های ترابری',w.dispatchIncoming||0,'orders','inbox','red'],['سفارش‌های در برنامه',w.dispatchPlanned||0,'orders','route','orange']],
     store:[['در انتظار بررسی',w.store||0,'registered','clipboard','red'],['در حال تحویل',w.storeDelivery||0,'delivery','truck','orange'],['تحویل‌شده',w.storeDelivered||0,'delivery','check','green']]
   };
   const cards=sets[role]||[];

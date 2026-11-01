@@ -19,6 +19,8 @@ test('مرورگر: یک کارتابل ترابری، منابع مستقل و 
   const order=(await post(sales,'/api/orders/remote',{name:'مشتری کارتابل',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledTime:'00:00',deliveryMode:'DELIVERY',items:[{productId:'p01',requestedQty:4,requestedUnit:'کیلوگرم'}]})).order;
   const page=await transport.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});
   assert.equal(await page.locator('#railNav [data-cartable=transport-resources]').count(),1);assert.equal(await page.locator('#railNav [data-cartable=drivers]').count(),0);
+  const dash=page.locator('[data-dash-role=dispatch]');await dash.waitFor();assert.equal((await dash.locator('.role-dash-card').filter({hasText:'رانندگان فعال'}).locator('strong').innerText()).trim(),'۱');assert.equal((await dash.locator('.role-dash-card').filter({hasText:'سفارش‌های در برنامه'}).locator('strong').innerText()).trim(),'۱');
+  await dash.locator('[data-cartable=transport-resources]').click();await page.locator('#content').getByText('راننده مستقل').first().waitFor();
   await page.locator('#railNav [data-cartable=orders]').click();await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).waitFor();
   assert.equal(await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).count(),1);assert.equal(await page.locator('[data-legacy-dispatch]').count(),0);
   await page.locator(`#transportPlans [data-tp=details][data-id="${order.id}"]`).click();await page.locator('#tpAssign').waitFor();
