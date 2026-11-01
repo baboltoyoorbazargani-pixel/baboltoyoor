@@ -16,8 +16,8 @@ test('مرورگر: ارتفاع یکسان کادر امضاء و مبالغ، 
   await ctx.route('**/api/orders/o',route=>route.fulfill({json:{order:order()}}));
   const check=async(p,scope)=>{
    const sheet=p.locator(scope),box=sheet.locator('.inv38-verify-box');await box.waitFor();
-   assert.equal(await sheet.locator('.inv38-foot').count(),0);
-   assert.equal(await box.locator('span').innerText(),'امضاء');assert.equal(await box.locator('strong').innerText(),'نام مشتری – 09121234567');
+   assert.equal(await sheet.locator('.inv38-foot').count(),0);assert.doesNotMatch(await sheet.innerText(),/[0-9٠-٩]/);assert.equal(await sheet.locator('.inv38-brand img').getAttribute('src'),'/logo.png');
+   assert.equal(await box.locator('span').innerText(),'امضاء');assert.equal(await box.locator('strong').innerText(),'نام مشتری – ۰۹۱۲۱۲۳۴۵۶۷');
    const geometry=await sheet.evaluate(e=>{const r=x=>{const q=e.querySelector(x).getBoundingClientRect();return {top:q.top,bottom:q.bottom,left:q.left,right:q.right,height:q.height};};return{tot:r('.inv38-total-box'),box:r('.inv38-verify-box'),title:r('.inv38-vitem span'),text:r('.inv38-vitem strong')};});
    assert.ok(Math.abs(geometry.tot.height-geometry.box.height)<=1,JSON.stringify(geometry));
    for(const el of [geometry.title,geometry.text])assert.ok(Math.abs((el.left+el.right-geometry.box.left-geometry.box.right)/2)<=1.5,JSON.stringify(geometry));

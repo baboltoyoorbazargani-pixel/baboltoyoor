@@ -11,6 +11,8 @@
     document.title=String(data.title||'فاکتور');
     document.getElementById('invoice-print-content').innerHTML=data.html;
     message.remove();
+    BTPrintDigits.convert(document.getElementById('invoice-print-content'));
+    document.title=BTPrintDigits.persian(document.title);
     const script=document.createElement('script');script.src='/print-ready.js';document.body.append(script);
   }catch(e){message.textContent=e.message||'آماده‌سازی فاکتور ناموفق بود.';}
 })();

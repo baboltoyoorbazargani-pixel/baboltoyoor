@@ -527,7 +527,7 @@ function printReport() {
   const r = adm.report; if (!r) return toast('ابتدا گزارش را اجرا کنید.');
   const w = window.open('', '_blank');
   if (!w) return toast('پنجره‌ی چاپ مسدود شده است.');
-  w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش ${admE(r.label)}</title>
+  w.document.write(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش ${admE(r.label)}</title>
     <style>body{font-family:Tahoma,sans-serif;margin:24px;color:#151a21}h1{font-size:18px;margin:0 0 4px;color:#b40f23}p{margin:0 0 12px;font-size:12px;color:#555}
     table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:5px 6px;text-align:right;vertical-align:top}th{background:#f4f5f7}
     .iran-plate{display:inline-grid;direction:ltr;grid-template-columns:14px 29px 22px 33px 22px;border:1px solid #1c2733;border-radius:4px;overflow:hidden;height:26px;vertical-align:middle;background:white;color:#111;font-weight:bold}
@@ -539,7 +539,7 @@ function printReport() {
     <p>${fa(r.rows.length)} ردیف در این چاپ از ${fa(r.total)} ردیف${r.truncated?' — این چاپ محدود است؛ برای همه ردیف‌ها CSV کامل را دریافت کنید.':''} • تاریخ چاپ: ${admE(admToday())}</p>
     <table><thead><tr>${r.columns.map((c) => `<th>${admE(c.label)}</th>`).join('')}</tr></thead>
     <tbody>${r.rows.map((row) => `<tr>${r.columns.map((c) => `<td>${/plate/i.test(c.key)?plateViewHtml(row[c.key],'—',true):admE(fmtRepCell(c.key, row[c.key]))}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <script src="/print-ready.js"><\/script></body></html>`);
+    <script src="/print-ready.js"><\/script></body></html>`));
   w.document.close();
 }
 

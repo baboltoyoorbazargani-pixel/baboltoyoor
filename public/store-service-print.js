@@ -19,6 +19,8 @@
       tbody.append(tr);
     }
     set('service-total',d.lines.some(x=>x.deliveredKg==null)?'نامشخص':qty(d.lines.reduce((sum,x)=>sum+Number(x.deliveredKg||0),0))+' کیلوگرم');
+    BTPrintDigits.convert(document.querySelector('.service-sheet'));
+    document.title=BTPrintDigits.persian(document.title);
     message.hidden=true;document.querySelector('.service-sheet').hidden=false;document.querySelector('.service-tools').hidden=false;
     document.getElementById('service-print-button').addEventListener('click',()=>window.print());
     if(document.fonts?.ready)await document.fonts.ready;

@@ -1248,7 +1248,7 @@ async function deleteUser(id){
 
 /* ---------- Invoice ---------- */
 function pickInvoicePayment(o,run){ if(run){ const hit=(o.payments||[]).find(p=>(p.deliveryRun||null)===run); return hit||null; } return o.payment||null; } // v37.17.0 — سند سرویس دیگر هرگز جای سند این سرویس نمایش داده نمی‌شود
-async function previewInvoice(id,run){try{const d=await api('/api/orders/'+id);const pay=pickInvoicePayment(d.order,run);if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');openModal('پیش‌نمایش فاکتور'+(run?` — سرویس ${run===2?'دوم':'اول'}`:''),invoiceHtml(d.order,pay)+`<div class="toolbar" style="justify-content:flex-end;margin-top:15px"><button class="btn btn-secondary" data-action="close-modal">بستن</button><button class="btn btn-primary" data-action="print-invoice" data-id="${id}"${run?` data-run="${run}"`:''}>${icon('receipt',16)} چاپ فاکتور</button></div>`)}catch(e){toast(e.message)}}
+async function previewInvoice(id,run){try{const d=await api('/api/orders/'+id);const pay=pickInvoicePayment(d.order,run);if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');openModal('پیش‌نمایش فاکتور'+(run?` — سرویس ${run===2?'دوم':'اول'}`:''),invoiceHtml(d.order,pay)+`<div class="toolbar" style="justify-content:flex-end;margin-top:15px"><button class="btn btn-secondary" data-action="close-modal">بستن</button><button class="btn btn-primary" data-action="print-invoice" data-id="${id}"${run?` data-run="${run}"`:''}>${icon('receipt',16)} چاپ فاکتور</button></div>`);BTPrintDigits.convert(document.querySelector('#modal .inv38-sheet'))}catch(e){toast(e.message)}}
 async function openInvoicePrint(id,run){
   const key='invoice-print-'+Date.now()+'-'+Math.random().toString(36).slice(2);
   try{
@@ -2109,7 +2109,7 @@ document.addEventListener('click',async e=>{
       const w=window.open('','_blank','width=1100,height=900');
       if(!w)return toast('مرورگر اجازه پنجره چاپ را نداد.');
       const remote=d.remote||{};
-      w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش مدیریتی بابل طیور</title><style>body{font-family:"B Yekan",Tahoma,sans-serif;color:#1b2027;padding:28px}h1{font-size:24px}h2{font-size:17px;border-bottom:1px solid #ddd;padding-bottom:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.box{border:1px solid #ddd;border-radius:12px;padding:12px}.box strong{display:block;font-size:22px;color:#b3132a;margin-top:5px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #ddd;padding:8px;font-size:11px;text-align:right}@media print{body{padding:0}}</style></head><body><h1>گزارش مدیریتی بابل طیور</h1><p>${esc(todayText())}</p><div class="grid"><div class="box">ورودی امروز<strong>${qty(d.gate?.today||0)}</strong></div><div class="box">سفارش امروز<strong>${qty(d.sales?.todayOrders||0)}</strong></div><div class="box">درآمد<strong>${esc(money(d.finance?.revenue||0))}</strong></div><div class="box">غیرحضوری آینده<strong>${qty(remote.scheduled||0)}</strong></div></div><h2>برنامه سفارش‌های غیرحضوری</h2><table><thead><tr><th>تاریخ</th><th>تعداد سفارش</th></tr></thead><tbody>${(remote.byDate||[]).map(x=>`<tr><td>${dateLabel(x.date)}</td><td>${qty(x.count)}</td></tr>`).join('')}</tbody></table><script src="/print-ready.js"><\/script></body></html>`);
+      w.document.write(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش مدیریتی بابل طیور</title><style>body{font-family:"B Yekan",Tahoma,sans-serif;color:#1b2027;padding:28px}h1{font-size:24px}h2{font-size:17px;border-bottom:1px solid #ddd;padding-bottom:8px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.box{border:1px solid #ddd;border-radius:12px;padding:12px}.box strong{display:block;font-size:22px;color:#b3132a;margin-top:5px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #ddd;padding:8px;font-size:11px;text-align:right}@media print{body{padding:0}}</style></head><body><h1>گزارش مدیریتی بابل طیور</h1><p>${esc(todayText())}</p><div class="grid"><div class="box">ورودی امروز<strong>${qty(d.gate?.today||0)}</strong></div><div class="box">سفارش امروز<strong>${qty(d.sales?.todayOrders||0)}</strong></div><div class="box">درآمد<strong>${esc(money(d.finance?.revenue||0))}</strong></div><div class="box">غیرحضوری آینده<strong>${qty(remote.scheduled||0)}</strong></div></div><h2>برنامه سفارش‌های غیرحضوری</h2><table><thead><tr><th>تاریخ</th><th>تعداد سفارش</th></tr></thead><tbody>${(remote.byDate||[]).map(x=>`<tr><td>${dateLabel(x.date)}</td><td>${qty(x.count)}</td></tr>`).join('')}</tbody></table><script src="/print-ready.js"><\/script></body></html>`));
       w.document.close();
     }catch(err){toast(err.message)}
   }
@@ -3728,6 +3728,7 @@ async function scPrintTicket(trip, st, cfg){
   };
   const cells=cfg.fields.filter(f=>f.show).map(f=>`<div class="pt-cell" style="grid-column:${f.col};grid-row:${f.row}"><small>${esc(f.label)}</small><b>${f.key==='plate'?plateViewHtml(trip.plate,'—',true):esc(vals[f.key]??'—')}</b></div>`).join('');
   area.innerHTML=`<div class="pt-ticket" dir="rtl" style="grid-template-columns:${cfg.colsMm.map(v=>v+'mm').join(' ')};grid-template-rows:${cfg.rowsMm.map(v=>v+'mm').join(' ')};font-size:${cfg.fontPt}pt"><div class="pt-title" style="grid-column:1 / span 6;grid-row:1">${esc(cfg.title)}</div>${cells}</div>`;
+  BTPrintDigits.convert(area);
   let pg=document.getElementById('scPageStyle');
   if(!pg){ pg=document.createElement('style'); pg.id='scPageStyle'; document.head.appendChild(pg); }
   const paper={A5L:'A5 landscape',A5P:'A5 portrait',A4L:'A4 landscape',A4P:'A4 portrait'}[cfg.paper]||'A5 landscape';
@@ -3939,7 +3940,7 @@ function printWarehouseHistory(){
   const rows=(d.rows||[]).map((r,k)=>`<tr><td>${fa(k+1)}</td><td>${dateLabel(r.day)} ${whhTime(r.completedAt)}</td><td dir="ltr">${esc(fa(r.orderNo))}</td><td>${esc(r.customerName)}</td><td>${r.items.map(i=>`${esc(i.productName)}: ${i.outOfStock?'<b class="oos">ناموجود</b>':qty(i.deliveredKg)+' کیلو'}`).join('<br>')}</td><td>${qty(r.deliveredKg)}</td><td>${esc(r.completedBy)}</td></tr>`).join('')||'<tr><td colspan="7" class="none">سابقه‌ای در این بازه نیست.</td></tr>';
   const prod=(s.byProduct||[]).map(p=>`<tr><td>${esc(p.productName)}</td><td>${qty(p.orders)}</td><td>${qty(p.deliveredKg)}</td><td>${p.outOfStock?qty(p.outOfStock):'—'}</td></tr>`).join('');
   const rets=(d.returns||[]).map(x=>`<tr><td dir="ltr">${esc(fa(x.orderNo))}</td><td>${esc(x.customerName)}</td><td>${esc(x.reason||'—')}</td><td>${esc(formatDateTime24(x.at))}</td><td>${esc(x.by)}</td></tr>`).join('');
-  w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش انبار ${esc(whhRangeText(d.from,d.to).replace(/<[^>]+>/g,''))}</title><style>
+  w.document.write(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش انبار ${esc(whhRangeText(d.from,d.to).replace(/<[^>]+>/g,''))}</title><style>
     *{box-sizing:border-box}body{font-family:"B Yekan","Vazirmatn",Tahoma,sans-serif;color:#1b2027;padding:26px;margin:0}
     header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #e30613;padding-bottom:12px;margin-bottom:16px}
     header h1{font-size:21px;margin:0}header p{margin:4px 0 0;color:#555;font-size:12px}header img{width:54px;height:54px;object-fit:contain}
@@ -3954,6 +3955,6 @@ function printWarehouseHistory(){
     ${prod?`<h2>خلاصهٔ کالاها</h2><table><thead><tr><th>کالا</th><th>تعداد سفارش</th><th>وزن تحویلی (کیلو)</th><th>ناموجود</th></tr></thead><tbody>${prod}</tbody></table>`:''}
     ${rets?`<h2>ارجاع‌ها به فروش</h2><table><thead><tr><th>سفارش</th><th>مشتری</th><th>دلیل</th><th>زمان</th><th>کاربر</th></tr></thead><tbody>${rets}</tbody></table>`:''}
     <footer><span>تهیه‌کننده: ${esc(app.user?.fullName||app.user?.username||'')}</span><span>تاریخ چاپ: ${esc(todayText())} ${whhTime(new Date(serverEpoch()).toISOString())}</span></footer>
-    <script src="/print-ready.js"><\/script></body></html>`);
+    <script src="/print-ready.js"><\/script></body></html>`));
   w.document.close();
 }
