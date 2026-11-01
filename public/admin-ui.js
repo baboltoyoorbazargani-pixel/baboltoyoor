@@ -172,7 +172,7 @@ async function renderDriversPage() {
     </nav>`;
   $('#content').innerHTML = innerTabs
     + (tab === 'dispatch'
-      ? '<div id="transportDispatch"></div>'
+      ? '<div id="transportPlans"></div><div id="transportDispatch"></div>'
       : tab === 'records'
         ? '<div id="drvRecords"></div>'
         : admHead('truck', 'رانندگان', 'رانندگان هنگام ساخت «کاربر راننده» ساخته می‌شوند؛ خودرو و پوز از حساب کاربری انتخاب می‌شوند. سوابق قدیمی حفظ شده‌اند.', adm.drivers.length,
@@ -184,7 +184,7 @@ async function renderDriversPage() {
   }
   if (tab === 'records') await renderDriverRecords();
   bindAdm('drivers');
-  if(tab==='dispatch')await renderDispatchPage();
+  if(tab==='dispatch'){await renderTransportPlanQueue();await renderDispatchPage();}
 }
 function paintDrivers() {
   const q = admNorm(adm.q);

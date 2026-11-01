@@ -2174,6 +2174,11 @@ document.addEventListener('click',async e=>{
   }
 });
 // v21 final UI refinements
+function transportOrderServiceHtml(o,canReturn){
+ if(o.transportWorkflow!==1||o.deliveryMode!=='DELIVERY')return '';
+ const runs=o.orderType==='STORE'?[1,2]:[0];
+ return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':hand?'تحویل انبار به راننده ثبت شد':'در انتظار تحویل انبار';return `<div class="order-compact-row"><b>${run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
+}
 async function openOrderDetails(id){
   try{
     const d=await api('/api/orders/'+id); const o=d.order||{}; const items=o.items||[];
@@ -2199,11 +2204,13 @@ async function openOrderDetails(id){
         <div><span>وزن تحویلی</span><b>${qty(totalDelivered)} کیلوگرم</b></div>
       </div>
       ${depositSummaryHtml(o.deposit)}
+      ${transportOrderServiceHtml(o,can('sales'))}
       ${warehouseReturnNoteHtml(o)}
       ${o.notes?`<div class="detail-note"><span>${icon('info',16)}</span><div><b>یادداشت سفارش</b><p>${esc(o.notes)}</p></div></div>`:''}
       <div class="table-wrap section-space"><table class="table v21-detail-table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>واحد</th><th>توضیحات</th>${showRunCols?'<th>وزن سرویس اول</th><th>وزن سرویس دوم</th>':''}<th>وزن تحویلی</th><th>وضعیت</th></tr></thead><tbody>${items.map((i,k)=>`<tr class="${i.itemStatus==='CANCELLED'?'row-cancelled':''}"><td>${fa(String(k+1))}</td><td><strong>${esc(i.product?.name||'—')}</strong></td><td>${qty(i.requestedQty)}</td><td>${esc(i.requestedUnit||'—')}</td><td>${esc(i.description||'—')}</td>${showRunCols?`<td>${runView[i.id]&&n(runView[i.id].r1Kg)>0?qty(runView[i.id].r1Kg)+' کیلوگرم':'—'}</td><td>${runView[i.id]&&n(runView[i.id].r2Kg)>0?qty(runView[i.id].r2Kg)+' کیلوگرم':'—'}</td>`:''}<td>${i.deliveredKg==null?'—':qty(i.deliveredKg)+' کیلوگرم'}</td><td>${badge(i.itemStatus)}</td></tr>`).join('')}</tbody></table></div>
       <div class="sticky-actions"><span class="subtle">تمام تغییرات و ارجاع‌ها در سوابق مدیریتی ثبت می‌شوند.</span><div class="toolbar"><button class="btn btn-secondary" data-action="close-modal">بستن</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',16)} اصلاح سفارش</button><button class="btn btn-primary" data-action="resubmit-order" data-id="${o.id}">${icon('send',16)} ارسال مجدد به انبار</button>`:''}${o.orderType==='STORE'&&o.status==='STORE_PENDING_SALES'?`<button class="btn btn-primary" data-action="sales-edit-store-order" data-id="${o.id}">${icon('edit',16)} ویرایش سفارش</button>`:''}</div></div>
     </div>`)
+    document.querySelectorAll('#modal [data-store-transport-return]').forEach(button=>{button.onclick=async()=>{const run=Number(button.dataset.storeTransportReturn);if(!confirm(`آیا مدارک سرویس ${run===1?'اول':'دوم'} پس از دریافت فروشگاه به فروش بازگشته است؟`))return;button.disabled=true;try{const result=await api('/api/sales/store-transport/'+encodeURIComponent(o.id)+'/'+run+'/return',{method:'POST',body:JSON.stringify({documentsReturned:true})});toast(result.orderClosed?'مدارک ثبت شد و سفارش فروشگاه بسته شد.':'بازگشت مدارک این سرویس ثبت شد.');if(app.salesCache)app.salesCache.fetchedAt=0;if(app.page==='sales')await renderSales('stores');await openOrderDetails(o.id);}catch(err){button.disabled=false;toast(err.message);}};});
   }catch(e){toast(e.message)}
 }
 
