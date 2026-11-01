@@ -18,4 +18,14 @@ jobs:
         run: |
           CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
           test -x "$CHROME"
-          BT_CHROMIUM_PATH="$CHROME" node --test tests/transport-desk-browser.test.js tests/transport-handover-browser.test.js tests/sales-delivery-tabs-browser.test.js tests/notification-roles-compact-browser.test.js
+          failed=0
+          for file in tests/transport-desk-browser.test.js tests/transport-handover-browser.test.js tests/sales-delivery-tabs-browser.test.js tests/notification-roles-compact-browser.test.js; do
+            if BT_CHROMIUM_PATH="$CHROME" node --test "$file" > /tmp/test-output.log 2>&1; then
+              echo "$file passed"
+            else
+              failed=1
+              encoded=$(tail -100 /tmp/test-output.log | base64 -w0)
+              echo "::error title=$file::$encoded"
+            fi
+          done
+          exit "$failed"
