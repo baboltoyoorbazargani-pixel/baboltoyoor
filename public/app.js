@@ -1396,6 +1396,13 @@ async function handleLogout(){
   showLoginView('');
   const f=$('#loginForm'); if(f){f.reset();}
 }
+async function goTransportSalesWork(id){
+  await go('sales','settlement');
+  const data=await fetchSalesCache(true);
+  if(app.page!=='sales'||app.sub.sales!=='settlement')return;
+  paintSalesPaneV29('settlement',data);
+  return stlOpen(id);
+}
 async function bootstrap(){
   syncServerTime();
   setInterval(syncServerTime,5*60*1000);
@@ -1410,6 +1417,7 @@ async function bootstrap(){
     if(e.target.id==='modal'){closeModal();return;}
     const el=e.target.closest('[data-action]'); if(!el)return; const a=el.dataset.action;
     if(a==='close-modal')return closeModal();
+    if(a==='transport-sales-work'){const id=el.dataset.id;closeModal();return goTransportSalesWork(id);}
     if(a==='print-invoice'){e.stopPropagation();return printInvoice(el.dataset.id,Number(el.dataset.run)||null);}
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
     if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
@@ -1516,7 +1524,7 @@ const NOTIF_ROUTES={
   STORE_RECEIPT_CONFIRMED:{page:'sales',sub:'delivery'},
   TRANSPORT_ORDER_READY:{page:'drivers',sub:'orders'},
   TRANSPORT_INVOICE_READY:{page:'drivers',sub:'orders'},
-  TRANSPORT_DEPARTED:{page:'sales',sub:'settlement'},
+  TRANSPORT_DEPARTED:{page:'sales',sub:'delivery'},
   STORE_ORDER_DUE:{page:'warehouse'},
   REMOTE_ORDER_DUE:{page:'warehouse'},
   NEW_ORDER:{page:'warehouse'},
@@ -1739,6 +1747,9 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       if(phase==='delivered')return whDeliveredDetails(entityId);
       return openOrderDetails(entityId);
     }
+    if(route.page==='sales'&&order.orderType==='STORE'&&order.transportWorkflow===1&&type==='STORE_RECEIPT_CONFIRMED'){
+      app.salesDeliveryTab='delivered';await go('sales','delivery');return openOrderDetails(entityId);
+    }
     if(route.page==='sales'&&order.orderType==='STORE'){
       // صفحه فروش ممکن است دادهٔ چند ثانیه قبل را در حافظه داشته باشد.
       if(app.salesFetchPromise)await app.salesFetchPromise.catch(()=>{});
@@ -1752,8 +1763,15 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       }
       return openOrderDetails(entityId);
     }
+    if(route.page==='sales'&&type==='TRANSPORT_DEPARTED'&&order.transportWorkflow===1){
+      app.salesDeliveryTab=order.status==='CLOSED'?'history':order.transportReturn?'delivered':'inTransit';
+      await go('sales','delivery');await fetchSalesCache(true);
+      const views=app.salesCache?.dispatchDeliveries||{};
+      if([...(views.assigned||[]),...(views.inTransit||[]),...(views.pending||[]),...(views.finalized||[])].some(o=>o.id===entityId))return openSalesDeliveryDetails(entityId);
+      return openOrderDetails(entityId);
+    }
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.status==='SETTLEMENT_PENDING'&&['TRANSPORT_WAREHOUSE_HANDOVER','WAREHOUSE_DONE'].includes(type))return goTransportSalesWork(entityId);
     await go(route.page,route.sub);
-    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.status==='SETTLEMENT_PENDING'&&['TRANSPORT_WAREHOUSE_HANDOVER','TRANSPORT_DEPARTED','WAREHOUSE_DONE'].includes(type))return stlOpen(entityId);
     if(route.page==='gate'){
       const el=document.querySelector(`[data-action="open-exit"][data-id="${CSS.escape(entityId)}"]`);
       if(focusNotificationElement(el))return;
@@ -2185,7 +2203,7 @@ document.addEventListener('click',async e=>{
 function transportOrderServiceHtml(o,canReturn){
  if(o.transportWorkflow!==1||o.deliveryMode!=='DELIVERY')return '';
  const runs=o.orderType==='STORE'?[1,2]:[0];
- return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':hand?'تحویل انبار به راننده ثبت شد':'در انتظار تحویل انبار';return `<div class="order-compact-row"><b>${run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
+ return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':hand?'تحویل انبار به راننده ثبت شد':'در انتظار تحویل انبار';return `<div class="order-compact-row"><b>${run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
 }
 async function openOrderDetails(id){
   try{
@@ -2219,7 +2237,7 @@ async function openOrderDetails(id){
       <div class="table-wrap section-space"><table class="table v21-detail-table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>واحد</th><th>توضیحات</th>${showRunCols?'<th>وزن سرویس اول</th><th>وزن سرویس دوم</th>':''}<th>وزن تحویلی</th><th>وضعیت</th></tr></thead><tbody>${items.map((i,k)=>`<tr class="${i.itemStatus==='CANCELLED'?'row-cancelled':''}"><td>${fa(String(k+1))}</td><td><strong>${esc(i.product?.name||'—')}</strong></td><td>${qty(i.requestedQty)}</td><td>${esc(i.requestedUnit||'—')}</td><td>${esc(i.description||'—')}</td>${showRunCols?`<td>${runView[i.id]&&n(runView[i.id].r1Kg)>0?qty(runView[i.id].r1Kg)+' کیلوگرم':'—'}</td><td>${runView[i.id]&&n(runView[i.id].r2Kg)>0?qty(runView[i.id].r2Kg)+' کیلوگرم':'—'}</td>`:''}<td>${i.deliveredKg==null?'—':qty(i.deliveredKg)+' کیلوگرم'}</td><td>${badge(i.itemStatus)}</td></tr>`).join('')}</tbody></table></div>
       <div class="sticky-actions"><span class="subtle">تمام تغییرات و ارجاع‌ها در سوابق مدیریتی ثبت می‌شوند.</span><div class="toolbar"><button class="btn btn-secondary" data-action="close-modal">بستن</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',16)} اصلاح سفارش</button><button class="btn btn-primary" data-action="resubmit-order" data-id="${o.id}">${icon('send',16)} ارسال مجدد به انبار</button>`:''}${o.orderType==='STORE'&&o.status==='STORE_PENDING_SALES'?`<button class="btn btn-primary" data-action="sales-edit-store-order" data-id="${o.id}">${icon('edit',16)} ویرایش سفارش</button>`:''}</div></div>
     </div>`)
-    document.querySelectorAll('#modal [data-store-transport-return]').forEach(button=>{button.onclick=async()=>{const run=Number(button.dataset.storeTransportReturn);if(!confirm(`آیا مدارک سرویس ${run===1?'اول':'دوم'} پس از دریافت فروشگاه به فروش بازگشته است؟`))return;button.disabled=true;try{const result=await api('/api/sales/store-transport/'+encodeURIComponent(o.id)+'/'+run+'/return',{method:'POST',body:JSON.stringify({documentsReturned:true})});toast(result.orderClosed?'مدارک ثبت شد و سفارش فروشگاه بسته شد.':'بازگشت مدارک این سرویس ثبت شد.');if(app.salesCache)app.salesCache.fetchedAt=0;if(app.page==='sales')await renderSales('stores');await openOrderDetails(o.id);}catch(err){button.disabled=false;toast(err.message);}};});
+    document.querySelectorAll('#modal [data-store-transport-return]').forEach(button=>{button.onclick=async()=>{const run=Number(button.dataset.storeTransportReturn);if(!confirm(`آیا مدارک سرویس ${run===1?'اول':'دوم'} پس از دریافت فروشگاه به فروش بازگشته است؟`))return;button.disabled=true;try{const result=await api('/api/sales/store-transport/'+encodeURIComponent(o.id)+'/'+run+'/return',{method:'POST',body:JSON.stringify({documentsReturned:true})});toast(result.orderClosed?'مدارک ثبت شد و سفارش فروشگاه بسته شد.':'بازگشت مدارک این سرویس ثبت شد.');if(app.salesCache)app.salesCache.fetchedAt=0;if(app.page==='sales'&&app.sub.sales==='delivery'){const data=await fetchSalesCache(true);paintSalesPaneV29('delivery',data);}else if(app.page==='sales')await renderSales('stores');await openOrderDetails(o.id);}catch(err){button.disabled=false;toast(err.message);}};});
   }catch(e){toast(e.message)}
 }
 

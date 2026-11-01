@@ -30,3 +30,10 @@ test('delivery refresh failure preserves cached records and flags stale state, t
  let result=await c.fetchSalesCache(true);assert.equal(result.dispatchDeliveries.active[0].id,'keep');assert.equal(result.dispatchDeliveries.error,true);assert(context().renderSalesDeliveryV38(result.dispatchDeliveries).includes('role="alert"'));
  fail=false;result=await c.fetchSalesCache(true);assert.equal(result.dispatchDeliveries.active[0].id,'new');assert.equal(result.dispatchDeliveries.error,false);
 });
+test('ردیف و جزئیات گردش جدید عدم تحویل را صریح نشان می‌دهد و دکمه پایان جعلی ندارد',()=>{
+ const c=context();c.app.features={experimentalTransport:true};
+ const o={id:'x',orderNo:'123',status:'SETTLEMENT_PENDING',customer:{name:'<script>'},transportService:{section:'delivered',label:'مدارک برگشت؛ تحویل‌نشده',outcome:'NOT_DELIVERED',driverName:'<script>',run:0,lines:[{productName:'<img>',deliveredKg:2}]}};
+ const row=c.salesDeliverySummaryRow(o),details=c.transportSalesDetailsHtml(o);assert(row.includes('تحویل‌نشده'));assert(!row.includes('<script>'));assert(details.includes('به مشتری تحویل نشده'));assert(details.includes('&lt;img&gt;'));assert(details.includes('transport-sales-work'));assert(!details.includes('sales-finalize-driver-delivery'));
+ const html=c.renderSalesDeliveryV38({pending:[o]});assert(html.includes('تحویل شده / بازگشت'));assert(!html.includes('data-action="sales-finalize-driver-delivery"'));
+ c.app.features.experimentalTransport=false;assert(c.transportSalesDetailsHtml(o).includes('فقط برای مشاهده'));assert(!c.transportSalesDetailsHtml(o).includes('transport-sales-work'));
+});

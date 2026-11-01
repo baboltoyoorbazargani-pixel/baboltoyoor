@@ -435,14 +435,24 @@ function renderStoreRunShipmentsPanel(shipments){ // v37.5.0
 }
 
 function salesDeliverySummaryRow(o){
+ const service=o.transportService;
+ if(service)return `<article class="order-compact-row sales-delivery-summary-row" data-delivery-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(storeAwareOrderName(o))}</strong>${service.run?`<span>سرویس ${service.run===2?'دوم':'اول'}</span>`:''}<span class="badge blue">${esc(service.label)}</span><span>راننده: ${esc(service.driverName||'تعیین نشده')}</span><span>${qty((service.lines||[]).length)} قلم سند</span><button type="button" class="btn btn-secondary btn-sm" data-action="sales-delivery-details" data-id="${esc(o.id)}" data-run="${Number(service.run)||0}">جزئیات</button></article>`;
  const d=o.dispatch||{};
  return `<article class="order-compact-row sales-delivery-summary-row" data-delivery-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(storeAwareOrderName(o))}</strong>${d.run?`<span>سرویس ${d.run===2?'دوم':'اول'}</span>`:''}${dspBadge(d.status)}<span>راننده: ${esc(d.driverName||'—')}</span><span>${qty((d.lines||o.items||[]).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-action="sales-delivery-details" data-id="${esc(o.id)}" data-run="${Number(d.run)||0}">جزئیات</button></article>`;
 }
 async function openSalesDeliveryDetails(id,run){
  const data=app.salesCache?.dispatchDeliveries||{};const views=[...(data.active||[]),...(data.pending||[]),...(data.finalized||[])];
- const o=views.find(v=>v.id===id&&Number(v.dispatch?.run||0)===Number(run||0));if(!o)return toast('محموله دیگر در فهرست نیست؛ صفحه را تازه کنید.');
+ const o=views.find(v=>v.id===id&&Number(v.transportService?.run??v.dispatch?.run??0)===Number(run||0));if(!o)return toast('محموله دیگر در فهرست نیست؛ صفحه را تازه کنید.');
+ if(o.transportService){openModal('جزئیات ارسال و بازگشت مدارک',transportSalesDetailsHtml(o));return;}
  const completed=['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status);
  openModal('جزئیات تحویل سفارش',completed?renderSalesDeliveryCardV38(o,o.dispatch.status!=='DELIVERED'):renderSalesDeliveryTrackingV18(o)+`<button type="button" class="btn btn-secondary" data-action="order-details" data-id="${esc(o.id)}">جزئیات اقلام سفارش</button>`);
+}
+function transportSalesDetailsHtml(o){
+ const s=o.transportService||{},store=o.orderType==='STORE',lines=Array.isArray(s.lines)?s.lines:[];
+ const rows=lines.map((l,i)=>`<tr><td>${fa(String(i+1))}</td><td>${esc(l.productName||'—')}</td><td>${qty(l.deliveredKg)} کیلوگرم</td></tr>`).join('');
+ const disabled=app.features?.experimentalTransport===false&&(store||s.section!=='history');
+ const action=disabled?'':store?`<button type="button" class="btn btn-primary" data-action="order-details" data-id="${esc(o.id)}">بررسی وضعیت و مدارک سرویس</button>`:o.status==='SETTLEMENT_PENDING'?`<button type="button" class="btn btn-primary" data-action="transport-sales-work" data-id="${esc(o.id)}">بررسی فاکتور و مدارک</button>`:o.status==='CLOSED'&&o.payment?`<button type="button" class="btn btn-primary" data-action="invoice" data-id="${esc(o.id)}">نمایش فاکتور بسته‌شده</button>`:'';
+ return `<article class="sd-panel sales-delivery-card"><header><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><h3>${esc(storeAwareOrderName(o))}</h3><span class="badge blue">${esc(s.label||'—')}</span>${s.run?` <span>سرویس ${s.run===2?'دوم':'اول'} — بدون تسویه مالی</span>`:''}</header><div class="sales-delivery-meta"><span><small>راننده</small><b>${esc(s.driverName||'تعیین نشده')}</b></span><span><small>تماس</small><b>${esc(fa(s.driverPhone||'—'))}</b></span><span><small>خودرو و پلاک</small><b>${esc(s.vehicleType||'—')} ${esc(fa(s.vehiclePlate||''))}</b></span><span><small>سند انبار</small><b>${esc(fa(s.warehouseDocumentNo||'—'))}</b></span>${!store?`<span><small>فاکتور</small><b>${esc(fa(s.invoiceNumber||'ثبت نشده'))}</b></span>`:''}</div>${disabled?'<p role="alert">گردش آزمایشی غیرفعال است؛ اطلاعات فقط برای مشاهده نمایش داده می‌شود.</p>':''}<p>${s.section==='assigned'?'خروج ثبت نشده و هیچ تحویل یا امضای مشتری تأیید نشده است.':s.section==='inTransit'?'خروج ثبت شده؛ دریافت مقصد هنوز تأیید نشده است.':s.outcome==='NOT_DELIVERED'?'این سفارش به مشتری تحویل نشده است.':''}</p><div class="table-wrap"><table class="table"><thead><tr><th>ردیف</th><th>محصول</th><th>وزن سند انبار</th></tr></thead><tbody>${rows||'<tr><td colspan="3">سند وزن این سرویس هنوز در دسترس نیست.</td></tr>'}</tbody></table></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button>${action}</div></article>`;
 }
 function renderSalesDeliveryV38(data={}) {
   const active=Array.isArray(data.active)?data.active:[];
@@ -452,11 +462,12 @@ function renderSalesDeliveryV38(data={}) {
   const history=Array.isArray(data.finalized)?data.finalized:[];
   const total=Math.max(0,Number(data.finalizedTotal??history.length));
   const offset=Math.max(0,Number(data.finalizedOffset)||0),limit=Math.max(1,Number(data.finalizedLimit)||30);
+  const modern=!!app.features?.experimentalTransport||[...assigned,...inTransit,...delivered,...history].some(o=>o.transportService);
   const columns=[
-    {id:'assigned',title:'واگذار شده',desc:'به راننده واگذار شده یا منتظر تأیید خروج نگهبانی است.',rows:assigned,empty:'سفارش واگذارشده‌ای نیست'},
+    {id:'assigned',title:'واگذار شده',desc:modern?'ارسال‌های آماده یا منتظر تخصیص و خروج.':'به راننده واگذار شده یا منتظر تأیید خروج نگهبانی است.',rows:assigned,empty:'سفارش واگذارشده‌ای نیست'},
     {id:'inTransit',title:'در حال ارسال',desc:'خروج تأیید شده و سفارش در مسیر است.',rows:inTransit,empty:'سفارشی در مسیر نیست'},
-    {id:'delivered',title:'تحویل شده',desc:'تحویل راننده را بررسی و در صورت صحت نهایی کنید.',rows:delivered,empty:'تحویل منتظر بررسی ندارید'},
-    {id:'history',title:'سوابق',desc:'تحویل‌های نهایی‌شده و بسته‌شده.',rows:history,empty:'سابقهٔ نهایی‌شده‌ای نیست'},
+    {id:'delivered',title:modern?'تحویل شده / بازگشت':'تحویل شده',desc:modern?'مدارک برگشتی یا دریافت فروشگاه را بررسی کنید.':'تحویل راننده را بررسی و در صورت صحت نهایی کنید.',rows:delivered,empty:'موردی منتظر بررسی نیست'},
+    {id:'history',title:'سوابق',desc:modern?'ارسال‌های بسته‌شده، شامل موارد تحویل‌نشده.':'تحویل‌های نهایی‌شده و بسته‌شده.',rows:history,empty:'سابقهٔ نهایی‌شده‌ای نیست'},
   ];
   const selected=columns.some(c=>c.id===app.salesDeliveryTab)?app.salesDeliveryTab:'assigned';
   const pages=`<nav class="sales-delivery-pages" aria-label="صفحه‌بندی سوابق تحویل"><button type="button" class="btn btn-secondary btn-sm" data-action="sales-delivery-history-page" data-offset="${Math.max(0,offset-limit)}" ${offset===0?'disabled':''}>صفحه قبل</button><span>${total?`${qty(offset+1)} تا ${qty(Math.min(offset+history.length,total))} از ${qty(total)} محموله`:'۰ محموله'}</span><button type="button" class="btn btn-secondary btn-sm" data-action="sales-delivery-history-page" data-offset="${offset+limit}" ${offset+limit>=total?'disabled':''}>صفحه بعد</button></nav>`;
