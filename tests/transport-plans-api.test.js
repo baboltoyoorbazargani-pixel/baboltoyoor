@@ -13,18 +13,41 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const admin=(await call('POST','/api/login',{username:'admin',password:'Initial!2345'})).cookie;await ok('POST','/api/account/password',{currentPassword:'Initial!2345',newPassword:pass},admin);
   for(const [username,roleCode,extra] of [['plan-sales','sales',{}],['plan-transport','dispatch',{}],['plan-wh','warehouse',{}],['plan-store','store',{storeName:'شعبه ۱ حمزه کلا'}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:pass,mustChangePassword:false,...extra},admin);
   const sales=(await call('POST','/api/login',{username:'plan-sales',password:pass})).cookie,transport=(await call('POST','/api/login',{username:'plan-transport',password:pass})).cookie,wh=(await call('POST','/api/login',{username:'plan-wh',password:pass})).cookie,shop=(await call('POST','/api/login',{username:'plan-store',password:pass})).cookie;
+  assert.equal((await ok('GET','/api/me',null,sales)).features.experimentalTransport,true);
   const driver=(await ok('POST','/api/transport/drivers',{fullName:'راننده',phone:'09121112233'},transport)).driver,vehicle=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'},transport)).vehicle;
   const now=new Date(),date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const body={name:'مشتری تست',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledTime:'00:00',items:[{productId:'p01',requestedQty:3,requestedUnit:'کیلوگرم'}],transportWorkflow:true};
   assert.equal((await call('POST','/api/orders/remote',body,sales)).status,400);
   const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),futureDate=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
+  assert.equal((await call('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY',deposit:{amount:100,type:'CASH'}},sales)).status,409);
+  const pickupDeposit=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP',deposit:{amount:100,type:'CASH'},phone:'09121112239'},sales)).order;assert.equal(pickupDeposit.deliveryMode,'PICKUP');assert.equal(pickupDeposit.deposit.amount,100);
+  const onsiteVisit=(await ok('POST','/api/visits',{name:'مراجعه پخش',phone:'09121112241',noVehicle:true},admin)).visit;
+  const onsitePickupVisit=(await ok('POST','/api/visits',{name:'مراجعه انبار',phone:'09121112242',noVehicle:true},admin)).visit;
+  const onsite=(await ok('POST','/api/orders',{visitId:onsiteVisit.id,items:body.items,transportWorkflow:true,deliveryMode:'DELIVERY'},sales)).order;
+  const onsitePickup=(await ok('POST','/api/orders',{visitId:onsitePickupVisit.id,items:body.items,transportWorkflow:true,deliveryMode:'PICKUP'},sales)).order;
+  assert.equal(onsite.deliveryMode,'DELIVERY');assert.equal(onsitePickup.deliveryMode,'PICKUP');
+  assert((await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===onsite.id));
+  const onsiteNotices=(await ok('GET','/api/notifications',null,transport)).notifications;assert(onsiteNotices.some(n=>n.entityId===onsite.id));assert(!onsiteNotices.some(n=>n.entityId===onsitePickup.id));
   const future=(await ok('POST','/api/orders/remote',{...body,scheduledDate:futureDate,deliveryMode:'DELIVERY'},sales)).order;
   const one=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY'},sales)).order,two=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP'},sales)).order;
+  const futureShop=(await ok('POST','/api/store/orders',{name:'مشتری آینده',phone:'09121112240',items:body.items},shop)).order;
+  const plannedShop=(await ok('POST',`/api/store/orders/${futureShop.id}/approve`,{transportWorkflow:true,scheduledAt:futureDate+'T08:00',dispatchPlace:'فروشگاه'},sales)).order;assert.equal(plannedShop.status,'SCHEDULED_REMOTE');assert.equal(plannedShop.transportWorkflow,1);assert.equal(plannedShop.deliveryMode,'DELIVERY');
+  assert.equal((await call('POST',`/api/store/orders/${futureShop.id}/quick-send`,{transportWorkflow:true},sales)).status,409);
+  assert(!(await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===futureShop.id));assert(!(await ok('GET','/api/notifications',null,transport)).notifications.some(n=>n.entityId===futureShop.id));
+  // Simulate the scheduled moment by moving only the fixture's timestamp into
+  // the past in SQLite, then trigger the ordinary due-order poll.
+  const {DatabaseSync}=require('node:sqlite');let rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
+  rawDb.prepare("UPDATE orders SET scheduled_date=?, payload=json_set(payload,'$.scheduledAt',?,'$.scheduledDate',?) WHERE id=?").run(date,date+'T00:00',date,futureShop.id);rawDb.close();
+  assert((await ok('GET','/api/transport/plans',null,transport)).orders.some(x=>x.id===futureShop.id));
+  assert.equal((await ok('GET','/api/notifications',null,wh)).notifications.filter(n=>n.entityId===futureShop.id&&n.type==='STORE_ORDER_DUE').length,1);
+  assert.equal((await ok('GET','/api/notifications',null,transport)).notifications.filter(n=>n.entityId===futureShop.id&&n.type==='TRANSPORT_ORDER_READY').length,1);
+  await ok('GET','/api/transport/plans',null,transport);assert.equal((await ok('GET','/api/notifications',null,transport)).notifications.filter(n=>n.entityId===futureShop.id&&n.type==='TRANSPORT_ORDER_READY').length,1);
+
   const o=(await ok('POST','/api/store/orders',{name:'مشتری',phone:'09121112235',items:body.items},shop)).order;await ok('POST',`/api/store/orders/${o.id}/quick-send`,{transportWorkflow:true},sales);
   const notices=(await ok('GET','/api/notifications',null,transport)).notifications;assert(notices.some(n=>n.entityId===one.id));assert(notices.some(n=>n.entityId===o.id));assert(!notices.some(n=>n.entityId===two.id||n.entityId===future.id));
   const warehouseNotices=(await ok('GET','/api/notifications',null,wh)).notifications;assert(!warehouseNotices.some(n=>n.entityId===future.id));
   assert.equal((await ok('GET','/api/transport/capabilities',null,transport)).experimentalWorkflow,true);assert.equal((await call('GET','/api/transport/capabilities',null,sales)).status,403);
-  const plans=(await ok('GET','/api/transport/plans',null,transport)).orders;assert.deepEqual(plans.find(x=>x.id===o.id).services.map(s=>s.run),[1,2]);assert.equal(plans.find(x=>x.id===one.id).services[0].canDepart,false);assert(plans.some(x=>x.id===one.id));assert(plans.some(x=>x.id===o.id));assert(!plans.some(x=>x.id===two.id));assert(!plans.some(x=>x.id===future.id));
+  const plans=(await ok('GET','/api/transport/plans',null,transport)).orders;assert.deepEqual(plans.find(x=>x.id===o.id).services.map(s=>s.run),[1,2]);assert.equal(plans.find(x=>x.id===one.id).services[0].canDepart,false);assert(plans.some(x=>x.id===one.id));assert(plans.some(x=>x.id===o.id));assert(!plans.some(x=>x.id===two.id));assert(!plans.some(x=>x.id===future.id));assert(plans.some(x=>x.id===futureShop.id));assert(!plans.some(x=>x.id===pickupDeposit.id));assert(!plans.some(x=>x.id===onsitePickup.id));
   assert.equal((await call('POST',`/api/transport/plans/${future.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,409);assert(!JSON.stringify(plans).includes('unitPrice'));
   await ok('PUT',`/api/orders/${future.id}/remote`,{scheduledDate:date,scheduledTime:'00:00'},sales);
   assert((await ok('GET','/api/transport/plans',null,transport)).orders.some(x=>x.id===future.id));
@@ -32,6 +55,11 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert((await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===future.id));
   assert.equal((await call('GET','/api/transport/plans',null,sales)).status,403);
   assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},sales)).status,403);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
+  rawDb.exec("CREATE TRIGGER test_assign_abort BEFORE INSERT ON notifications WHEN NEW.type='TRANSPORT_ASSIGNED' BEGIN SELECT RAISE(ABORT, 'simulated assignment failure'); END");rawDb.close();
+  assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,500);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec('DROP TRIGGER test_assign_abort');assert.equal(rawDb.prepare("SELECT COUNT(*) AS n FROM audit WHERE entity_id=? AND action='TRANSPORT_PLAN_ASSIGNED'").get(one.id).n,0);rawDb.close();
+  assert.equal((await ok('GET',`/api/orders/${one.id}`,null,sales)).order.transportAssignments['0'],undefined);
   const a=(await ok('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).assignment;assert.equal(a.driverName,'راننده');assert.equal(a.vehiclePlate,'12ب34567');
   const info=(await ok('GET',`/api/orders/${one.id}`,null,wh)).order;assert.equal(info.transportAssignments['0'].driverName,'راننده');
   assert.equal((await call('POST',`/api/transport/plans/${two.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,409);
@@ -64,7 +92,13 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:false},wh)).status,400);
   assert.equal((await call('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true},sales)).status,403);
   assert.equal((await call('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true},wh)).status,409);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec("CREATE TRIGGER test_handover_abort BEFORE INSERT ON notifications WHEN NEW.type='TRANSPORT_WAREHOUSE_HANDOVER' BEGIN SELECT RAISE(ABORT, 'simulated handover failure'); END");rawDb.close();
+  assert.equal((await call('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken},wh)).status,500);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec('DROP TRIGGER test_handover_abort');assert.equal(rawDb.prepare("SELECT COUNT(*) AS n FROM audit WHERE entity_id=? AND action='TRANSPORT_WAREHOUSE_HANDOVER'").get(third.id).n,0);rawDb.close();
+  assert.equal((await ok('GET',`/api/orders/${third.id}`,null,sales)).order.transportHandovers,undefined);
   let hand=(await ok('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken},wh)).handover;
+  const saleNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(saleNotice.navSection,'settlement');
+  const transportNotice=(await ok('GET','/api/notifications',null,transport)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(transportNotice.navSection,'orders');
   assert.equal(hand.document.warehouseDocumentNo,doc.warehouseDocumentNo);assert.equal(hand.document.items[0].deliveredKg,2.5);
   assert.equal((await call('POST',`/api/orders/${third.id}/warehouse/reopen-preparing`,{},sales)).status,409);
   assert.equal((await call('POST',`/api/transport/plans/${third.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,409);
@@ -104,7 +138,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST',closeUrl,{...closeBody,returns:[{itemId:third.items[0].id,returnKg:5}]},sales)).status,400);
   assert.equal((await call('POST',closeUrl,{...closeBody,settlementMethods:[{type:'CASH',amount:1}]},sales)).status,400);
   still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');
-  const {DatabaseSync}=require('node:sqlite');let rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
   rawDb.exec("CREATE TRIGGER test_transport_abort BEFORE INSERT ON dispatch_returns BEGIN SELECT RAISE(ABORT, 'simulated failure'); END");rawDb.close();
   assert.equal((await call('POST',closeUrl,closeBody,sales)).status,500);
   rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec('DROP TRIGGER test_transport_abort');
@@ -181,6 +215,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const out1=(await ok('POST',storeDepart(1),{departureConfirmed:true},transport)).service;assert.equal(out1.driverName,'راننده');assert.equal(out1.status,'IN_TRANSIT');
   assert.equal((await call('POST',storeReturn(1),{documentsReturned:true},sales)).status,409);
   await ok('POST',`/api/store/orders/${o.id}/confirm-receipt`,{run:1},shop);
+  const receiptNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===o.id&&n.type==='STORE_RECEIPT_CONFIRMED');assert.equal(receiptNotice.navSection,'stores');
   assert.equal((await call('POST',storeReturn(1),{},sales)).status,400);
   const back1=await ok('POST',storeReturn(1),{documentsReturned:true},sales);assert.equal(back1.service.status,'CLOSED');assert.equal(back1.orderClosed,false);
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.status,'WAREHOUSE_PREPARING');
