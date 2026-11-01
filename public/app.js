@@ -1832,7 +1832,7 @@ function addPhoneOrderLine(form, focusProduct = false){
     if (next) { next.focus(); next.scrollIntoView?.({block:'nearest'}); }
   }
 }
-// در سفارش تلفنی Enter ارسال نمی‌کند؛ Insert در خود فرم قلم تازه می‌افزاید.
+// در سفارش تلفنی Enter سفارش را ثبت نمی‌کند؛ Insert همچنان قلم تازه می‌افزاید.
 document.addEventListener('keydown', e => {
   if (e.isComposing || !(e.target instanceof Element)) return;
   const input = e.target, form = input.closest('#phoneOrderFormV25');
@@ -1852,13 +1852,14 @@ document.addEventListener('keydown', e => {
 }, true);
 // v37.6.0 — ناوبری Enter در فرم سفارش فروشگاه: محصول → مقدار → واحد → توضیح → ردیف جدید
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
+  if (e.key !== 'Enter' || e.isComposing || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
   const t = e.target;
   if (!t || !(t instanceof Element)) return;
   const form = t.closest('#storeOrderForm'); if (!form) return;
   const parts = t.dataset.opProductSearch != null ? 'product' : t.dataset.opQty != null ? 'qty' : t.dataset.opUnit != null ? 'unit' : t.dataset.opDesc != null ? 'desc' : null;
   if (!parts) return;
   e.preventDefault();
+  if (e.repeat) return;
   const raw = t.dataset.opProductSearch || t.dataset.opQty || t.dataset.opUnit || t.dataset.opDesc;
   const idx = Number(String(raw).split('-').pop());
   const focusRow = (rowIdx, sel) => {
@@ -1870,18 +1871,20 @@ document.addEventListener('keydown', (e) => {
     const box = form.querySelector(`[data-op-suggest="store-${idx}"], [data-suggest-for="store-${idx}"]`);
     const first = box?.querySelector('.op-product-option, .product-option, button:not([disabled])');
     if (first && !t.dataset.opProductPicked) first.click();
+    if (!(app.storeDraft || [])[idx]?.productId) return toast('ابتدا محصولی از فهرست انتخاب کنید.');
     setTimeout(() => focusRow(idx, '[data-op-qty]'), 60);
   } else if (parts === 'qty') { focusRow(idx, '[data-op-unit]'); }
   else if (parts === 'unit') { focusRow(idx, '[data-op-desc]'); }
   else if (parts === 'desc') {
+    if (focusRow(idx + 1, '[data-op-product-search]')) return;
     document.querySelector('[data-action="store-add-line"]')?.click();
-    setTimeout(() => { const n = form.querySelectorAll('[data-op-product-search^="store-"]').length; focusRow(n - 1, '[data-op-product-search]'); }, 80);
+    setTimeout(() => focusRow(idx + 1, '[data-op-product-search]'), 80);
   }
 });
 // v37.40.0 — ناوبری Enter در فرم سفارش حضوری فروش (مانند کارتابل فروشگاه):
 // محصول ← مقدار ← واحد ← توضیحات ← افزودن قلم و تمرکز روی محصول ردیف تازه
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
+  if (e.key !== 'Enter' || e.isComposing || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
   const t = e.target;
   if (!t || !(t instanceof Element)) return;
   const lines = t.closest('#orderLines'); if (!lines) return;
@@ -1891,6 +1894,7 @@ document.addEventListener('keydown', (e) => {
     : t.dataset.description != null ? 'desc' : null;
   if (!field) return;
   e.preventDefault();
+  if (e.repeat) return;
   const idx = String(t.dataset.productSearch ?? t.dataset.qty ?? t.dataset.unit ?? t.dataset.description);
   const rowKey = (x) => String(x.dataset.productSearch ?? x.dataset.qty ?? x.dataset.unit ?? x.dataset.description);
   const focusField = (sel, rowIdx) => {
@@ -1903,11 +1907,13 @@ document.addEventListener('keydown', (e) => {
     const first = box?.querySelector('.product-option:not([disabled])');
     const row = (app.orderDraft || [])[Number(idx)];
     if (first && !(row && row.productId)) first.click();
+    if (!(app.orderDraft || [])[Number(idx)]?.productId) return toast('ابتدا محصولی از فهرست انتخاب کنید.');
     // فوکوس تأخیری فقط شبکهٔ اطمینان است؛ اگر کاربر تا آن لحظه جلو رفته باشد دست نمی‌خورد
     setTimeout(() => { const a = document.activeElement; if (!a || a === document.body || a.dataset?.productSearch === idx) focusField('[data-qty]', idx); }, first ? 90 : 10);
   } else if (field === 'qty') { focusField('[data-unit]', idx); }
   else if (field === 'unit') { focusField('[data-description]', idx); }
   else if (field === 'desc') {
+    if (focusField('[data-product-search]', Number(idx) + 1)) return;
     document.querySelector('[data-action="add-line"]')?.click();
     setTimeout(() => {
       const a = document.activeElement;
@@ -1916,6 +1922,46 @@ document.addEventListener('keydown', (e) => {
       const last = inputs[inputs.length - 1];
       if (last) { last.focus(); last.scrollIntoView?.({ block: 'nearest' }); }
     }, 90);
+  }
+});
+// ناوبری مشترک ردیف‌ها در غیرحضوری، آتی و فرم‌های ویرایش سفارش.
+// انتخاب پیشنهادها در handler جست‌وجوی محصول در فاز capture انجام می‌شود.
+document.addEventListener('keydown', e => {
+  if(e.key!=='Enter' || e.isComposing || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || !(e.target instanceof Element))return;
+  const t=e.target, ds=t.dataset;
+  let root, index, field, attrs, button, row;
+  const op=ds.opProductSearch ?? ds.opQty ?? ds.opUnit ?? ds.opDesc;
+  if(op!=null){
+    const m=String(op).match(/^(phone|future|storeedit)-(\d+)$/);if(!m)return;
+    const prefix=m[1];index=Number(m[2]);
+    const config={phone:['#phoneOrderFormV25','phoneDraft','[data-action="phone-add-line"]'],future:['#futureOrderFormV25','futureDraft','[data-action="future-add-line"]'],storeedit:['#storeOrderEditForm','storeEditDraft','#storeEditAdd']}[prefix];
+    root=t.closest(config[0]);if(!root)return;
+    field=ds.opProductSearch!=null?'product':ds.opQty!=null?'qty':ds.opUnit!=null?'unit':'desc';
+    attrs={product:'data-op-product-search',qty:'data-op-qty',unit:'data-op-unit',desc:'data-op-desc',value:i=>`${prefix}-${i}`};
+    button=root.querySelector(config[2]);row=app[config[1]]?.[index];
+  }else{
+    const returned=t.closest('#returnedEditLines'), store=t.closest('#salesStoreEditLines');
+    if(!returned&&!store)return;
+    root=returned||store;const p=returned?'return':'ss';
+    const vals=returned?[ds.returnProductSearch,ds.returnQty,ds.returnUnit,ds.returnDescription]:[ds.ssProductSearch,ds.ssQty,ds.ssUnit,ds.ssDescription];
+    const k=vals.findIndex(v=>v!=null);if(k<0)return;
+    field=['product','qty','unit','desc'][k];index=Number(vals[k]);
+    attrs={product:`data-${p}-product-search`,qty:`data-${p}-qty`,unit:`data-${p}-unit`,desc:`data-${p}-description`,value:i=>String(i)};
+    button=root.closest('.returned-editor')?.querySelector(returned?'[data-action="returned-add-line"]':'[data-action="sales-store-add-line"]');
+    row=returned?app.returnEdit?.items?.[index]:app.salesStoreEdit?.items?.[index];
+  }
+  if(!Number.isInteger(index)||!row)return;
+  e.preventDefault();if(e.repeat)return;
+  const focus=(name,i)=>{const el=root.querySelector(`[${attrs[name]}="${attrs.value(i)}"]`);if(el){el.focus();if(name!=='unit')el.select?.();el.scrollIntoView?.({block:'nearest'});}return el;};
+  if(field==='product'){
+    if(row.productId)focus('qty',index);else toast('ابتدا محصولی از فهرست انتخاب کنید.');
+  }else if(field==='qty')focus('unit',index);
+  else if(field==='unit')focus('desc',index);
+  else if(!focus('product',index+1)){
+    if(!button)return;
+    button.click();
+    // همهٔ دکمه‌های افزودن از همان مسیر معمول فرم و اعتبارسنجی آن استفاده می‌کنند.
+    focus('product',index+1);
   }
 });
 function operationProductSearch(i,q,prefix,draftKey){
