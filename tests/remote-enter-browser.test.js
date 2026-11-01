@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 const executablePath=process.env.BT_CHROMIUM_PATH;
-test('مرورگر: Insert در سفارش غیرحضوری قلم بعدی را باز می‌کند و ثبت فقط با دکمه انجام می‌شود', {skip:!executablePath,timeout:75000},async()=>{
+test('مرورگر: Enter و Insert در سفارش غیرحضوری قلم بعدی را باز می‌کنند و ثبت فقط با دکمه انجام می‌شود', {skip:!executablePath,timeout:75000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-phone-enter-')),base=`http://127.0.0.1:${port}`;let browser;
  const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});
@@ -20,7 +20,8 @@ test('مرورگر: Insert در سفارش غیرحضوری قلم بعدی را
   await form.locator('[data-action="op-remove-line"][data-index="1"]').click();
   const search0=form.locator('[data-op-product-search="phone-0"]');await search0.fill('01');await form.locator('[data-op-suggest="phone-0"] button').first().waitFor();await search0.press('ArrowDown');await search0.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opQty),'phone-0');
   await qty0.fill('۲');await form.locator('[data-op-unit="phone-0"]').selectOption({label:'بسته'});await form.locator('[data-op-desc="phone-0"]').fill('ردیف نخست');await form.locator('[data-op-desc="phone-0"]').press('Enter');
-  await qty0.press('Enter');assert.equal(await form.locator('[data-op-product-search]').count(),1,'Enter does not add a row');assert.equal(writes.length,0);
+  assert.equal(await form.locator('[data-op-product-search]').count(),2,'Enter در توضیح ردیف جدید می‌سازد');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');await form.locator('[data-action="op-remove-line"][data-index="1"]').click();
+  await qty0.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.dataset.opUnit),'phone-0');assert.equal(writes.length,0);
   // فوکوس روی توضیح، مقدار، واحد، دکمه یا فیلد دیگر نباید میانبر را غیرفعال کند.
   await form.locator('[data-op-desc="phone-0"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');
   assert.equal(await form.locator('[data-op-qty="phone-0"]').inputValue(),'۲');assert.equal(await form.locator('[data-op-unit="phone-0"]').inputValue(),'بسته');assert.equal(await form.locator('[data-op-desc="phone-0"]').inputValue(),'ردیف نخست');

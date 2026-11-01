@@ -23,7 +23,7 @@ test('repeated keys and 100-line limit do not add extra rows',()=>{
  const h=harness([{productId:'p01',requestedQty:'2'}]);assert(h.press(new h.Element('INPUT'),{repeat:true}).prevented);assert.equal(h.rows.length,1);
  const full=harness(Array.from({length:100},()=>({productId:'p01',requestedQty:'1'})));assert(full.press(new full.Element('INPUT')).prevented);assert.equal(full.rows.length,100);assert.match(full.messages[0],/۱۰۰/);
 });
-test('Enter cannot submit or add a row; notes, clipboard, composing and other forms are untouched',()=>{
+test('the phone capture guard prevents implicit submission; notes and Insert modifiers remain untouched',()=>{
  const h=harness([{productId:'p01',requestedQty:'1'}]);
  for(const el of [new h.Element('INPUT',{opQty:'phone-0'}),new h.Element('SELECT',{}),new h.Element('BUTTON',{},true,'submit')])assert(h.press(el,{key:'Enter'}).prevented);
  assert(!h.press(new h.Element('TEXTAREA'),{key:'Enter'}).prevented);assert(!h.press(new h.Element('TEXTAREA')).prevented);assert(!h.press(new h.Element('BUTTON',{},true,'button'),{key:'Enter'}).prevented);assert(!h.press(new h.Element('INPUT',{},false)).prevented);assert(!h.press(new h.Element('INPUT'),{isComposing:true}).prevented);
