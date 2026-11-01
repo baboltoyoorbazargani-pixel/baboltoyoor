@@ -65,7 +65,7 @@ function custRowHtml(c) {
     <span class="cust-code">${custEsc(c.code)}</span>
     <span class="cust-main"><strong>${custEsc(c.name)}</strong><small>${custEsc(c.phone || '—')}</small></span>
     <span class="cust-chips">${plate}${district}</span>
-    <span class="cust-stats"><small>${fa(c.visitCount || 0)} مراجعه • ${fa(c.orderCount || 0)} سفارش</small><small>${c.lastActivityAt ? dt(c.lastActivityAt) : 'بدون فعالیت'}</small></span>
+    <span class="cust-stats">${c.debtBalance!==undefined?`<small>مانده معوق: <b>${money(c.debtBalance)}</b></small>`:''}<small>${fa(c.visitCount || 0)} مراجعه • ${fa(c.orderCount || 0)} سفارش</small><small>${c.lastActivityAt ? dt(c.lastActivityAt) : 'بدون فعالیت'}</small></span>
     <span class="cust-open">${icon('arrow', 16)}</span>
   </article>`;
 }
@@ -132,6 +132,8 @@ async function custDetail(id) {
   try {
     const d = await api('/api/customers/' + id);
     const c = d.customer;
+    const canDebt=['admin','sales'].includes(normalizeRole(app.user?.roleCode));
+    const debts=canDebt?await api('/api/customers/'+encodeURIComponent(id)+'/debts'):null;
     const row = (label, val) => `<div class="cust-kv"><small>${label}</small><b>${custEsc(val || '—')}</b></div>`;
     const visits = (d.visits || []).map((v) => `<li><span>${dt(v.createdAt)}</span><b>${custEsc(v.purpose || 'مراجعه')}</b><small>${custEsc(v.district || '')}</small></li>`).join('');
     const orders = (d.orders || []).map((o) => `<li><span>${dt(o.createdAt)}</span><b>${custEsc(o.orderNo || '')}</b><small>${custEsc(o.orderType || '')} • ${custEsc(o.status || '')}</small></li>`).join('');
@@ -143,11 +145,13 @@ async function custDetail(id) {
         ${row('شماره دوم', c.phone2)}${row('کد ملی', c.nationalId)}<div class="cust-kv"><small>پلاک</small><div>${plateViewHtml(c.plate, '—', true)}</div></div>${row('نوع وسیله', c.vehicleType)}
         ${row('محله', c.district)}${row('شرکت / واحد', c.company)}${row('نشانی', c.address)}${row('یادداشت', c.notes)}
       </div>
+      ${debts?custDebtHtml(debts):''}
       <div class="cust-history">
         <div><h4>آخرین مراجعه‌ها (${fa((d.visits || []).length)})</h4><ul>${visits || '<li class="cust-none">مراجعه‌ای ثبت نشده است.</li>'}</ul></div>
         <div><h4>سفارش‌ها (${fa((d.orders || []).length)})</h4><ul>${orders || '<li class="cust-none">سفارشی ثبت نشده است.</li>'}</ul></div>
       </div>
     </div>`);
+    if(debts)custBindDebt(id,debts);
     $('#modal').querySelector('[data-cust-edit]').addEventListener('click', () => custForm(c));
     $('#modal').querySelector('[data-cust-delete]')?.addEventListener('click', async () => {
       if (!confirm(`پرونده ${c.code} — ${c.name} حذف شود؟ این کار برگشت ندارد.`)) return;
@@ -155,6 +159,53 @@ async function custDetail(id) {
       catch (err) { toast(err.message); }
     });
   } catch (err) { toast(err.message); }
+}
+
+
+// حساب معوق فقط برای فاکتورهای جدید دارای معوق ایجاد می‌شود. چک تا
+// تأیید وصول از مانده کسر نمی‌شود، ولی مبلغ آن برای دریافت دیگر رزرو است.
+function custDebtHtml(data){
+ const labels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک'};
+ const status={PENDING:'در انتظار وصول',CLEARED:'وصول‌شده',RETURNED:'برگشتی',REVERSED:'ابطال‌شده'};
+ return `<section class="cust-debt" aria-label="حساب معوق مشتری"><h3>حساب معوق و مانده</h3><p>مانده کل: <b>${money(data.balance)}</b> • چک در انتظار وصول: <b>${money(data.pending)}</b></p>
+ <p class="cust-debt-hint">این حساب از سفارش‌های جدید آغاز شده است؛ معوق سفارش‌های قبلی به آن افزوده نشده است.</p>
+ ${data.invoices.length?data.invoices.map(inv=>`<article class="cust-debt-invoice"><div class="cust-debt-heading"><div><b>فاکتور ${custEsc(fa(inv.invoiceNumber||'—'))}</b> • سفارش ${custEsc(fa(inv.orderNo||'—'))}<br><small>${custEsc(dt(inv.createdAt))}</small></div><button type="button" class="btn btn-secondary btn-sm" data-debt-receive="${custEsc(inv.paymentId)}" ${inv.available<=0?'disabled':''}>ثبت دریافت</button></div>
+ <div class="cust-debt-values"><span>معوق اولیه: <b>${money(inv.initial)}</b></span><span>وصول‌شده: <b>${money(inv.paid)}</b></span><span>مانده: <b>${money(inv.balance)}</b></span><span>چک در انتظار: <b>${money(inv.pending)}</b></span><span>قابل دریافت: <b>${money(inv.available)}</b></span></div>
+ <div class="cust-debt-history">${inv.receipts.length?inv.receipts.map(r=>`<div class="cust-debt-receipt"><span><b>${custEsc(labels[r.type]||r.type)}</b> • ${money(r.amount)} • ${custEsc(status[r.status]||r.status)}<br><small>${custEsc(dt(r.createdAt))} • ${custEsc(r.createdByName||'—')}${r.bank?' • '+custEsc(r.bank):''}${r.checkNumber?' • چک '+custEsc(r.checkNumber):''}${r.dueDate?' • سررسید '+custEsc(fa(r.dueDate)):''}${r.reference?' • پیگیری '+custEsc(r.reference):''}${r.deviceSnapshot?.title?' • دستگاه '+custEsc(r.deviceSnapshot.title):''}${r.resolvedAt?' • تعیین وضعیت: '+custEsc(dt(r.resolvedAt))+' '+custEsc(r.resolvedByName||''):''}${r.reversedAt?' • ابطال: '+custEsc(dt(r.reversedAt))+' '+custEsc(r.reversedByName||''):''}</small></span>${r.status==='PENDING'?`<span class="cust-debt-actions"><button type="button" class="btn btn-secondary btn-sm" data-debt-check="${custEsc(r.id)}" data-payment="${custEsc(inv.paymentId)}" data-status="CLEARED">تأیید وصول</button><button type="button" class="btn btn-secondary btn-sm" data-debt-check="${custEsc(r.id)}" data-payment="${custEsc(inv.paymentId)}" data-status="RETURNED">برگشت چک</button></span>`:r.status==='CLEARED'&&normalizeRole(app.user?.roleCode)==='admin'?`<span class="cust-debt-actions"><button type="button" class="btn btn-secondary btn-sm" data-debt-check="${custEsc(r.id)}" data-payment="${custEsc(inv.paymentId)}" data-status="REVERSED">ابطال دریافت</button></span>`:''}</div>`).join(''):'<small>دریافتی ثبت نشده است.</small>'}</div></article>`).join(''):'<p>فاکتور معوق جدیدی ثبت نشده است.</p>'}</section>`;
+}
+function custBindDebt(id,data){
+ const modal=$('#modal');
+ modal.querySelectorAll('[data-debt-receive]').forEach(button=>button.addEventListener('click',()=>{
+  const inv=data.invoices.find(x=>x.paymentId===button.dataset.debtReceive);if(inv)custDebtReceive(id,inv);
+ }));
+ modal.querySelectorAll('[data-debt-check]').forEach(button=>button.addEventListener('click',async()=>{
+  if(!confirm(button.dataset.status==='CLEARED'?'وصول این چک تأیید شود؟':button.dataset.status==='REVERSED'?'این دریافت ابطال شود و مبلغ به مانده بازگردد؟':'چک برگشتی ثبت شود؟'))return;
+  button.disabled=true;try{
+   await api(`/api/customers/${encodeURIComponent(id)}/debts/${encodeURIComponent(button.dataset.payment)}/receipts/${encodeURIComponent(button.dataset.debtCheck)}/resolve`,{method:'POST',body:JSON.stringify({status:button.dataset.status})});
+   toast('وضعیت دریافت ثبت شد.');await custLoad();await custDetail(id);
+  }catch(e){button.disabled=false;toast(e.message);}
+ }));
+}
+async function custDebtReceive(id,inv){
+ try{
+  const {devices=[]}=await api('/api/payment-devices');
+  openModal('ثبت دریافت معوق',`<form id="custDebtForm" class="cust-form"><p>فاکتور ${custEsc(fa(inv.invoiceNumber||'—'))} • مانده ${money(inv.balance)} • قابل دریافت ${money(inv.available)}</p><div class="cust-form-grid">
+  <label class="cust-field"><span>روش دریافت</span><select name="type"><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option></select></label>
+  <label class="cust-field"><span>مبلغ (ریال)</span><input name="amount" inputmode="numeric" required value="${custEsc(String(inv.available))}"></label>
+  <label class="cust-field" data-debt-pos hidden><span>دستگاه پوز</span><select name="deviceId"><option value="">انتخاب دستگاه</option>${devices.map(d=>`<option value="${custEsc(d.id)}">${custEsc(d.title)} • ${custEsc(d.bank)} • ${custEsc(d.terminalNumber)}</option>`).join('')}</select></label>
+  <label class="cust-field" data-debt-bank hidden><span>بانک</span><input name="bank" maxlength="100"></label>
+  <label class="cust-field" data-debt-ref hidden><span>شماره پیگیری</span><input name="reference" maxlength="100"></label>
+  <label class="cust-field" data-debt-check-fields hidden><span>شماره چک</span><input name="checkNumber" maxlength="100"></label>
+  <label class="cust-field" data-debt-check-fields hidden><span>سررسید چک</span><input name="dueDate" data-debt-due type="date"></label>
+  </div><p id="custDebtHint" class="cust-debt-hint" hidden>چک تا تأیید وصول از مانده کسر نمی‌شود.</p><div id="custDebtError" class="form-error" role="alert"></div><div class="cust-form-actions"><button type="button" class="btn btn-secondary" data-debt-back>بازگشت</button><button type="submit" class="btn btn-primary">ثبت دریافت</button></div></form>`);
+  const form=$('#custDebtForm');const type=form.elements.type;const dueInput=form.querySelector('[data-debt-due]');const operationId=newIdempotencyKey();
+  const change=()=>{const t=type.value;form.querySelector('[data-debt-pos]').hidden=t!=='POS';form.querySelector('[data-debt-bank]').hidden=!['CARD_TRANSFER','CHECK'].includes(t);form.querySelector('[data-debt-ref]').hidden=!['POS','CARD_TRANSFER'].includes(t);form.querySelectorAll('[data-debt-check-fields]').forEach(x=>x.hidden=t!=='CHECK');form.elements.deviceId.required=t==='POS';form.elements.bank.required=['CARD_TRANSFER','CHECK'].includes(t);form.elements.reference.required=t==='CARD_TRANSFER';form.elements.checkNumber.required=t==='CHECK';dueInput.required=t==='CHECK';$('#custDebtHint').hidden=t!=='CHECK';};
+  type.addEventListener('change',change);change();form.querySelector('[data-debt-back]').addEventListener('click',()=>custDetail(id));
+  form.addEventListener('submit',async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;$('#custDebtError').textContent='';try{
+   const body=Object.fromEntries(new FormData(form));body.operationId=operationId;if(body.type==='CHECK'){const visible=dueInput.parentElement.querySelector('.ui-jdate');body.dueDate=visible?jalaliToIso(normalizeJalaliText(visible.value)):dueInput.value;if(!body.dueDate)throw new Error('سررسید چک معتبر نیست.');}await api(`/api/customers/${encodeURIComponent(id)}/debts/${encodeURIComponent(inv.paymentId)}/receipts`,{method:'POST',body:JSON.stringify(body)});
+   toast('دریافت ثبت شد.');await custLoad();await custDetail(id);
+  }catch(err){$('#custDebtError').textContent=err.message;button.disabled=false;}});
+ }catch(err){toast(err.message);}
 }
 
 // ---- ورود نگهبانی: انتخاب مشتری قبلی با کد یا از پیشنهادها ----

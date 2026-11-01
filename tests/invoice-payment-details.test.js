@@ -10,16 +10,17 @@ for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async funct
  test(`${file}: mixed methods, credit snapshot and pending check are escaped and identified`,()=>{
   const s=html({totalAmount:100,amountDue:100,settlementMethods:[{type:'CASH',amount:10},{type:'POS',amount:20,deviceSnapshot:{title:'<pos>',bank:'بانک'}},{type:'CARD_TRANSFER',amount:10,reference:'<ref>'},{type:'CHECK',amount:30,bank:'<bank>',checkNumber:'12',dueDate:'1405',checkStatus:'PENDING'},{type:'CREDIT',amount:30,reason:'<script>alert(1)</script>'}]});
   assert(!s.includes('/logo.png'));assert(!s.includes('بابل طیور'));assert(s.includes('فاکتور فروش و تحویل'));
-  assert.match(s,/نوع تسویه<\/span><b>ترکیبی/);for(const label of ['نقدی','پوز','کارت‌به‌کارت','چک','اعتباری','در انتظار وصول'])assert(s.includes(label));
-  assert.match(s,/مانده اعتباری ثبت‌شده<\/span><b>30/);assert(s.includes('هنگام تسویه'));assert(s.includes('وصول بعدی'));assert(!s.includes('معوق'));
-  assert(s.includes('&lt;script&gt;'));assert(s.includes('&lt;pos&gt;'));assert(s.includes('&lt;ref&gt;'));assert(!s.includes('<script>'));assert(!s.includes('بررسی لازم است'));
+  assert.match(s,/نوع تسویه<\/span><b>ترکیبی/);for(const label of ['نقدی','پوز','کارت‌به‌کارت','چک','معوق','در انتظار وصول'])assert(s.includes(label));
+  assert.match(s,/معوق ثبت‌شده<\/span><b>30/);assert(!s.includes('وصول بعدی'));assert(!s.includes('اعتباری'));
+  assert(!s.includes('&lt;script&gt;'));assert(s.includes('&lt;pos&gt;'));assert(s.includes('&lt;ref&gt;'));assert(!s.includes('<script>'));assert(!s.includes('بررسی لازم است'));
  });
  test(`${file}: deposits, old and malformed data do not invent balances`,()=>{
-  let s=html({totalAmount:100,deposit:{type:'CASH',amount:100},depositAmount:100,amountDue:0,settlementMethods:[]});assert(s.includes('از محل بیعانه'));assert.match(s,/مانده اعتباری ثبت‌شده<\/span><b>0/);
-  s=html({totalAmount:100,settlementType:'CREDIT'});assert.match(s,/مانده اعتباری ثبت‌شده<\/span><b>نامشخص/);assert(s.includes('جزئیات روش پرداخت ثبت نشده'));
-  s=html({totalAmount:100,settlementMethods:[{type:'CREDIT',amount:null}]});assert.match(s,/اعتباری<\/span>[\s\S]*?<b>نامشخص/);assert.match(s,/مانده اعتباری ثبت‌شده<\/span><b>نامشخص/);
+  let s=html({totalAmount:100,deposit:{type:'CASH',amount:100},depositAmount:100,amountDue:0,settlementMethods:[]});assert(s.includes('از محل بیعانه'));assert.match(s,/معوق ثبت‌شده<\/span><b>0/);
+  s=html({totalAmount:100,settlementType:'CREDIT'});assert.match(s,/معوق ثبت‌شده<\/span><b>نامشخص/);assert(s.includes('جزئیات روش پرداخت ثبت نشده'));
+  s=html({totalAmount:100,settlementMethods:[{type:'CREDIT',amount:null}]});assert.match(s,/معوق<\/span>[\s\S]*?<b>نامشخص/);assert.match(s,/معوق ثبت‌شده<\/span><b>نامشخص/);
   s=html({totalAmount:100,amountDue:100,settlementMethods:[{type:'CASH',amount:90}]});assert(s.includes('بررسی لازم است'));
   s=html({totalAmount:100,depositAmount:20,settlementMethods:[{type:'CASH',amount:80}]});assert(!s.includes('قابل تسویه ثبت‌شده'));
  });
- test(`${file}: store document remains weight-only`,()=>{const s=c.invoiceHtml({...order,orderType:'STORE',storeName:'فروشگاه',payment:{totalAmount:100,settlementMethods:[{type:'CREDIT',amount:100}]}});assert(s.includes('/logo.png'));assert(!s.includes('inv38-payment-box'));assert(!s.includes('اعتباری'));});
+ test(`${file}: current debt excludes pending and reversed receipts`,()=>{const s=html({totalAmount:100,settlementMethods:[{type:'CREDIT',amount:100}],debtAccount:{initial:100,receipts:[{status:'CLEARED',amount:30},{status:'PENDING',amount:20},{status:'REVERSED',amount:10}]}});assert.match(s,/مانده معوق<\/span><b>70/);assert(!s.includes('وصول بعدی'));});
+ test(`${file}: store document remains weight-only`,()=>{const s=c.invoiceHtml({...order,orderType:'STORE',storeName:'فروشگاه',payment:{totalAmount:100,settlementMethods:[{type:'CREDIT',amount:100}]}});assert(s.includes('/logo.png'));assert(!s.includes('inv38-payment-box'));assert(!s.includes('معوق'));});
 }

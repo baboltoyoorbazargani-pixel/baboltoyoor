@@ -11,7 +11,7 @@ test('انتخاب پوز غیرفعال یا مبلغ نامنطبق رد می�
  assert.throws(()=>cleanRows([{type:'POS',amount:100,deviceId:'pos-off'}],100,{paymentDevices:devices}));
  assert.throws(()=>cleanRows([{type:'CASH',amount:90}],100,{paymentDevices:devices}));
 });
-test('کارت‌به‌کارت و اعتبار نیازمند شناسه/علت هستند',()=>{
+test('کارت‌به‌کارت شناسه می‌خواهد و معوق نیازمند توضیح نیست',()=>{
  assert.throws(()=>cleanRows([{type:'CARD_TRANSFER',amount:100,bank:'بانک'}],100,{paymentDevices:devices}));
- assert.throws(()=>cleanRows([{type:'CREDIT',amount:100}],100,{paymentDevices:devices}));
+ assert.equal(cleanRows([{type:'CREDIT',amount:100}],100,{paymentDevices:devices})[0].reason,'');
 });
