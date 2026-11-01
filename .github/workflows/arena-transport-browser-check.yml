@@ -29,3 +29,5 @@ jobs:
             fi
           done
           exit "$failed"
+
+# Re-run after browser fixture fixes.
