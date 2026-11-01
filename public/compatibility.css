@@ -1005,3 +1005,17 @@
 #appView[data-cartable-page="sales"] .sales-store-subpanel-v43[data-store-section="history"] .store-receipt-summary .badge{white-space:normal;overflow-wrap:anywhere}
 /* تفکیک دیداری سفارش‌های سابقهٔ راننده. */
 #appView #content .dsp-driver-stage .dsp-list>.dsp-card.order-compact-row{border-bottom:2px solid #aab8c6!important;margin-bottom:10px}
+
+/* گزارش و پشتیبان: تفکیک واضح ابزارها و وضعیت اولیه، بدون تغییر گردش کار */
+#appView #content .adm-report-placeholder{border:1px dashed #d4dde5;border-radius:14px;background:#f8fafc}
+#appView #content .adm-report-placeholder .sd-queue-empty{padding:44px 20px}
+#appView #content .adm-backup-layout .auto-backup-settings{margin:0}
+#appView #content .adm-backup-action{display:grid;gap:10px;min-width:0;padding:16px;border:1px solid #d4dde5;border-radius:12px;background:#fff}
+#appView #content .adm-backup-action h3,#appView #content .adm-backup-action p,#appView #content .adm-backup-list-title{margin:0}
+#appView #content .adm-backup-action h3,#appView #content .adm-backup-list-title{font-size:15px}
+#appView #content .adm-backup-action p{font-size:12px;line-height:1.8;color:#526272}
+#appView #content .adm-backup-action input[type=file]{max-width:100%;min-width:0}
+#appView #content .adm-backup-row-actions{display:flex;gap:6px;flex-wrap:wrap}
+/* در کنترل‌هایی که کادر مشترک ندارند نیز محل فوکوس صفحه‌کلید دیده شود. */
+#appView :is(input,select,textarea):not(.input-shell *):focus-visible,
+#modal :is(input,select,textarea):not(.input-shell *):focus-visible{outline:2px solid #a8172e!important;outline-offset:2px}

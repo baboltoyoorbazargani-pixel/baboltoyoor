@@ -169,13 +169,13 @@ function renderProductPickerLine(x,i,prefix='sales'){
   return `<article class="sd-line" data-line="${idx}">
     <span class="sd-line-no">${fa(String(i+1).padStart(2,'0'))}</span>
     <div class="sd-line-cell cell-product" style="position:relative"><label>محصول (نام یا کد سریع)</label>
-      <div class="input-shell"><span>${icon('search',15)}</span><input data-op-product-search="${prefix}-${idx}" value="${esc(x.productLabel||'')}" placeholder="مثلاً 01 یا ران مرغ" autocomplete="off"></div>
+      <div class="input-shell"><span>${icon('search',15)}</span><input data-op-product-search="${prefix}-${idx}" aria-label="محصول ردیف ${fa(String(i+1))}" value="${esc(x.productLabel||'')}" placeholder="مثلاً 01 یا ران مرغ" autocomplete="off"></div>
       <div class="product-suggest" data-op-suggest="${prefix}-${idx}"></div>
       <div class="sd-picked ${x.productId?'':'none'}">${x.productId?`${icon('check',13)} انتخاب شد <span class="code-pill">${esc(x.quickCode||'')}</span>`:'هنوز محصولی انتخاب نشده'}</div>
     </div>
-    <div class="sd-line-cell cell-qty"><label>مقدار</label><div class="input-shell"><input data-op-qty="${prefix}-${idx}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰"></div></div>
-    <div class="sd-line-cell cell-unit"><label>واحد</label><div class="input-shell"><select data-op-unit="${prefix}-${idx}">${units.map(u=>`<option ${x.requestedUnit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
-    <div class="sd-line-cell cell-desc"><label>توضیحات ردیف</label><div class="input-shell"><input type="text" data-op-desc="${prefix}-${idx}" value="${esc(x.description||'')}" maxlength="500" placeholder="توضیح برای انبار..."></div></div>
+    <div class="sd-line-cell cell-qty"><label>مقدار</label><div class="input-shell"><input data-op-qty="${prefix}-${idx}" aria-label="مقدار ردیف ${fa(String(i+1))}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰"></div></div>
+    <div class="sd-line-cell cell-unit"><label>واحد</label><div class="input-shell"><select data-op-unit="${prefix}-${idx}" aria-label="واحد ردیف ${fa(String(i+1))}">${units.map(u=>`<option ${x.requestedUnit===u?'selected':''}>${u}</option>`).join('')}</select></div></div>
+    <div class="sd-line-cell cell-desc"><label>توضیحات ردیف</label><div class="input-shell"><input type="text" data-op-desc="${prefix}-${idx}" aria-label="توضیح ردیف ${fa(String(i+1))}" value="${esc(x.description||'')}" maxlength="500" placeholder="توضیح برای انبار..."></div></div>
     <button type="button" class="sd-line-del" data-action="op-remove-line" data-prefix="${prefix}" data-draft-key="${draftKey}" data-index="${idx}" title="حذف ردیف" aria-label="حذف ردیف">${icon('trash',16)}</button>
   </article>`;
 }
@@ -207,14 +207,14 @@ function renderSalesRemoteV32(orders){
     ${salesSectionTitle('NON-PRESENTIAL / PHONE','ثبت سفارش غیرحضوری','این بخش فقط برای سفارش‌های تلفنی و غیرحضوری است؛ سفارش‌های فروشگاهی در تب مستقل «فروشگاه‌ها» قرار دارند.')}
     <form id="phoneOrderFormV25" class="sales-form-v25 sales-form-v40">
       <div class="sales-customer-grid-v25 sales-remote-customer-grid-v40">
-        <div class="field contact-field-v41"><label>نام مشتری</label><div class="input-shell"><span>${icon('user',18)}</span><input name="name" required placeholder="نام و نام خانوادگی"></div></div>
-        <div class="field contact-field-v41"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
-        <div class="field sales-remote-place-v40"><label>محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
+        <div class="field contact-field-v41"><label for="phoneCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',18)}</span><input id="phoneCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
+        <div class="field contact-field-v41"><label for="phoneCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input id="phoneCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
+        <div class="field sales-remote-place-v40"><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
       </div>
       <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>در این فرم برای افزودن ردیف محصول کلید Insert را بزنید (به‌جز هنگام نوشتن یادداشت). ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
-      <div class="sd-note-box sales-phone-notes-v40"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>
+      <div class="sd-note-box sales-phone-notes-v40"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea aria-label="یادداشت تکمیلی سفارش" name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>
       ${depositEntryHtml()}
       <div class="sales-form-bottom-v25"><span class="form-helper-v32">واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</span><button type="submit" class="btn btn-primary btn-lg">${icon('send',18)} ثبت و ارسال به انبار</button></div>
     </form>
@@ -360,11 +360,11 @@ function futureFormV38(orders){
       <div class="fx-card-body fx-body-compact"><p class="fx-intro">مشتری، <b>زمان ورود به کارتابل انبار</b> و اقلام را وارد کنید؛ سفارش در زمان سررسید خودکار وارد صف انبار می‌شود.</p>
         <form id="futureOrderFormV25" class="fx-form fx-form-compact">
           <div class="fx-grid-2 future-contact-grid-v40 fx-top-grid">
-            <div class="field future-contact-field-v40 contact-field-v41"><label>نام مشتری</label><div class="input-shell"><span>${icon('user',16)}</span><input name="name" required placeholder="نام و نام خانوادگی"></div></div>
-            <div class="field future-contact-field-v40 contact-field-v41"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
+            <div class="field future-contact-field-v40 contact-field-v41"><label for="futureCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',16)}</span><input id="futureCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
+            <div class="field future-contact-field-v40 contact-field-v41"><label for="futureCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="futureCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
             ${jalaliDateTimeInput('زمان ورود به کارتابل انبار','scheduledDate','scheduledTime',nextDayIso(),'08:00',true)}
             ${jalaliInput('تاریخ تحویل','deliveryDate','',true)}
-            <div class="field fx-addr-field"><label>محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
+            <div class="field fx-addr-field"><label for="futureDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input id="futureDispatchPlace" name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
           </div>
           <div class="sd-lines-head fx-lines-head"><h3>اقلام سفارش</h3></div>
           <div id="future-lines" class="sd-lines"></div>
@@ -372,7 +372,7 @@ function futureFormV38(orders){
             <button type="button" class="btn btn-secondary btn-sm" data-action="future-add-line">${icon('plus',15)} افزودن قلم جدید</button>
             <small>واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</small>
           </div>
-          <div class="field future-note-v40 fx-note"><label>یادداشت و توضیحات</label><textarea name="notes" maxlength="1000" rows="1" placeholder="هماهنگی، بسته‌بندی، محدودیت تحویل یا نکته مهم..."></textarea></div>
+          <div class="field future-note-v40 fx-note"><label for="futureNotes">یادداشت و توضیحات</label><textarea name="notes" maxlength="1000" rows="1" id="futureNotes" placeholder="هماهنگی، بسته‌بندی، محدودیت تحویل یا نکته مهم..."></textarea></div>
           ${depositEntryHtml()}
           <div class="fx-foot fx-foot-compact">
             <button type="submit" class="btn btn-primary">${icon('send',16)} ثبت برنامه ارسال</button>
@@ -651,9 +651,9 @@ function renderGateEntry(){
         <div class="gt-fieldset">
           <div class="gt-fieldset-title">${icon('user',16)} مشخصات مشتری</div>
           <div class="gt-entry-cust">
-            <div class="cust-code-entry"><div class="field"><label>کد مشتری <small>(برای مشتری قبلی)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerCode" autocomplete="off" placeholder="مثلاً C-00001"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><div id="gateCustChip"></div></div>
-            <div class="field"><label>نام و نام خانوادگی</label><div class="input-shell"><span>${icon('user',16)}</span><input name="name" required placeholder="نام مشتری"></div></div>
-            <div class="field"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
+            <div class="cust-code-entry"><div class="field"><label for="gateCustCode">کد مشتری <small>(برای مشتری قبلی)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerCode" autocomplete="off" placeholder="مثلاً C-00001"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><div id="gateCustChip"></div></div>
+            <div class="field"><label for="gateCustomerName">نام و نام خانوادگی</label><div class="input-shell"><span>${icon('user',16)}</span><input id="gateCustomerName" name="name" required placeholder="نام مشتری"></div></div>
+            <div class="field"><label for="gateCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="gateCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
           </div>
         </div>
         <div class="gt-fieldset">
@@ -661,8 +661,8 @@ function renderGateEntry(){
           <div class="gt-entry-vehicle">
             <div class="gt-plate-col"><div id="plateBox"></div><div id="plateSuggest" class="gt-suggest"></div></div>
             <div class="gt-entry-vehicle-fields">
-              <div class="field"><label>نوع وسیله</label><div class="input-shell"><select name="vehicleType"><option>خودرو</option><option>موتورسیکلت</option><option>وانت</option><option>بدون وسیله</option></select></div></div>
-              <div class="field"><label>هدف مراجعه</label><div class="input-shell"><input name="purpose" placeholder="خرید، دریافت سفارش یا توضیح کوتاه"></div></div>
+              <div class="field"><label for="gateVehicleType">نوع وسیله</label><div class="input-shell"><select id="gateVehicleType" name="vehicleType"><option>خودرو</option><option>موتورسیکلت</option><option>وانت</option><option>بدون وسیله</option></select></div></div>
+              <div class="field"><label for="gatePurpose">هدف مراجعه</label><div class="input-shell"><input id="gatePurpose" name="purpose" placeholder="خرید، دریافت سفارش یا توضیح کوتاه"></div></div>
             </div>
           </div>
         </div>
@@ -1220,15 +1220,15 @@ async function renderStorePortal(){
         <form id="storeOrderForm" style="display:contents">
           <div class="sd-pad" style="padding-bottom:6px">
             <div class="gt-grid2">
-              <div class="field"><label>نام مشتری</label><div class="input-shell"><span>${icon('user',16)}</span><input name="name" required placeholder="نام و نام خانوادگی مشتری"></div></div>
-              <div class="field"><label>شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
+              <div class="field"><label for="storeCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',16)}</span><input id="storeCustomerName" name="name" required placeholder="نام و نام خانوادگی مشتری"></div></div>
+              <div class="field"><label for="storeCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="storeCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
             </div>
             <div class="st38-lock" style="margin-top:13px"><span>${icon('lock',17)}</span><div><strong>زمان ارسال</strong><span>توسط واحد فروش تعیین می‌شود؛ فروشگاه مستقیم به انبار دسترسی ندارد.</span></div></div>
           </div>
           <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول، مقدار، واحد و توضیح هر ردیف.</p></div></div>
           <div class="sd-lines-body"><div id="store-lines" class="sd-lines"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px;flex-wrap:wrap"><button type="button" class="btn btn-secondary" data-action="store-add-line">${icon('plus',15)} افزودن ردیف</button><small style="font-size:11px;color:var(--muted)">واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</small></div>
-            <div class="field" style="margin-top:15px"><label>یادداشت سفارش</label><textarea name="notes" rows="2" maxlength="1000" placeholder="توضیحات برای فروش یا انبار..."></textarea></div>
+            <div class="field" style="margin-top:15px"><label for="storeOrderNotes">یادداشت سفارش</label><textarea id="storeOrderNotes" name="notes" rows="2" maxlength="1000" placeholder="توضیحات برای فروش یا انبار..."></textarea></div>
           </div>
           <div class="sd-submit-bar"><div><strong style="font-size:13.5px">ارسال برای تأیید فروش</strong><small style="display:block;font-size:11px;color:var(--muted)">فروشگاه مستقیماً به انبار دسترسی ندارد.</small></div><button class="btn btn-primary btn-lg" type="submit">${icon('send',16)} ثبت سفارش</button></div>
         </form>

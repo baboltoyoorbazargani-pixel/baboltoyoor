@@ -153,7 +153,7 @@ function bindJalaliDates(root=document){
     const todayBtn=root.querySelector(`[data-date-today=\"${target}\"]`); if(todayBtn)todayBtn.addEventListener('click',()=>{input.value=isoToJalali(today());sync();input.focus();});
   });
 }
-function jalaliInput(label,target,isoValue=today(),required=true){const j=isoToJalali(isoValue);return `<div class=\"field jalali-field\"><label>${esc(label)}</label><div class=\"input-shell op-input jalali-shell\"><span>${icon('calendar',17)}</span><input class=\"jalali-date-input\" data-target=\"${esc(target)}\" value=\"${esc(j)}\" placeholder=\"۱۴۰۵/۰۷/۱۴\" inputmode=\"numeric\" autocomplete=\"off\" ${required?'required':''}><button type=\"button\" class=\"date-today-btn\" data-date-today=\"${esc(target)}\">امروز</button></div><input type=\"hidden\" name=\"${esc(target)}\" value=\"${esc(isoValue)}\" ${required?'required':''}></div>`}
+function jalaliInput(label,target,isoValue=today(),required=true){const j=isoToJalali(isoValue);return `<div class=\"field jalali-field\"><label>${esc(label)}</label><div class=\"input-shell op-input jalali-shell\"><span>${icon('calendar',17)}</span><input class=\"jalali-date-input\" aria-label=\"${esc(label)}\" data-target=\"${esc(target)}\" value=\"${esc(j)}\" placeholder=\"۱۴۰۵/۰۷/۱۴\" inputmode=\"numeric\" autocomplete=\"off\" ${required?'required':''}><button type=\"button\" class=\"date-today-btn\" data-date-today=\"${esc(target)}\">امروز</button></div><input type=\"hidden\" name=\"${esc(target)}\" value=\"${esc(isoValue)}\" ${required?'required':''}></div>`}
 
 /* ---------- تقویم جلالی تعاملی و انتخاب‌گر ساعت ---------- */
 const JALALI_MONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
@@ -2654,10 +2654,10 @@ function renderProductPickerLine(x,i,prefix='sales'){
   return `<article class="v26-product-line op-line" data-line="${idx}">
     <span class="v26-product-index">${fa(String(i+1).padStart(2,'0'))}</span>
     <div class="v26-product-line-main">
-      <div class="field op-product-field"><label>محصول <small>نام یا کد سریع دو رقمی</small></label><div class="input-shell v26-input"><span>${icon('search',17)}</span><input data-op-product-search="${prefix}-${idx}" value="${esc(x.productLabel||'')}" placeholder="مثلاً 01 یا مرغ بسته‌بندی" autocomplete="off"></div><div class="product-suggest" data-op-suggest="${prefix}-${idx}"></div><div class="v26-product-picked">${x.productId?`<span>انتخاب شد</span>`:'هنوز محصول انتخاب نشده است'}</div></div>
-      <div class="field"><label>مقدار درخواستی <small>عدد / وزن</small></label><div class="input-shell v26-input quantity-shell"><input data-op-qty="${prefix}-${idx}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰٫۰۰۰"></div></div>
-      <div class="field"><label>واحد</label><div class="input-shell v26-input"><select data-op-unit="${prefix}-${idx}"><option ${x.requestedUnit==='کیلوگرم'?'selected':''}>کیلوگرم</option><option ${x.requestedUnit==='بسته'?'selected':''}>بسته</option><option ${x.requestedUnit==='عدد'?'selected':''}>عدد</option><option ${x.requestedUnit==='کارتن'?'selected':''}>کارتن</option></select></div></div>
-      <div class="field op-desc"><label>توضیحات ردیف <small>برای انبار و تحویل</small></label><div class="input-shell v26-input v26-textarea"><textarea data-op-desc="${prefix}-${idx}" rows="2" maxlength="500" placeholder="توضیح بسته‌بندی، نحوه تحویل یا نکته مشتری...">${esc(x.description||'')}</textarea></div></div>
+      <div class="field op-product-field"><label>محصول <small>نام یا کد سریع دو رقمی</small></label><div class="input-shell v26-input"><span>${icon('search',17)}</span><input data-op-product-search="${prefix}-${idx}" aria-label="محصول ردیف ${fa(String(i+1))}" value="${esc(x.productLabel||'')}" placeholder="مثلاً 01 یا مرغ بسته‌بندی" autocomplete="off"></div><div class="product-suggest" data-op-suggest="${prefix}-${idx}"></div><div class="v26-product-picked">${x.productId?`<span>انتخاب شد</span>`:'هنوز محصول انتخاب نشده است'}</div></div>
+      <div class="field"><label>مقدار درخواستی <small>عدد / وزن</small></label><div class="input-shell v26-input quantity-shell"><input data-op-qty="${prefix}-${idx}" aria-label="مقدار ردیف ${fa(String(i+1))}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰٫۰۰۰"></div></div>
+      <div class="field"><label>واحد</label><div class="input-shell v26-input"><select data-op-unit="${prefix}-${idx}" aria-label="واحد ردیف ${fa(String(i+1))}"><option ${x.requestedUnit==='کیلوگرم'?'selected':''}>کیلوگرم</option><option ${x.requestedUnit==='بسته'?'selected':''}>بسته</option><option ${x.requestedUnit==='عدد'?'selected':''}>عدد</option><option ${x.requestedUnit==='کارتن'?'selected':''}>کارتن</option></select></div></div>
+      <div class="field op-desc"><label>توضیحات ردیف <small>برای انبار و تحویل</small></label><div class="input-shell v26-input v26-textarea"><textarea data-op-desc="${prefix}-${idx}" aria-label="توضیح ردیف ${fa(String(i+1))}" rows="2" maxlength="500" placeholder="توضیح بسته‌بندی، نحوه تحویل یا نکته مشتری...">${esc(x.description||'')}</textarea></div></div>
     </div>
     <button type="button" class="v26-delete-line" data-action="op-remove-line" data-prefix="${prefix}" data-draft-key="${({remote:'remoteDraft',phone:'phoneDraft',future:'futureDraft',store:'storeDraft',storeedit:'storeEditDraft',sales:'orderDraft',onsite:'orderDraft'})[prefix]||'orderDraft'}" data-index="${idx}" title="حذف ردیف">${icon('trash',16)}</button>
   </article>`;
@@ -3181,13 +3181,13 @@ function renderFutureLineRow(x,i){
   return `<article class="fx41-line op-line" data-line="${idx}">
     <span class="fx41-line-no">${fa(String(i+1).padStart(2,'0'))}</span>
     <div class="fx41-cell fx41-cell-product">
-      <div class="input-shell fx41-input"><span>${icon('search',15)}</span><input data-op-product-search="${prefix}-${idx}" value="${esc(x.productLabel||'')}" placeholder="جستجوی محصول (نام یا کد)" autocomplete="off"></div>
+      <div class="input-shell fx41-input"><span>${icon('search',15)}</span><input data-op-product-search="${prefix}-${idx}" aria-label="محصول ردیف ${fa(String(i+1))}" value="${esc(x.productLabel||'')}" placeholder="جستجوی محصول (نام یا کد)" autocomplete="off"></div>
       <div class="product-suggest" data-op-suggest="${prefix}-${idx}"></div>
       <div class="v26-product-picked fx41-picked">${x.productId?`<span>انتخاب شد</span>`:''}</div>
     </div>
-    <div class="fx41-cell"><div class="input-shell fx41-input"><input data-op-qty="${prefix}-${idx}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰"></div></div>
-    <div class="fx41-cell"><div class="input-shell fx41-input"><select data-op-unit="${prefix}-${idx}">${units}</select></div></div>
-    <div class="fx41-cell"><div class="input-shell fx41-input"><input data-op-desc="${prefix}-${idx}" value="${esc(x.description||'')}" maxlength="500" placeholder="توضیحات محصول..."></div></div>
+    <div class="fx41-cell"><div class="input-shell fx41-input"><input data-op-qty="${prefix}-${idx}" aria-label="مقدار ردیف ${fa(String(i+1))}" inputmode="decimal" value="${esc(x.requestedQty||'')}" placeholder="۰"></div></div>
+    <div class="fx41-cell"><div class="input-shell fx41-input"><select data-op-unit="${prefix}-${idx}" aria-label="واحد ردیف ${fa(String(i+1))}">${units}</select></div></div>
+    <div class="fx41-cell"><div class="input-shell fx41-input"><input data-op-desc="${prefix}-${idx}" aria-label="توضیح ردیف ${fa(String(i+1))}" value="${esc(x.description||'')}" maxlength="500" placeholder="توضیحات محصول..."></div></div>
     <button type="button" class="fx41-del" data-action="op-remove-line" data-prefix="future" data-draft-key="futureDraft" data-index="${idx}" title="حذف ردیف" aria-label="حذف ردیف">${icon('trash',15)}</button>
   </article>`;
 }
