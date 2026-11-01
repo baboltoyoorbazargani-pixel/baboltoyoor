@@ -44,8 +44,8 @@ async function call(method, p, { cookie, body, headers = {} } = {}) {
 const IDEM = () => ({ headers: { 'Idempotency-Key': 'k-' + Math.random().toString(36).slice(2) } });
 async function login(u, p) { const r = await call('POST', '/api/login', { body: { username: u, password: p } }); assert.equal(r.status, 200); return r.cookie; }
 
-let admin, sales, wh, storeUser, drv1, gateCk;
-let driverId;
+let admin, sales, wh, storeUser, drv1, drv2, gateCk;
+let driverId, driverId2;
 const ids = {};
 
 async function mkUser(username, roleCode, extra = {}) {
@@ -81,6 +81,8 @@ test('راه‌اندازی: کاربران، راننده و سفارش فرو�
   assert.equal(d.status, 201, JSON.stringify(d.json));
   driverId = d.json.driver.id;
   drv1 = await mkUser('srd-driver', 'driver', { driverId });
+  const d2 = await call('POST', '/api/drivers', { cookie: admin, body: { fullName: 'رضا راننده دوم', phone: '09129998876', vehicleType: 'وانت', plate: '13ب34567' } });
+  assert.equal(d2.status,201,JSON.stringify(d2.json));driverId2=d2.json.driver.id;drv2=await mkUser('srd-driver2','driver',{driverId:driverId2});
   const o = await freshStoreOrder(LINE1());
   ids.order = o.id; ids.i1 = o.items[0].id; ids.i2 = o.items[1].id;
 });
@@ -114,6 +116,11 @@ test('ارسال سرویس اول: علامت اقلام، درخواست نز�
   assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:storeUser})).status,403);
   assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/1`, {cookie:drv1})).status,403);
   assert.equal((await call('GET', `/api/orders/${ids.order}/store-run/print/3`, {cookie:wh})).status,400);
+  const pending=await call('GET', '/api/warehouse/store-documents', {cookie:wh});assert.equal(pending.status,200);
+  const row=pending.json.documents.find(x=>x.orderId===ids.order&&x.run===1);assert.ok(row);assert.match(row.warehouseDocumentNo,/^W-\d{6}$/);assert.equal(row.driverName,'');ids.doc1=row.warehouseDocumentNo;
+  assert.equal((await call('GET', `/api/warehouse/store-documents/${ids.order}/1`, {cookie:wh})).status,409);
+  assert.equal((await call('GET', '/api/warehouse/store-documents', {cookie:storeUser})).status,403);
+  assert.equal((await call('GET', `/api/warehouse/store-documents/${ids.order}/1`, {cookie:sales})).status,403);
   assert.equal(o.storeRunOps.r1Shipment.status, 'PENDING_SALES');
   assert.deepEqual(o.storeRunOps.r1Shipment.itemIds, [ids.i1]);
   assert.ok(o.items.find((x) => x.id === ids.i1).sentRun1.at);
@@ -144,6 +151,7 @@ test('فروش: send-dispatch بدون run روی سفارش سرویس‌دار
   const after = await getOrder(sales, ids.order);
   assert.equal(after.storeRunOps.r1Shipment.status, 'DISPATCHED');
   assert.equal(after.dispatch.driverName, 'علی راننده');
+  const doc=await call('GET', `/api/warehouse/store-documents/${ids.order}/1`, {cookie:wh});assert.equal(doc.status,200);assert.equal(doc.json.document.driverName,'علی راننده');assert.equal(doc.json.document.warehouseDocumentNo,ids.doc1);assert.deepEqual(doc.json.document.lines.map(x=>x.deliveredKg),[105]);assert.equal(doc.json.document.lines[0].requestedQty,100);assert.doesNotMatch(JSON.stringify(doc.json),/unitPrice|finalAmount|تومان/);
 });
 
 test('راننده/نگهبان: خروج سرویس ۱ → درحال ارسال → تحویل با امضا', async () => {
@@ -162,6 +170,7 @@ test('سرویس دوم: تعیین راننده پیش از نهایی‌شدن
   assert.equal((await call('POST', `/api/orders/${ids.order}/store-run/move`, { ...IDEM(), cookie: wh, body: { itemId: ids.i2 } })).status, 200);
   assert.equal((await call('POST', `/api/orders/${ids.order}/store-run/weights`, { ...IDEM(), cookie: wh, body: { run: 2, items: [{ itemId: ids.i2, deliveredKg: 80 }] } })).status, 200, 'کمتر از درخواست هم پذیرفته');
   ok(await call('POST', `/api/orders/${ids.order}/store-run/send-run`, { ...IDEM(), cookie: wh, body: { run: 2 } }), 'send-run-2');
+  const listing=await call('GET','/api/warehouse/store-documents',{cookie:wh});const second=listing.json.documents.find(x=>x.orderId===ids.order&&x.run===2);assert.ok(second);assert.match(second.warehouseDocumentNo,/^W-\d{6}$/);assert.notEqual(second.warehouseDocumentNo,ids.doc1);ids.doc2=second.warehouseDocumentNo;assert.equal(second.driverName,'');assert.equal((await call('GET',`/api/warehouse/store-documents/${ids.order}/2`,{cookie:wh})).status,409);
   const premature = await call('POST', `/api/orders/${ids.order}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId, items: [{ itemId: ids.i2, unitPrice: 7000 }], run: 2 } });
   assert.equal(premature.status, 409);
   assert.match(String(premature.json.error), /نهایی/);
@@ -199,16 +208,17 @@ test('فروشگاه: تأیید دریافت محمولهٔ سرویس اول �
 });
 
 test('سرویس دوم: چرخهٔ کامل به پخش و تحویل → فاکتور دوم مستقل', async () => {
-  const sd = await call('POST', `/api/orders/${ids.order}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId, run: 2 } });
+  const sd = await call('POST', `/api/orders/${ids.order}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId:driverId2, run: 2 } });
   const o = ok(sd, 'send-dispatch run=2');
   assert.equal(o.dispatch.run, 2);
   assert.equal(o.dispatches.length, 1, 'خدمه‌بر سرویس اول آرشیو شد');
   assert.equal(o.dispatches[0].run, 1);
   assert.equal(o.dispatches[0].status, 'SALES_FINALIZED');
+  const doc1=await call('GET',`/api/warehouse/store-documents/${ids.order}/1`,{cookie:wh}),doc2=await call('GET',`/api/warehouse/store-documents/${ids.order}/2`,{cookie:wh});assert.equal(doc1.status,200);assert.equal(doc2.status,200);assert.equal(doc1.json.document.driverName,'علی راننده');assert.equal(doc2.json.document.driverName,'رضا راننده دوم');assert.equal(doc1.json.document.warehouseDocumentNo,ids.doc1);assert.equal(doc2.json.document.warehouseDocumentNo,ids.doc2);assert.deepEqual(doc1.json.document.lines.map(x=>x.deliveredKg),[105]);assert.deepEqual(doc2.json.document.lines.map(x=>x.deliveredKg),[80]);
   assert.equal(o.dispatch.approvedTotalAmount, 0, 'بدون قیمت');
-  assert.equal((await call('POST', `/api/driver/orders/${ids.order}/exit`, { ...IDEM(), cookie: drv1, body: {} })).status, 200);
+  assert.equal((await call('POST', `/api/driver/orders/${ids.order}/exit`, { ...IDEM(), cookie: drv2, body: {} })).status, 200);
   assert.equal((await call('POST', `/api/gate/dispatch/${ids.order}/exit`, { ...IDEM(), cookie: gateCk, body: {} })).status, 200);
-  const deliver = await call('POST', `/api/driver/orders/${ids.order}/deliver`, { ...IDEM(), cookie: drv1, body: { signatureData: SIG, settlementType: 'CREDIT', lines: [{ itemId: ids.i2, returnKg: 5, shortageKg: 0, reason: 'بسته آسیب‌دیده' }] } });
+  const deliver = await call('POST', `/api/driver/orders/${ids.order}/deliver`, { ...IDEM(), cookie: drv2, body: { signatureData: SIG, settlementType: 'CREDIT', lines: [{ itemId: ids.i2, returnKg: 5, shortageKg: 0, reason: 'بسته آسیب‌دیده' }] } });
   assert.equal(deliver.status, 200, JSON.stringify(deliver.json));
   assert.equal(deliver.json.order.dispatch.lines[0].netKg, 75);
   assert.equal(deliver.json.order.dispatch.lines[0].deliveredKg, 80, 'تحویل سرویس ۲ فقط قلم خودش');
@@ -255,13 +265,11 @@ test('فروشگاه: تأیید دریافت محمولهٔ سرویس دوم �
   assert.ok(list.json.orders.find((x) => x.id === ids.order).payments.length >= 2);
 });
 
-test('سوابق راننده دو ردیف (سرویس اول و دوم) برای همان سفارش دارد', async () => {
-  const mine = await call('GET', '/api/driver/orders', { cookie: drv1 });
-  const hist = mine.json.history.filter((x) => x.id === ids.order);
-  assert.equal(hist.length, 2);
-  assert.deepEqual(hist.map((x) => x.dispatch.run || null).sort((a, b) => a - b), [1, 2]);
-  // نام‌ها و جزئیات سالم‌اند؛ امضای جدید ثبت نمی‌شود
-  for (const h of hist) assert.equal(h.dispatch.hasSignature, false);
+test('سوابق هر راننده فقط سرویس مربوط به خود را نشان می‌دهد', async () => {
+  for (const [cookie,run] of [[drv1,1],[drv2,2]]) {
+    const mine=await call('GET','/api/driver/orders',{cookie});const hist=mine.json.history.filter(x=>x.id===ids.order);
+    assert.equal(hist.length,1);assert.equal(hist[0].dispatch.run,run);assert.equal(hist[0].dispatch.hasSignature,false);
+  }
 });
 
 test('پایان روز: وزن ارسال‌نشده → 400؛ درخواست معلق نزد فروش → 409', async () => {
