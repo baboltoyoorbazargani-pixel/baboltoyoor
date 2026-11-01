@@ -1,4 +1,7 @@
-'use strict';const {test}=require('node:test'),assert=require('node:assert/strict');const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
+'use strict';
+// This browser scenario intentionally exercises pre-upgrade driver accounts.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
+const {test}=require('node:test'),assert=require('node:assert/strict');const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 test('محموله و نشانگرهای نقش‌ها با فروشگاه مجزا و جزئیات پخش و نگهبانی', {skip:!process.env.BT_CHROMIUM_PATH,timeout:120000}, async()=>{const {chromium}=require('playwright-core');const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-notif-audit-')),base=`http://127.0.0.1:${port}`;const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','inherit']});let browser;
 try{await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('server exit '+c)));});
 browser=await chromium.launch({executablePath:process.env.BT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});const contexts={};for(const k of ['admin','sales','gate','warehouse','store','other','driver','dispatch'])contexts[k]=await browser.newContext();const post=async(c,url,data={})=>{const r=await contexts[c].request.post(base+url,{data});if(!r.ok())throw Error(`${c} ${url} ${r.status()} ${await r.text()}`);return r.json()};const get=async(c,url)=>{const r=await contexts[c].request.get(base+url);if(!r.ok())throw Error(`${url} ${r.status()} ${await r.text()}`);return r.json()};
@@ -35,6 +38,7 @@ for(const width of [1440,390]){
   await pages.gate.locator('#modal .modal-close').click();
   await pages.dispatch.setViewportSize({width,height:850});
   await pages.dispatch.evaluate(()=>{adm.tab='dispatch';dsp.tab='assigned';return go('drivers','orders')});
+  await pages.dispatch.locator('[data-legacy-dispatch] > summary').click();
   const dispatchRow=pages.dispatch.locator(`[data-order="${order.id}"]`).first();await dispatchRow.locator('[data-dsp=details]').click();
   await pages.dispatch.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.dispatch.locator('#modal').innerText()).includes('فروشگاه شعبه 1 اول'));
   await pages.dispatch.locator('#modal .modal-close').click();
@@ -72,9 +76,9 @@ await pages.sales.locator('[data-delivery-tab=delivered]').click();
 await pages.sales.locator(`[data-delivery-section=delivered] [data-delivery-order="${order.id}"] [data-action=sales-delivery-details]`).click();
 await pages.sales.locator('#modal.open .sales-store-delivery-details').waitFor();assert.match(await pages.sales.locator('#modal').innerText(),/سرویس اول/);assert.doesNotMatch(await pages.sales.locator('#modal').innerText(),/قابل تسویه/);
 const finalized=pages.sales.waitForResponse(r=>r.url().endsWith('/finalize')&&r.request().method()==='POST');await pages.sales.locator('#modal [data-action=sales-finalize-driver-delivery]').click();assert.equal((await finalized).status(),200);
-await pages.sales.waitForFunction(()=>!document.querySelector('#modal.open'));
+await pages.sales.locator('#modal.open').waitFor({state:'hidden'});
 await pages.sales.evaluate(id=>previewInvoice(id,1),order.id);await pages.sales.locator('#modal .inv38-vitem').waitFor();assert.match(await pages.sales.locator('#modal .inv38-vitem strong').innerText(),/مشتری فروشگاه – ۰۹۱۲۱۱۱۲۲۳۳/);assert.doesNotMatch(await pages.sales.locator('#modal .inv38-sheet').innerText(),/اثر انگشت|امضای الکترونیکی/);
-await pages.sales.evaluate(id=>printInvoice(id,1),order.id);await pages.sales.waitForFunction(()=>window.__prints===1);const storePrint=pages.sales.frameLocator('iframe[title="سند آماده چاپ"]');await storePrint.locator('.inv38-vitem').waitFor();assert.match(await storePrint.locator('.inv38-vitem strong').innerText(),/مشتری فروشگاه – ۰۹۱۲۱۱۱۲۲۳۳/);await pages.sales.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));await pages.sales.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});await pages.sales.locator('#modal .modal-close').click();
+await pages.sales.evaluate(id=>printInvoice(id,1),order.id);const storePrint=pages.sales.frameLocator('iframe[title="سند آماده چاپ"]');await storePrint.locator('.inv38-vitem').waitFor();for(let attempt=0;attempt<100&&(await pages.sales.evaluate(()=>window.__prints||0))<1;attempt++)await pages.sales.waitForTimeout(100);assert.equal(await pages.sales.evaluate(()=>window.__prints),1);assert.match(await storePrint.locator('.inv38-vitem strong').innerText(),/مشتری فروشگاه – ۰۹۱۲۱۱۱۲۲۳۳/);await pages.sales.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));await pages.sales.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});await pages.sales.locator('#modal .modal-close').click();
 await pages.sales.locator('[data-delivery-tab=history]').click();
 assert.equal(await pages.sales.locator('[data-delivery-tab=history] b').count(),0,'history total is not a pending-work badge');
 await pages.sales.locator(`[data-delivery-section=history] [data-delivery-order="${order.id}"]`).waitFor();

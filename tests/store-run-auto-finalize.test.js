@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.35.0 — چهار درخواست فروش/انبار:
    (۳) انبار ← فروشگاه‌ها ← آماده‌سازی: پس از ثبت وزن‌های سرویس دوم و ارسال آن، سفارش باید
    از آماده‌سازی خارج و به سوابق انبار برود. علت قدیمی: «پایان کار انبار» (finalizedAt و

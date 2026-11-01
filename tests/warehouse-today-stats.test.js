@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.33.0 — کارت «سفارشات ورودی امروز» در داشبورد انبار: آمار زندهٔ سمت سرور + نمایش داشبورد */
 const {test, before, after}=require('node:test');
 const assert=require('node:assert/strict');

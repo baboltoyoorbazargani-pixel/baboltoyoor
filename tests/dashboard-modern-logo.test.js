@@ -50,7 +50,7 @@ test('every rail section carries a thematic icon separate from its badge key',()
   assert.match(app,/\['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'\]/);
   assert.match(app,/\['stores','فروشگاه‌ها','store','warehouseStores'\]/);
   // ترابری و فروشگاه
-  assert.match(app,/\['drivers','رانندگان','driver',null\]/);
+  assert.match(app,/\['transport-resources','رانندگان و خودروها','driver',null\]/);assert.doesNotMatch(app,/\['drivers','رانندگان','driver',null\]/);
   assert.match(app,/\['orders','سفارشات','route','dispatchPending'\]/);
   assert.match(app,/\['create','ثبت سفارش','clipboard',null\]/);
   assert.match(app,/\['delivery','تحویل','truck',null\]/);
@@ -74,7 +74,7 @@ test('unit dashboards render soft icon cards with a relative progress bar',()=>{
   assert.match(app,/dashMax=Math\.max\(1,\.\.\.cards/);
   assert.match(app,/'ورودی حضوری',w\.salesIntake\|\|0,'onsite','user','red'/);
   assert.match(app,/'سفارش‌های ورودی',w\.warehouseIncoming\|\|0,'incoming','inbox','red'/);
-  assert.match(app,/'رانندگان فعال',w\.activeDrivers\|\|0,'drivers','driver','blue'/);
+  assert.match(app,/'رانندگان فعال',w\.activeDrivers\|\|0,'transport-resources','driver','blue'/);
   assert.match(app,/'در انتظار بررسی',w\.store\|\|0,'registered','clipboard','red'/);
 });
 

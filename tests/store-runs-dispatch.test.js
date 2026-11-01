@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 // v37.6.0 — «اقلام سرویس اول باید ارسال شوند»: ارسال وزن‌شده‌های هر سرویس به فروش، تعیین راننده،
 // تحویل فیزیکی و فاکتور/تأیید دریافت جداگانه برای هر سرویس — همه در همان سفارش واحد فروشگاه.
 const { test, before, after } = require('node:test');

@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),{spawn}=r
 test('ارسال برنامه‌ریزی ترابری مستقل از انبار، دسترسی، زمان‌بندی و تفکیک فروشگاه',{timeout:90000},async()=>{
  const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-plan-')),base=`http://127.0.0.1:${port}`,pass='Changed!2345';
- const start=()=>spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345',BT_EXPERIMENTAL_TRANSPORT_WORKFLOW:'1'},stdio:['ignore','pipe','pipe']});
+ const start=()=>spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});
  let proc=start();
  const ready=()=>new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve()}});proc.once('exit',c=>reject(Error('exit '+c)));});
  try{
@@ -18,6 +18,8 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const now=new Date(),date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const body={name:'مشتری تست',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledTime:'00:00',items:[{productId:'p01',requestedQty:3,requestedUnit:'کیلوگرم'}],transportWorkflow:true};
   assert.equal((await call('POST','/api/orders/remote',body,sales)).status,400);
+  assert.equal((await call('POST','/api/orders/remote',{...body,transportWorkflow:undefined},sales)).status,400);
+  assert.equal((await call('POST','/api/orders/remote',{...body,transportWorkflow:false,deliveryMode:'DELIVERY'},sales)).status,409);
   const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),futureDate=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
   assert.equal((await call('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY',deposit:{amount:100,type:'CASH'}},sales)).status,409);
   const pickupDeposit=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP',deposit:{amount:100,type:'CASH'},phone:'09121112239'},sales)).order;assert.equal(pickupDeposit.deliveryMode,'PICKUP');assert.equal(pickupDeposit.deposit.amount,100);
@@ -29,13 +31,13 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert((await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===onsite.id));
   const onsiteNotices=(await ok('GET','/api/notifications',null,transport)).notifications;assert(onsiteNotices.some(n=>n.entityId===onsite.id));assert(!onsiteNotices.some(n=>n.entityId===onsitePickup.id));
   const future=(await ok('POST','/api/orders/remote',{...body,scheduledDate:futureDate,deliveryMode:'DELIVERY'},sales)).order;
-  const one=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY'},sales)).order,two=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP'},sales)).order;
+  const one=(await ok('POST','/api/orders/remote',{...body,transportWorkflow:undefined,deliveryMode:'DELIVERY'},sales)).order,two=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP'},sales)).order;
   let cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);
   assert(cart.assigned.some(x=>x.id===one.id&&x.transportService.label.includes('تخصیص')));
   assert(![...cart.assigned,...cart.inTransit,...cart.pending,...cart.finalized].some(x=>x.id===two.id||x.id===future.id||x.id===onsitePickup.id));
   assert.equal((await call('GET','/api/sales/dispatch-deliveries',null,wh)).status,403);
   const futureShop=(await ok('POST','/api/store/orders',{name:'مشتری آینده',phone:'09121112240',items:body.items},shop)).order;
-  const plannedShop=(await ok('POST',`/api/store/orders/${futureShop.id}/approve`,{transportWorkflow:true,scheduledAt:futureDate+'T08:00',dispatchPlace:'فروشگاه'},sales)).order;assert.equal(plannedShop.status,'SCHEDULED_REMOTE');assert.equal(plannedShop.transportWorkflow,1);assert.equal(plannedShop.deliveryMode,'DELIVERY');
+  const plannedShop=(await ok('POST',`/api/store/orders/${futureShop.id}/approve`,{scheduledAt:futureDate+'T08:00',dispatchPlace:'فروشگاه'},sales)).order;assert.equal(plannedShop.status,'SCHEDULED_REMOTE');assert.equal(plannedShop.transportWorkflow,1);assert.equal(plannedShop.deliveryMode,'DELIVERY');
   assert.equal((await call('POST',`/api/store/orders/${futureShop.id}/quick-send`,{transportWorkflow:true},sales)).status,409);
   assert(!(await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===futureShop.id));assert(!(await ok('GET','/api/notifications',null,transport)).notifications.some(n=>n.entityId===futureShop.id));
   // Simulate the scheduled moment by moving only the fixture's timestamp into

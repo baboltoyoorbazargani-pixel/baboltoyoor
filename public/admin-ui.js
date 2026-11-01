@@ -101,7 +101,7 @@ function userFormHtml(u, drivers = [], vehicles = [], devices = [], branches = [
     <label class="cust-field"><span>نام کامل *</span><input name="fullName" required maxlength="120" value="${admE(u?.fullName)}"></label>
     <label class="cust-field"><span>نام کاربری (انگلیسی) *</span><input name="username" required dir="ltr" maxlength="40" value="${admE(u?.username)}"></label>
     <label class="cust-field"><span>سمت سازمانی *</span><input name="position" required maxlength="120" value="${admE(u?.position)}"></label>
-    <label class="cust-field"><span>نقش *</span><select name="roleCode">${Object.entries(ADM_ROLES).map(([k, v]) => `<option value="${k}" ${k === role ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+    <label class="cust-field"><span>نقش *</span><select name="roleCode">${Object.entries(ADM_ROLES).filter(([k])=>k!=='driver'||role==='driver').map(([k, v]) => `<option value="${k}" ${k === role ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
     <div data-role-fields="store"><label class="cust-field cust-span2"><span>شعبهٔ فروشگاه *</span><select name="branchId"><option value="">انتخاب شعبهٔ تعریف‌شده</option>${branches.filter(x=>x.isActive).map(x=>`<option value="${admE(x.id)}" data-branch-no="${admE(x.branchNo)}" ${x.id===u?.branchId?'selected':''}>${admE(x.name)} — شعبه ${admE(fa(x.branchNo))}</option>`).join('')}</select><small>ابتدا شعبه را در «شعب فروشگاه» تعریف کنید. حساب‌های قدیمی تا زمان انتخاب دستی بدون تغییر باقی می‌مانند.</small></label></div>
     <div data-role-fields="driver"><input type="hidden" name="driverId" value="${admE(u?.driverId || '')}">
     <label class="cust-field"><span>شماره تماس راننده *</span><input name="drvPhone" maxlength="30" inputmode="tel" dir="ltr" value="${admE(myDrv?.phone)}"></label>
@@ -155,6 +155,30 @@ async function deleteUser(id) {
 /* ---------- رانندگان (پخش: به‌زودی) ---------- */
 async function renderDriversPage() {
   if(app.timer){clearInterval(app.timer);app.timer=null;}
+  // One operational transport desk; old open shipments remain reachable only
+  // while they actually exist, so existing deliveries are never abandoned.
+  if(normalizeRole(app.user?.roleCode)==='dispatch'||app.adminActiveRole==='dispatch'){
+    const host=$('#content');host.innerHTML='<div id="transportPlans"></div><div id="legacyTransport"></div>';
+    await renderTransportPlanQueue();
+    if($('#content')!==host||app.page!=='drivers')return;
+    const legacy=$('#legacyTransport');
+    async function refreshLegacy(){
+      try{
+        const old=await api('/api/dispatch/orders?status=open');
+        if($('#legacyTransport')!==legacy)return;
+        const count=Number(old.counts?.pending||0)+Number(old.counts?.assigned||0);
+        let details=legacy.querySelector('[data-legacy-dispatch]');
+        if(!count){legacy.innerHTML='';return;}
+        if(!details){legacy.innerHTML=`<details data-legacy-dispatch><summary></summary><p>این موارد پیش از تغییر ثبت شده‌اند و برای جلوگیری از توقف، تا پایان در دسترس‌اند.</p><div id="transportDispatch"></div></details>`;details=legacy.querySelector('[data-legacy-dispatch]');}
+        details.querySelector('summary').textContent=`سفارش‌های باز از گردش قبلی (${qty(count)})`;
+        if(details.open||!$('#transportDispatch').innerHTML){const data=await api(dspDispatchUrl());if($('#legacyTransport')===legacy)paintDispatch(data);}
+      }catch(e){if($('#legacyTransport')===legacy&&!legacy.querySelector('[data-legacy-dispatch]'))legacy.innerHTML='<p role="alert">بررسی سفارش‌های قبلی ناموفق بود؛ تلاش مجدد خودکار انجام می‌شود.</p>';}
+    }
+    await refreshLegacy();
+    if($('#content')!==host||app.page!=='drivers')return;
+    app.timer=setInterval(async()=>{if(app.page!=='drivers'||dspBusy())return;await renderTransportPlanQueue();await refreshLegacy();},8000);
+    return;
+  }
   const canManage=normalizeRole(app.user?.roleCode)==='admin';
   // v37.39.0 — تعریف راننده فقط از «ساخت کاربر راننده» است؛ واحد پخش فهرست را می‌بیند و خودرو/پوز را ویرایش می‌کند
   const canEditDrivers=canManage||normalizeRole(app.user?.roleCode)==='dispatch'||app.adminActiveRole==='dispatch';

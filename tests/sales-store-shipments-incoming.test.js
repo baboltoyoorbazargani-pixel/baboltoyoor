@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.33.0 — اقلام سرویس دوم (و اول) پس از ارسال انبار در کارتابل فروش دیده نمی‌شدند:
    پنل «اقلام سرویس ارسال‌شده از انبار» فقط در سربرگ «در جریان» رندر می‌شد، درحالی‌که
    فروش محمولهٔ تازه‌رسیده را در سربرگ «ورودی» جست‌وجو می‌کند. پنل به «ورودی» منتقل شد،

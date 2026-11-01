@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.38.0 — عیب‌یابی نقش‌ها در ساخت کاربر:
    گزارش: «ساخت کاربر راننده خطای انتخاب راننده می‌دهد». علت‌ها: (۱) حساب راننده نیازمند
    رکورد رانندهٔ از پیش ثبت‌شده است اما فرم هیچ راهنمایی نداشت و روی سیستم تازه فهرست انتخاب
@@ -62,8 +64,9 @@ test('فرم‌های کاربر: هر هفت نقش، فیلد وابسته ب�
   assert.match(au, /b\.roleCode === 'driver' && !\(b\.drvPhone && b\.vehicleId && b\.paymentDeviceId\)/);
   assert.match(au, /syncRoleFields/);
   assert.doesNotMatch(app, /نگهبوش/);
-  assert.match(app, /<option value="dispatch">واحد پخش<\/option><option value="driver">راننده<\/option>/);
-  assert.match(app, /Object\.entries\(ROLE\)\.map/);
+  assert.match(app, /<option value="dispatch">واحد پخش<\/option>/);
+  assert.doesNotMatch(app, /<option value="driver">راننده<\/option>/);
+  assert.match(app, /Object\.entries\(ROLE\)\.filter/);
   assert.match(app, /data-user-edit-driver/);
   assert.match(app, /data-legacy-driver-field/);
   assert.match(route, /باید یک رانندهٔ ثبت‌شده انتخاب شود/);

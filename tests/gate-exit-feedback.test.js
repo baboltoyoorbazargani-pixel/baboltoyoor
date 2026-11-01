@@ -1,4 +1,6 @@
 'use strict';
+// This suite exercises records and accounts from the retired delivery workflow.
+process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
 /* v37.34.0 — رگرسیون گزارش نگهبانی: «تأیید خروج در منوی کنترل خروج هیچ واکنشی نشان نمی‌دهد».
    مسیر فاکتور ذاتاً سالم بود، اما هیچ بازخوردی هنگام انتظار نداشت: بازشدن برگه و ثبت نهایی
    تا پاسخ سرور هیچ نشانه‌ای نداشتند و خطای «قلم بدون تیک» فقط پیام گذرا بود.
