@@ -1444,15 +1444,32 @@ function invoiceHtml(o,paySel){
   const discount=p.discountAmount != null ? n(p.discountAmount) : Math.max(0,-difference);
   const additions=p.additionsAmount != null ? n(p.additionsAmount) : Math.max(0,difference);
   const customerName=esc((p.customerName ?? o.customer?.name)||'—');const customerPhone=esc((p.customerPhone ?? o.customer?.phone)||'—');
+  const settleLabels=Object.assign(Object.create(null),{CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'اعتباری'});
+  const methods=Array.isArray(p.settlementMethods)?p.settlementMethods:[];
+  const amountKnown=v=>(typeof v==='number'||typeof v==='string')&&String(v).trim()!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0;
+  const methodsComplete=methods.length>0&&methods.every(m=>m&&settleLabels[String(m.type||'').toUpperCase()]&&amountKnown(m.amount));
+  const types=[...new Set(methods.map(m=>String(m?.type||'').toUpperCase()).filter(Boolean))];
+  const due=amountKnown(p.amountDue)?Number(p.amountDue):(!p.deposit&&(p.depositAmount==null||Number(p.depositAmount)===0)&&amountKnown(p.totalAmount)?Number(p.totalAmount):null);
+  const depositOnly=Array.isArray(p.settlementMethods)&&methods.length===0&&due===0&&Number(p.depositAmount)>0;
+  const settlementKind=types.length>1?'ترکیبی':types.length===1?(settleLabels[types[0]]||'نامشخص'):(depositOnly?'از محل بیعانه':(settleLabels[p.settlementType]||'ثبت نشده'));
+  const credit=methodsComplete?methods.reduce((sum,m)=>sum+(String(m.type).toUpperCase()==='CREDIT'?Number(m.amount):0),0):(depositOnly?0:null);
+  const recordedSum=methodsComplete?methods.reduce((sum,m)=>sum+Number(m.amount),0):null;
+  const paymentRows=methods.map(m=>{
+    m=m||{};const type=String(m.type||'').toUpperCase();
+    const details=[m.deviceSnapshot?.title?`دستگاه ${m.deviceSnapshot.title}`:'',m.deviceSnapshot?.bank?`بانک ${m.deviceSnapshot.bank}`:'',m.bank?`بانک ${m.bank}`:'',m.reference?`پیگیری ${m.reference}`:'',m.checkNumber?`شماره چک ${m.checkNumber}`:'',m.dueDate?`سررسید ${m.dueDate}`:'',type==='CHECK'&&m.checkStatus==='PENDING'?'در انتظار وصول':'',m.reason?`علت ${m.reason}`:''].filter(Boolean).join(' • ');
+    return `<div class="inv38-payment-row"><div><span>${esc(settleLabels[type]||type||'نامشخص')}</span>${details?`<small>${esc(details)}</small>`:''}</div><b>${amountKnown(m.amount)?money(m.amount):'نامشخص'}</b></div>`;
+  }).join('');
+  const paymentBox=`<section class="inv38-payment-box" aria-label="روش‌های تسویه"><h3>روش‌های تسویه</h3><div class="inv38-payment-row"><span>نوع تسویه</span><b>${esc(settlementKind)}</b></div>${due!==null?`<div class="inv38-payment-row"><span>قابل تسویه ثبت‌شده</span><b>${money(due)}</b></div>`:''}${paymentRows||`<div class="inv38-payment-empty">${depositOnly?'تمام مبلغ از بیعانه لحاظ‌شده تأمین شده است.':'جزئیات روش پرداخت ثبت نشده است.'}</div>`}<div class="inv38-payment-row inv38-payment-balance"><span>مانده اعتباری ثبت‌شده</span><b>${credit===null?'نامشخص':money(credit)}</b></div>${credit>0?'<small class="inv38-payment-note">اعتبار ثبت‌شده هنگام تسویه است؛ وصول بعدی در این سامانه ثبت نمی‌شود.</small>':''}${recordedSum!==null&&due!==null&&recordedSum!==due?'<small class="inv38-payment-note">جمع روش‌های ثبت‌شده با مبلغ قابل تسویه یکسان نیست؛ بررسی لازم است.</small>':''}</section>`;
   return `<div class="inv38-sheet inv38-compact">
   <div class="inv38-head">
-    <div class="inv38-brand"><img src="/logo.png" alt="بابل طیور"><div><b>بابل طیور</b><span>فاکتور فروش و تحویل</span></div></div>
+    <div class="inv38-sales-title">فاکتور فروش و تحویل</div>
     <div class="inv38-meta"><div><span>شماره فاکتور</span><b>${esc(fa(p.invoiceNumber||'—'))}</b></div><div><span>تاریخ تسویه</span><b>${esc(dt(p.verifiedAt||o.createdAt))}</b></div><div><span>شماره سفارش</span><b>${esc(fa(o.orderNo||'—'))}</b></div></div>
   </div>
   <div class="inv38-rule"></div>
   <div class="inv38-cust"><div><span>مشتری</span><b>${customerName}</b></div><div><span>شماره تماس</span><b class="inv38-phone" dir="ltr">${customerPhone}</b></div><div><span>وضعیت</span><b>تسویه نهایی و آماده خروج</b></div></div>
   <p class="inv38-scroll-hint">برای مشاهده همه ستون‌های اقلام، جدول را افقی پیمایش کنید.</p><div class="inv38-table-scroll" role="region" aria-label="اقلام فاکتور؛ برای مشاهده همه ستون‌ها افقی پیمایش کنید" tabindex="0"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن تحویلی</th><th>فی</th><th>مبلغ</th></tr></thead><tbody>${items.map((i,k)=>`<tr><td>${fa(String(k+1))}</td><td><b>${esc(i.product?.name||'—')}</b></td><td>${qty(i.deliveredKg)} کیلوگرم</td><td>${money(i.unitPrice)}</td><td>${money(i.finalAmount)}</td></tr>`).join('')}</tbody></table></div>
-  <div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${p.deposit?`<div><span>بیعانه دریافت‌شده (${esc(({CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت'})[p.deposit?.type]||'')})${p.deposit?.reference?` • پیگیری ${esc(p.deposit.reference)}`:''}</span><b>${money(p.deposit.amount)}</b></div>${p.deposit.refundedAmount?`<div><span>استرداد دستی بیعانه</span><b>${money(p.deposit.refundedAmount)}</b></div><div><span>بیعانه لحاظ‌شده</span><b>${money(p.depositAmount)}</b></div>`:''}<div><span>مانده پس از کسر بیعانه</span><b>${money(p.amountDue)}</b></div>`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
+  <div class="inv38-bottom inv38-with-payments"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(subtotal)}</b></div><div><span>تخفیفات</span><b>${money(discount)}</b></div><div><span>اضافات</span><b>${money(additions)}</b></div>${returns?`<div><span>کسر مرجوعی</span><b>${money(returns)}</b></div>`:''}${p.deposit?`<div><span>بیعانه دریافت‌شده (${esc(({CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت'})[p.deposit?.type]||'')})${p.deposit?.reference?` • پیگیری ${esc(p.deposit.reference)}`:''}</span><b>${money(p.deposit.amount)}</b></div>${p.deposit.refundedAmount?`<div><span>استرداد دستی بیعانه</span><b>${money(p.deposit.refundedAmount)}</b></div><div><span>بیعانه لحاظ‌شده</span><b>${money(p.depositAmount)}</b></div>`:''}<div><span>مانده پس از کسر بیعانه (پیش از تسویه)</span><b>${amountKnown(p.amountDue)?money(p.amountDue):'نامشخص'}</b></div>`:''}<div class="grand"><span>مبلغ نهایی</span><b>${money(p.totalAmount)}</b></div></div></div>
+  ${paymentBox}
   <div class="inv38-verify">
     <div class="inv38-verify-box"><div class="inv38-verify-grid"><div class="inv38-vitem"><span>امضاء</span><strong>${signatureContact}</strong></div></div></div>
   </div>
