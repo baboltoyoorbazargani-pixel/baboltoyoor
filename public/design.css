@@ -2036,3 +2036,13 @@ select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3
    (پیش‌تر در عرض کم، عنوان و توضیح کنار هم فشرده و ستونی می‌شدند) */
 .sd-head-main{flex-wrap:wrap}
 .sd-head-main>h2,.sd-head-main>p{flex:1 1 100%;min-width:0;overflow-wrap:normal;word-break:normal}
+
+/* Customer debt ledger */
+.cust-debt{margin:16px 0;padding:14px;border:1px solid var(--border,#dbe1e8);border-radius:10px;overflow-wrap:anywhere}
+.cust-debt h3{margin:0 0 8px}.cust-debt p{margin:6px 0}.cust-debt-hint{font-size:12px;color:var(--muted,#626b78)}
+.cust-debt-invoice{border:1px solid var(--border,#dbe1e8);border-radius:8px;padding:10px;margin-top:10px}
+.cust-debt-heading,.cust-debt-receipt{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cust-debt-values{display:flex;gap:8px 16px;flex-wrap:wrap;margin:10px 0;font-size:12px}
+.cust-debt-history{border-top:1px solid var(--border,#dbe1e8);padding-top:6px}
+.cust-debt-receipt{padding:6px 0;border-bottom:1px solid var(--border,#dbe1e8);font-size:12px}
+.cust-debt-receipt small{color:var(--muted,#626b78)}.cust-debt-actions{display:flex;flex-wrap:wrap;gap:5px}

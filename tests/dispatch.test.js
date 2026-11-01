@@ -330,6 +330,9 @@ test('پس از تحویل، فروش سفارش را نهایی می‌کند �
   assert.equal(r.json.order.payment.grossAmount, 84000);
   assert.equal(r.json.order.payment.returnDeduction, 10000);
   assert.equal(r.json.order.payment.totalAmount, 74000);
+  assert.equal(r.json.order.payment.debtAccount.initial, 74000);
+  const debt = await call('GET', `/api/customers/${r.json.order.customerId}/debts`, {cookie:S.sales});
+  assert.equal(debt.json.balance, 74000);
   const finance = await call('GET', '/api/reports', { cookie: S.admin });
   assert.equal(finance.json.finance.revenue, 74000, 'مبلغ خالص مرجوعی‌خورده باید وارد گزارش مالی شود');
   const queue = await call('GET', '/api/sales/dispatch-deliveries', { cookie: S.sales });

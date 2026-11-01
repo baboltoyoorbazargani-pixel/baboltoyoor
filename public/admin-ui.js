@@ -250,7 +250,7 @@ async function renderDriverRecords() {
         <div class="adm-cell"><small>سفارش</small><b dir="ltr">${admE(r.orderNo)}</b><span>${admE(formatDateTime24(r.deliveredAt))}</span></div>
         <div class="adm-cell"><small>مشتری</small><b>${admE(r.customerName)}</b><span dir="ltr">${admE(r.customerPhone || '')}</span></div>
         <div class="adm-cell"><small>راننده</small><b>${admE(r.driverName)}</b>${plateViewHtml(r.driverPlate, '—', true)}</div>
-        <div class="adm-cell"><small>تسویه</small><span class="badge ${r.settlementType === 'CASH' ? 'green' : 'blue'}">${r.settlementType === 'CASH' ? 'نقدی' : 'اعتباری'}</span><span>${r.hasReturn ? 'دارای مرجوعی' : 'بدون مرجوعی'} • ${r.hasShort ? 'دارای کسری' : 'بدون کسری'}</span></div>
+        <div class="adm-cell"><small>تسویه</small><span class="badge ${r.settlementType === 'CASH' ? 'green' : 'blue'}">${r.settlementType === 'CASH' ? 'نقدی' : 'معوق'}</span><span>${r.hasReturn ? 'دارای مرجوعی' : 'بدون مرجوعی'} • ${r.hasShort ? 'دارای کسری' : 'بدون کسری'}</span></div>
         <div class="adm-cell adm-actions"><span>تحویلی ${qty(r.totalKg)} • خالص ${qty(r.netKg)} کیلو</span>
           <details class="drv-lines"><summary>جزئیات اقلام</summary>
             <div class="table-wrap"><table class="adm-table"><thead><tr><th>کالا</th><th>تحویلی</th><th>مرجوعی</th><th>کسری</th><th>خالص</th><th>علت</th></tr></thead>
@@ -265,7 +265,7 @@ async function renderDriverRecords() {
       <label class="adm-date">از<input type="date" id="recFrom" value="${admE(adm.recFrom)}"></label>
       <label class="adm-date">تا<input type="date" id="recTo" value="${admE(adm.recTo)}"></label>
       ${sel('recDriver', adm.recDriver || '', driverOpts)}
-      ${sel('recSettle', adm.recSettle || '', [['', 'همه تسویه‌ها'], ['CASH', 'نقدی'], ['CREDIT', 'اعتباری']])}
+      ${sel('recSettle', adm.recSettle || '', [['', 'همه تسویه‌ها'], ['CASH', 'نقدی'], ['CREDIT', 'معوق']])}
       ${sel('recKind', adm.recKind || '', [['', 'همه تحویل‌ها'], ['return', 'فقط مرجوعی'], ['shortage', 'فقط کسری وزن']])}
       <button class="btn btn-secondary btn-sm" type="button" data-adm="rec-today">امروز</button>
     </div>
@@ -282,7 +282,7 @@ async function renderDriverRecords() {
 async function showDriverSignature(orderId) {
   try {
     const d = await api('/api/admin/driver-records/' + orderId);
-    openModal(`امضای مشتری — سفارش ${d.order.orderNo || ''}`, `<div class="drv-sigview"><img src="${d.signatureData}" alt="امضای مشتری"><small>تسویه ${d.order.dispatch.settlementType === 'CASH' ? 'نقدی' : 'اعتباری'} • ${admE(formatDateTime24(d.order.dispatch.deliveredAt))} • ثبت‌کننده: ${admE(d.order.dispatch.deliveredBy)}</small></div>`);
+    openModal(`امضای مشتری — سفارش ${d.order.orderNo || ''}`, `<div class="drv-sigview"><img src="${d.signatureData}" alt="امضای مشتری"><small>تسویه ${d.order.dispatch.settlementType === 'CASH' ? 'نقدی' : 'معوق'} • ${admE(formatDateTime24(d.order.dispatch.deliveredAt))} • ثبت‌کننده: ${admE(d.order.dispatch.deliveredBy)}</small></div>`);
   } catch (err) { toast(err.message); }
 }
 

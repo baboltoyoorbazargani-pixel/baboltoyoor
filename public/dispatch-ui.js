@@ -7,7 +7,7 @@
 const DSP_STATUS = { PENDING_ASSIGN: 'در انتظار تخصیص راننده', ASSIGNED: 'تخصیص‌یافته؛ منتظر اعلام خروج راننده', DRIVER_EXIT_REPORTED: 'خروج راننده ثبت شد؛ منتظر تأیید نگهبان', IN_TRANSIT: 'در حال ارسال به مشتری', DELIVERED: 'تحویل ثبت شد؛ منتظر تأیید نهایی فروش', SALES_FINALIZED: 'ثبت نهایی فروش انجام شد', CLOSED: 'بسته شده (نسخهٔ قدیمی)' };
 const DSP_STATUS_CLASS = { PENDING_ASSIGN: 'orange', ASSIGNED: 'orange', DRIVER_EXIT_REPORTED: 'purple', IN_TRANSIT: 'blue', DELIVERED: 'orange', SALES_FINALIZED: 'green', CLOSED: 'gray' };
 const DSP_RET_STATUS = { AT_SALES: 'نزد واحد فروش', AT_WAREHOUSE: 'ارجاع به انبار', RECEIVED: 'دریافت‌شده توسط انبار' };
-const DSP_SETTLE = { CASH: 'نقدی', CREDIT: 'اعتباری' };
+const DSP_SETTLE = { CASH: 'نقدی', CREDIT: 'معوق' };
 const DSP_LIVE_MS = 4000;
 const dsp = { tab: 'pending', driverTab:'assigned', retTab: '', orders: [], counts: {}, drivers: [], open: [], driverData:null, sig: null, sigs: {} };
 
@@ -140,7 +140,6 @@ function dspBindPayments(devices, dueFn){
   if(type==='POS')h=`<label class="cust-field"><span>دستگاه فعال *</span><select data-device><option value="">انتخاب دستگاه</option>${devices.map(d=>`<option value="${esc(d.id)}">${esc(d.title)} • ${esc(d.bank)} • ${esc(d.terminalNumber)}</option>`).join('')}</select></label><label class="cust-field"><span>شماره پیگیری</span><input data-reference placeholder="اختیاری"></label>`;
   if(type==='CARD_TRANSFER')h='<label class="cust-field"><span>بانک مقصد *</span><input data-bank></label><label class="cust-field"><span>شناسه پیگیری *</span><input data-reference></label>';
   if(type==='CHECK')h='<label class="cust-field"><span>بانک *</span><input data-bank></label><label class="cust-field"><span>شماره چک *</span><input data-check></label><label class="cust-field"><span>سررسید *</span><input type="date" data-due></label>';
-  if(type==='CREDIT')h='<label class="cust-field"><span>علت مانده *</span><input data-reason placeholder="علت یا موعد پرداخت"></label>';
   detail.innerHTML=h;detail.hidden=!h;
  };
  const refresh=()=>{let sum=0;host.querySelectorAll('[data-pay-amount]').forEach(x=>sum+=dspParseAmount(x.value));const due=dueFn();$('#dspPaySum').textContent=money(sum);$('#dspPayBalance').textContent=money(due-sum);};
@@ -160,7 +159,7 @@ function dspDeliverySummary(d, priceFree = false) {
   const lines = d.lines || [];
   if(priceFree){const sum=k=>lines.reduce((s,l)=>s+Number(l[k]||0),0);return `<div class="dsp-summary"><span>مرجوعی ${dspKg(sum('returnKg'))}</span><span>کسری ${dspKg(sum('shortageKg'))}</span><span>خالص ${dspKg(sum('netKg'))}</span>${d.note?`<small>یادداشت: ${esc(d.note)}</small>`:''}</div>`;}
 
-  const payLabels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'اعتباری'};
+  const payLabels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'معوق'};
   const paymentRows=(d.settlementMethods||[]).map(m=>`<span>${esc(payLabels[m.type]||m.type)}${m.deviceSnapshot?` • ${esc(m.deviceSnapshot.title)} (${esc(m.deviceSnapshot.terminalNumber)})`:''}${m.checkNumber?` • چک ${esc(m.checkNumber)}`:''}${m.reference?` • پیگیری ${esc(m.reference)}`:''}: <b>${money(m.amount)}</b></span>`).join('');
   const sum = (k) => lines.reduce((s, l) => s + Number(l[k] || 0), 0);
   const gross=Number(d.grossAmount??d.approvedTotalAmount??0);
@@ -355,7 +354,7 @@ async function openDeliveryForm(orderId) {
     <div class="dsp-delivery-head"><div class="dsp-head-cell"><span>${o.orderType==='STORE'?'فروشگاه':'مشتری'}</span><b>${esc(dspCustomer(o))}</b><small>${esc(dspPhone(o))}</small></div><div class="dsp-head-cell"><span>شماره سفارش</span><b>${esc(fa(o.orderNo||'—'))}</b><small>${priceFree ? 'تحویل محموله (بدون تسویه مالی)' : 'تحویل و تسویه'}</small></div><div class="dsp-head-cell"><span>راننده / خودرو</span><b>${esc(o.dispatch.driverName||'—')}</b><small>${plateViewHtml(o.dispatch.driverPlate, '—', true)}</small></div></div>
     ${itemsTable}
     ${priceFree ? '' : `<section class="dsp-payable-preview"><div><span>مبلغ اولیهٔ فاکتور</span><b>${money(approvedTotal)}</b></div><div><span>کسر مرجوعی</span><b id="dspReturnDeduction">${money(0)}</b></div><div class="dsp-payable-final"><span>مبلغ قابل تسویه</span><strong id="dspPayableAmount">${money(approvedTotal)}</strong></div><small>کسری وزن فقط ثبت می‌شود و به‌تنهایی مبلغ را کاهش نمی‌دهد.</small></section>`}
-    ${priceFree ? '' : `<section class="dsp-block"><h4>روش‌های دریافت وجه *</h4><p class="adm-note">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مبلغ قابل تسویه برابر باشد.</p><div id="dspPayRows"><div class="dsp-pay-row"><label class="cust-field"><span>روش دریافت</span><select data-pay-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">اعتباری / مانده</option></select></label><label class="cust-field"><span>مبلغ (ریال)</span><input inputmode="numeric" data-pay-amount value="${Number(approvedTotal).toLocaleString('fa-IR')}"></label><div class="dsp-pay-detail"></div><button type="button" class="btn btn-secondary btn-sm" data-pay-del>حذف</button></div></div><button type="button" class="btn btn-secondary btn-sm" id="dspPayAdd">＋ افزودن روش پرداخت</button><div class="dsp-pay-summary">جمع پرداخت: <b id="dspPaySum">${money(approvedTotal)}</b>　•　مانده: <b id="dspPayBalance">${money(0)}</b></div></section>`}
+    ${priceFree ? '' : `<section class="dsp-block"><h4>روش‌های دریافت وجه *</h4><p class="adm-note">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مبلغ قابل تسویه برابر باشد.</p><div id="dspPayRows"><div class="dsp-pay-row"><label class="cust-field"><span>روش دریافت</span><select data-pay-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">معوق</option></select></label><label class="cust-field"><span>مبلغ (ریال)</span><input inputmode="numeric" data-pay-amount value="${Number(approvedTotal).toLocaleString('fa-IR')}"></label><div class="dsp-pay-detail"></div><button type="button" class="btn btn-secondary btn-sm" data-pay-del>حذف</button></div></div><button type="button" class="btn btn-secondary btn-sm" id="dspPayAdd">＋ افزودن روش پرداخت</button><div class="dsp-pay-summary">جمع پرداخت: <b id="dspPaySum">${money(approvedTotal)}</b>　•　مانده: <b id="dspPayBalance">${money(0)}</b></div></section>`}
     <label class="cust-field"><span>یادداشت تحویل</span><input name="note" maxlength="500"></label>
   </div>`;
   openModal(`ثبت تحویل — سفارش ${o.orderNo || ''}`, admModalForm('dspDeliverForm', body, priceFree ? 'ثبت تحویل محموله' : 'ثبت تحویل و ثبت تسویه'));
@@ -393,7 +392,6 @@ async function openDeliveryForm(orderId) {
     if(settlementMethods.some(x=>x.type==='POS'&&!x.deviceId))return fail('برای پرداخت پوز، دستگاه فعال را انتخاب کنید.');
     if(settlementMethods.some(x=>x.type==='CARD_TRANSFER'&&(!x.bank||!x.reference)))return fail('برای کارت‌به‌کارت، بانک مقصد و شناسه پیگیری الزامی است.');
     if(settlementMethods.some(x=>x.type==='CHECK'&&(!x.bank||!x.checkNumber||!x.dueDate)))return fail('برای چک، بانک، شماره و سررسید الزامی است.');
-    if(settlementMethods.some(x=>x.type==='CREDIT'&&!x.reason))return fail('علت مانده اعتباری را ثبت کنید.');
     const settlementType=settlementMethods.some(x=>x.type==='CREDIT')?'CREDIT':'CASH';
     const fullReturn = full.checked;
     const fullReason = $('#dspFullReason').value.trim();
