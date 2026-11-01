@@ -36,3 +36,14 @@ test('real store migration and restart persist six-digit order labels and sequen
   const two=run();assert.equal(two.order.orderNo,'000001');assert.equal(two.label,'000003');
  }finally{fs.rmSync(dir,{recursive:true,force:true})}
 });
+test('historic numeric store labels cannot be reused by customers, including during migration',()=>{
+ const db={orders:[{id:'store',orderType:'STORE',orderNo:'000001'},{id:'pending',orderType:'REMOTE',orderNo:'OLD'}],counters:{}};
+ ensureOrderNumbers(db);assert.equal(db.orders[0].orderNo,'000001');assert.equal(db.orders[1].orderNo,'000002');assert.equal(nextOrderNumber(db),'000003');
+ const data={orders:[{id:'old-store',orderType:'STORE',orderNo:'000002'}],counters:{orderNumber:1}};
+ assert.equal(nextOrderNumber(data),'000003');assert.equal(data.orders[0].orderNo,'000002');
+});
+test('historic equal customer and store labels are preserved and no new order reuses them',()=>{
+ for(const orders of [[{id:'s',orderType:'STORE',orderNo:'000001'},{id:'c',orderType:'REMOTE',orderNo:'000001'}],[{id:'c',orderType:'REMOTE',orderNo:'000001'},{id:'s',orderType:'STORE',orderNo:'000001'}]]){
+  const db={orders,counters:{}};assert.equal(ensureOrderNumbers(db),0);assert.deepEqual(orders.map(o=>o.orderNo),['000001','000001']);assert.equal(nextOrderNumber(db),'000002');assert.equal(ensureOrderNumbers(db),0);
+ }
+});
