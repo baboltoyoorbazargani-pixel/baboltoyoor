@@ -19,8 +19,9 @@ test('عملیات خروج تا تأیید صریح انجام نمی‌شود 
 });
 test('جزئیات فروش و انبار تخصیص مستقل را نشان می‌دهد و فقط فروش می‌تواند بازگشت مدارک تأییدشده را ثبت کند',()=>{
  const appSource=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8'),fragment=appSource.slice(appSource.indexOf('function transportOrderServiceHtml('),appSource.indexOf('async function openOrderDetails('));
- const ctx=vm.createContext({esc,fa:x=>x});vm.runInContext(fragment,ctx);
+ const ctx=vm.createContext({esc,fa:x=>x,app:{features:{experimentalTransport:true}}});vm.runInContext(fragment,ctx);
  const order={transportWorkflow:1,deliveryMode:'DELIVERY',orderType:'STORE',transportAssignments:{'1':{driverName:'<راننده اول>',driverPhone:'091',vehicleType:'وانت',vehiclePlate:'123'},'2':{driverName:'راننده دوم'}},transportStoreTrips:{'1':{status:'RECEIPT_CONFIRMED'},'2':{status:'IN_TRANSIT'}}};
  const sales=ctx.transportOrderServiceHtml(order,true),warehouse=ctx.transportOrderServiceHtml(order,false);assert.match(sales,/&lt;راننده اول&gt;/);assert.match(sales,/راننده دوم/);assert.match(sales,/data-store-transport-return="1"/);assert.doesNotMatch(sales,/data-store-transport-return="2"/);assert.doesNotMatch(warehouse,/data-store-transport-return=/);
+ ctx.app.features.experimentalTransport=false;assert.doesNotMatch(ctx.transportOrderServiceHtml(order,true),/data-store-transport-return=/);
  assert.equal(ctx.transportOrderServiceHtml({...order,transportWorkflow:undefined},true),'');
 });

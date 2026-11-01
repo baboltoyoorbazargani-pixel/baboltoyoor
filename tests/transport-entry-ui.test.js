@@ -22,11 +22,15 @@ test('انتخاب‌نشدن روش و سفارش بیعانه‌دار پخش 
  let h=harness('');await h.c.submitOrder('visit');await h.c.submitPhoneOrderV25(h.form);assert.equal(h.calls.length,0);assert(h.messages.every(s=>/روش تحویل/.test(s)));
  h=harness('DELIVERY',{amount:10,type:'CASH'});await h.c.submitPhoneOrderV25(h.form);await h.c.submitFutureOrderV25(h.form);assert.equal(h.calls.length,0);assert(h.messages.every(s=>/بیعانه/.test(s)));
 });
-test('اعلان ترابری به صف مستقل می‌رود و فروش پس از خروج به فرم فاکتور هدایت می‌شود',async()=>{
+test('اعلان ترابری به صف مستقل و خروج به کارتابل تحویل فروش هدایت می‌شود',async()=>{
  const calls=[],clicked=[];const button={click:()=>clicked.push('open')};
  const c={app:{user:{roleCode:'dispatch'}},adm:{},acknowledgeNotifications:async()=>true,normalizeRole:x=>x,go:async(...args)=>calls.push(['go',...args]),document:{querySelector:()=>button},CSS:{escape:x=>x},focusNotificationElement:()=>true,api:async()=>{throw Error('dispatch must not read general order API')},toast:m=>calls.push(['toast',m]),stlOpen:id=>calls.push(['stl',id])};
  vm.createContext(c);vm.runInContext(fragment(appSource,'const NOTIF_ROUTES={','function faDigits('),c);vm.runInContext(fragment(appSource,'async function openNotificationTarget(', 'function notifyNewArrivals('),c);
  await c.openNotificationTarget('n','TRANSPORT_INVOICE_READY','dispatch','order','id1');assert.deepEqual(calls[0],['go','drivers','orders']);assert.deepEqual(clicked,['open']);assert.equal(c.adm.tab,'dispatch');
- calls.length=0;c.app.user.roleCode='sales';c.api=async()=>({order:{id:'id2',orderType:'REMOTE',transportWorkflow:1,deliveryMode:'DELIVERY',status:'SETTLEMENT_PENDING'}});
- await c.openNotificationTarget('n','TRANSPORT_DEPARTED','sales','order','id2');assert.deepEqual(calls,[['go','sales','settlement'],['stl','id2']]);
+ calls.length=0;c.app.user.roleCode='sales';c.api=async()=>({order:{id:'id2',orderType:'REMOTE',transportWorkflow:1,deliveryMode:'DELIVERY',status:'SETTLEMENT_PENDING'}});c.fetchSalesCache=async()=>{c.app.salesCache={dispatchDeliveries:{inTransit:[{id:'id2'}]}}};c.openSalesDeliveryDetails=id=>calls.push(['details',id]);
+ await c.openNotificationTarget('n','TRANSPORT_DEPARTED','sales','order','id2');assert.deepEqual(calls,[['go','sales','delivery'],['details','id2']]);assert.equal(c.app.salesDeliveryTab,'inTransit');
+});
+test('بازکردن فاکتور از کارتابل پس از آماده‌شدن میز تسویه انجام می‌شود',async()=>{
+ const events=[],c={app:{page:'sales',sub:{sales:'delivery'}},go:async(p,s)=>{events.push('go');c.app.page=p;c.app.sub.sales=s;},fetchSalesCache:async()=>{events.push('fetch');return{orders:[]}},paintSalesPaneV29:(tab)=>events.push('paint-'+tab),stlOpen:id=>events.push('open-'+id)};
+ vm.createContext(c);vm.runInContext(fragment(appSource,'async function goTransportSalesWork(', 'async function bootstrap('),c);await c.goTransportSalesWork('id');assert.deepEqual(events,['go','fetch','paint-settlement','open-id']);
 });
