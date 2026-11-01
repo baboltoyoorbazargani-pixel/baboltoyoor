@@ -3431,6 +3431,7 @@ function stlFormHtml(o){
 window.BTSettlementRenderers={row:stlRowHtml,form:stlFormHtml};
 function stlPaintForm(){
   const host = $('#stlMain'); if(!host || !stl.order) return;
+  if(stl.order.transportWorkflow===1&&stl.order.deliveryMode==='DELIVERY'&&typeof transportSalesInvoicePanel==='function'){transportSalesInvoicePanel(stl.order);return;}
   host.innerHTML = stlFormHtml(stl.order);
   const driverSelect=host.querySelector('[data-stl-driver]');if(driverSelect)driverSelect.addEventListener('change',()=>{host.querySelector('[data-stl-plate]').innerHTML=plateViewHtml(stl.drivers.find(x=>x.id===driverSelect.value)?.plate,'—',true);});
   stlRecalc(); stlBindPayments();
