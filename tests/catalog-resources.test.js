@@ -36,6 +36,7 @@ test('independent catalogs, selections, permissions and no orphan records on err
   assert.equal((await call('PUT','/api/admin/transport-vehicles/'+vehicle.id,{isActive:false})).status,409);
   assert.equal((await call('PUT','/api/admin/payment-devices/'+device.id,{isActive:false})).status,409);
   assert.equal((await call('PUT','/api/drivers/'+driver.driverId,{plate:'11ب11111'})).status,409);
+  assert.equal((await call('PUT','/api/transport/drivers/'+driver.driverId,{fullName:'تغییر مغایر'})).status,409, 'حساب رانندهٔ قدیمی از مسیر ترابری ناسازگار نمی‌شود');
   assert.equal((await call('DELETE','/api/drivers/'+driver.driverId,{})).status,409);
   const dc=await login('driver-new',password);assert.equal((await call('POST','/api/admin/store-branches',{name:'x',branchNo:8},dc)).status,403);
 });
