@@ -18,6 +18,15 @@ test('حساب معوق مشتری: سفارش جدید، دریافت انتخ�
    r=await req('POST',`/api/orders/${o.id}/settle`,{items:[{itemId:o.items[0].id,unitPrice:1000}],settlementMethods:[{type:'CASH',amount:500},{type:'CREDIT',amount:1500}]});assert.equal(r.status,200,JSON.stringify(r.json));assert.equal(r.json.order.payment.debtAccount.initial,1500);return r.json.order;
   };
   const first=await make(),second=await make(),cid=first.customerId;assert.equal(second.customerId,cid);
+
+  // Same phone really links a store order to the same customer. A run of more
+  // than 30 store orders must not consume the customer history cap.
+  assert.equal((await req('POST','/api/admin/users',{username:'store1',fullName:'فروشگاه',position:'فروشگاه',roleCode:'store',storeName:'فروشگاه شعبه 1 حمزه کلا',password:'Shop!12345',mustChangePassword:false})).status,201);
+  const shopLogin=await fetch(base+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'store1',password:'Shop!12345'})});assert.equal(shopLogin.status,200);const shop=shopLogin.headers.get('set-cookie').match(/sid=[^;]+/)[0];
+  const shopIds=[];for(let i=0;i<31;i++){const so=await req('POST','/api/store/orders',{name:'مشتری بدهکار',phone:'09121112233',items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]},{cookie:shop,key:`shop-create-${i}`});assert.equal(so.status,201,JSON.stringify(so.json));assert.equal(so.json.order.customerId,cid);assert.match(so.json.order.orderNo,/^B41/);shopIds.push(so.json.order.id);}
+  let profile=await req('GET',`/api/customers/${cid}`);assert.equal(profile.status,200);assert.equal(profile.json.customer.orderCount,2);assert.equal(profile.json.customer.lastActivityAt,second.createdAt);assert.deepEqual(profile.json.orders.map(o=>o.id),[second.id,first.id]);
+  const customerList=await req('GET','/api/customers?q=09121112233');const row=customerList.json.customers.find(c=>c.id===cid);assert.equal(row.orderCount,2);assert.equal(row.debtBalance,3000);assert.equal(row.lastActivityAt,second.createdAt);
+  const shopList=await req('GET','/api/store/orders',undefined,{cookie:shop});assert.equal(shopList.status,200);assert.equal(shopList.json.total,31);assert(shopIds.every(id=>shopList.json.orders.some(o=>o.id===id)));
   const url=`/api/customers/${cid}/debts`,p=first.payment.id,baseReceipt=`${url}/${p}/receipts`;
   let r=await req('GET',url);assert.equal(r.status,200);assert.equal(r.json.balance,3000);assert.equal(r.json.invoices.length,2);assert.equal((await req('GET',url,undefined,{cookie:gate})).status,403);
   assert.equal((await req('POST',baseReceipt,{type:'CASH',amount:100})).status,400); // idempotency key mandatory
@@ -43,7 +52,7 @@ test('حساب معوق مشتری: سفارش جدید، دریافت انتخ�
   r=await req('GET',url);assert.equal(r.json.balance,1900);assert.equal(r.json.invoices.find(x=>x.paymentId===p).balance,400);
   r=await req('POST',baseReceipt,{type:'CASH',amount:400},{key:'receive-09'});assert.equal(r.status,201);assert.equal(r.json.balance,1500);
   const other=await req('POST','/api/customers',{name:'دیگری',phone:'09120000001'});assert.equal(other.status,201);assert.equal((await req('POST',`/api/customers/${other.json.customer.id}/debts/${p}/receipts`,{type:'CASH',amount:1},{key:'receive-08'})).status,404);
-  await stop();await start();cookie=null;assert.equal((await req('POST','/api/login',{username:'admin',password:'Changed!2345'})).status,200);r=await req('GET',url);assert.equal(r.json.balance,1500);assert.equal(r.json.invoices.find(x=>x.paymentId===p).receipts.length,5);
+  await stop();await start();cookie=null;assert.equal((await req('POST','/api/login',{username:'admin',password:'Changed!2345'})).status,200);r=await req('GET',url);assert.equal(r.json.balance,1500);assert.equal(r.json.invoices.find(x=>x.paymentId===p).receipts.length,5);profile=await req('GET',`/api/customers/${cid}`);assert.equal(profile.json.customer.orderCount,2);assert.deepEqual(profile.json.orders.map(o=>o.id),[second.id,first.id]);
   r=await req('GET',`/api/orders/${first.id}`);assert.equal(r.json.order.payment.debtAccount.receipts.filter(x=>x.status==='CLEARED').length,3);assert.equal(r.json.order.payment.debtAccount.receipts[0].reference,undefined);
   const third=await make(),thirdUrl=`/api/customers/${cid}/debts/${third.payment.id}/receipts`;
   const concurrent=await Promise.all([req('POST',thirdUrl,{type:'CASH',amount:1000},{key:'race-0001'}),req('POST',thirdUrl,{type:'CASH',amount:1000},{key:'race-0002'})]);assert.deepEqual(concurrent.map(x=>x.status).sort(),[201,409]);

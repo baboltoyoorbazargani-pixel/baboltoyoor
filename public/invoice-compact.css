@@ -108,3 +108,13 @@ body.invoice-print{margin:0;padding:8px;background:#fff}
  .inv38-compact .inv38-with-payments .inv38-verify{grid-column:1;grid-row:3}
  .inv38-compact .inv38-sales-title{white-space:normal}
 }
+
+/* Inline the sales invoice header fields, without changing the store document. */
+.inv38-compact .inv38-sales-title + .inv38-meta{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)}
+.inv38-compact .inv38-sales-title + .inv38-meta > div{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;padding:4px}
+.inv38-compact .inv38-sales-title + .inv38-meta span{display:inline;white-space:nowrap;flex-shrink:0}
+.inv38-compact .inv38-sales-title + .inv38-meta b{display:inline;margin:0;min-width:0;overflow-wrap:anywhere}
+@media screen and (max-width:640px){
+ .inv38-compact .inv38-sales-title + .inv38-meta{grid-template-columns:minmax(0,1fr)}
+ .inv38-compact .inv38-sales-title + .inv38-meta > div{justify-content:space-between}
+}
