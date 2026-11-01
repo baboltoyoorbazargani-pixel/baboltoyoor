@@ -108,6 +108,7 @@ async function openOrder(visitId){
       </div>
       <div class="sd-oe-layout">
         <section class="sd-panel">
+          ${app.features?.experimentalTransport?deliveryModeInputHtml('onsite'):''}
           <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع دو رقمی انتخاب کنید؛ توضیحات هر ردیف جداگانه ثبت می‌شود.</p></div><span class="sd-chip">کیلوگرم / بسته / عدد / کارتن</span></div>
           <div class="sd-lines-body"><div id="orderLines" class="sd-lines"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-secondary" data-action="add-line">${icon('plus',16)} افزودن ردیف محصول</button><span style="font-size:11.5px;color:var(--muted)">برای حذف هر ردیف از آیکن سطل استفاده کنید.</span></div>
@@ -211,6 +212,7 @@ function renderSalesRemoteV32(orders){
         <div class="field contact-field-v41"><label for="phoneCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input id="phoneCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
         <div class="field sales-remote-place-v40"><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
       </div>
+      ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
       <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>با کلیدهای جهت‌دار محصول را انتخاب کنید؛ Enter از مقدار و واحد به توضیح می‌رود و در پایان ردیف، قلم بعدی را باز می‌کند. Insert نیز ردیف جدید می‌افزاید؛ ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
@@ -367,6 +369,7 @@ function futureFormV38(orders){
             <div class="field fx-addr-field"><label for="futureDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input id="futureDispatchPlace" name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
           </div>
           <div class="sd-lines-head fx-lines-head"><h3>اقلام سفارش</h3></div>
+          ${app.features?.experimentalTransport?deliveryModeInputHtml('future'):''}
           <div id="future-lines" class="sd-lines"></div>
           <div class="fx-lines-add">
             <button type="button" class="btn btn-secondary btn-sm" data-action="future-add-line">${icon('plus',15)} افزودن قلم جدید</button>

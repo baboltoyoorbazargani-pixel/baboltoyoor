@@ -748,7 +748,7 @@ function setHeader(kicker,title,subtitle){$('#headerKicker').textContent=kicker;
 function landing(){const r=normalizeRole(app.user?.roleCode);return r==='admin'?'dashboard':r}
 
 async function refreshShell(){
-  const me=await api('/api/me');app.user=me.user;
+  const me=await api('/api/me');app.user=me.user;app.features=me.features||{};
   const roleLabel=ROLE[normalizeRole(app.user.roleCode)]||app.user.roleCode;
   $('#appView')?.setAttribute('data-role',normalizeRole(app.user.roleCode));
   const roleText=(app.user.position && app.user.position.trim()!==roleLabel) ? `${app.user.position} • ${roleLabel}` : roleLabel;
@@ -1469,7 +1469,7 @@ function resetClientState(){
   stopNotifReminder(); closeNotifPanel();
   app.salesDeliveryTab='assigned'; app.salesDeliveryHistoryOffset=0;
   app.notifRequestSeq=(app.notifRequestSeq||0)+1; app.notifAppliedSeq=app.notifRequestSeq;
-  app.user=null; app.notifSnapshot=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
+  app.user=null; app.features={}; app.notifSnapshot=null; app.notifSeen=null; app.notifUnread=0; app.notifAudioWarningShown=false; app.page='dashboard'; app.workload={}; app.selectedWarehouse=null; app.selectedSettlement=null; app.forcePasswordChange=false;
 }
 function handleSessionExpired(){
   if(!app.user) return;
@@ -1514,6 +1514,9 @@ const NOTIF_ROUTES={
   STORE_ORDER_PENDING:{page:'sales',sub:'stores'},
   STORE_ORDER_QUICK_SENT:{page:'warehouse'},
   STORE_RECEIPT_CONFIRMED:{page:'sales',sub:'delivery'},
+  TRANSPORT_ORDER_READY:{page:'drivers',sub:'orders'},
+  TRANSPORT_INVOICE_READY:{page:'drivers',sub:'orders'},
+  TRANSPORT_DEPARTED:{page:'sales',sub:'settlement'},
   STORE_ORDER_DUE:{page:'warehouse'},
   REMOTE_ORDER_DUE:{page:'warehouse'},
   NEW_ORDER:{page:'warehouse'},
@@ -1535,6 +1538,8 @@ const NOTIF_ROUTES={
 };
 function notifRoute(type,targetRole){
   if(type==='STORE_ORDER_APPROVED') return targetRole==='warehouse'?{page:'warehouse'}:{page:'sales',sub:'stores'};
+  if(type==='TRANSPORT_ASSIGNED') return targetRole==='warehouse'?{page:'warehouse'}:{page:'sales',sub:'flow'};
+  if(type==='TRANSPORT_WAREHOUSE_HANDOVER') return targetRole==='dispatch'?{page:'drivers',sub:'orders'}:{page:'sales',sub:'settlement'};
   return NOTIF_ROUTES[type]||null;
 }
 function faDigits(v){return String(v).replace(/[0-9]/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])}
@@ -1724,12 +1729,14 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
     }
     if(route.page==='store'){await go('store',route.sub);return openStoreOrderDetails(entityId);}
     if(route.page==='driver'){await go('driver');return dspOrderDetails(entityId);}
+    if(route.page==='drivers'){adm.tab='dispatch';await go('drivers','orders');const el=document.querySelector(`[data-tp="details"][data-id="${CSS.escape(entityId)}"]`);if(el){focusNotificationElement(el);el.click();return;}return toast('این سفارش دیگر در صف جاری ترابری نیست.');}
     const order=(await api('/api/orders/'+encodeURIComponent(entityId))).order;
     if(route.page==='warehouse'){
-      const phase=order.orderType==='STORE'?'stores':(order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming');
+      const phase=order.orderType==='STORE'?'stores':(order.status==='SETTLEMENT_PENDING'&&type==='TRANSPORT_ASSIGNED'?'delivered':order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming');
       if(order.orderType==='STORE')app.wh38.storeTab=order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming';
       await go('warehouse',phase);
       if(order.orderType==='STORE'&&order.status==='WAREHOUSE_PENDING')return wh38StoreDetails(entityId);
+      if(phase==='delivered')return whDeliveredDetails(entityId);
       return openOrderDetails(entityId);
     }
     if(route.page==='sales'&&order.orderType==='STORE'){
@@ -1746,6 +1753,7 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       return openOrderDetails(entityId);
     }
     await go(route.page,route.sub);
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.status==='SETTLEMENT_PENDING'&&['TRANSPORT_WAREHOUSE_HANDOVER','TRANSPORT_DEPARTED','WAREHOUSE_DONE'].includes(type))return stlOpen(entityId);
     if(route.page==='gate'){
       const el=document.querySelector(`[data-action="open-exit"][data-id="${CSS.escape(entityId)}"]`);
       if(focusNotificationElement(el))return;
@@ -2203,6 +2211,7 @@ async function openOrderDetails(id){
         <div><span>مقدار درخواستی</span><b>${qty(totalRequested)}</b></div>
         <div><span>وزن تحویلی</span><b>${qty(totalDelivered)} کیلوگرم</b></div>
       </div>
+      ${o.transportWorkflow===1?`<p><b>روش تحویل:</b> ${o.deliveryMode==='DELIVERY'?'ارسال توسط پخش':'تحویل در انبار'}</p>`:''}
       ${depositSummaryHtml(o.deposit)}
       ${transportOrderServiceHtml(o,can('sales'))}
       ${warehouseReturnNoteHtml(o)}
@@ -2365,6 +2374,19 @@ function futureOrderRowsV25(orders){
 }
 
 // بیعانه صرفاً هنگام ثبت سفارش دریافت می‌شود؛ اطلاعات آن پس از ثبت قابل حذف پنهانی نیست.
+// The incomplete new workflow is opt-in at the server and never silently
+// inferred from an absent choice. Legacy forms are unchanged when disabled.
+function deliveryModeInputHtml(prefix){
+ const id="delivery-mode-"+String(prefix||"order");
+ return `<div class="field transport-delivery-choice"><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
+}
+function readDeliveryMode(root,deposit){
+ if(!app.features?.experimentalTransport)return {};
+ const mode=root?.querySelector('[data-delivery-mode]')?.value||'';
+ if(!['DELIVERY','PICKUP'].includes(mode))throw Error('روش تحویل سفارش را انتخاب کنید.');
+ if(mode==='DELIVERY'&&deposit)throw Error('سفارش دارای بیعانه قابل ارسال توسط پخش نیست؛ تحویل در انبار را انتخاب کنید.');
+ return {transportWorkflow:true,deliveryMode:mode};
+}
 function depositEntryHtml(){
  return `<section class="deposit-entry"><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
  <div class="deposit-fields" data-deposit-fields hidden><label>مبلغ بیعانه (ریال)<input class="adm-input" data-deposit-amount inputmode="numeric" autocomplete="off" placeholder="مبلغ دریافتی"></label><label>نوع پرداخت<select class="adm-select" data-deposit-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option></select></label><label data-deposit-pos hidden>دستگاه فعال<select class="adm-select" data-deposit-device><option value="">انتخاب دستگاه</option></select></label><label data-deposit-bank-wrap hidden>بانک / حساب مقصد<input class="adm-input" data-deposit-bank maxlength="100"></label><label data-deposit-reference-wrap hidden>شماره پیگیری<input class="adm-input" data-deposit-reference maxlength="100" placeholder="شناسه تراکنش"></label></div></section>`;
@@ -2417,8 +2439,8 @@ async function submitPhoneOrderV25(form){
   const f=Object.fromEntries(new FormData(form));
   try{
     const deposit=readOrderDeposit(form);
-    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',deposit,items})});
-    toast(d.order?.status==='WAREHOUSE_PENDING'?'سفارش تلفنی ثبت و مستقیماً به انبار ارسال شد.':'سفارش تلفنی ثبت شد.');
+    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',deposit,items,...(app.features?.experimentalTransport?readDeliveryMode(form,deposit):{})})});
+    toast(d.order?.status==='WAREHOUSE_PENDING'?(d.order.deliveryMode==='DELIVERY'?'سفارش تلفنی به انبار و ترابری ارسال شد.':'سفارش تلفنی به انبار ارسال شد.'):'سفارش تلفنی ثبت شد.');
     form.reset(); app.phoneDraft=[defaultOrderLine()]; renderOrderLineArea('phone','phoneDraft'); await renderSales('remote');
   }catch(e){toast(e.message)}
 }
@@ -2434,7 +2456,7 @@ async function submitFutureOrderV25(form){
   if(!items.length)return toast('حداقل یک محصول معتبر برای سفارش آینده وارد کنید.');
   try{
     const deposit=readOrderDeposit(form);
-    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${iso}T${tm}`,deposit,items})});
+    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${iso}T${tm}`,deposit,items,...(app.features?.experimentalTransport?readDeliveryMode(form,deposit):{})})});
     toast(d.order?.status==='SCHEDULED_REMOTE'?'سفارش برای تاریخ و ساعت انتخاب‌شده برنامه‌ریزی شد.':'سفارش در صف انبار قرار گرفت.');
     form.reset(); const dateInp=form.querySelector('.jalali-date-input[data-target=scheduledDate]'); if(dateInp){dateInp.value=isoToJalali(iso); dateInp.dispatchEvent(new Event('input',{bubbles:true}));}
     const t=form.querySelector('.time24-input'); if(t)t.value='08:00'; app.futureDraft=[defaultOrderLine()]; renderOrderLineArea('future','futureDraft'); await renderSales('future');
@@ -2450,7 +2472,7 @@ async function openStoreApprovalV25(id){
       e.preventDefault(); if(!e.target.reportValidity())return;
       const f=Object.fromEntries(new FormData(e.target)); const tm=normalizeTime24(f.scheduledTime); if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت نامعتبر است.');
       if(!f.scheduledDate)return toast('تاریخ شمسی معتبر وارد کنید.');
-      try{const r=await api('/api/store/orders/'+id+'/approve',{method:'POST',body:JSON.stringify({scheduledAt:`${f.scheduledDate}T${tm}`,dispatchPlace:f.dispatchPlace})});closeModal();toast(r.order?.status==='WAREHOUSE_PENDING'?'سفارش تأیید و به صف انبار ارسال شد.':'سفارش تأیید و برای زمان تعیین‌شده برنامه‌ریزی شد.');await renderSales('stores');await refreshIndicators();}catch(err){toast(err.message)}
+      try{const r=await api('/api/store/orders/'+id+'/approve',{method:'POST',body:JSON.stringify({scheduledAt:`${f.scheduledDate}T${tm}`,dispatchPlace:f.dispatchPlace,...(app.features?.experimentalTransport?{transportWorkflow:true}:{})})});closeModal();toast(r.order?.status==='WAREHOUSE_PENDING'?(r.order.transportWorkflow===1?'سفارش تأیید و به انبار و ترابری ارسال شد.':'سفارش تأیید و به صف انبار ارسال شد.'):'سفارش تأیید و برای زمان تعیین‌شده برنامه‌ریزی شد.');await renderSales('stores');await refreshIndicators();}catch(err){toast(err.message)}
     });
   }catch(e){toast(e.message)}
 }
@@ -2489,7 +2511,7 @@ async function submitOrder(visitId){
   const buttons=$$('#content [data-action="submit-order"]').filter(b=>b.dataset.id===visitId);
   app.onsiteSubmitting=true;buttons.forEach(b=>b.disabled=true);
   try{
-    await api('/api/orders',{method:'POST',body:JSON.stringify({visitId,items})});
+    await api('/api/orders',{method:'POST',body:JSON.stringify({visitId,items,...(app.features?.experimentalTransport?readDeliveryMode(document.querySelector('#content'),null):{})})});
     toast('سفارش ثبت و برای انبار ارسال شد.');
     app.orderDraft=[];
     // Clear the editor immediately and remove the submitted visitor from the cached queue.
@@ -3086,9 +3108,9 @@ async function salesV29ClickHandler(e){
     if(a==='sales-edit-store-order')return openSalesStoreOrderEdit(el.dataset.id);
     if(a==='store-approve-v25')return openStoreApprovalV25(el.dataset.id);
     if(a==='store-quick-send-v40'){
-      if(!confirm('این سفارش فروشگاهی بدون انتظار برای زمان‌بندی، همین حالا به صف انبار ارسال شود؟'))return;
+      if(!confirm(app.features?.experimentalTransport?'سفارش فروشگاهی اکنون به انبار و ترابری ارسال شود؟ سفارش زمان‌دار تا موعد مقرر ارسال نمی‌شود.':'این سفارش فروشگاهی بدون انتظار برای زمان‌بندی، همین حالا به صف انبار ارسال شود؟'))return;
       el.disabled=true;
-      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify({})});toast(result.order?.status==='WAREHOUSE_PENDING'?'سفارش با موفقیت به صف انبار ارسال شد.':'ارسال سریع ثبت شد.');await renderSales('stores');await refreshIndicators();}
+      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify(app.features?.experimentalTransport?{transportWorkflow:true}:{})});toast(result.order?.status==='WAREHOUSE_PENDING'?(result.order.transportWorkflow===1?'سفارش به انبار و ترابری ارسال شد.':'سفارش با موفقیت به صف انبار ارسال شد.'):'ارسال سریع ثبت شد.');await renderSales('stores');await refreshIndicators();}
       catch(err){el.disabled=false;toast(err.message||'ارسال سریع انجام نشد.');}
       return;
     }
@@ -3333,6 +3355,7 @@ function orderCustomerStripHtml(o,settlement=false){
   return `<div class="bt-customer-strip-scroll" role="region" aria-label="مشخصات مشتری" tabindex="0"><div class="bt-customer-strip" style="--customer-fields:${fields.length}">${fields.map(([label,value])=>`<div class="bt-customer-field" tabindex="0" title="${esc(label)}: ${esc(value)}" aria-label="${esc(label)}: ${esc(value)}"><b>${esc(label)}</b><span>${label==='پلاک'?plateViewHtml(o.customer?.plate,'بدون پلاک',true):esc(value)}</span></div>`).join('')}</div></div>`;
 }
 function stlDispatchControls(o,returnControl=''){
+  if(o.transportWorkflow===1&&o.deliveryMode==='PICKUP')return `<div class="stl-dispatch-control">${returnControl}<span>تحویل در انبار؛ ارسال به پخش مجاز نیست.</span></div>`;
   if(o.deposit)return `<div class="stl-dispatch-control deposit-dispatch-block">${returnControl}<span class="deposit-dispatch-message">سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span></div>`;
   const d=o.dispatch||null;
   if(d && !['PENDING_ASSIGN','ASSIGNED'].includes(d.status)) return `<span class="badge blue">${esc(dispatchStatusLabel(d.status))}</span>`;
