@@ -9,6 +9,9 @@
 .whd-meta .whd-label{flex:0 0 auto;white-space:nowrap}
 .whd-meta>span b{font-size:10px;font-weight:700;min-width:0;overflow-wrap:anywhere}
 .whd-meta>span b[dir=ltr]{white-space:nowrap;overflow-wrap:normal;unicode-bidi:isolate}
+.wh-store-doc-shortcut{margin:6px 0}
+.whd-store-meta{grid-template-columns:1.3fr 1.3fr 1.1fr 1.5fr .7fr}
+.whd-store-meta>span{flex-wrap:wrap}
 .whd-table-scroll{max-width:100%;overflow-x:auto}
 .whd-doc table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid #e3e6ea;border-radius:6px;font-size:11px}
 .whd-col-number{width:34px}.whd-col-product{width:38%}.whd-col-request{width:27%}

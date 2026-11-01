@@ -116,6 +116,7 @@ test('سناریوی گزارش: ارسال زودهنگام سرویس دوم،
   const again = await SEND(wh, o.id, 2);
   assert.equal(again.status, 200);
   assert.equal(again.json.order.storeRunOps.r2Shipment.itemIds.length, 1);
+  const number=again.json.order.storeWarehouseDocumentNos['2'];assert.match(number,/^W-\d{6}$/);
 
   // بقیه دیرتر می‌رسند: انتقال و وزن آن‌ها دیگر نباید ۴۰۹ شود
   assert.equal((await MOVE(wh, o.id, it.p03)).status, 200);
@@ -126,7 +127,7 @@ test('سناریوی گزارش: ارسال زودهنگام سرویس دوم،
 
   // ارسال تکمیلی → همان محموله بزرگ می‌شود و فروش هر دو را می‌بیند
   const appended = await SEND(wh, o.id, 2);
-  assert.equal(appended.status, 200);
+  assert.equal(appended.status, 200);assert.equal(appended.json.order.storeWarehouseDocumentNos['2'],number);
   assert.equal(appended.json.order.storeRunOps.r2Shipment.itemIds.length, 2, 'قلم تازه باید به همان محموله افزوده شود');
   const ships = await call('GET', '/api/sales/store-run-shipments', { cookie: sales });
   const run2 = (ships.json.shipments || []).find((s) => s.orderId === o.id && s.run === 2);
@@ -138,5 +139,6 @@ test('سناریوی گزارش: ارسال زودهنگام سرویس دوم،
   // پس از واگذاری به راننده، سرویس کامل قفل می‌شود
   const assign = await call('POST', `/api/orders/${o.id}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId, run: 2 } });
   assert.equal(assign.status, 200, JSON.stringify(assign.json).slice(0, 200));
+  const doc=await call('GET',`/api/warehouse/store-documents/${o.id}/2`,{cookie:wh});assert.equal(doc.status,200);assert.equal(doc.json.document.warehouseDocumentNo,number);assert.deepEqual(doc.json.document.lines.map(x=>x.deliveredKg),[35,40]);
   assert.equal((await W(wh, o.id, 2, [{ itemId: it.p03, deliveredKg: 1 }])).status, 409, 'پس از واگذاری به راننده وزن جدید ممنوع است');
 });
