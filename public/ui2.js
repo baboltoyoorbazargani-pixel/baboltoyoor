@@ -922,10 +922,9 @@ async function loadWhStoreHistory(){
 function printWhStoreHistory(){
   const d=app.whStoreHist.data; if(!d) return toast('ابتدا سوابق بارگذاری شود.');
   const s=d.summary||{};
-  const w=window.open('','_blank','width=1100,height=900'); if(!w) return toast('مرورگر اجازه پنجره چاپ را نداد.');
   const rows=(d.rows||[]).map((r,k)=>`<tr><td>${fa(k+1)}</td><td>${dateLabel(r.day)} ${whhTime(r.completedAt)}</td><td dir="ltr">${esc(fa(r.orderNo))}</td><td>${esc(r.customerName)}</td><td>${r.items.map(i=>`${esc(i.productName)}: ${i.outOfStock?'<b class="oos">ناموجود</b>':qty(i.deliveredKg)+' کیلو'+(i.r1Kg!=null||i.r2Kg!=null?` (سرویس اول ${qty(i.r1Kg||0)}${Number(i.r2Kg)>0?'، سرویس دوم '+qty(i.r2Kg):''})`:'')}`).join('<br>')}</td><td>${qty(r.deliveredKg)}</td><td>${esc(r.completedBy)}</td></tr>`).join('')||'<tr><td colspan="7" class="none">سابقه‌ای در این بازه نیست.</td></tr>';
   const prod=(s.byProduct||[]).map(p=>`<tr><td>${esc(p.productName)}</td><td>${qty(p.orders)}</td><td>${qty(p.deliveredKg)}</td><td>${p.outOfStock?qty(p.outOfStock):'—'}</td></tr>`).join('');
-  w.document.write(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش سوابق فروشگاه‌ها ${esc(whhRangeText(d.from,d.to).replace(/<[^>]+>/g,''))}</title><style>
+  BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش سوابق فروشگاه‌ها ${esc(whhRangeText(d.from,d.to).replace(/<[^>]+>/g,''))}</title><style>
     *{box-sizing:border-box}body{font-family:"B Yekan","Vazirmatn",Tahoma,sans-serif;color:#1b2027;padding:26px;margin:0}
     header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #e30613;padding-bottom:12px;margin-bottom:16px}
     header h1{font-size:21px;margin:0}header p{margin:4px 0 0;color:#555;font-size:12px}header img{width:54px;height:54px;object-fit:contain}
@@ -940,7 +939,6 @@ function printWhStoreHistory(){
     ${prod?`<h2>خلاصهٔ کالاها</h2><table><thead><tr><th>کالا</th><th>تعداد سفارش</th><th>وزن تحویلی (کیلو)</th><th>ناموجود</th></tr></thead><tbody>${prod}</tbody></table>`:''}
     <footer><span>تهیه‌کننده: ${esc(app.user?.fullName||app.user?.username||'')}</span><span>تاریخ چاپ: ${esc(todayText())} ${whhTime((typeof serverEpoch==='function'?new Date(serverEpoch()):new Date()).toISOString())}</span></footer>
     <script src="/print-ready.js"><\/script></body></html>`));
-  w.document.close();
 }
 function wh38Shell(phase){
   const c=$('#content'); if(!c)return;
@@ -1468,9 +1466,7 @@ document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-action="rp38-print"]'); if(!el)return;
   try{
     const d=await api('/api/reports'); const remote=d.remote||{};
-    const w=window.open('','_blank','width=1100,height=900');
-    if(!w)return toast('مرورگر اجازه پنجره چاپ را نداد.');
-    w.document.write(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش مدیریتی بابل طیور</title><link rel="stylesheet" href="/design.css"><style>html{background:#fff}body{margin:0;padding:22px;background:#fff}@media print{body{padding:0}}</style></head><body>
+    BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>گزارش مدیریتی بابل طیور</title><link rel="stylesheet" href="/design.css"><style>html{background:#fff}body{margin:0;padding:22px;background:#fff}@media print{body{padding:0}}</style></head><body>
     <div class="inv38-sheet">
       <div class="rpt38-head"><div class="inv38-brand"><img src="/logo.png" alt="بابل طیور"><div><h1>گزارش مدیریتی بابل طیور</h1><p>${esc(todayText())} • سامانه یکپارچه عملیات مشتریان</p></div></div></div>
       <div class="inv38-rule"></div>
@@ -1487,6 +1483,5 @@ document.addEventListener('click',async e=>{
       <div class="inv38-foot">بابل طیور • گزارش داخلی • ${esc(todayText())}</div>
     </div>
     <script src="/print-ready.js"><\/script></body></html>`));
-    w.document.close();
-  }catch(err){toast(err.message)}
+    }catch(err){toast(err.message)}
 });

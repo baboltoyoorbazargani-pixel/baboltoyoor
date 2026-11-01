@@ -1,6 +1,6 @@
 'use strict';
 (async function(){
-  const params=new URLSearchParams(location.search),id=params.get('id'),run=Number(params.get('run'));
+  const params=new URLSearchParams(window.frameElement?.dataset.printQuery || location.search),id=params.get('id'),run=Number(params.get('run'));
   const message=document.getElementById('service-message');
   const set=(id,value)=>{document.getElementById(id).textContent=value||'—';};
   const qty=v=>new Intl.NumberFormat('fa-IR',{maximumFractionDigits:3}).format(Number(v||0));
@@ -21,10 +21,12 @@
     set('service-total',d.lines.some(x=>x.deliveredKg==null)?'نامشخص':qty(d.lines.reduce((sum,x)=>sum+Number(x.deliveredKg||0),0))+' کیلوگرم');
     BTPrintDigits.convert(document.querySelector('.service-sheet'));
     document.title=BTPrintDigits.persian(document.title);
-    message.hidden=true;document.querySelector('.service-sheet').hidden=false;document.querySelector('.service-tools').hidden=false;
-    document.getElementById('service-print-button').addEventListener('click',()=>window.print());
+    message.hidden=true;document.querySelector('.service-sheet').hidden=false;
     if(document.fonts?.ready)await document.fonts.ready;
     await Promise.all([...document.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.addEventListener('load',resolve,{once:true});img.addEventListener('error',resolve,{once:true});})));
+    if(window.frameElement && window.parent.BTPrintFrame){window.parent.BTPrintFrame.ready(window);return;}
+    document.querySelector('.service-tools').hidden=false;
+    document.getElementById('service-print-button').addEventListener('click',()=>window.print());
     requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
-  }catch(e){message.textContent=e.message||'دریافت اطلاعات سرویس ناموفق بود.';}
+  }catch(e){message.textContent=e.message||'دریافت اطلاعات سرویس ناموفق بود.';if(window.frameElement && window.parent.BTPrintFrame)window.parent.BTPrintFrame.fail(window,message.textContent);}
 })();
