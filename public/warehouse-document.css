@@ -1,0 +1,25 @@
+/* Shared by the warehouse modal and the print document. */
+.whd-doc{color:#20242a;font-family:'Vazirmatn',Tahoma,sans-serif;box-sizing:border-box}
+.whd-doc *{box-sizing:border-box}
+.whd-meta{display:grid;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:0;margin-bottom:10px;border:1px solid #999;font-size:10px}
+.whd-meta span{min-width:0;padding:5px 4px;overflow-wrap:anywhere;border-left:1px solid #bbb}
+.whd-meta span:last-child{border-left:0}
+.whd-meta b{font-weight:700}
+.whd-note{font-size:11px;margin:6px 0;overflow-wrap:anywhere}
+.whd-table-scroll{overflow:auto}
+.whd-doc table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
+.whd-col-number{width:34px}.whd-col-product{width:27%}.whd-col-request{width:18%}.whd-col-weight{width:22%}
+.whd-doc th,.whd-doc td{border:1px solid #999;padding:5px;text-align:right;vertical-align:top;overflow-wrap:anywhere}
+.whd-doc th{background:#f4f6f8}.whd-doc th:first-child,.whd-number{text-align:center!important;padding:5px 1px!important;white-space:nowrap}
+.whd-doc tr{break-inside:avoid;page-break-inside:avoid}
+.whd-doc .whd-total-row td{border:0;padding:0}
+.whd-doc .whd-total-row .whd-total{border:1px solid #999;padding:5px;text-align:center;font-weight:700}
+.whd-total span,.whd-total b{display:block}
+.whd-acknowledgement{break-inside:avoid;page-break-inside:avoid;margin-top:15px}
+.whd-declaration{margin:0;white-space:normal;overflow-wrap:anywhere;font-size:10px;line-height:1.8}
+.whd-signature{margin-right:auto;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;width:220px;max-width:100%;min-height:85px;padding-top:4px;font-size:11px;overflow-wrap:anywhere}
+@media screen and (max-width:700px){
+ .whd-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.whd-meta span:nth-child(2){border-left:0}.whd-meta span:nth-child(-n+2){border-bottom:1px solid #bbb}
+ .whd-doc table{min-width:600px}.whd-declaration{white-space:normal;font-size:11px}
+}
+@media print{.whd-table-scroll{overflow:visible}.whd-meta span{font-size:10px}}
