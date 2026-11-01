@@ -58,7 +58,7 @@ function admHead(ico, title, desc, count, actions = '') {
     ${actions ? `<div class="adm-toolbar">${actions}</div>` : ''}`;
 }
 function admSearchBox(id, placeholder, value = '') {
-  return `<div class="input-shell adm-search"><span>${icon('search', 16)}</span><input id="${id}" value="${admE(value)}" placeholder="${admE(placeholder)}" autocomplete="off"></div>`;
+  return `<div class="input-shell adm-search"><span>${icon('search', 16)}</span><input id="${id}" value="${admE(value)}" placeholder="${admE(placeholder)}" aria-label="${admE(placeholder)}" autocomplete="off"></div>`;
 }
 function admMsgBox(id = 'admMsg') { return `<div id="${id}" class="form-error adm-msg"></div>`; }
 function admModalForm(id, body, submitLabel) {
@@ -328,7 +328,7 @@ function paintProducts() {
       <div class="adm-cell"><small>کد سریع</small><b class="cust-code">${admE(x.quickCode)}</b></div>
       <div class="adm-cell"><small>محصول</small><b>${admE(fa(x.name))}</b><span>واحد: ${admE(x.defaultUnit)}</span></div>
       <div class="adm-cell"><small>قیمت امروز (ریال)</small>
-        <div class="adm-price"><input type="text" inputmode="numeric" data-price-for="${admE(x.id)}" value="${admE(admFormatPrice(adm.todayPrices[x.id] ?? ''))}" placeholder="مثلاً ۲۵۰٬۰۰۰" autocomplete="off">
+        <div class="adm-price"><input type="text" inputmode="numeric" data-price-for="${admE(x.id)}" aria-label="قیمت امروز ${admE(x.name)} (ریال)" value="${admE(admFormatPrice(adm.todayPrices[x.id] ?? ''))}" placeholder="مثلاً ۲۵۰٬۰۰۰" autocomplete="off">
         <button class="btn btn-primary btn-sm" type="button" data-adm="prod-price" data-id="${admE(x.id)}">ثبت قیمت</button></div></div>
       <div class="adm-cell adm-actions">${admActiveBadge(x.isActive)}
         <button class="btn btn-secondary btn-sm" type="button" data-adm="prod-edit" data-id="${admE(x.id)}">${icon('edit', 14)} ویرایش</button>
@@ -447,7 +447,7 @@ async function renderReportsPage(unit = null) {
       <div class="adm-rep-main">
         <div class="adm-rep-bar"><div id="repSummary" class="adm-count">هنوز گزارشی اجرا نشده است.</div>
           <div class="toolbar"><button class="btn btn-secondary btn-sm" type="button" data-adm="rep-csv">Excel (CSV کامل)</button><button class="btn btn-secondary btn-sm" type="button" data-adm="rep-print">چاپ / PDF</button></div></div>
-        <div id="repResult" class="adm-rep-result"></div>
+        <div id="repResult" class="adm-rep-result"><div class="adm-report-placeholder">${sdEmpty('reports', 'گزارشی اجرا نشده است', 'منبع، ستون‌ها و فیلترهای دلخواه را انتخاب و گزارش را اجرا کنید.')}</div></div>
       </div>
     </div></section>`;
   $('#repSource').addEventListener('change', (e) => { adm.reportDraft = { source: e.target.value, from: '', to: '', fields: null, filters: [] }; adm.report = null; renderReportsPage(unit); });
@@ -465,9 +465,9 @@ function paintReportControls() {
   const sel = dr.fields || s.columns.map((c) => c.key);
   $('#repFields').innerHTML = s.columns.map((c) => `<label class="adm-check"><input type="checkbox" data-rep-field="${c.key}" ${sel.includes(c.key) ? 'checked' : ''}> ${admE(c.label)}</label>`).join('');
   $('#repFilters').innerHTML = dr.filters.map((f, i) => `<div class="adm-filter">
-      <select data-rep-f="field" data-i="${i}">${s.columns.map((c) => `<option value="${c.key}" ${c.key === f.field ? 'selected' : ''}>${admE(c.label)}</option>`).join('')}</select>
-      <select data-rep-f="op" data-i="${i}">${[['contains', 'شامل'], ['equals', 'برابر'], ['gte', 'بزرگ‌تر یا برابر'], ['lte', 'کوچک‌تر یا برابر']].map(([v, l]) => `<option value="${v}" ${v === f.op ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      <input data-rep-f="value" data-i="${i}" value="${admE(f.value)}" placeholder="مقدار">
+      <select aria-label="ستون فیلتر ${fa(i+1)}" data-rep-f="field" data-i="${i}">${s.columns.map((c) => `<option value="${c.key}" ${c.key === f.field ? 'selected' : ''}>${admE(c.label)}</option>`).join('')}</select>
+      <select aria-label="شرط فیلتر ${fa(i+1)}" data-rep-f="op" data-i="${i}">${[['contains', 'شامل'], ['equals', 'برابر'], ['gte', 'بزرگ‌تر یا برابر'], ['lte', 'کوچک‌تر یا برابر']].map(([v, l]) => `<option value="${v}" ${v === f.op ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <input aria-label="مقدار فیلتر ${fa(i+1)}" data-rep-f="value" data-i="${i}" value="${admE(f.value)}" placeholder="مقدار">
       <button class="btn btn-secondary btn-sm" type="button" data-adm="rep-del-filter" data-i="${i}">${icon('close', 14)}</button></div>`).join('') || '<small class="adm-note">فیلتری اضافه نشده است.</small>';
   // کنترل‌ها را به پیش‌نویس وصل کن
   $('#repFrom')?.addEventListener('change', (e) => { dr.from = e.target.value; });
@@ -614,7 +614,7 @@ function adminNavItems() {
 async function renderBackupsPage() {
   const { backups, schedule, automaticCount } = await api('/api/admin/backups');
   $('#content').innerHTML = admHead('backups', 'پشتیبان‌گیری و بازیابی', 'ساخت، بارگذاری و بازیابی نسخهٔ پشتیبان داده‌ها.', undefined) + `
-    <div class="adm-report"><div class="adm-rep-side">
+    <div class="adm-report adm-backup-layout"><div class="adm-rep-side">
       <form id="auto-backup-form" class="auto-backup-settings">
         <h3>پشتیبان‌گیری خودکار ساعتی</h3>
         <label class="auto-backup-toggle"><input type="checkbox" name="enabled" ${schedule.enabled?'checked':''}> فعال‌سازی پشتیبان خودکار</label>
@@ -625,15 +625,17 @@ async function renderBackupsPage() {
         <div class="auto-backup-status" role="status"><strong>وضعیت: ${schedule.enabled?'فعال':'غیرفعال'}</strong><span>آخرین پشتیبان موفق: ${schedule.lastSuccessAt?admE(dt(schedule.lastSuccessAt)):'هنوز ساخته نشده'}</span>${schedule.lastBackup?`<span>فایل: <b dir="ltr">${admE(schedule.lastBackup)}</b></span>`:''}${schedule.enabled&&schedule.nextRunAt?`<span>نوبت بعدی${schedule.lastError?' (تلاش مجدد)':''}: ${admE(dt(schedule.nextRunAt))}</span>`:''}${schedule.lastError?`<span class="auto-backup-error">${admE(schedule.lastError)}</span>`:''}</div>
         <div id="auto-backup-message" role="alert"></div>
       </form>
+      <section class="adm-backup-action"><h3>پشتیبان‌گیری دستی</h3>
       <p>نسخهٔ پشتیبان شامل اطلاعات کاربران و هش رمزهاست؛ فایل دانلودشده را در محل امن و جدا از سرور نگه دارید.</p>
-      <button class="btn btn-primary" type="button" id="backup-create">ایجاد نسخهٔ پشتیبان</button>
+      <button class="btn btn-primary" type="button" id="backup-create">ایجاد نسخهٔ پشتیبان</button></section>
+      <section class="adm-backup-action"><h3>افزودن فایل برای بازیابی</h3>
       <p>بازیابی داده‌های فعلی را جایگزین می‌کند. پیش از آن یک نسخهٔ ایمنی خودکار ساخته می‌شود و همه کاربران باید دوباره وارد شوند.</p>
       <label class="cust-field"><span>انتخاب فایل پشتیبان SQLite از رایانه (حداکثر ۵۱۲ مگابایت)</span><input type="file" id="backup-file" accept=".db,application/octet-stream"></label>
       <button class="btn btn-secondary" type="button" id="backup-upload">افزودن فایل پشتیبان</button>
       <p>فایل دانلودشدهٔ پشتیبان را انتخاب کنید. پس از بررسی، فایل به فهرست اضافه می‌شود؛ بازیابی جداگانه با دکمهٔ «بازیابی» و تأیید رمز انجام می‌شود.</p>
-      <div id="backup-message" role="status"></div>
-    </div><div class="adm-rep-main"><div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>نام نسخه</th><th>زمان</th><th>حجم (بایت)</th><th>عملیات</th></tr></thead><tbody>
-      ${backups.map(b => `<tr><td>${admE(b.name)}${b.automatic?' <small>(خودکار)</small>':''}</td><td>${admE(dt(b.createdAt))}</td><td>${admE(b.size)}</td><td><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
+      <div id="backup-message" role="status"></div></section>
+    </div><div class="adm-rep-main"><h3 class="adm-backup-list-title">نسخه‌های پشتیبان</h3><div class="adm-table-wrap"><table class="adm-table"><thead><tr><th>نام نسخه</th><th>زمان</th><th>حجم (بایت)</th><th>عملیات</th></tr></thead><tbody>
+      ${backups.map(b => `<tr><td data-label="نام نسخه">${admE(b.name)}${b.automatic?' <small>(خودکار)</small>':''}</td><td data-label="زمان">${admE(dt(b.createdAt))}</td><td data-label="حجم (بایت)">${admE(b.size)}</td><td data-label="عملیات"><div class="adm-backup-row-actions"><a class="btn btn-secondary btn-sm" href="/api/admin/backups/${encodeURIComponent(b.name)}/download">دانلود</a> <button class="btn btn-secondary btn-sm" type="button" data-backup-restore="${admE(b.name)}">بازیابی</button></div></td></tr>`).join('') || '<tr><td colspan="4">هنوز نسخه‌ای ساخته نشده است.</td></tr>'}
     </tbody></table></div>${automaticCount>200?`<p>فهرست فقط ۲۰۰ پشتیبان خودکار جدیدتر را نشان می‌دهد؛ بقیه در پوشهٔ مقصد محفوظ‌اند و با بارگذاری قابل بازیابی هستند.</p>`:''}<div id="backup-confirm"></div></div></div></section>`;
   $('#auto-backup-form').onsubmit = async e => {
     e.preventDefault(); const form=e.currentTarget, button=form.querySelector('button[type=submit]'), message=$('#auto-backup-message');

@@ -32,7 +32,7 @@ async function renderCustomers() {
       <div class="sd-count"><strong id="custTotal">${fa(0)}</strong><span>مشتری</span></div>
     </div>
     <div class="cust-toolbar">
-      <div class="input-shell cust-search"><span>${icon('search', 16)}</span><input id="custSearch" value="${custEsc(custUi.q)}" placeholder="جستجو: کد، نام، تلفن، پلاک، کد ملی" autocomplete="off"></div>
+      <div class="input-shell cust-search"><span>${icon('search', 16)}</span><input id="custSearch" aria-label="جستجوی مشتری با کد، نام، تلفن، پلاک یا کد ملی" value="${custEsc(custUi.q)}" placeholder="جستجو: کد، نام، تلفن، پلاک، کد ملی" autocomplete="off"></div>
       <button class="btn btn-primary" type="button" data-action="cust-new">${icon('plus', 16)} مشتری جدید</button>
     </div>
     <div id="custList" class="cust-list"><div class="sd-queue-empty">در حال بارگذاری…</div></div>
