@@ -33,3 +33,31 @@ test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر
  const pending=ctx.invoiceHtml({...base,transportReturn:{outcome:'DELIVERED'}},{totalAmount:1750,discountAmount:300,additionsAmount:50,settlementMethods:[{type:'CHECK',amount:1750,checkStatus:'PENDING'}],debtAccount:{initial:1750,receipts:[{amount:1750,status:'PENDING'}]}});
  assert.match(pending,/در انتظار وصول/);assert.match(pending,/مانده معوق<\/span><b>1750/);
 });
+test('محاسبه فرم فروش با مرجوعی جزئی و کامل مطابق فاکتور است و وزن نامعتبر رد می‌شود',()=>{
+ const ctx=vm.createContext({en:s=>String(s).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d))});
+ vm.runInContext(fragment('function transportClosureAmount(invoice,rows){','function transportPaymentRowHtml('),ctx);
+ const invoice={totalAmount:1750,priceLines:[{deliveredKg:2,unitPrice:1000}]};
+ assert.equal(ctx.transportClosureAmount(invoice,['۰']),1750);assert.equal(ctx.transportClosureAmount(invoice,['۰٫۵']),1250);assert.equal(ctx.transportClosureAmount(invoice,['1.9']),0);assert.equal(ctx.transportClosureAmount(invoice,['۲']),0);
+ for(const bad of ['','-1','2.001','1.0001','1kg','NaN'])assert.equal(ctx.transportClosureAmount(invoice,[bad]),null,bad);
+});
+test('ثبت بازگشت فروش نیازمند تأیید مدارک و امضای کاغذی در حالت تحویل‌شده است',async()=>{
+ let consent=true;const calls=[],button={disabled:false},err={textContent:''},sigbox={hidden:true},f={elements:{documents:{checked:true},outcome:{value:'DELIVERED'},signature:{checked:false},note:{value:''}},querySelector:s=>({'[data-ts-signature]':sigbox,'[data-ts-error]':err,'[type=submit]':button})[s]};
+ const ctx=vm.createContext({confirm:()=>consent,api:async(...a)=>calls.push(a),toast:()=>{},stlOpen:async()=>{},encodeURIComponent,JSON});
+ vm.runInContext(fragment('function bindTransportReturn(host,order){','function transportClosureFormHtml(order){'),ctx);ctx.bindTransportReturn({querySelector:()=>f},{id:'ord'});f.elements.outcome.onchange();assert.equal(sigbox.hidden,false);
+ await f.onsubmit({preventDefault(){}});assert.equal(calls.length,0);assert.match(err.textContent,/امضای دستی/);
+ f.elements.signature.checked=true;consent=false;await f.onsubmit({preventDefault(){}});assert.equal(calls.length,0);
+ consent=true;await f.onsubmit({preventDefault(){}});assert.deepEqual(JSON.parse(calls[0][1].body),{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true,note:''});
+ f.elements.outcome.value='NOT_DELIVERED';f.elements.outcome.onchange();assert.equal(f.elements.signature.checked,false);assert.equal(sigbox.hidden,true);
+});
+test('بستن فاکتور فقط پس از تأیید صریح و با مقادیر واردشده فروش ثبت می‌شود',async()=>{
+ let consent=false,submitted=[],closed=0,reset=0;const amount={value:'0',addEventListener(){}},reason={value:'مرجوعی'},line={dataset:{id:'item'},querySelector:s=>s==='[data-ts-kg]'?amount:reason},button={disabled:false},error={textContent:''},total={textContent:''};
+ const payments=[];const payHost={querySelectorAll:()=>payments};const add={};
+ const form={elements:{checked:{checked:false}},querySelectorAll:s=>s==='[data-ts-line]'?[line]:s==='[data-ts-kg]'?[amount]:s==='[data-ts-payrow]'?payments:[],querySelector:s=>({'[data-ts-payments]':payHost,'[data-ts-total]':total,'[data-ts-add]':add,'[data-ts-error]':error,'[type=submit]':button})[s]};
+ const ctx=vm.createContext({en:s=>String(s),money:x=>String(x),stl:{devices:[]},app:{salesCache:{fetchedAt:1}},api:async(...a)=>submitted.push(a),confirm:()=>consent,toast:()=>{},stlClose:()=>closed++,renderSales:async()=>reset++,encodeURIComponent,JSON});
+ vm.runInContext(fragment('function transportClosureAmount(invoice,rows){','function invoiceHtml(o,paySel){'),ctx);
+ const order={id:'x',transportInvoice:{totalAmount:1750,priceLines:[{itemId:'item',deliveredKg:2,unitPrice:1000}]}};ctx.bindTransportClosure({querySelector:()=>form},order);
+ await form.onsubmit({preventDefault(){}});assert.match(error.textContent,/حداقل یک روش/);assert.equal(submitted.length,0);
+ amount.value='2';await form.onsubmit({preventDefault(){}});assert.equal(submitted.length,0);
+ form.elements.checked.checked=true;await form.onsubmit({preventDefault(){}});assert.equal(submitted.length,0);
+ consent=true;await form.onsubmit({preventDefault(){}});assert.equal(submitted[0][0],'/api/sales/transport-invoices/x/close');assert.deepEqual(JSON.parse(submitted[0][1].body),{returns:[{itemId:'item',returnKg:'2',reason:'مرجوعی'}],settlementMethods:[]});assert.equal(closed,1);assert.equal(reset,1);assert.equal(ctx.app.salesCache.fetchedAt,0);
+});

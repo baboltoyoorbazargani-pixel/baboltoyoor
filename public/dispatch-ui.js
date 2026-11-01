@@ -561,3 +561,31 @@ function paintReturns(data) {
     } catch (err) { toast(err.message); }
   };
 }
+
+/* Experimental, opt-in transport planning. Legacy dispatch remains separate. */
+function transportPlanRows(orders){
+ return orders.flatMap(o=>(o.services||[]).map(s=>{
+  const a=s.assignment, service=s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
+  const state=s.tripStatus==='CLOSED'?'مدارک بازگشته':s.tripStatus==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':s.departed?'در مسیر':s.canDepart?'آماده ثبت خروج':s.handedOver?'در انتظار فاکتور':'در انتظار تحویل انبار';
+  return `<article class="dsp-card order-compact-row"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(o.customerName||'—')}</strong><span>${esc(service)}</span><span>${esc(state)}</span><span>${esc(a?.driverName||'راننده تعیین نشده')}</span><span>${esc(a?.vehicleType||'')} ${esc(fa(a?.vehiclePlate||''))}</span><button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات</button></article>`;
+ })).join('');
+}
+async function renderTransportPlanQueue(){
+ const host=$('#transportPlans');if(!host)return;
+ try{
+  const capability=await api('/api/transport/capabilities');if($('#transportPlans')!==host||!capability.experimentalWorkflow)return;
+  const [data,resources]=await Promise.all([api('/api/transport/plans'),api('/api/transport/resources')]);if($('#transportPlans')!==host)return;
+  const orders=data.orders||[];
+  host.innerHTML=`<section class="sd-panel sd-pad"><div class="stl-block-head"><h2>برنامه‌ریزی و خروج ترابری</h2><button type="button" class="btn btn-secondary btn-sm" data-tp="refresh">به‌روزرسانی</button></div><p>سفارش‌های گردش جدید؛ تخصیص هر سرویس مستقل است و ثبت خروج به معنی تأیید دریافت مشتری نیست.</p><div class="adm-list">${transportPlanRows(orders)||'<p>سفارشی در صف گردش جدید نیست.</p>'}</div></section>`;
+  host.onclick=e=>{const b=e.target.closest('[data-tp]');if(!b)return;if(b.dataset.tp==='refresh')return renderTransportPlanQueue();const order=orders.find(o=>o.id===b.dataset.id),service=order?.services?.find(s=>s.run===Number(b.dataset.run));if(order&&service)transportPlanDetails(order,service,resources);};
+ }catch(err){if($('#transportPlans')===host)host.innerHTML=`<section class="sd-panel sd-pad" role="alert">خطا در دریافت برنامه ترابری: ${esc(err.message)} <button type="button" class="btn btn-secondary btn-sm" data-tp-retry>تلاش مجدد</button></section>`;host.querySelector('[data-tp-retry]')?.addEventListener('click',renderTransportPlanQueue);}
+}
+function transportPlanDetails(order,service,resources){
+ const a=service.assignment,drivers=(resources.drivers||[]).filter(d=>d.isActive),vehicles=(resources.vehicles||[]).filter(v=>v.isActive);
+ const items=(order.items||[]).map(i=>`<li>${esc(i.productName||'—')} — ${qty(i.requestedQty)} ${esc(i.requestedUnit||'')}</li>`).join('');
+ const select=service.handedOver?'':`<form id="tpAssign"><label>راننده <select name="driverId" required><option value="">انتخاب راننده</option>${drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===a?.driverId?'selected':''}>${esc(d.fullName)} — ${esc(fa(d.phone||''))}</option>`).join('')}</select></label> <label>خودرو <select name="vehicleId" required><option value="">انتخاب خودرو</option>${vehicles.map(v=>`<option value="${esc(v.id)}" ${v.id===a?.vehicleId?'selected':''}>${esc(v.vehicleType)} — ${esc(fa(v.plate))}</option>`).join('')}</select></label><button class="btn btn-primary btn-sm" type="submit">ثبت تخصیص</button><p data-tp-error role="alert"></p></form>`;
+ const depart=service.canDepart?`<button type="button" class="btn btn-primary" data-tp-depart>تأیید خروج ${service.run?'این سرویس':'و تحویل فاکتور چاپی'}</button>`:'';
+ openModal('جزئیات برنامه ترابری',`<div><p>سفارش ${esc(fa(order.orderNo||'—'))} — ${esc(order.customerName||'—')} ${service.run?`— سرویس ${service.run===1?'اول':'دوم'}`:''}</p><p>محل ارسال: ${esc(order.dispatchPlace||'—')}</p><p>راننده: ${esc(a?.driverName||'تعیین نشده')} — خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</p><p>سند انبار: ${esc(fa(service.warehouseDocumentNo||'—'))}${service.invoiceNumber?` — شماره فاکتور: ${esc(fa(service.invoiceNumber))}`:''}</p><ul>${items}</ul>${service.handedOver?'<p>تحویل انبار ثبت شده و تخصیص این سرویس دیگر قابل تغییر نیست.</p>':select}<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button>${depart}</div><p data-tp-depart-error role="alert"></p></div>`);
+ const form=$('#tpAssign');if(form)form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;try{await api('/api/transport/plans/'+encodeURIComponent(order.id)+'/assign',{method:'POST',body:JSON.stringify({run:service.run,driverId:form.elements.driverId.value,vehicleId:form.elements.vehicleId.value})});closeModal();toast('تخصیص ترابری ثبت شد.');await renderTransportPlanQueue();}catch(err){form.querySelector('[data-tp-error]').textContent=err.message;button.disabled=false;}};
+ const button=$('#modal [data-tp-depart]');if(button)button.onclick=async()=>{const question=service.run?'آیا خروج واقعی این سرویس از انبار را تأیید می‌کنید؟':'آیا فاکتور چاپی با شماره نمایش‌داده‌شده به راننده تحویل شده و خروج واقعی انجام شده است؟';if(!confirm(question))return;button.disabled=true;try{const url=service.run?`/api/transport/store-shipments/${encodeURIComponent(order.id)}/${service.run}/depart`:`/api/transport/shipments/${encodeURIComponent(order.id)}/depart`;const body=service.run?{departureConfirmed:true}:{invoicePaperGiven:true,invoiceNumber:service.invoiceNumber};await api(url,{method:'POST',body:JSON.stringify(body)});closeModal();toast('خروج ثبت شد؛ دریافت مقصد هنوز تأیید نشده است.');await renderTransportPlanQueue();}catch(err){$('#modal [data-tp-depart-error]').textContent=err.message;button.disabled=false;}};
+}

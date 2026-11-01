@@ -23,7 +23,8 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const o=(await ok('POST','/api/store/orders',{name:'مشتری',phone:'09121112235',items:body.items},shop)).order;await ok('POST',`/api/store/orders/${o.id}/quick-send`,{transportWorkflow:true},sales);
   const notices=(await ok('GET','/api/notifications',null,transport)).notifications;assert(notices.some(n=>n.entityId===one.id));assert(notices.some(n=>n.entityId===o.id));assert(!notices.some(n=>n.entityId===two.id||n.entityId===future.id));
   const warehouseNotices=(await ok('GET','/api/notifications',null,wh)).notifications;assert(!warehouseNotices.some(n=>n.entityId===future.id));
-  const plans=(await ok('GET','/api/transport/plans',null,transport)).orders;assert(plans.some(x=>x.id===one.id));assert(plans.some(x=>x.id===o.id));assert(!plans.some(x=>x.id===two.id));assert(!plans.some(x=>x.id===future.id));
+  assert.equal((await ok('GET','/api/transport/capabilities',null,transport)).experimentalWorkflow,true);assert.equal((await call('GET','/api/transport/capabilities',null,sales)).status,403);
+  const plans=(await ok('GET','/api/transport/plans',null,transport)).orders;assert.deepEqual(plans.find(x=>x.id===o.id).services.map(s=>s.run),[1,2]);assert.equal(plans.find(x=>x.id===one.id).services[0].canDepart,false);assert(plans.some(x=>x.id===one.id));assert(plans.some(x=>x.id===o.id));assert(!plans.some(x=>x.id===two.id));assert(!plans.some(x=>x.id===future.id));
   assert.equal((await call('POST',`/api/transport/plans/${future.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,409);assert(!JSON.stringify(plans).includes('unitPrice'));
   await ok('PUT',`/api/orders/${future.id}/remote`,{scheduledDate:date,scheduledTime:'00:00'},sales);
   assert((await ok('GET','/api/transport/plans',null,transport)).orders.some(x=>x.id===future.id));
@@ -75,7 +76,9 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true},sales)).status,409);
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}/close`,{settlementMethods:[]},sales)).status,409);
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}`,{items:[{itemId:third.items[0].id,unitPrice:0}]},sales)).status,400);
+  let planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===third.id).services[0];assert.equal(planned.handedOver,true);assert.equal(planned.canDepart,false);
   const invoice=(await ok('POST',`/api/sales/transport-invoices/${third.id}`,invoiceRequest,sales)).invoice;
+  planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===third.id).services[0];assert.equal(planned.canDepart,true);assert.equal(planned.invoiceNumber,invoice.invoiceNumber);assert.equal(planned.departed,false);assert(!JSON.stringify(planned).includes('unitPrice'));
   assert.equal(invoice.totalAmount,2950);assert.equal(invoice.priceLines[0].deliveredKg,2.5);assert.match(invoice.invoiceNumber,/^\d{6}$/);
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}`,invoiceRequest,sales)).status,409);
   assert.equal((await call('GET',`/api/sales/transport-invoices/${third.id}`,null,transport)).status,403);
@@ -85,6 +88,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST',`/api/transport/shipments/${third.id}/depart`,{invoicePaperGiven:true,invoiceNumber:invoice.invoiceNumber},sales)).status,403);
   const departure=(await ok('POST',`/api/transport/shipments/${third.id}/depart`,{invoicePaperGiven:true,invoiceNumber:invoice.invoiceNumber},transport)).departure;
   assert.equal(departure.driverName,'راننده');assert.equal(departure.invoicePaperGiven,true);
+  planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===third.id).services[0];assert.equal(planned.departed,true);assert.equal(planned.canDepart,false);
   still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.transportReturn,undefined);assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');
   assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:false},sales)).status,400);
   assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'NOT_DELIVERED',customerSignatureOnPaper:true},sales)).status,400);
@@ -146,6 +150,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   await ok('POST',`/api/orders/${o.id}/store-run/move`,{itemId:o.items[0].id},wh);
   await ok('POST',`/api/orders/${o.id}/store-run/weights`,{run:2,items:[{itemId:o.items[0].id,deliveredKg:2}]},wh);
   await ok('POST',`/api/orders/${o.id}/store-run/send-run`,{run:2},wh);
+  assert(!(await ok('GET','/api/sales/store-run-shipments',null,sales)).shipments.some(s=>s.orderId===o.id));
   const doc1=(await ok('GET',`/api/warehouse/store-documents/${o.id}/1`,null,wh)).document;
   const doc2=(await ok('GET',`/api/warehouse/store-documents/${o.id}/2`,null,wh)).document;
   assert.equal(doc1.driverName,'راننده');assert.equal(doc2.driverName,'راننده دوم');
@@ -153,6 +158,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.transportHandovers,undefined);
   hand=(await ok('POST',`/api/warehouse/transport-handovers/${o.id}`,{run:1,signedPaperConfirmed:true,handoverToken:doc1.handoverToken},wh)).handover;
   assert.equal(hand.driverName,'راننده');assert.equal(hand.document.warehouseDocumentNo,doc1.warehouseDocumentNo);
+  const serviceViews=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===o.id).services;assert.equal(serviceViews[0].canDepart,true);assert.equal(serviceViews[1].canDepart,false);assert.equal(serviceViews[0].warehouseDocumentNo,doc1.warehouseDocumentNo);
   assert.equal((await call('POST',`/api/transport/plans/${o.id}/assign`,{run:1,driverId:driver2.id,vehicleId:vehicle2.id},transport)).status,409);
   assert.equal((await call('POST',`/api/orders/${o.id}/store-run/weights`,{run:1,items:[{itemId:o.items[0].id,deliveredKg:1}]},wh)).status,409);
   assert.equal((await call('POST',`/api/orders/${o.id}/store-run/send-run`,{run:1},wh)).status,409);
