@@ -122,6 +122,11 @@ test('جریان کامل سفارش فروشگاه و فیلتر سوابق ف�
   const nFull = (await call('GET', `/api/orders/${ON.id}`, { cookie: WH })).json.order;
   assert.equal((await call('POST', `/api/orders/${ON.id}/warehouse`, { cookie: WH, body: { items: [{ itemId: nFull.items[0].id, deliveredKg: 100 }] } })).status, 200);
 
+  const delivered=await call('GET','/api/warehouse/delivered',{cookie:WH});
+  assert.equal(delivered.status,200);assert.ok(delivered.json.orders.some(r=>r.id===ON.id));assert.ok(!delivered.json.orders.some(r=>r.id===O1.id||r.id===O2.id));
+  assert.equal((await call('GET',`/api/warehouse/delivered/${O1.id}`,{cookie:WH})).status,404);
+  const document=await call('GET',`/api/warehouse/delivered/${ON.id}`,{cookie:WH});assert.equal(document.status,200);assert.equal(document.json.order.items[0].deliveredKg,100);assert(!JSON.stringify(document.json).includes('unitPrice'));
+
   const day = localDay();
   const storeHist = (await call('GET', `/api/warehouse/history?from=2000-01-01&to=${day}&orderType=STORE`, { cookie: WH })).json;
   assert.ok(Array.isArray(storeHist.rows));

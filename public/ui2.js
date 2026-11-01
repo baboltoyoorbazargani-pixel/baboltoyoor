@@ -854,6 +854,7 @@ async function wh38Paint(phase){
   if(phase==='history') return; // سوابق با فیلترهای کاربر؛ نوسازی خودکار ۷ ثانیه‌ای فیلترها را به‌هم نمی‌زند
   const host=$('#wh38Body'); if(!host||host.dataset.sheet==='1')return;
   try{
+    if(phase==='delivered'){ await whDeliveredPaint(host); return; }
     if(phase==='stores'){ // v37.9.0 — فروشگاه‌های انبار: سربرگ افقی، فرم/فهرست عمودی زیر آن
       const active=['incoming','preparing','history'].includes(app.wh38.storeTab)?app.wh38.storeTab:'incoming'; app.wh38.storeTab=active;
       if(active==='history'&&host.querySelector('[data-wh38-store-history]')) return; // v37.36.0 — فیلترهای سوابق با تازه‌سازی خودکار ۷ ثانیه‌ای به‌هم نمی‌ریزد
@@ -879,6 +880,43 @@ async function wh38Paint(phase){
     host.innerHTML=wh38List(orders,phase);
   }
   catch{ host.innerHTML='<div class="empty">خطا در دریافت صف انبار.</div>'; }
+}
+// Completed regular warehouse orders: this is a read-only warehouse document,
+// not a sales invoice and not a confirmation of physical delivery to customer.
+app.whDelivered=app.whDelivered||{q:'',offset:0,seq:0};
+async function whDeliveredPaint(host){
+  if(!host.querySelector('[data-wh-delivered]')){
+    host.innerHTML=`<section class="wh-delivered" data-wh-delivered><div class="wh-delivered-heading"><div><h2>تحویل شده</h2><p>سفارش‌های مشتریان عادی پس از ثبت وزن نهایی انبار؛ سفارش‌های فروشگاه در بخش فروشگاه‌ها هستند.</p></div></div><form class="wh-delivered-search"><label for="whDeliveredQ">جستجوی سفارش، مشتری یا کالا</label><div><input id="whDeliveredQ" type="search" maxlength="80" value="${esc(app.whDelivered.q)}" placeholder="شماره سفارش، نام یا شماره تماس"><button class="btn btn-secondary" type="submit">جستجو</button></div></form><div id="whDeliveredRows" aria-live="polite">در حال دریافت سفارش‌ها…</div></section>`;
+    host.querySelector('form').addEventListener('submit',e=>{e.preventDefault();app.whDelivered.q=host.querySelector('#whDeliveredQ').value.trim();app.whDelivered.offset=0;whDeliveredLoad();});
+  }
+  await whDeliveredLoad();
+}
+async function whDeliveredLoad(){
+  const st=app.whDelivered,seq=++st.seq;
+  try{
+    const d=await api('/api/warehouse/delivered?'+new URLSearchParams({q:st.q,offset:String(st.offset)}));
+    if(seq!==st.seq||app.wh38.phase!=='delivered')return;
+    if(d.offset>=d.total&&d.offset>0){st.offset=Math.max(0,Math.ceil(d.total/d.limit-1)*d.limit);return whDeliveredLoad();}
+    const host=$('#whDeliveredRows');if(!host)return;
+    host.innerHTML=`<div class="order-compact-scroll wh-delivered-list">${d.orders.map(o=>`<article class="order-compact-row wh-delivered-row"><span class="order-code">${esc(fa(o.orderNo))}</span><strong>${esc(o.customerName)}</strong><span>${qty(o.itemCount)} قلم</span><span>${qty(o.deliveredKg)} کیلوگرم</span><span>${esc(formatDateTime24(o.completedAt))}</span><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات و چاپ</button></article>`).join('')||'<div class="empty">سفارش وزن‌نهایی‌شده‌ای یافت نشد.</div>'}</div><div class="wh-delivered-pages"><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-prev" ${d.offset===0?'disabled':''}>قبلی</button><span>${qty(d.total)} سفارش${d.total?` • ${qty(d.offset+1)} تا ${qty(Math.min(d.offset+d.limit,d.total))}`:''}</span><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-next" ${d.offset+d.limit>=d.total?'disabled':''}>بعدی</button></div>`;
+  }catch(e){const host=$('#whDeliveredRows');if(host&&seq===st.seq)host.innerHTML=`<div class="empty">خطا در دریافت سفارش‌ها: ${esc(e.message)}</div>`;}
+}
+function whDeliveredDocument(o){
+  return `<div class="whd-doc"><header><h2>سند وزن انبار بابل طیور</h2><p>ثبت وزن نهایی انبار — این سند فاکتور فروش یا تأیید تحویل به مشتری نیست.</p></header><div class="whd-meta"><span>شماره سفارش: <b>${esc(fa(o.orderNo))}</b></span><span>نوع سفارش: <b>${esc(o.orderType==='REMOTE'?'غیرحضوری':o.orderType==='ONSITE'?'حضوری':o.orderType||'—')}</b></span><span>ثبت سفارش: <b>${esc(formatDateTime24(o.createdAt))}</b></span><span>وضعیت جاری: <b>${esc(STATUS[o.status]?.[0]||o.status||'—')}</b></span><span>مشتری: <b>${esc(o.customerName)}</b></span><span>شماره تماس: <b>${esc(fa(o.customerPhone||'—'))}</b></span><span>تاریخ ثبت وزن: <b>${esc(formatDateTime24(o.completedAt))}</b></span><span>ثبت‌کننده: <b>${esc(o.completedBy)}</b></span><span>محل ارسال: <b>${esc(o.dispatchPlace||'—')}</b></span>${o.deliveryDate?`<span>تاریخ تحویل: <b>${esc(dateLabel(o.deliveryDate))}</b></span>`:''}</div>${o.notes?`<p>یادداشت سفارش: ${esc(o.notes)}</p>`:''}<div class="whd-table-scroll"><table><thead><tr><th>ردیف</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن نهایی (کیلوگرم)</th><th>توضیحات</th></tr></thead><tbody>${o.items.map((i,k)=>`<tr><td>${fa(k+1)}</td><td>${esc(i.productName)}</td><td>${i.requestedQty==null?'—':qty(i.requestedQty)+' '+esc(i.requestedUnit)}</td><td>${i.outOfStock?'ناموجود':qty(i.deliveredKg)}</td><td>${esc(i.description||'—')}</td></tr>`).join('')||'<tr><td colspan="5">جزئیات اقلام در سابقه موجود نیست.</td></tr>'}</tbody></table></div><p class="whd-total">جمع وزن نهایی: <b>${qty(o.deliveredKg)} کیلوگرم</b></p>${o.legacy?'<p>سابقه قدیمی: بعضی جزئیات ردیف‌ها از اطلاعات فعلی سفارش بازیابی شده است.</p>':''}<div class="whd-signatures"><span>نام و امضای انباردار</span><span>نام و امضای تحویل‌گیرنده</span></div></div>`;
+}
+async function whDeliveredDetails(id){
+  try{
+    const {order}=await api('/api/warehouse/delivered/'+encodeURIComponent(id));
+    openModal('جزئیات سند انبار',whDeliveredDocument(order)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-delivered-print>${icon('receipt',16)} چاپ سند انبار</button></div>`);
+    $('#modal [data-wh-delivered-print]').addEventListener('click',()=>whDeliveredPrint(id));
+    BTPrintDigits.convert(document.querySelector('#modal .whd-doc'));
+  }catch(e){toast(e.message);}
+}
+async function whDeliveredPrint(id){
+  try{
+    const {order}=await api('/api/warehouse/delivered/'+encodeURIComponent(id));
+    BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>سند انبار ${esc(fa(order.orderNo))}</title><style>*{box-sizing:border-box}body{font-family:"B Yekan","Vazirmatn",Tahoma,sans-serif;color:#1b2027;margin:0;padding:15px}h2{font-size:20px;margin:0}header{border-bottom:2px solid #333;margin-bottom:14px}header p{font-size:11px}.whd-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;margin:12px 0}.whd-meta span{border:1px solid #bbb;padding:6px}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{border:1px solid #777;padding:6px;text-align:right;vertical-align:top;overflow-wrap:anywhere;font-size:12px}th{background:#eee}tr{break-inside:avoid}.whd-total{font-size:14px}.whd-signatures{display:flex;justify-content:space-around;margin-top:35px;padding-top:10px;min-height:60px}@media print{body{padding:0}@page{size:A4;margin:12mm}}</style></head><body>${whDeliveredDocument(order)}<script src="/print-ready.js"><\/script></body></html>`));
+  }catch(e){toast(e.message);}
 }
 /* ---------- v37.36.0 — سربرگ «سوابق و گزارشات» فروشگاه‌ها در کارتابل انبار ---------- */
 app.whStoreHist = app.whStoreHist || { range:'today', from:'', to:'', q:'', data:null, seq:0 };
@@ -953,6 +991,9 @@ function wh38Shell(phase){
     const el=e.target.closest('[data-action]'); if(!el)return;
     const a=el.dataset.action, id=el.dataset.id;
     try{
+      if(a==='wh-delivered-details'){ return whDeliveredDetails(id); }
+      if(a==='wh-delivered-prev'){ app.whDelivered.offset=Math.max(0,app.whDelivered.offset-50); return whDeliveredLoad(); }
+      if(a==='wh-delivered-next'){ app.whDelivered.offset+=50; return whDeliveredLoad(); }
       if(a==='print-store-service'){ return printStoreService(id,Number(el.dataset.run)); }
       if(a==='wh38-accept'){ el.disabled=true; await api('/api/orders/'+id+'/warehouse/accept',{method:'POST'}); toast('سفارش تأیید شد و وارد مرحله آماده‌سازی شد.'); await refreshIndicators(); if(app.page==='warehouse'&&app.wh38.phase==='incoming')wh38Shell('incoming'); else if(app.wh38.phase==='stores')wh38Paint('stores'); }
       else if(a==='wh38-store-details'){ wh38StoreDetails(id); }
