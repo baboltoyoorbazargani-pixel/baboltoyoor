@@ -24,10 +24,10 @@ test('warehouse row uses equal width columns, 44px boxes, and scroll on narrow s
  assert.match(css,/\.wh38-oos input\[type="checkbox"\] \{[\s\S]*?width:18px!important;height:18px!important/);
 });
 test('weight entry and out-of-stock event mapping and finalization rules remain intact',()=>{
- assert.match(sheet,/w\.disabled=ch\.checked; if\(ch\.checked\)w\.value=''/);
+ assert.match(sheet,/w\.disabled=ch\.checked; if\(ch\.checked\)\{w\.value=''[\s\S]*?whWeighingDrafts\.delete\(w\)/);
  assert.match(sheet,/wh38Total\(\)/);
  const finalize=ui.slice(ui.indexOf('async function wh38Finalize(id)'),ui.indexOf('window.renderWarehouse='));
- assert.match(finalize,/deliveredKg:out\?0:n\(w\.value\), outOfStock:out/);
- assert.match(finalize,/!x\.outOfStock&&x\.deliveredKg<=0/);
+ assert.match(finalize,/deliveredKg:out\?0:whWeightNet\(w\), outOfStock:out/ );
+ assert.match(finalize,/!x\.outOfStock&&\(!Number\.isFinite\(x\.deliveredKg\)\|\|x\.deliveredKg<=0\)/);
  assert.match(finalize,/api\('\/api\/orders\/\s*'\+id\+'\/warehouse'/);
 });
