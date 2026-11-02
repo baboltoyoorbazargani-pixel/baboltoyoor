@@ -1164,3 +1164,27 @@
 #appView #content .stl-queue-list .stl-queue-customer{display:block!important;flex:1 1 0!important;min-width:0!important;max-width:none!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-weight:700!important}
 #appView #content .stl-queue-list .stl-queue-order{display:flex!important;flex:0 0 auto!important;align-items:center!important;gap:4px!important;min-width:0!important;max-width:57%!important;margin:0!important;padding:0 9px 0 0!important;border-inline-start:1px solid #cbd5df!important;white-space:nowrap!important;overflow:hidden!important;font-size:12px!important}
 #appView #content .stl-queue-list .stl-queue-order bdi{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+/* نگهبانی: فهرست شناور جستجوی مشتری و جزئیات وسیله */
+#appView #content .cust-code-entry{position:relative;min-width:0}
+#appView #content .gate-customer-results:not(:empty){position:absolute;z-index:40;inset-inline:0;top:100%;max-height:260px;overflow-y:auto;padding:6px;margin-top:2px;border:1px solid var(--bt-line,#dce4eb);border-radius:10px;background:#fff;box-shadow:0 10px 24px rgba(0,0,0,.15)}
+#appView #content .gate-customer-result{align-items:center}
+#appView #content .gate-customer-result span{overflow-wrap:anywhere}
+#appView #content #gateCarTypeField[hidden]{display:none!important}
+#appView #content .gate-history-search{display:grid;gap:6px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
+#appView #content .gate-history-search input{width:100%;min-width:0}
+#appView #content .gate-history-search small{color:var(--muted);font-size:11px}
+#appView[data-cartable-page="gate"] .gate-dispatch-tabs{grid-template-columns:minmax(0,1fr)}
+/* فضای افقی بیشتری به کنترل خروج بده و اطلاعات را بدون پیمایش در شبکه بچین. */
+#appView[data-cartable-page="gate"]:has(.gt-exit-panel) .content{max-width:none!important}
+#appView[data-cartable-page="gate"]:has(.gt-exit-panel) .workspace{padding-inline:12px!important}
+#appView #content .gt-exit-list{overflow-x:hidden!important;padding:10px!important}
+#appView #content .gt-exit-card{box-sizing:border-box;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;grid-template-rows:repeat(2,minmax(42px,auto));gap:0;align-items:stretch;width:100%;min-width:0;margin-bottom:8px;padding:6px;border:1px solid var(--line,#dce4eb);border-radius:12px;background:#fff}
+#appView #content .gt-exit-field{box-sizing:border-box;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:3px 8px;border-inline-start:1px solid #dce4eb;line-height:1.3}
+#appView #content .gt-exit-field small{font-size:10px;color:var(--muted,#64748b)}
+#appView #content .gt-exit-field>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700}
+#appView #content .gt-exit-actions{grid-column:5;grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;gap:5px;padding:4px}
+#appView #content .gt-exit-actions .btn{min-width:0;white-space:nowrap}
+@media(max-width:900px){#appView #content .gt-exit-card{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none}#appView #content .gt-exit-actions{grid-column:1/-1;grid-row:auto;justify-content:flex-start}}
+@media(max-width:480px){#appView #content .gt-exit-actions .btn{flex:1;padding-inline:6px}}
+@media(min-width:1600px){#appView #content .gt-exit-card{grid-template-columns:repeat(8,minmax(0,1fr)) auto;grid-template-rows:minmax(42px,auto)}#appView #content .gt-exit-actions{grid-column:9;grid-row:1}}

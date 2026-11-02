@@ -599,21 +599,15 @@ function gtQueueRow(v){
   </div>`;
 }
 
-function gateDispatchFocusMarkup(data,key){
-  const map={
-    awaiting:['در انتظار ثبت خروج راننده','سفارش‌های واگذارشده به راننده که هنوز خروج را اعلام نکرده‌اند.',data.awaitingDriver||[],o=>gateDispatchCard(o)],
-    leaving:['در انتظار تأیید خروج','راننده خروج را اعلام کرده است؛ پس از کنترل، خروج پیش از حرکت را تأیید کنید.',data.leaving||[],o=>gateDispatchCard(o,'exit')],
-    transit:['در حال ارسال به مشتری','خروج پیش از حرکت تأیید شده است؛ سفارش در مسیر تحویل به مشتری است.',data.inTransit||[],o=>gateDispatchCard(o)]
-  };
-  const [title,desc,rows,render]=map[key]||map.awaiting;
-  const cards=rows.map(render).join('')||sdEmpty('truck','سفارشی در این مرحله نیست','با تغییر وضعیت سفارش، اطلاعات همین‌جا به‌روزرسانی می‌شود.');
-  return `<section class="sd-panel gate-dispatch-focus" aria-label="${esc(title)}"><div class="gate-tab-context"><p>${esc(desc)}</p><span class="sd-count"><strong>${qty(rows.length)}</strong><span>سفارش</span></span></div><div class="adm-list dsp-list gate-dispatch-vertical-list">${cards}</div></section>`;
+function gateDispatchFocusMarkup(data){
+  const rows=data.leaving||[];
+  const cards=rows.map(o=>gateDispatchCard(o,'exit')).join('')||sdEmpty('truck','سفارشی در انتظار تأیید خروج نیست','پس از ثبت خروج راننده، سفارش برای کنترل در این بخش نمایش داده می‌شود.');
+  return `<section class="sd-panel gate-dispatch-focus" aria-label="در انتظار تأیید خروج"><div class="gate-tab-context"><p>خروج اعلام‌شده را پس از کنترل تأیید کنید.</p><span class="sd-count"><strong>${qty(rows.length)}</strong><span>سفارش</span></span></div><div class="adm-list dsp-list gate-dispatch-vertical-list">${cards}</div></section>`;
 }
 function gateDispatchTabsHtml(data,active,error=''){
-  const tabs=[['awaiting','در انتظار ثبت خروج راننده',(data.awaitingDriver||[]).length],['leaving','در انتظار تأیید خروج',(data.leaving||[]).length],['transit','در حال ارسال به مشتری',(data.inTransit||[]).length]];
-  const nav=`<div class="gate-dispatch-tabs" role="tablist" aria-label="مراحل تحویل راننده">${tabs.map(([id,label,count])=>`<button type="button" role="tab" aria-selected="${active===id?'true':'false'}" class="${active===id?'active':''}" data-gate-dispatch-tab="${id}">${label} <b class="gate-dispatch-count" data-gate-dispatch-count="${id}">${qty(count)}</b></button>`).join('')}</div>`;
-  const panel=error?`<div class="gate-dispatch-load-error" role="alert">صف خروج ارسالی بارگذاری نشد: ${esc(error)}</div>`:gateDispatchFocusMarkup(data,active);
-  return nav+`<div id="gateDispatchPanel" role="tabpanel" aria-label="${tabs.find(([id])=>id===active)?.[1]||tabs[0][1]}">${panel}</div>`;
+  const nav=`<div class="gate-dispatch-tabs" role="tablist" aria-label="مراحل پخش"><button type="button" role="tab" aria-selected="true" class="active" data-gate-dispatch-tab="leaving">در انتظار تأیید خروج <b class="gate-dispatch-count" data-gate-dispatch-count="leaving">${qty((data.leaving||[]).length)}</b></button></div>`;
+  const panel=error?`<div class="gate-dispatch-load-error" role="alert">صف خروج پخش بارگذاری نشد: ${esc(error)}</div>`:gateDispatchFocusMarkup(data);
+  return nav+`<div id="gateDispatchPanel" role="tabpanel" aria-label="در انتظار تأیید خروج">${panel}</div>`;
 }
 
 async function renderGate(tab){
@@ -621,7 +615,7 @@ async function renderGate(tab){
   app.sub.gate=tab;
   app.gateRenderSeq=(Number(app.gateRenderSeq)||0)+1;
   const renderSeq=app.gateRenderSeq;
-  const visits=(await api('/api/visits')).visits||[];
+  const visits=(await api('/api/visits'+(tab==='history'&&app.gateHistoryQ?'?q='+encodeURIComponent(app.gateHistoryQ):''))).visits||[];
   let dispatchData={awaitingDriver:[],leaving:[],inTransit:[]};
   let dispatchError='';
   try{dispatchData=await api('/api/gate/dispatch');}
@@ -631,9 +625,9 @@ async function renderGate(tab){
   let html='<span class="gate-ui-build" data-ui-build="37.3.18" hidden></span><div class="gate-workspace-content">';
   if(tab==='entry')html+=renderGateEntry();
   else if(tab==='waiting')html+=renderGateWaiting(visits.filter(v=>v.status==='WAITING_SALES'));
-  else if(tab==='history')html+=`<div id="gateHistoryLive">${renderGateHistory(visits,true)}</div>`;
+  else if(tab==='history')html+=`<div class="gate-history-search"><label for="gateHistorySearch">جستجوی سوابق مراجعه</label><input id="gateHistorySearch" type="search" maxlength="80" value="${esc(app.gateHistoryQ||'')}" placeholder="نام، شماره تماس، پلاک، کد یا هدف مراجعه" autocomplete="off"><small>آخرین ۱۰۰ نتیجه نمایش داده می‌شود.</small></div><div id="gateHistoryLive" aria-live="polite">${renderGateHistory(visits,true)}</div>`;
   else if(tab==='exit')html+=renderGateExit(exitOrders);
-  else if(tab==='dispatch'){app.gateDispatchTab=['awaiting','leaving','transit'].includes(app.gateDispatchTab)?app.gateDispatchTab:'awaiting';html+=gateDispatchTabsHtml(dispatchData,app.gateDispatchTab,dispatchError);}
+  else if(tab==='dispatch'){app.gateDispatchTab='leaving';html+=gateDispatchTabsHtml(dispatchData,app.gateDispatchTab,dispatchError);}
   html+='</div>';
   $('#content').innerHTML=html; bindGate(tab); if(tab==='entry')bindPlate();
   dsp.sigs.gate=JSON.stringify(dispatchData);
@@ -649,7 +643,7 @@ function renderGateEntry(){
         <div class="gt-fieldset">
           <div class="gt-fieldset-title">${icon('user',16)} مشخصات مشتری</div>
           <div class="gt-entry-cust">
-            <div class="cust-code-entry"><div class="field"><label for="gateCustCode">جستجوی مشتری <small>(کد، نام، تماس یا پلاک)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerSearch" autocomplete="off" placeholder="کد، نام، تماس یا پلاک" aria-controls="gateCustomerResults" aria-autocomplete="list"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><input type="hidden" name="customerCode" id="gateCustomerCodeValue"><div id="gateCustomerResults" class="gate-customer-results" aria-live="polite"></div><div id="gateCustChip"></div></div>
+            <div class="cust-code-entry"><div class="field"><label for="gateCustCode">جستجوی مشتری <small>(کد، نام، تماس یا پلاک)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerSearch" autocomplete="off" placeholder="کد، نام، تماس یا پلاک" aria-controls="gateCustomerResults" aria-autocomplete="list" aria-expanded="false" role="combobox"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><input type="hidden" name="customerCode" id="gateCustomerCodeValue"><div id="gateCustomerResults" class="gate-customer-results" aria-live="polite"></div><div id="gateCustChip"></div></div>
             <div class="field"><label for="gateCustomerName">نام و نام خانوادگی</label><div class="input-shell"><span>${icon('user',16)}</span><input id="gateCustomerName" name="name" required placeholder="نام مشتری"></div></div>
             <div class="field"><label for="gateCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="gateCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
           </div>
@@ -659,7 +653,8 @@ function renderGateEntry(){
           <div class="gt-entry-vehicle">
             <div class="gt-plate-col"><div id="plateBox"></div><div id="plateSuggest" class="gt-suggest"></div></div>
             <div class="gt-entry-vehicle-fields">
-              <div class="field"><label for="gateVehicleType">نوع وسیله</label><div class="input-shell"><select id="gateVehicleType" name="vehicleType"><option>خودرو</option><option>موتورسیکلت</option><option>وانت</option><option>بدون وسیله</option></select></div></div>
+              <div class="field"><label for="gateVehicleType">نوع وسیله</label><div class="input-shell"><select id="gateVehicleType" name="vehicleType"><option>خودرو</option><option>موتورسیکلت</option></select></div></div>
+              <div class="field" id="gateCarTypeField"><label for="gateCarType">نوع خودرو</label><div class="input-shell"><input id="gateCarType" name="carType" maxlength="80" required placeholder="مثلاً پژو یا وانت"></div></div>
               <div class="field"><label for="gatePurpose">هدف مراجعه</label><div class="input-shell"><input id="gatePurpose" name="purpose" placeholder="خرید، دریافت سفارش یا توضیح کوتاه"></div></div>
             </div>
           </div>
@@ -683,14 +678,19 @@ function renderGateWaiting(queue){
 function renderGateHistory(visits,hideHeading=false){
   return `<section class="sd-panel">
     ${hideHeading?'':`<div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico" style="background:var(--blue-bg);color:var(--blue)">${icon('reports',19)}</span><div><h2>سوابق مراجعه</h2><p>آخرین ورودهای ثبت‌شده و وضعیت هر مراجعه.</p></div></div><div class="sd-count"><strong>${qty(visits.length)}</strong><span>مراجعه</span></div></div>`}
-    <div class="gt-table-pad"><div class="table-wrap"><table class="table gt-table"><thead><tr><th>مشتری</th><th>پلاک</th><th>محله</th><th>هدف</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>${visits.map(v=>`<tr><td><div class="gt-cust-cell"><span class="sd-avatar">${esc(initials(v.customer?.name||''))}</span><div><strong>${esc(v.customer?.name||'—')}</strong><small>${esc(v.customer?.phone||'')}</small></div></div></td><td>${plateViewHtml(v.customer?.plate, 'بدون پلاک', true)}</td><td>${esc(v.district||'—')}</td><td>${esc(v.purpose||'—')}</td><td>${badge(v.status)}</td><td>${dt(v.createdAt)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">سابقه‌ای ثبت نشده است.</td></tr>'}</tbody></table></div></div>
+    <div class="gt-table-pad"><div class="table-wrap"><table class="table gt-table"><thead><tr><th>مشتری</th><th>پلاک</th><th>نوع وسیله</th><th>محله</th><th>هدف</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>${visits.map(v=>`<tr><td><div class="gt-cust-cell"><span class="sd-avatar">${esc(initials(v.customer?.name||''))}</span><div><strong>${esc(v.customer?.name||'—')}</strong><small>${esc(v.customer?.phone||'')}</small></div></div></td><td>${plateViewHtml(v.plate ?? v.customer?.plate, 'بدون پلاک', true)}</td><td>${esc([v.vehicleType ?? v.customer?.vehicleType, v.carType ?? v.customer?.carType].filter(Boolean).join(' — ')||'—')}</td><td>${esc(v.district||'—')}</td><td>${esc(v.purpose||'—')}</td><td>${badge(v.status)}</td><td>${dt(v.createdAt)}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">سابقه‌ای ثبت نشده است.</td></tr>'}</tbody></table></div></div>
   </section>`;
 }
 
+function gateExitRow(o){
+  const field=(label,text,html)=>`<div class="gt-exit-field" title="${esc(label+': '+text)}"><small>${esc(label)}</small><span>${html??esc(text)}</span></div>`;
+  const phone=storeAwareOrderPhone(o),name=storeAwareOrderName(o),plate=o.customer?.plate||'بدون پلاک';
+  return `<article class="gt-exit-card" data-order="${esc(o.id)}">${field('مشتری',name)}${field('شماره و تاریخ سفارش',fa(o.orderNo||'—')+' • '+dt(o.createdAt))}${field('شماره فاکتور',fa(o.payment?.invoiceNumber||'—'))}${field('پلاک',fa(plate),plateViewHtml(o.customer?.plate,'بدون پلاک',true))}${field('شماره تماس',fa(phone))}${field('مبلغ',String(o.payment?.totalAmount??'—'),money(o.payment?.totalAmount))}${field('زمان تسویه',dt(o.payment?.verifiedAt))}${field('تعداد اقلام',String(activeItemsOf(o).length),qty(activeItemsOf(o).length)+' قلم')}<div class="gt-exit-actions"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${esc(o.id)}">${icon('check',14)} کنترل خروج</button></div></article>`;
+}
 function renderGateExit(orders){
-  return `<section class="sd-panel">
+  return `<section class="sd-panel gt-exit-panel">
     <div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico" style="background:var(--green-bg);color:var(--green)">${icon('check',19)}</span><div><h2>فاکتورهای آماده خروج</h2><p>فقط فاکتورهای تسویه‌شده در این کارتابل قابل کنترل هستند.</p></div></div><div class="sd-count"><strong>${qty(orders.length)}</strong><span>آماده</span></div></div>
-    <div class="gt-exit-list" id="gateExitRows">${orders.map(o=>orderSummaryRow(o,{className:'gt-exit-row',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:[{html:`فاکتور ${esc(fa(o.payment?.invoiceNumber||'—'))}`},{html:plateViewHtml(o.customer?.plate,'بدون پلاک',true)},{html:`شماره تماس: ${esc(storeAwareOrderPhone(o))}`},{html:`مبلغ: ${money(o.payment?.totalAmount)}`},{html:`تسویه: ${esc(dt(o.payment?.verifiedAt))}`},{html:verificationBadges(o.payment)}],actionsHtml:`<button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${esc(o.id)}">${icon('check',14)} کنترل خروج</button>`})).join('')||sdEmpty('check','فاکتور آماده خروج وجود ندارد','پس از تسویه هر سفارش، فاکتور آن برای کنترل خروج اینجا قرار می‌گیرد.')}</div>
+    <div class="gt-exit-list" id="gateExitRows">${orders.map(gateExitRow).join('')||sdEmpty('check','فاکتور آماده خروج وجود ندارد','پس از تسویه هر سفارش، فاکتور آن برای کنترل خروج اینجا قرار می‌گیرد.')}</div>
     <div id="exitEditor" style="padding:0 20px 20px"></div>
   </section>`;
 }
@@ -699,7 +699,7 @@ function bindGate(tab){
   const c=$('#content');
   c.onclick=async e=>{
     const dispatchTab=e.target.closest('[data-gate-dispatch-tab]');
-    if(dispatchTab){app.gateDispatchTab=['awaiting','leaving','transit'].includes(dispatchTab.dataset.gateDispatchTab)?dispatchTab.dataset.gateDispatchTab:'awaiting';return renderGate('dispatch');}
+    if(dispatchTab){app.gateDispatchTab='leaving';return;}
     const b=e.target.closest('[data-sub]');
     if(b){const [k,v]=b.dataset.sub.split(':'); if(k==='gate'){app.sub.gate=v; return renderGate(v);} return;}
     const gateAction=e.target.closest('[data-gate]');
@@ -712,8 +712,20 @@ function bindGate(tab){
     if(a==='pick-customer')return pickCustomer(Number(el.dataset.index));
   };
   const f=$('#gateForm'); if(f)f.addEventListener('submit',submitGate);
-  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;});
+  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;if(nv.checked&&$('#plateSuggest'))$('#plateSuggest').innerHTML='';syncGateVehicleFields();});
+  f?.elements.vehicleType?.addEventListener('change',syncGateVehicleFields);syncGateVehicleFields();
+  const history=$('#gateHistorySearch');if(history)history.addEventListener('input',()=>queueGateHistorySearch(history));
   if($('#plateBox'))$('#plateBox').innerHTML=plateEditorHtml('',f?.elements.vehicleType?.value||'');
+}
+
+function syncGateVehicleFields(){
+ const f=$('#gateForm'),field=$('#gateCarTypeField'),input=$('#gateCarType');if(!f||!field||!input)return;
+ const show=!$('#noVehicle')?.checked&&f.elements.vehicleType.value==='خودرو';field.hidden=!show;input.disabled=!show;input.required=show;
+}
+let gateHistoryTimer=null,gateHistorySeq=0;
+function queueGateHistorySearch(input){
+ clearTimeout(gateHistoryTimer);const seq=++gateHistorySeq;app.gateHistoryQ=input.value.trim();
+ gateHistoryTimer=setTimeout(async()=>{try{const q=app.gateHistoryQ;const result=await api('/api/visits'+(q?'?q='+encodeURIComponent(q):''));if(seq!==gateHistorySeq||!input.isConnected||app.sub.gate!=='history'||q!==app.gateHistoryQ)return;const host=$('#gateHistoryLive');if(host)host.innerHTML=renderGateHistory(result.visits||[],true);}catch(e){if(seq===gateHistorySeq&&input.isConnected){const host=$('#gateHistoryLive');if(host)host.innerHTML=`<p role="alert">جستجو ناموفق بود: ${esc(e.message||'خطای دریافت')}</p>`;}}},200);
 }
 
 /* پلاک ایران — ظاهر جدید، همان کلاس‌ها */

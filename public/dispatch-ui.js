@@ -463,7 +463,7 @@ function updateGateDispatchInCartable(data) {
   const home = $('#gateHomeDispatch');
   if (home) home.innerHTML = gateHomeDispatchMarkup(data);
   const full = $('#gateDispatchPanel');
-  if (full) full.innerHTML = app.sub.gate==='dispatch' && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.gateDispatchTab||'awaiting') : app.sub.gate?.startsWith('dispatch-') && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.sub.gate) : gateDispatchMarkup(data);
+  if (full) full.innerHTML = app.sub.gate==='dispatch' && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,'leaving') : app.sub.gate?.startsWith('dispatch-') && typeof gateDispatchFocusMarkup==='function' ? gateDispatchFocusMarkup(data,app.sub.gate) : gateDispatchMarkup(data);
   const counts={awaiting:(data.awaitingDriver||[]).length,leaving:(data.leaving||[]).length,transit:(data.inTransit||[]).length};
   document.querySelectorAll('[data-gate-dispatch-count]').forEach(el=>{const count=counts[el.dataset.gateDispatchCount]||0;el.textContent=qty(count);});
 }
@@ -474,8 +474,9 @@ function startGateDispatchLive() {
     if(app.page!=='gate'||app.gateRenderSeq!==seq||busy)return;
     busy=true;const tab=app.sub.gate;
     try{
-      const [dispatch,rows]=await Promise.all([api('/api/gate/dispatch'),tab==='exit'?api('/api/orders?status=SETTLED'):api('/api/visits')]);
-      if(app.page!=='gate'||app.gateRenderSeq!==seq||app.sub.gate!==tab)return;
+      const historyQ=tab==='history'?(app.gateHistoryQ||''):'';
+      const [dispatch,rows]=await Promise.all([api('/api/gate/dispatch'),tab==='exit'?api('/api/orders?status=SETTLED'):api('/api/visits'+(historyQ?'?q='+encodeURIComponent(historyQ):''))]);
+      if(app.page!=='gate'||app.gateRenderSeq!==seq||app.sub.gate!==tab||(tab==='history'&&historyQ!==(app.gateHistoryQ||'')))return;
       const sig=JSON.stringify(dispatch);if(sig!==dsp.sigs.gate){dsp.sigs.gate=sig;updateGateDispatchInCartable(dispatch);}
       const rowSig=JSON.stringify(rows);
       if(rowSig!==lastRows){

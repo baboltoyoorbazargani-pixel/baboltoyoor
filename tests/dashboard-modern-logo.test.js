@@ -37,7 +37,7 @@ test('every rail section carries a thematic icon separate from its badge key',()
   // نگهبانی
   assert.match(app,/\['waiting','در انتظار اقدام فروش','bell','gateEntry'\]/);
   assert.match(app,/\['exit','کنترل خروج','exitDoor','gateExit'\]/);
-  assert.match(app,/\['dispatch','تحویل راننده','truck','gateDispatchPending'\]/);
+  assert.match(app,/\['dispatch','پخش','truck','gateDispatchPending'\]/);
   assert.match(app,/\['history','سوابق مراجعه','history',null\]/);
   // فروش
   assert.match(app,/\['onsite','حضوری','user','salesIntake'\]/);

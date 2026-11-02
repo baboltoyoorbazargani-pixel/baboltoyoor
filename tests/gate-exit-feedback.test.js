@@ -40,7 +40,7 @@ test('ثبت خروج نهایی وضعیت «در حال ثبت» و خطای �
 
 test('کارت «تحویل راننده» داشبورد به صف «در انتظار تأیید خروج» می‌رسد، نه صفحهٔ خالی', () => {
   assert.ok(appJs.includes("key==='dispatch-leaving'"), 'مقصد dispatch-leaving در ناوبری شناخته می‌شود');
-  assert.ok(appJs.includes("app.gateDispatchTab=key==='dispatch-leaving'?'leaving'"), 'تب داخلی روی leaving تنظیم می‌شود');
+  assert.ok(appJs.includes("app.gateDispatchTab='leaving'"), 'تب داخلی روی leaving تنظیم می‌شود');
   assert.ok(!appJs.includes('dispatch-awaiting'), 'مقدار نامعتبر قدیمی تب حذف شده است');
 });
 
