@@ -1,4 +1,4 @@
-name: Gate live search and onsite layout browser checks
+name: Gate live search and onsite layout browser checks (repeat)
 on:
   push:
     branches: [arena/c2b207f9-baboltoyoor]

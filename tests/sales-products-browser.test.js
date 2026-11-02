@@ -10,7 +10,7 @@ test('مرورگر: محصولات در تنظیمات و کارتابل فرو�
   const post=async(ctx,url,data)=>{const r=await ctx.request.post(base+url,{data});assert.ok(r.ok(),`${url} ${r.status()}: ${await r.text()}`);return r.json();};
   await post(admin,'/api/login',{username:'admin',password:'Initial!2345'});await post(admin,'/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   for(const role of ['sales','gate'])await post(admin,'/api/admin/users',{username:'test-'+role,password:'Changed!2345',fullName:'کاربر '+role,position:'آزمایش',roleCode:role,mustChangePassword:false});
-  const order=(await post(admin,'/api/orders/remote',{name:'مشتری تست قیمت',phone:'09121112233',scheduledTime:'00:00',items:[{productId:'p01',requestedQty:2,requestedUnit:'کیلوگرم'}]})).order;
+  const order=(await post(admin,'/api/orders/remote',{name:'مشتری تست قیمت',phone:'09121112233',scheduledTime:'00:00',deliveryMode:'PICKUP',items:[{productId:'p01',requestedQty:2,requestedUnit:'کیلوگرم'}]})).order;
   await post(admin,`/api/orders/${order.id}/warehouse/accept`,{});await post(admin,`/api/orders/${order.id}/warehouse/start-preparing`,{});await post(admin,`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:2}]});
   await post(sales,'/api/login',{username:'test-sales',password:'Changed!2345'});await post(gate,'/api/login',{username:'test-gate',password:'Changed!2345'});
   assert.equal((await gate.request.get(base+'/api/admin/products')).status(),403);assert.equal((await gate.request.post(base+'/api/admin/prices',{data:{productId:'p01',price:17}})).status(),403);
