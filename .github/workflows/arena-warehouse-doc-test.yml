@@ -14,7 +14,7 @@ jobs:
           BT_CHROMIUM_PATH: /usr/bin/google-chrome
         run: |
           set +e
-          node --test tests/warehouse-weighing-browser.test.js tests/warehouse-delivered-browser.test.js tests/warehouse-store-document-browser.test.js tests/transport-handover-browser.test.js > browser.log 2>&1
+          node --test --test-concurrency=1 tests/warehouse-weighing-browser.test.js tests/warehouse-delivered-browser.test.js tests/warehouse-store-document-browser.test.js tests/transport-handover-browser.test.js > browser.log 2>&1
           result=$?
           cat browser.log
           if [ "$result" != 0 ]; then base64 -w0 browser.log | fold -w3000 | while read -r chunk || [ -n "$chunk" ]; do echo "::error title=Browser output chunk::$chunk"; done; fi
