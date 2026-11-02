@@ -14,13 +14,13 @@
 .whd-store-meta>span{flex-wrap:wrap}
 .whd-table-scroll{max-width:100%;overflow-x:auto}
 .whd-doc table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid #e3e6ea;border-radius:6px;font-size:11px}
-.whd-col-number{width:34px}.whd-col-product{width:38%}.whd-col-request{width:27%}
+.whd-col-number{width:34px}.whd-col-product{width:24%}.whd-col-tares{width:50%}.whd-col-weight{width:19%}
 .whd-doc th,.whd-doc td{line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;text-align:right}
 .whd-doc th{background:#f6f7f9;color:#67707d;font-size:10px;padding:4px 6px;border-bottom:1px solid #e3e6ea}
 .whd-doc td{font-size:11px;padding:3px 6px;border-bottom:1px solid #eef0f3}
 .whd-doc tbody tr:last-child td{border-bottom:0}
 .whd-doc th:first-child,.whd-number{text-align:center!important;padding-right:1px!important;padding-left:1px!important;white-space:nowrap}
-.whd-doc th:nth-child(3),.whd-doc th:nth-child(4),.whd-doc td.whd-quantity{text-align:center}
+.whd-doc th:last-child,.whd-doc td.whd-quantity{text-align:center}
 .whd-doc thead{display:table-header-group}.whd-doc tr{break-inside:avoid;page-break-inside:avoid}
 .whd-acknowledgement{break-inside:avoid;page-break-inside:avoid;margin-top:15px}
 .whd-declaration{margin:0;white-space:normal;overflow-wrap:anywhere;font-size:12px;font-weight:700;line-height:1.8}
@@ -35,7 +35,14 @@
  .whd-doc{print-color-adjust:exact;-webkit-print-color-adjust:exact}
  .whd-table-scroll{overflow:visible}.whd-doc table{min-width:0}
 }
-/* Details use product row numbers, so long product names never wrap the main rows. */
-.whd-weighings{margin-top:10px;break-inside:auto}.whd-weighings>b,.whd-weighings>small{display:block;margin-bottom:3px}.whd-weighings>b{font-size:11px}.whd-weighings>small{font-size:9px}
-.whd-doc .whd-weighing-table{table-layout:fixed;min-width:650px}.whd-doc .whd-weighing-table th,.whd-doc .whd-weighing-table td{text-align:center;white-space:nowrap;overflow-wrap:normal;padding:3px 1px;font-size:8px}
-@media print{.whd-doc .whd-weighing-table{min-width:0}}
+/* Tare boxes belong to the product row; empty types and gross-weight columns are omitted. */
+.whd-doc .whd-products th{color:#394455}
+.whd-doc .whd-products td{padding-top:7px;padding-bottom:7px}
+.whd-product b{font-size:12px}
+.whd-tare-list{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:flex-start}
+.whd-tare-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;border:1px solid #c9d4df;border-radius:5px;padding:3px 6px;background:#f7f9fb;color:#34465a;font-size:10px;line-height:1.5;white-space:nowrap}
+.whd-tare-chip b{color:#172b40;font-weight:700}
+.whd-tare-empty,.whd-tare-unknown{font-size:10px;color:#687685}
+.whd-net{font-size:12px!important;font-weight:700;color:#173b50}
+.whd-total{margin:10px 0 0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;width:245px;max-width:100%;padding:8px 12px;border:1px solid #a9bbc9;border-radius:7px;background:#f3f7f9;font-size:12px;break-inside:avoid;page-break-inside:avoid}
+.whd-total strong{font-size:13px;color:#173b50;white-space:nowrap}
