@@ -23,7 +23,7 @@ test('خروج‌های منتظر تأیید در تب اصلی نگهبانی 
   const gateRenderer=ui.slice(gateStart,gateEnd);
   assert.doesNotMatch(gateRenderer,/gateHomeDispatchMarkup\(dispatchData\)/);
   assert.match(gateRenderer,/gateDispatchTabsHtml\(dispatchData,app\.gateDispatchTab,dispatchError\)/);
-  assert.match(ui,/role="tablist" aria-label="مراحل تحویل راننده"/);
+  assert.match(ui,/role="tablist" aria-label="مراحل پخش"/);
   assert.match(ui, /data-ui-build="37\.3\.18"/);
   assert.match(dispatch, /function startGateDispatchLive\(\)/);
   assert.match(dispatch, /home\.innerHTML = gateHomeDispatchMarkup\(data\)/);

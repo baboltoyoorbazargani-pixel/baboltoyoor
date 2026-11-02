@@ -20,6 +20,7 @@ test('مرورگر: چهار سربرگ تحویل، سفارش عادی و فر
    await page.setViewportSize({width,height:850});await page.locator('[data-delivery-tab=inTransit]').click();
    assert.equal(await page.locator('[data-delivery-section]:visible').count(),1);assert.equal(await page.locator('[data-delivery-section=inTransit] [data-delivery-order=transit]').count(),1);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`page ${width}`);
+   const geometry=await page.locator('[data-delivery-section=inTransit] [data-delivery-order=transit]').evaluate(e=>({wrap:getComputedStyle(e).flexWrap,layout:[...e.querySelectorAll(':scope > .sales-distribution-cell')].map(x=>({top:x.getBoundingClientRect().top,border:getComputedStyle(x).borderInlineStartWidth}))}));assert.equal(geometry.wrap,'nowrap');assert(geometry.layout.length>=7);assert(geometry.layout.slice(1).every(x=>x.border==='1px'));
    await page.locator('[data-delivery-tab=history]').click();assert.equal(await page.locator('[data-delivery-tab=history] b').count(),0);assert.equal(await page.locator('[data-delivery-section=history] [data-delivery-order]').count(),30);
    assert.match(await page.locator('[data-delivery-section=history] .sales-delivery-pages').innerText(),/۳۲/);
   }
