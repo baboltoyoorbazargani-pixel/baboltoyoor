@@ -1657,7 +1657,7 @@ function applyNotifSnapshot(d){
   app.notifSnapshot=d;
   notifyNewArrivals(d);
   const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
-  updateSalesDeliveryUnread();
+  updateSalesDeliveryWorkCount();
   renderNav();
 }
 async function toggleNotifications(){
@@ -1691,7 +1691,7 @@ async function acknowledgeNotifications(id=''){
     if(app.notifUnread) startNotifReminder(false);
     closeNotifPanel();
     renderNav();
-    updateSalesDeliveryUnread();
+    updateSalesDeliveryWorkCount();
     return true;
   }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}
 }
@@ -2836,18 +2836,18 @@ async function refreshIndicators(){
   const [noti,w]=await Promise.all([api('/api/notifications').catch(()=>null),api('/api/workload').catch(()=>null)]);
   if(!app.user || app.user.id!==userId) return;
   // Workload and unread notifications have different meanings and independent failures.
-  if(w){app.workload=w.counts||{};
+  if(w && seq>(app.workloadAppliedSeq||0)){app.workloadAppliedSeq=seq;app.workload=w.counts||{};
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
     const keys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
-    $$('[data-sales-count]').forEach(el=>{if(el.dataset.salesCount==='delivery')return;const n=Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
+    $$('[data-sales-count]').forEach(el=>{const n=el.dataset.salesCount==='delivery'?Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0):Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
   }
   if(noti && seq>(app.notifAppliedSeq||0)){app.notifAppliedSeq=seq;applyNotifSnapshot(noti);}
-  updateSalesDeliveryUnread();
+  updateSalesDeliveryWorkCount();
   const bell=$('#bellIcon'); if(bell) bell.innerHTML=icon('bell',22);
   renderNav();
 }
-function updateSalesDeliveryUnread(){
-  const n=navUnread('sales','delivery');
+function updateSalesDeliveryWorkCount(){
+  const n=Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0);
   $$('[data-sales-count="delivery"]').forEach(el=>{el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
 }
 function navUnread(role,section){
@@ -2913,7 +2913,7 @@ function renderSalesTabsV29(tab){
     stores:Number((app.workload?.store||0)+(app.workload?.storeScheduled||0)),
     flow:Number(app.workload?.salesFlow||0),
     settlement:Number(app.workload?.salesSettlement||0),
-    delivery:navUnread('sales','delivery'),
+    delivery:Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0),
     future:Number(app.workload?.salesFuture||0)
   };
   return `<nav class="v26-sales-tabs v30-sales-tabs" aria-label="هفت بخش کارتابل فروش">${SALES_TABS_V29.map((id,i)=>{
