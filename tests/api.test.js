@@ -444,3 +444,13 @@ test('ثبت نگهبانی برای پلاک موتورسیکلت و رد پل�
   const car=await call('POST','/api/visits',{cookie:gateCookie,body:{...body,phone:'09129999125',vehicleType:'خودرو'}});
   assert.equal(car.status,400);
 });
+
+test('نوع خودرو و پلاک هر مراجعه ثبت می‌شود و سوابق با نام، پلاک و نوع خودرو قابل جستجوست', async () => {
+  const car=await call('POST','/api/visits',{cookie:gateCookie,body:{name:'مشتری خودرو آزمایش',phone:'09129999177',vehicleType:'خودرو',carType:'پژو ۴۰۵',plate:'12ب345-67'}});
+  assert.equal(car.status,201,JSON.stringify(car.json));assert.equal(car.json.visit.carType,'پژو ۴۰۵');assert.equal(car.json.enriched.customer.carType,'پژو ۴۰۵');
+  const motorcycle=await call('POST','/api/visits',{cookie:gateCookie,body:{customerId:car.json.visit.customerId,name:'مشتری خودرو آزمایش',phone:'09129999177',vehicleType:'موتورسیکلت',plate:'123-45678'}});
+  assert.equal(motorcycle.status,201,JSON.stringify(motorcycle.json));assert.equal(motorcycle.json.visit.carType,'');assert.equal(motorcycle.json.enriched.customer.carType,'');
+  const search=async q=>(await call('GET','/api/visits?q='+encodeURIComponent(q),{cookie:gateCookie})).json.visits;
+  const old=await search('۱۲ب۳۴۵');assert(old.some(v=>v.id===car.json.visit.id&&v.plate==='12ب345-67'&&v.carType==='پژو ۴۰۵'));assert(!old.some(v=>v.id===motorcycle.json.visit.id));
+  assert((await search('پژو۴۰۵')).some(v=>v.id===car.json.visit.id));assert((await search('۰۹۱۲۹۹۹۹۱۷۷')).some(v=>v.id===motorcycle.json.visit.id));
+});

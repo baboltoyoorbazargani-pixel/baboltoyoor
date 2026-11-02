@@ -229,19 +229,19 @@ let gateSearchSeq = 0;
 let gateSearchMatches = [];
 function gateSearchReset() {
   clearTimeout(gateSearchTimer); gateSearchSeq++; gateSearchMatches=[];
-  const results=$('#gateCustomerResults'); if(results)results.innerHTML='';
+  const results=$('#gateCustomerResults'); if(results)results.innerHTML='';const input=$('#gateCustCode');if(input)input.setAttribute('aria-expanded','false');
 }
 async function gateSearchCustomers(raw, input, seq, exact=false) {
   const results=$('#gateCustomerResults');
   if(!input || !results || !raw)return;
-  results.textContent='در حال جستجو…';
+  results.textContent='در حال جستجو…';input.setAttribute('aria-expanded','true');
   try {
     const d=await api('/api/customers/search?q='+encodeURIComponent(raw));
     if(seq!==gateSearchSeq || !input.isConnected || $('#gateCustCode')!==input || input.value.trim()!==raw)return;
     gateSearchMatches=d.customers||[];
     const match=exact && gateSearchMatches.find(x=>String(x.code).toUpperCase()===custCodeOf(raw));
     if(match){gateSearchReset();gateFillCustomer(match);return;}
-    results.innerHTML=gateSearchMatches.length?gateSearchMatches.map((c,i)=>`<button type="button" class="gate-customer-result" data-action="gate-search-pick" data-index="${i}"><strong>${custEsc(c.name||'—')}</strong><span>کد ${custEsc(fa(c.code||'—'))} • ${custEsc(fa(c.phone||'—'))}</span></button>`).join(''):'<p>مشتری پیدا نشد.</p>';
+    results.innerHTML=gateSearchMatches.length?gateSearchMatches.map((c,i)=>`<button type="button" class="gate-customer-result" data-action="gate-search-pick" data-index="${i}"><strong>${custEsc(c.name||'—')}</strong><span>کد ${custEsc(fa(c.code||'—'))} • ${custEsc(fa(c.phone||'—'))} • پلاک: <bdi>${custEsc(fa(c.plate||'ثبت نشده'))}</bdi></span></button>`).join(''):'<p>مشتری پیدا نشد.</p>';
   } catch(err) {
     if(seq===gateSearchSeq && input.isConnected && $('#gateCustCode')===input)results.textContent='خطا در جستجوی مشتری؛ دوباره تلاش کنید.';
   }
@@ -263,13 +263,15 @@ function gateFillCustomer(c) {
   if (!f) return;
   f.elements.name.value = c.name || '';
   f.elements.phone.value = c.phone || '';
-  if (c.vehicleType) f.elements.vehicleType.value = c.vehicleType;
+  f.elements.vehicleType.value = c.vehicleType==='موتورسیکلت'?'موتورسیکلت':'خودرو';
+  f.elements.carType.value = c.carType || (c.vehicleType==='وانت'?'وانت':'');
   $('#plateBox').innerHTML = plateEditorHtml(c.plate || '',f.elements.vehicleType.value);
   bindPlate();
   $('#gateCustId').value = c.id;
   $('#gateCustCode').value = c.code;
   $('#gateCustomerCodeValue').value = c.code;
   const noVehicle=$('#noVehicle'); if(noVehicle){noVehicle.checked=c.vehicleType==='بدون وسیله';$('#plateBox').hidden=noVehicle.checked;}
+  if(typeof syncGateVehicleFields==='function')syncGateVehicleFields();
   gateSearchReset();
   $('#plateSuggest').innerHTML = '';
   custGateChip(c);
@@ -292,6 +294,7 @@ function gateClearCustomer() {
 
 // رویدادهای سراسری کارت‌های مشتری در نگهبانی و مودال‌ها
 document.addEventListener('click', (e) => {
+  if (!e.target.closest('.cust-code-entry')) gateSearchReset();
   const el = e.target.closest('[data-action]');
   if (!el) return;
   if (el.dataset.action === 'gate-code-lookup') return gateCodeLookup();

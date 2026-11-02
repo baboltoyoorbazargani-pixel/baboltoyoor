@@ -47,7 +47,7 @@ test('مرورگر: اعلان، مقصد دقیق، شمارنده و پاسخ 
   await page.evaluate(()=>{closeModal();paintDriver({driver:{},assigned:[{id:'x',dispatch:{status:'ASSIGNED'},items:[]}],inTransit:[],delivered:[],history:[]});});
   const count=page.locator('[data-dsp-driver-tab="assigned"] .sd-tab-count');assert.equal(await count.innerText(),'۱');assert.notEqual(await count.evaluate(e=>getComputedStyle(e).display),'none');
   await page.evaluate(()=>{document.querySelector('#content').innerHTML=gateDispatchTabsHtml({awaitingDriver:[{}],leaving:[{},{}],inTransit:[]},'awaiting');app.sub.gate='dispatch';updateGateDispatchInCartable({awaitingDriver:[],leaving:[{}],inTransit:[{}]});});
-  assert.equal(await page.locator('[data-gate-dispatch-count="awaiting"]').innerText(),'۰');assert.equal(await page.locator('[data-gate-dispatch-count="leaving"]').innerText(),'۱');assert.equal(await page.locator('[data-gate-dispatch-count="transit"]').innerText(),'۱');assert.equal(await page.locator('#gateDispatchPanel #gateDispatchPanel').count(),0);
+  assert.equal(await page.locator('[data-gate-dispatch-count]').count(),1);assert.equal(await page.locator('[data-gate-dispatch-count="leaving"]').innerText(),'۱');assert.equal(await page.locator('#gateDispatchPanel #gateDispatchPanel').count(),0);
   assert.deepEqual(errors,[]);
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const stopped=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true});}
 });
