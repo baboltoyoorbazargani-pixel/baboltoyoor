@@ -1235,3 +1235,6 @@
 #modal .wh-weight-line select{box-sizing:border-box;width:100%;height:38px;min-width:0;padding:4px 6px;border:1px solid #cfd8df;border-radius:8px;font:inherit;background:#fff}
 #modal .wh-weight-line .btn{flex:none;white-space:nowrap;min-height:38px}
 #modal .wh-weight-line .wh-weight-net{min-width:80px;flex:none}
+/* یک دکمهٔ مشترک برای افزودن ناخالصی به نوبت انتخاب‌شده، خارج از ردیف‌ها. */
+#modal .wh-weight-line.is-active{background:#f8fafc}
+#modal .wh-wt-select[aria-pressed=true]{border-color:var(--brand,#b3132a);color:var(--brand,#b3132a)}
