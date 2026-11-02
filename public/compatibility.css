@@ -1151,3 +1151,5 @@
 /* Equal-sized editable cells across all order-entry variants, without clipping suggestions. */
 #appView #content :is(#orderLines,#phone-lines,#future-lines,#store-lines,.sd-line) .sd-line-cell > .input-shell{box-sizing:border-box!important;height:44px!important;min-height:44px!important;max-height:44px!important}
 #appView #content :is(#orderLines,#phone-lines,#future-lines,#store-lines,.sd-line) .sd-line-cell > .input-shell :is(input,select){box-sizing:border-box!important;height:100%!important;min-height:0!important;max-height:100%!important}
+#appView #content .order-summary-row .store-receipt-summary{margin:0!important;align-self:center!important;flex-wrap:nowrap!important;white-space:nowrap!important}
+#appView #content #orderLines .sd-line.sd-line-compact .sd-line-cell > .input-shell{height:44px!important;min-height:44px!important;max-height:44px!important}
