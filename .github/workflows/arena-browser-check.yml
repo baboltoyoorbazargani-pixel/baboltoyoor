@@ -12,4 +12,12 @@ jobs:
       - name: Run browser tests
         env:
           BT_CHROMIUM_PATH: /usr/bin/google-chrome
-        run: node --test tests/sales-layout-daily-browser.test.js tests/sales-live-session-browser.test.js tests/gate-search-onsite-layout-browser.test.js tests/order-unified-layout-browser.test.js tests/sales-products-browser.test.js
+        run: |
+          set +e
+          node --test tests/sales-layout-daily-browser.test.js tests/sales-live-session-browser.test.js tests/gate-search-onsite-layout-browser.test.js tests/order-unified-layout-browser.test.js tests/sales-products-browser.test.js > browser.log 2>&1
+          result=$?
+          cat browser.log
+          if [ "$result" != 0 ]; then
+            echo "::error title=Browser output::$(base64 -w0 browser.log)"
+          fi
+          exit "$result"
