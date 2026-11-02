@@ -208,14 +208,14 @@ function renderSalesRemoteV32(orders){
   const {queue,html:queueHtml}=remotePhoneQueueRowsV40(all);
   const phoneQueue=queue;
   return `<section class="sales-pane-v25 sales-pane-v40" data-sales-pane="remote"><div class="sales-panel-v25 telephone-form-v25">
-    ${salesSectionTitle('NON-PRESENTIAL / PHONE','ثبت سفارش غیرحضوری','این بخش فقط برای سفارش‌های تلفنی و غیرحضوری است؛ سفارش‌های فروشگاهی در تب مستقل «فروشگاه‌ها» قرار دارند.')}
+    <div class="sales-section-title-v25 phone-form-title"><h2>ثبت سفارش غیرحضوری</h2></div>
     <form id="phoneOrderFormV25" class="sales-form-v25 sales-form-v40">
       <div class="sales-customer-grid-v25 sales-remote-customer-grid-v40">
         <div class="field contact-field-v41"><label for="phoneCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',18)}</span><input id="phoneCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
         <div class="field contact-field-v41"><label for="phoneCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input id="phoneCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
         <div class="field sales-remote-place-v40"><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
+        ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
       </div>
-      ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
       <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>با کلیدهای جهت‌دار محصول را انتخاب کنید؛ Enter از مقدار و واحد به توضیح می‌رود و در پایان ردیف، قلم بعدی را باز می‌کند. Insert نیز ردیف جدید می‌افزاید؛ ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
       <div id="phone-lines" class="op-lines"></div>
       <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
@@ -347,9 +347,9 @@ function futureFormV38(orders){
             ${jalaliDateTimeInput('زمان ورود به کارتابل انبار','scheduledDate','scheduledTime',nextDayIso(),'08:00',true)}
             ${jalaliInput('تاریخ تحویل','deliveryDate','',true)}
             <div class="field fx-addr-field"><label for="futureDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input id="futureDispatchPlace" name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
+            ${app.features?.experimentalTransport?deliveryModeInputHtml('future'):''}
           </div>
           <div class="sd-lines-head fx-lines-head"><h3>اقلام سفارش</h3></div>
-          ${app.features?.experimentalTransport?deliveryModeInputHtml('future'):''}
           <div id="future-lines" class="sd-lines"></div>
           <div class="fx-lines-add">
             <button type="button" class="btn btn-secondary btn-sm" data-action="future-add-line">${icon('plus',15)} افزودن قلم جدید</button>
