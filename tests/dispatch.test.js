@@ -148,7 +148,7 @@ test('مدیر هم از کارتابل فروش تخصیص می‌دهد و ر�
   assert.equal(driverOrder.dispatch.approvedTotalAmount, 45000);
   const workload = await call('GET', '/api/workload', { cookie: S.admin });
   assert.equal(workload.json.counts.dispatchPending, 0);
-  assert.equal(workload.json.counts.salesSettlement, 0, 'پس از تخصیص به پخش، سفارش دیگر در شمارندهٔ تسویهٔ شروع‌نشده نیست');
+  assert.equal(workload.json.counts.salesSettlement, 2, 'شمارنده با سفارش‌های جاری قابل مشاهده در صف تسویه هماهنگ است، از جمله سفارش‌های تخصیص‌یافته');
   const readOnlyDispatch = await call('GET', '/api/dispatch/orders?status=assigned', { cookie: S.dispatch });
   assert.ok(readOnlyDispatch.json.orders.some((order) => order.id === ids.adminOrder));
   const driverRoster = readOnlyDispatch.json.drivers.find((driver) => driver.id === ids.driver2);

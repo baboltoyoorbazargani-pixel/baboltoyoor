@@ -1763,6 +1763,8 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       }
       return openOrderDetails(entityId);
     }
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='SETTLEMENT_PENDING')return goTransportSalesWork(entityId);
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='CLOSED'){app.salesDeliveryTab='history';await go('sales','delivery');return openOrderDetails(entityId);}
     if(route.page==='sales'&&type==='TRANSPORT_DEPARTED'&&order.transportWorkflow===1){
       app.salesDeliveryTab=order.status==='CLOSED'?'history':order.transportReturn?'delivered':'inTransit';
       await go('sales','delivery');await fetchSalesCache(true);
