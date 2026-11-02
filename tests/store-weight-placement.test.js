@@ -24,7 +24,7 @@ test('ثبت وزن صفر در سرویس اول، قلم را به سرویس 
   assert.match(handler, /قلم به سرویس دوم منتقل شد/, 'پیام انتقال به سرویس دوم نیست');
   assert.match(handler, /run===2/, 'در سرویس دوم وزن صفر نباید دوباره انتقال بدهد');
   // وزن مثبت همچنان ثبت می‌شود و پیامش جای قلم در فاکتور همان سرویس را می‌گوید
-  assert.match(handler, /sr38Post\(id,'weights',\{run,items:\[\{itemId:el\.dataset\.item,deliveredKg:kg\}\]\}\)/);
+  assert.match(handler, /sr38Post\(id,'weights',\{run,items:\[\{itemId:el\.dataset\.item,deliveredKg:kg,weighings:whWeightPayload\(inp\)\}\]\}\)/);
   assert.match(handler, /مقدار ثبت‌شده وارد فاکتور همین سرویس می‌شود/);
 });
 

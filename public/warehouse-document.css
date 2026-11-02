@@ -35,3 +35,7 @@
  .whd-doc{print-color-adjust:exact;-webkit-print-color-adjust:exact}
  .whd-table-scroll{overflow:visible}.whd-doc table{min-width:0}
 }
+/* Details use product row numbers, so long product names never wrap the main rows. */
+.whd-weighings{margin-top:10px;break-inside:auto}.whd-weighings>b,.whd-weighings>small{display:block;margin-bottom:3px}.whd-weighings>b{font-size:11px}.whd-weighings>small{font-size:9px}
+.whd-doc .whd-weighing-table{table-layout:fixed;min-width:650px}.whd-doc .whd-weighing-table th,.whd-doc .whd-weighing-table td{text-align:center;white-space:nowrap;overflow-wrap:normal;padding:3px 1px;font-size:8px}
+@media print{.whd-doc .whd-weighing-table{min-width:0}}

@@ -1207,3 +1207,22 @@
 #appView #content .stl-pane{gap:10px!important}
 #appView [data-dash-role="sales"] .role-dash-card[data-sales-daily] strong{font-size:clamp(17px,1.5vw,25px)!important;line-height:1.4;overflow-wrap:anywhere}
 .sales-daily-detail{display:grid;gap:8px;line-height:1.8}.sales-daily-detail p{margin:2px 0;color:var(--muted,#64748b)}.sales-daily-row,.sales-daily-total{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:8px;border-bottom:1px solid var(--line,#dce4eb)}.sales-daily-row span{overflow-wrap:anywhere}.sales-daily-row b,.sales-daily-total b{text-align:left}.sales-daily-total{background:#f7fafc;border-radius:8px;font-weight:800}
+/* وزن‌کشی: جزئیات در پنجرهٔ جدا؛ ردیف محصول در همه عرض‌ها یک‌خطی و قابل پیمایش. */
+#appView #content .wh38-prep-items{grid-template-columns:minmax(980px,1fr)!important;overflow-x:auto!important}
+#appView #content .wh38-prep-item:not(.sr318-row){grid-template-columns:28px minmax(150px,1fr) minmax(125px,.8fr) minmax(140px,1fr) minmax(220px,1.3fr) 76px!important;grid-template-areas:none!important;align-items:start!important;gap:8px!important}
+#appView #content .wh38-prep-item:not(.sr318-row)>*{grid-area:auto!important}
+#appView #content .wh38-prep-item:not(.sr318-row) .wh38-cell-label{height:20px!important;min-height:20px!important;line-height:20px!important;white-space:nowrap!important}
+#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-title,#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-desc{height:44px!important;min-height:44px!important;padding-block:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-title strong,#appView #content .wh38-prep-item:not(.sr318-row) .wh38-prep-desc{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#appView #content .wh-weight-main{padding-inline:6px!important;gap:3px!important}
+#appView #content .wh-weight-main input{min-width:50px!important;flex:1 1 55px!important}
+#appView #content .wh-weight-open{flex:0 0 auto!important;white-space:nowrap!important;padding:3px 7px!important;min-height:30px!important;font-size:11px!important}
+#appView #content .wh-weight-inline-net{color:#14764a;font-size:10px;margin-inline-start:4px}
+#modal .modal-card:has(.wh-weight-dialog){width:min(1100px,96vw);max-width:1100px}
+#modal .wh-weight-dialog p{margin:0 0 10px;line-height:1.7}#modal .wh-weight-scroll{max-width:100%;overflow-x:auto}
+#modal .wh-weight-line{display:grid;grid-template-columns:repeat(7,minmax(86px,1fr)) minmax(80px,1fr) auto;align-items:end;gap:7px;min-width:780px;padding:8px 0;border-bottom:1px solid #e6ebef}
+#modal .wh-weight-line label,#modal .wh-weight-net{display:grid;gap:4px;min-width:0;font-size:11px;font-weight:700}
+#modal .wh-weight-line input{box-sizing:border-box;width:100%;height:38px;min-width:0;padding:4px 7px;border:1px solid #cfd8df;border-radius:8px;font:inherit;direction:ltr;text-align:right}
+#modal .wh-weight-net b{height:38px;display:flex;align-items:center;white-space:nowrap;color:#14764a}
+#modal .wh-weight-summary{padding:9px 0;font-weight:800}#modal [data-wt-error]{color:#a51c2b}#modal [data-wt-error]:empty{display:none}
+#appView #content .sr-weight-net{font-size:11px;color:#14764a;white-space:nowrap;flex:0 0 auto}

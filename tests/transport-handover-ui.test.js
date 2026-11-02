@@ -5,7 +5,7 @@ function fragment(start,end){return source.slice(source.indexOf(start),source.in
 const escape=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 test('سند مشتری پخش محل امضای راننده و مشتری دارد، بدون تغییر سند مشتری قدیمی',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,formatDateTime24:()=> 'تاریخ'});
- vm.runInContext(fragment('function whDeliveredDocument(o){','async function whDeliveredDetails(id){'),ctx);
+ vm.runInContext(fragment('function whWeighingDocument(lines){','async function whDeliveredDetails(id){'),ctx);
  const base={orderNo:'001',warehouseDocumentNo:'W-000001',customerName:'مشتری',customerPhone:'09',items:[]};
  const html=ctx.whDeliveredDocument({...base,deliveryMode:'DELIVERY',driverName:'<راننده>',driverPhone:'0912'});
  assert.match(html,/امضاء مشتری پس از تحویل/);assert.match(html,/امضاء راننده هنگام دریافت از انبار/);assert.match(html,/&lt;راننده&gt;/);assert.match(html,/امانت/);
