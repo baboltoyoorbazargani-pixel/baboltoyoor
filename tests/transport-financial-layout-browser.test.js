@@ -21,7 +21,7 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
   await post(wh,`/api/orders/${order.id}/warehouse/accept`,{});await post(wh,`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:2}]});
   await post(transport,`/api/transport/plans/${order.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id});
   const doc=(await get(wh,`/api/warehouse/delivered/${order.id}`)).order;await post(wh,`/api/warehouse/transport-handovers/${order.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken});
-  await sales.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__prints=(window.parent.__prints||0)+1;};});
+  await sales.addInitScript(()=>{if(window!==window.top)window.print=()=>{const body=window.parent.document.body;body.dataset.prints=String(Number(body.dataset.prints||0)+1);setTimeout(()=>window.dispatchEvent(new Event('afterprint')),0);};});
   const page=await sales.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(()=>go('sales','settlement'));
   const queue=page.locator(`[data-stl=select][data-id="${order.id}"]`);await queue.waitFor();
   // A failed order request must leave a visible, retryable error instead of a blank panel.
@@ -43,8 +43,9 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
  const prepared=(await get(sales,`/api/orders/${order.id}`)).order.transportInvoice;assert.equal(prepared.priceLines[0].unitPrice,1234567);assert.equal(prepared.totalAmount,2379134);
  // Printing is an explicit request, not proof that a printer succeeded. The
  // order must remain accessible from delivery even if printing is cancelled.
- await page.locator('[data-ti-preview]').click();await page.locator('#modal [data-ti-print]').click();await page.locator('[data-delivery-tab=assigned]').waitFor();
- const deliveryRow=page.locator(`[data-delivery-order="${order.id}"]`);await deliveryRow.locator('[data-action=sales-delivery-details]').click();await page.locator('#modal [data-action=transport-sales-work]').click();await page.locator('#transportDeliveryWork [data-ti-preview]').waitFor();assert.equal(await page.evaluate(()=>app.sub.sales),'delivery');
+ await page.locator('[data-ti-preview]').click();await page.locator('#modal [data-ti-print]').click();await page.locator('[data-delivery-tab=assigned]').waitFor();await page.locator('body[data-prints="1"]').waitFor();
+ await page.evaluate(()=>go('sales','settlement'));await page.locator('.stl-queue-list').waitFor();assert.equal(await page.locator(`[data-stl=select][data-id="${order.id}"]`).count(),0);await page.evaluate(()=>go('sales','delivery'));
+ const deliveryRow=page.locator(`[data-delivery-order="${order.id}"]`);await deliveryRow.locator('[data-action=sales-delivery-details]').click();await page.locator('#modal [data-action=transport-sales-work]').click();await page.locator('#transportDeliveryWork [data-ti-preview]').waitFor();assert.equal(await page.evaluate(()=>app.sub.sales),'delivery');await page.locator('#transportDeliveryWork [data-ti-preview]').click();await page.locator('body[data-prints="2"]').waitFor();
  await page.locator('#modal [data-action=close-modal]').first().click();await post(transport,`/api/transport/shipments/${order.id}/depart`,{invoicePaperGiven:true,invoiceNumber:prepared.invoiceNumber});
  await page.evaluate(async()=>{const fresh=await fetchSalesCache(true);paintSalesPaneV29('delivery',fresh)});await page.locator('[data-delivery-tab=inTransit]').click();await page.locator(`[data-delivery-section=inTransit] [data-delivery-order="${order.id}"] [data-action=sales-delivery-details]`).click();await page.locator('#modal [data-action=transport-sales-work]').click();await page.locator('#transportDeliveryWork [data-ts-return]').waitFor();assert.equal(await page.evaluate(()=>app.sub.sales),'delivery');
  await page.route('**/api/payment-devices',route=>route.fulfill({status:503,json:{error:'فهرست پوز در دسترس نیست'}}));
