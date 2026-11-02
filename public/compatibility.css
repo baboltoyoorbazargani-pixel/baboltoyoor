@@ -1140,3 +1140,8 @@
 /* خانه‌های مشخصات در جزئیات سفارش و جزئیات ترابری هم‌ارتفاع باشند؛ متن بلند بریده نمی‌شود. */
 #modal :is(.v21-detail-modal .detail-grid,.tp-detail-grid){align-items:stretch!important;grid-auto-rows:1fr!important}
 #modal :is(.v21-detail-modal .detail-grid,.tp-detail-grid)>div{box-sizing:border-box;min-height:64px;height:100%;min-width:0;overflow-wrap:anywhere}
+#appView #content .sales-history-list{display:block!important;max-width:100%;min-width:0;overflow-x:auto!important}
+#appView #content .order-summary-row .st-run-chips{display:inline-flex!important;flex-wrap:nowrap!important;align-items:center!important;white-space:nowrap!important}
+#appView #content .dsp-list .dsp-card.dsp-card-compact{box-sizing:border-box!important;height:54px!important;min-height:54px!important;max-height:54px!important;padding:7px 14px!important}
+#appView #content .dsp-list .dsp-card.dsp-card-compact :is(.dsp-card-head,.dsp-card-actions){height:38px!important;min-height:38px!important;max-height:38px!important;align-items:center!important}
+#appView #content .dsp-list .dsp-card.dsp-card-compact .btn{height:36px!important;min-height:36px!important;max-height:36px!important;white-space:nowrap!important}

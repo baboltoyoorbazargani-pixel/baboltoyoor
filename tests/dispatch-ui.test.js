@@ -97,6 +97,7 @@ test('کارت خروج قبل از حرکت دارای دکمهٔ تأیید ن
     data: { leaving: [{ id: 'order-id', orderNo: 'SO-TEST-0002', customer: { name: 'مشتری آزمایشی' }, dispatch: { status: 'DRIVER_EXIT_REPORTED', driverName: 'راننده آزمایشی', driverPlate: 'AA-1', driverExitAt: '2026-10-11T08:33:00.000Z', events: [] }, items: [{ product: { name: 'محصول آزمایشی' }, deliveredKg: 25 }] }] },
   };
   vm.createContext(context);
+  vm.runInContext(app.slice(app.indexOf('function orderSummaryRow('),app.indexOf('\nconst app =')), context);
   vm.runInContext(`${helpers}\nresult=gateHomeDispatchMarkup(data)`, context);
   assert.match(context.result, /SO-TEST-0002/);
   assert.match(context.result, /DRIVER_EXIT_REPORTED/);

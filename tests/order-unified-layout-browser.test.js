@@ -9,7 +9,10 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
   browser=await chromium.launch({executablePath:process.env.BT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext(),post=async(u,data)=>{const r=await ctx.request.post(base+u,{data});assert(r.ok(),u+' '+await r.text());return r.json()};
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});
-  const kinds=['remote','flow','future','settlement','sales-store','warehouse','warehouse-store-incoming','warehouse-store-preparing','delivery','transport','store-registered','store-delivery','store-delivered','gate','invoice'];
+  const now=new Date(),day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const real=(await post('/api/orders/remote',{name:'مشتری واقعی آزمون',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:day,scheduledAt:day+'T00:00',transportWorkflow:true,deliveryMode:'DELIVERY',items:[{productId:'p01',requestedQty:4,requestedUnit:'کیلوگرم'}]})).order;
+  await page.evaluate(()=>go('sales','flow'));const realRow=page.locator(`.sd-flow-list [data-order="${real.id}"]`);await realRow.waitFor();await realRow.locator('[data-action=order-details]').click();await page.locator('#modal.open .v21-detail-modal').waitFor();assert.match(await page.locator('#modal').innerText(),/مشتری واقعی آزمون/);await page.evaluate(()=>closeModal());
+  const kinds=['remote','flow','future','settlement','sales-store','warehouse','warehouse-store-incoming','warehouse-store-preparing','delivery','transport','store-registered','store-delivery','store-delivered','gate','gate-dispatch','legacy-dispatch','sales-history','invoice'];
   for(const kind of kinds){
    await page.evaluate(kind=>{
     if(app.timer)clearInterval(app.timer);if(app.wh38?.timer)clearInterval(app.wh38.timer);
@@ -31,6 +34,9 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
     if(kind==='store-delivery')html=wrap(st38Row({...store,dispatch:{run:1,status:'IN_TRANSIT',lines:[]}}));
     if(kind==='store-delivered')html=wrap(st38DeliveredRow({...store,dispatch:{run:2,status:'DELIVERED',lines:[]}}));
     if(kind==='gate')html=renderGateExit([{...o,status:'SETTLED'}]);
+    if(kind==='gate-dispatch')html=wrap(gateDispatchCard({...o,dispatch:{status:'DRIVER_EXIT_REPORTED',driverName:'راننده نمونه',driverPlate:'12ب34567'}},'exit'));
+    if(kind==='legacy-dispatch')html=wrap(dspDispatchCard({...o,dispatch:{status:'ASSIGNED',driverName:'راننده نمونه'}}));
+    if(kind==='sales-history')html=`<div class="sales-history-list">${salesHistoryRow({...o,customerName:o.customer.name,phone:o.customer.phone,invoiceCount:1})}</div>`;
     if(kind==='invoice')html=`<div class="sd-invoice-list">${invoiceRowsV27([{...o,status:'SETTLED'}])}</div>`;
     el.innerHTML=html;
    },kind);
