@@ -1093,23 +1093,37 @@ function whWeightNet(input){const draft=whWeighingDrafts.get(input);return draft
 function whWeightPayload(input){const draft=whWeighingDrafts.get(input);return draft?draft.map(({netKg,...row})=>row):[{grossKg:input.value,basket18:0,basket25:0,box300:0,box600:0,rackKg:0,cartKg:0}];}
 function whOpenWeighing(input){
  if(!input||input.disabled)return;
- const original=whWeighingDrafts.get(input),initial=original?original.map(x=>({...x})):[{grossKg:input.value,basket18:0,basket25:0,box300:0,box600:0,rackKg:0,cartKg:0}];
- const fields=[['grossKg','ناخالص'],['basket18','سبد ۱٫۸'],['basket25','سبد ۲٫۵'],['box300','کارتن ۳۰۰'],['box600','کارتن ۶۰۰'],['rackKg','راک'],['cartKg','گاری']];
- const line=(row={})=>`<div class="wh-weight-line" data-wt-line>${fields.map(([key,label])=>`<label><span>${label}</span><input type="text" inputmode="decimal" autocomplete="off" data-wt-field="${key}" value="${esc(String(row[key]??(key==='grossKg'?'':0)))}" aria-label="${label}"></label>`).join('')}<div class="wh-weight-net"><span>خالص</span><b data-wt-net>—</b></div><button type="button" class="btn btn-secondary btn-sm" data-wt-remove>حذف</button></div>`;
- openModal('وزن ناخالص و ناخالصی‌ها',`<div class="wh-weight-dialog"><p>وزن‌ها به کیلوگرم است. تعداد هر نوع سبد و کارتن و وزن راک یا گاری را وارد کنید. در صورت نیاز نوبت دیگری اضافه کنید.</p><div class="wh-weight-scroll"><div data-wt-lines>${initial.map(line).join('')}</div></div><div class="wh-weight-summary">جمع وزن خالص: <b data-wt-total>—</b></div><p data-wt-error role="alert"></p><div class="modal-actions"><button type="button" class="btn btn-secondary" data-wt-add>افزودن نوبت</button><button type="button" class="btn btn-secondary" data-wt-clear>پاک کردن جزئیات</button><button type="button" class="btn btn-primary" data-wt-apply>تأیید وزن</button></div></div>`);
+ const original=whWeighingDrafts.get(input),initial=original?original.map(x=>({...x})):[{grossKg:input.value}];
+ const tareTypes=[['basket18','سبد ۱٫۸ کیلویی',true],['basket25','سبد ۲٫۵ کیلویی',true],['box300','کارتن ۳۰۰ گرمی',true],['box600','کارتن ۶۰۰ گرمی',true],['rackKg','راک',false],['cartKg','گاری',false]];
+ const group=(key='',value='')=>{
+  const type=tareTypes.find(x=>x[0]===key);
+  return `<div class="wh-tare-group" data-wt-group><label class="wh-tare-kind"><span>نوع ناخالصی</span><select data-wt-type aria-label="نوع ناخالصی"><option value="">بدون ناخالصی</option>${tareTypes.map(([k,label])=>`<option value="${k}" ${key===k?'selected':''}>${label}</option>`).join('')}</select></label><label class="wh-tare-amount" data-wt-amount-label ${type?'':'hidden'}><span>${type?.[2]?'تعداد':'وزن (کیلوگرم)'}</span><input type="text" inputmode="decimal" autocomplete="off" data-wt-value value="${esc(String(value))}" aria-label="${type?.[2]?'تعداد':'وزن ناخالصی به کیلوگرم'}" ${type?'':'disabled'}></label><button type="button" class="btn btn-secondary btn-sm wh-tare-remove" data-wt-remove-tare aria-label="حذف ناخالصی">×</button></div>`;
+ };
+ const line=(row={})=>{
+  const selected=tareTypes.filter(([key])=>Number(row[key])>0);
+  return `<div class="wh-weight-line" data-wt-line><label class="wh-gross"><span>وزن ناخالص (کیلوگرم)</span><input type="text" inputmode="decimal" autocomplete="off" data-wt-field="grossKg" value="${esc(String(row.grossKg??''))}" aria-label="وزن ناخالص"></label><div class="wh-tare-groups" data-wt-groups>${selected.length?selected.map(([key])=>group(key,row[key])).join(''):group()}</div><button type="button" class="btn btn-secondary btn-sm" data-wt-add-tare>افزودن ناخالصی</button><div class="wh-weight-net"><span>وزن خالص</span><b data-wt-net>—</b></div><button type="button" class="btn btn-secondary btn-sm" data-wt-remove>حذف نوبت</button></div>`;
+ };
+ openModal('وزن ناخالص و ناخالصی‌ها',`<div class="wh-weight-dialog"><p>نوع ناخالصی را انتخاب کنید و تعداد یا وزن آن را وارد کنید؛ برای ترکیب چند نوع از «افزودن ناخالصی» استفاده کنید. وزن‌ها به کیلوگرم است.</p><div class="wh-weight-scroll"><div data-wt-lines>${initial.map(line).join('')}</div></div><div class="wh-weight-summary">جمع وزن خالص: <b data-wt-total>—</b></div><p data-wt-error role="alert"></p><div class="modal-actions"><button type="button" class="btn btn-secondary" data-wt-add>افزودن نوبت</button><button type="button" class="btn btn-secondary" data-wt-clear>پاک کردن جزئیات</button><button type="button" class="btn btn-primary" data-wt-apply>تأیید وزن</button></div></div>`);
  const host=$('#modal .wh-weight-dialog'),container=host.querySelector('[data-wt-lines]');
-
+ function syncOptions(el){const selects=[...el.querySelectorAll('[data-wt-type]')],used=new Set(selects.map(x=>x.value).filter(Boolean));for(const select of selects)for(const option of select.options)option.disabled=!!option.value&&option.value!==select.value&&used.has(option.value);}
  function calculate(){let sum=0,error='',rows=[];for(const el of container.querySelectorAll('[data-wt-line]')){
-  const v={};for(const x of el.querySelectorAll('[data-wt-field]'))v[x.dataset.wtField]=whParseWeight(x.value);
+  const v={grossKg:whParseWeight(el.querySelector('[data-wt-field=grossKg]').value),basket18:0,basket25:0,box300:0,box600:0,rackKg:0,cartKg:0},seen=new Set();let duplicate=false;
+  for(const entry of el.querySelectorAll('[data-wt-group]')){const key=entry.querySelector('[data-wt-type]').value;if(!key)continue;if(seen.has(key))duplicate=true;seen.add(key);v[key]=whParseWeight(entry.querySelector('[data-wt-value]').value);}
   const kg=['grossKg','rackKg','cartKg'],counts=['basket18','basket25','box300','box600'];
-  const good=kg.every(k=>Number.isFinite(v[k])&&v[k]>=0&&v[k]<=100000&&Math.abs(v[k]*1000-Math.round(v[k]*1000))<.000001)&&counts.every(k=>Number.isInteger(v[k])&&v[k]>=0&&v[k]<=100000);
+  const good=!duplicate&&kg.every(k=>Number.isFinite(v[k])&&v[k]>=0&&v[k]<=100000&&Math.abs(v[k]*1000-Math.round(v[k]*1000))<.000001)&&counts.every(k=>Number.isInteger(v[k])&&v[k]>=0&&v[k]<=100000);
   const gross=Math.round(v.grossKg*1000),tare=v.basket18*1800+v.basket25*2500+v.box300*300+v.box600*600+Math.round(v.rackKg*1000)+Math.round(v.cartKg*1000),net=(gross-tare)/1000;
-  if(!good||!(net>0)){error='اعداد معتبر و حداکثر سه رقم اعشار وارد کنید؛ مجموع ناخالصی باید کمتر از ناخالص باشد.';el.querySelector('[data-wt-net]').textContent='—';continue;}
+  if(!good||!(net>0)){error=duplicate?'هر نوع ناخالصی در هر نوبت فقط یک بار قابل انتخاب است.':'اعداد معتبر و حداکثر سه رقم اعشار وارد کنید؛ مجموع ناخالصی باید کمتر از ناخالص باشد.';el.querySelector('[data-wt-net]').textContent='—';continue;}
   v.netKg=net;sum+=net;rows.push(v);el.querySelector('[data-wt-net]').textContent=qty(net);
  }if(!rows.length||sum>100000)error=error||'جمع وزن خالص نامعتبر است.';host.querySelector('[data-wt-error]').textContent=error;host.querySelector('[data-wt-total]').textContent=error?'—':qty(sum)+' کیلوگرم';return error?null:rows;}
- host.addEventListener('input',calculate);host.addEventListener('click',e=>{
+ for(const el of container.querySelectorAll('[data-wt-line]'))syncOptions(el);
+ host.addEventListener('input',calculate);
+ host.addEventListener('change',e=>{if(!e.target.matches('[data-wt-type]'))return;const entry=e.target.closest('[data-wt-group]'),type=tareTypes.find(x=>x[0]===e.target.value),label=entry.querySelector('[data-wt-amount-label]'),amount=entry.querySelector('[data-wt-value]');label.hidden=!type;amount.disabled=!type;amount.value='';label.querySelector('span').textContent=type?.[2]?'تعداد':'وزن (کیلوگرم)';amount.setAttribute('aria-label',type?.[2]?'تعداد':'وزن ناخالصی به کیلوگرم');syncOptions(entry.closest('[data-wt-line]'));calculate();if(type)amount.focus();});
+ host.addEventListener('click',e=>{
+  const el=e.target.closest('[data-wt-line]');
+  if(e.target.closest('[data-wt-add-tare]')){const list=el.querySelector('[data-wt-groups]'),blank=[...list.querySelectorAll('[data-wt-type]')].find(x=>!x.value);if(blank){blank.focus();return;}if(list.children.length>=tareTypes.length)return;list.insertAdjacentHTML('beforeend',group());syncOptions(el);list.lastElementChild.querySelector('select').focus();calculate();}
+  if(e.target.closest('[data-wt-remove-tare]')){const entry=e.target.closest('[data-wt-group]'),list=entry.parentElement;entry.remove();if(!list.children.length)list.insertAdjacentHTML('beforeend',group());syncOptions(el);calculate();}
   if(e.target.closest('[data-wt-add]')){if(container.children.length>=100)return;container.insertAdjacentHTML('beforeend',line());calculate();}
-  if(e.target.closest('[data-wt-remove]')){if(container.children.length>1)e.target.closest('[data-wt-line]').remove();calculate();}
+  if(e.target.closest('[data-wt-remove]')){if(container.children.length>1)el.remove();calculate();}
   if(e.target.closest('[data-wt-clear]')){whWeighingDrafts.delete(input);input.readOnly=false;input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));closeModal();}
   if(e.target.closest('[data-wt-apply]')){const rows=calculate();if(!rows)return;whWeighingDrafts.set(input,rows);input.value=String(rows.reduce((s,r)=>s+Math.round(r.grossKg*1000),0)/1000);input.readOnly=true;input.dispatchEvent(new Event('input',{bubbles:true}));closeModal();}
  });calculate();

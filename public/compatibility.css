@@ -1226,3 +1226,12 @@
 #modal .wh-weight-net b{height:38px;display:flex;align-items:center;white-space:nowrap;color:#14764a}
 #modal .wh-weight-summary{padding:9px 0;font-weight:800}#modal [data-wt-error]{color:#a51c2b}#modal [data-wt-error]:empty{display:none}
 #appView #content .sr-weight-net{font-size:11px;color:#14764a;white-space:nowrap;flex:0 0 auto}
+/* نمایش انتخابی ناخالصی‌ها: هر نوبت یک ردیف قابل پیمایش باقی می‌ماند. */
+#modal .wh-weight-line{display:flex;flex-wrap:nowrap;align-items:end;width:max-content;min-width:100%;gap:7px}
+#modal .wh-weight-line .wh-gross{width:145px;flex:none}
+#modal .wh-tare-groups,#modal .wh-tare-group{display:flex;flex-wrap:nowrap;align-items:end;gap:6px;flex:none}
+#modal .wh-tare-kind{width:155px;flex:none}#modal .wh-tare-amount{width:105px;flex:none}
+#modal .wh-tare-amount[hidden]{display:none!important}
+#modal .wh-weight-line select{box-sizing:border-box;width:100%;height:38px;min-width:0;padding:4px 6px;border:1px solid #cfd8df;border-radius:8px;font:inherit;background:#fff}
+#modal .wh-weight-line .btn{flex:none;white-space:nowrap;min-height:38px}
+#modal .wh-weight-line .wh-weight-net{min-width:80px;flex:none}

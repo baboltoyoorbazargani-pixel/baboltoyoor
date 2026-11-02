@@ -1,0 +1,21 @@
+name: Temporary warehouse dropdown browser checks
+on: [push, workflow_dispatch]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright-core
+      - name: Browser tests
+        env:
+          BT_CHROMIUM_PATH: /usr/bin/google-chrome
+        run: |
+          set +e
+          node --test tests/warehouse-weighing-browser.test.js tests/warehouse-delivered-browser.test.js tests/warehouse-store-document-browser.test.js tests/transport-handover-browser.test.js > browser.log 2>&1
+          result=$?
+          cat browser.log
+          if [ "$result" != 0 ]; then echo "::error title=Browser output::$(base64 -w0 browser.log)"; fi
+          exit "$result"
