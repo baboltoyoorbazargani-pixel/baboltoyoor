@@ -1028,3 +1028,25 @@
 #appView #content .sales-delivery-summary-row>.sales-distribution-identity{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:150px}
 #appView #content .sales-delivery-summary-row .sales-distribution-identity small{font-size:11.5px;color:var(--muted,#64748b)}
 #appView #content .sales-delivery-summary-row>.sales-distribution-actions{margin-inline-start:auto;padding-inline-end:0}
+
+/* جزئیات ترابری: مشخصات کنار هم، با شکست کنترل‌شده و بدون بریدن متن. */
+#modal .tp-detail{display:grid;gap:16px;min-width:0;max-width:100%}
+#modal .tp-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
+#modal .tp-detail-cell{min-width:0;padding:9px 11px;border:1px solid var(--line,#dce4eb);border-radius:10px;background:#f9fafb}
+#modal .tp-detail-cell dt{font-size:12px;color:var(--muted,#667085);line-height:1.5}
+#modal .tp-detail-cell dd{margin:4px 0 0;font-weight:700;line-height:1.7;overflow-wrap:anywhere}
+#modal .tp-items{min-width:0}#modal .tp-items h3{font-size:15px;margin:0 0 7px}
+#modal .tp-items .table-wrap{max-width:100%;overflow-x:auto}
+#modal .tp-items-table{width:100%;border-collapse:collapse;table-layout:fixed}
+#modal .tp-items-table th,#modal .tp-items-table td{padding:8px;border:1px solid var(--line,#dce4eb);text-align:right;vertical-align:top;overflow-wrap:anywhere;white-space:normal}
+#modal .tp-items-table th:first-child{width:55px}#modal .tp-items-table th:last-child{width:30%}
+#modal .tp-assign{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:10px;align-items:end;min-width:0}
+#modal .tp-assign label{display:grid;gap:4px;min-width:0}#modal .tp-assign select{width:100%;min-width:0;max-width:100%}
+#modal .tp-assign [role=alert]{grid-column:1/-1;margin:0;overflow-wrap:anywhere}
+#modal .tp-detail .modal-actions{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:700px){#modal .tp-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#modal .tp-assign{grid-template-columns:minmax(0,1fr)}}
+
+/* محتوای فرم‌ها از قاب و سلول جدا نشود؛ جدول‌ها و ردیف‌های افقی خودشان پیمایش دارند. */
+:is(#appView #content,#modal) :is(.field,.cust-field,.adm-field,.form-grid,.cust-form-grid){min-width:0;max-width:100%}
+:is(#appView #content,#modal) :is(.field,.cust-field,.adm-field)>:is(label,small,span){min-width:0;max-width:100%;overflow-wrap:anywhere}
+:is(#appView #content,#modal) form .btn{max-width:100%;height:auto;white-space:normal;line-height:1.5;overflow-wrap:anywhere}

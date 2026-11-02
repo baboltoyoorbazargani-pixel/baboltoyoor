@@ -35,6 +35,7 @@ test('مرورگر: خوانایی پلاک، هندسه موتور و هماه�
      return {width:rect.width,scroll:card.scrollWidth,over};
     });
     assert.deepEqual(geometry.over,[],`${width} ${type}: overlapping fields`);assert(geometry.scroll<=geometry.width+2,`${width} ${type}: horizontal overflow`);
+    const textBounds=await page.evaluate(()=>{const bad=[];for(const el of document.querySelectorAll('#modal form .cust-field:not(.adm-check) > span:first-child,#modal form .btn')){if(!el.getClientRects().length)continue;const r=el.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(el);for(const x of range.getClientRects())if(x.width&&x.height&&(x.left<r.left-1||x.right>r.right+1||x.top<r.top-1||x.bottom>r.bottom+1))bad.push(el.textContent.trim());}return bad;});assert.deepEqual(textBounds,[],`${width} ${type}: text outside control`);
     if(type==='pos'){assert.equal(await page.locator('#posSimWrap').evaluate(el=>getComputedStyle(el).display),'none');await page.locator('#posDeviceForm [name=connection]').selectOption('wireless');assert.notEqual(await page.locator('#posSimWrap').evaluate(el=>getComputedStyle(el).display),'none');}
     if(type==='resource'){
      await page.locator('[data-plate-letter]').selectOption('ج');
