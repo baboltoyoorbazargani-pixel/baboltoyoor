@@ -3,6 +3,21 @@ const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
 function storeAwareOrderName(o){return o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—')}
 function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':(o?.customer?.phone||'—')}
+// Shared compact order row. Callers supply only trusted markup for status and actions;
+// customer data and labels are escaped here. A store service remains a separate row.
+function orderSummaryRow(o,opts={}){
+ const cell=(content,cls='')=>`<span class="order-summary-cell ${cls}">${content}</span>`;
+ const name=opts.name??storeAwareOrderName(o),number=opts.orderNo??o.orderNo??'—',date=opts.createdAt??o.createdAt;
+ const identity=`<strong>${esc(name||'—')}</strong>${opts.identityDetail?`<small>${esc(opts.identityDetail)}</small>`:''}`;
+ const extras=(opts.extras||[]).filter(x=>x&&x.html).map(x=>cell(x.html,x.className||'')).join('');
+ const itemCount=opts.itemCount===undefined?'':cell(`${qty(opts.itemCount)} قلم`,'order-summary-count');
+ const status=opts.statusHtml?cell(opts.statusHtml,'order-summary-status'):'';
+ const actions=opts.actionsHtml?cell(opts.actionsHtml,'order-summary-actions'):'';
+ const contents=cell(identity,'order-summary-identity')+cell(`شماره سفارش ${esc(fa(number))}`,'order-code')+cell(`تاریخ ${esc(formatDateTime24(date))}`,'order-summary-date')+status+itemCount+extras+actions;
+ const classes=`order-summary-row ${opts.className||''}`;
+ if(opts.selectable)return `<button type="button" class="${classes}" data-stl="select" data-id="${esc(o.id)}">${contents}</button>`;
+ return `<article class="${classes}" data-order="${esc(o.id)}">${contents}</article>`;
+}
 
 const app = {
   salesStoreTab: 'incoming',

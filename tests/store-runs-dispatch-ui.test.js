@@ -5,7 +5,7 @@ const read=p=>fs.readFileSync(require('node:path').join(__dirname,'..',p),'utf8'
 const ui=read('public/ui2.js'),app=read('public/app.js'),css=read('public/compatibility.css');
 const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const fa=v=>String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
-function ctx(...fns){const c={esc,fa,qty:fa,money:fa,icon:()=>'',badge:()=>'',dateLabel:s=>s,dt:s=>s,formatDateTime24:v=>v||'—',plateViewHtml:()=>'',activeItemsOf:o=>(o.items||[]),storeAwareOrderName:o=>o?.storeName||o?.customer?.name||'—',storeAwareOrderPhone:o=>'',sdEmpty:()=>'',orderCustomerStripHtml:()=>''};vm.createContext(c);for(const f of fns){const idx=()=>ui.indexOf('function '+f);vm.runInContext(ui.slice(idx(),idx()+ui.slice(idx()).search(/\nfunction |\nasync function |$/)+1),c);}return c;}
+function ctx(...fns){const c={esc,fa,qty:fa,money:fa,icon:()=>'',badge:()=>'',dateLabel:s=>s,dt:s=>s,formatDateTime24:v=>v||'—',plateViewHtml:()=>'',activeItemsOf:o=>(o.items||[]),storeAwareOrderName:o=>o?.storeName||o?.customer?.name||'—',storeAwareOrderPhone:o=>'',sdEmpty:()=>'',orderCustomerStripHtml:()=>''};vm.createContext(c);vm.runInContext(app.slice(app.indexOf('function orderSummaryRow('),app.indexOf('\nconst app =')),c);for(const f of fns){const idx=()=>ui.indexOf('function '+f);vm.runInContext(ui.slice(idx(),idx()+ui.slice(idx()).search(/\nfunction |\nasync function |$/)+1),c);}return c;}
 
 test('anbar sheet: دکمهٔ ارسال هر سرویس با شرط آماده‌بودن و تأیید همراه است',()=>{
  const c=ctx('sr38SendBtn');

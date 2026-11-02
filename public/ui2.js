@@ -200,7 +200,7 @@ function sdStoreCard(o){
 }
 function remotePhoneQueueRowsV40(orders){
   const queue=(Array.isArray(orders)?orders:[]).filter(o=>o&&o.orderType==='REMOTE'&&['WAREHOUSE_PENDING','WAREHOUSE_PREPARING','RETURNED_TO_SALES','SETTLEMENT_PENDING'].includes(o.status));
-  const rows=queue.map(o=>`<article class="phone-queue-card-v40"><div><b>${esc(storeAwareOrderName(o))}</b><small>${esc(storeAwareOrderPhone(o))} • ${qty(activeItemsOf(o).length)} قلم • ${formatDateTime24(o.updatedAt||o.createdAt)}</small></div><span>${badge(o.status)}</span><button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات</button></article>`).join('');
+  const rows=queue.map(o=>orderSummaryRow(o,{className:'phone-queue-card-v40',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:[{html:`شماره تماس: ${esc(storeAwareOrderPhone(o)||'—')}`}],actionsHtml:`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>`})).join('');
   return {queue,html:rows||salesEmptyV25('phone','سفارش تلفنی فعالی در روند نیست','پس از ثبت سفارش غیرحضوری، اینجا قابل پیگیری است.')};
 }
 function renderSalesRemoteV32(orders){
@@ -251,7 +251,7 @@ function renderSalesStoresV41(orders,deliveries={}){ // v37.7.9 — فروشگا
   const approved=all.filter(o=>o.status==='SCHEDULED_REMOTE').sort((a,b)=>String(a.scheduledAt||a.createdAt||'').localeCompare(String(b.scheduledAt||b.createdAt||'')));
   const processing=all.filter(o=>['WAREHOUSE_PENDING','WAREHOUSE_PREPARING','RETURNED_TO_SALES'].includes(o.status)).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
   const history=all.filter(o=>['CLOSED','SETTLED','EXITED'].includes(o.status)||(o.payments||[]).length>0||storeReceiptEntries(o).some(d=>d.confirmed)).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')));
-  const card=(o,kind)=>`<article class="sd-store-card sd-store-card-v40 sd-store-card-compact-v41 sd-store-card-v42 ssin21-card" data-store-summary-id="${esc(o.id)}"><div class="sd-store-identity-v42 ssin21-id"><h3>${esc(o.storeName||'فروشگاه')}</h3><small class="ssin21-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="order-code">شماره سفارش ${esc(fa(o.orderNo||'—'))}</span><span class="ssin21-meta">تاریخ ${esc(formatDateTime24(o.createdAt))}</span><span class="ssin21-meta">${qty(activeItemsOf(o).length)} قلم</span><div class="ssin21-actions">${kind==='history'?'<div class="ssin21-history-buttons">':''}<button class="btn btn-secondary btn-sm" data-action="store-order-details-v25" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>${kind==='incoming'?`<button class="btn btn-secondary btn-sm" data-action="sales-edit-store-order" data-id="${esc(o.id)}">${icon('edit',14)} ویرایش سفارش</button><button class="btn btn-primary btn-sm" data-action="store-approve-v25" data-id="${esc(o.id)}">${icon('calendar',14)} تأیید و تعیین زمان</button><button class="btn btn-secondary btn-sm" data-action="store-quick-send-v40" data-id="${esc(o.id)}">${icon('send',14)} تأیید و ارسال سریع</button>`:''}${kind==='approved'?`<button class="btn btn-secondary btn-sm" data-action="store-quick-send-v40" data-id="${esc(o.id)}">${icon('send',14)} ارسال سریع به انبار</button>`:''}${kind==='processing'&&o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-returned-order" data-id="${esc(o.id)}">${icon('edit',14)} اصلاح سفارش</button><button class="btn btn-primary btn-sm" data-action="resubmit-order" data-id="${esc(o.id)}">${icon('send',14)} ارسال مجدد به انبار</button>`:''}${kind==='processing'&&o.dispatch&&o.dispatch.status==='DELIVERED'?`<button class="btn btn-primary btn-sm" data-action="sales-finalize-driver-delivery" data-id="${esc(o.id)}">${icon('check',14)} تأیید نهایی تحویل${o.dispatch.run?` سرویس ${o.dispatch.run===2?'دوم':'اول'}`:''}</button>`:''}${kind==='history'?storeServicePrintButtons(o.id,storeAvailableRuns(o))+'</div>'+storeReceiptSummary(o):''}</div>${kind==='processing'?warehouseReturnNoteHtml(o):''}${kind==='processing'?storeReceiptSummary(o):''}</article>`;
+  const card=(o,kind)=>`<article class="sd-store-card sd-store-card-v40 sd-store-card-compact-v41 sd-store-card-v42 ssin21-card order-summary-row" data-store-summary-id="${esc(o.id)}"><div class="sd-store-identity-v42 ssin21-id order-summary-cell order-summary-identity"><h3>${esc(o.storeName||'فروشگاه')}</h3><small class="ssin21-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="order-code order-summary-cell">شماره سفارش ${esc(fa(o.orderNo||'—'))}</span><span class="ssin21-meta order-summary-cell">تاریخ ${esc(formatDateTime24(o.createdAt))}</span><span class="order-summary-cell order-summary-status">${badge(o.status)}</span><span class="ssin21-meta order-summary-cell">${qty(activeItemsOf(o).length)} قلم</span><div class="ssin21-actions order-summary-cell order-summary-actions">${kind==='history'?'<div class="ssin21-history-buttons">':''}<button class="btn btn-secondary btn-sm" data-action="store-order-details-v25" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>${kind==='incoming'?`<button class="btn btn-secondary btn-sm" data-action="sales-edit-store-order" data-id="${esc(o.id)}">${icon('edit',14)} ویرایش سفارش</button><button class="btn btn-primary btn-sm" data-action="store-approve-v25" data-id="${esc(o.id)}">${icon('calendar',14)} تأیید و تعیین زمان</button><button class="btn btn-secondary btn-sm" data-action="store-quick-send-v40" data-id="${esc(o.id)}">${icon('send',14)} تأیید و ارسال سریع</button>`:''}${kind==='approved'?`<button class="btn btn-secondary btn-sm" data-action="store-quick-send-v40" data-id="${esc(o.id)}">${icon('send',14)} ارسال سریع به انبار</button>`:''}${kind==='processing'&&o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-returned-order" data-id="${esc(o.id)}">${icon('edit',14)} اصلاح سفارش</button><button class="btn btn-primary btn-sm" data-action="resubmit-order" data-id="${esc(o.id)}">${icon('send',14)} ارسال مجدد به انبار</button>`:''}${kind==='processing'&&o.dispatch&&o.dispatch.status==='DELIVERED'?`<button class="btn btn-primary btn-sm" data-action="sales-finalize-driver-delivery" data-id="${esc(o.id)}">${icon('check',14)} تأیید نهایی تحویل${o.dispatch.run?` سرویس ${o.dispatch.run===2?'دوم':'اول'}`:''}</button>`:''}${kind==='history'?storeServicePrintButtons(o.id,storeAvailableRuns(o))+'</div>'+storeReceiptSummary(o):''}</div>${kind==='processing'&&warehouseReturnNoteHtml(o)?`<span class="order-summary-cell order-summary-note">${warehouseReturnNoteHtml(o)}</span>`:''}${kind==='processing'&&storeReceiptSummary(o)?`<span class="order-summary-cell">${storeReceiptSummary(o)}</span>`:''}</article>`;
   // v37.33.0 — محموله‌های ارسالی انبار (هر دو سرویس) در سربرگ «ورودی» فروشگاه‌های فروش نمایش داده می‌شوند (جای قبلی: «در جریان»؛ فروش آن‌ها را در ورودی پیدا نمی‌کرد)
   const shipmentsPanel=renderStoreRunShipmentsPanel(deliveries.storeRunShipments||[]);
   const panel=(id,title,rows,kind,emptyTitle,emptyText,extra='')=>`<section class="sales-store-subpanel-v43" data-store-section="${id}"${(app.salesStoreTab||'incoming')===id?'':' hidden'}><header class="sales-store-subhead-v43"><h2>${title}</h2><span>${qty(rows.length)} سفارش</span></header>${extra}<div class="sd-store-list sd-store-list-v40">${rows.map(o=>card(o,kind)).join('')||salesEmptyV25('sales',emptyTitle,emptyText)}</div></section>`;
@@ -262,27 +262,13 @@ function renderSalesStoresV41(orders,deliveries={}){ // v37.7.9 — فروشگا
 }
 /* ---------- تب ۳: در جریان ---------- */
 function sdFlowCard(o,idx){
-  const items=activeItemsOf(o);
-  // v37.43.0 — کارت تک‌خطی و کم‌ارتفاع؛ فهرست محصولات روی کارت نیست و فقط با «جزئیات کامل» دیده می‌شود.
-  const meta=(label,value)=>`<span class="sd-fmeta"><i>${label}:</i><b>${value}</b></span>`;
-  return `<article class="sd-flow-card sd-flow-card-1line ${sdStatusAccent(o.status)}">
-    <div class="sd-flow-index">${fa(String(idx+1).padStart(2,'0'))}</div>
-    <div class="sd-flow-1line-main">
-      <div class="sd-flow-1line-id"><strong>${esc(storeAwareOrderName(o))}</strong>${sdTypeBadge(o)}</div>
-      <div class="sd-flow-meta">
-        ${meta('شماره سفارش',esc(fa(o.orderNo||'—')))}
-        ${meta('شماره تماس',esc(storeAwareOrderPhone(o)||'—'))}
-        ${meta('محل ارسال',esc(o.dispatchPlace||'ثبت نشده'))}
-        ${meta('تعداد اقلام',qty(items.length)+' قلم')}
-        ${meta('زمان ثبت',formatDateTime24(o.createdAt))}
-        ${meta('آخرین اقدام',formatDateTime24(o.updatedAt||o.createdAt))}
-        ${o.scheduledAt?meta('زمان ارسال',salesOrderDateTime(o)):''}
-      </div>
-      ${o.storeRun&&o.storeRun.enabled?sr38Chips(o):''}
-      ${warehouseReturnNoteHtml(o)}
-    </div>
-    <div class="sd-flow-1line-side">${badge(o.status)}<div class="sd-flow-1line-actions"><button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${o.id}">${icon('eye',14)} جزئیات کامل</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',14)} اصلاح سفارش</button><button class="btn btn-primary btn-sm" data-action="resubmit-order" data-id="${o.id}">${icon('send',14)} ارسال مجدد به انبار</button>`:''}</div></div>
-  </article>`;
+ const items=activeItemsOf(o);
+ const extras=[{html:`شماره تماس: ${esc(storeAwareOrderPhone(o)||'—')}`},{html:`محل ارسال: ${esc(o.dispatchPlace||'ثبت نشده')}`},{html:`آخرین اقدام: ${esc(formatDateTime24(o.updatedAt||o.createdAt))}`}];
+ if(o.scheduledAt)extras.push({html:`زمان ارسال: ${esc(salesOrderDateTime(o))}`});
+ if(o.storeRun&&o.storeRun.enabled)extras.push({html:sr38Chips(o)});
+ if(o.status==='RETURNED_TO_SALES'&&o.warehouseReturn?.reason)extras.push({html:warehouseReturnNoteHtml(o),className:'order-summary-note'});
+ const actions=`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-returned-order" data-id="${esc(o.id)}">${icon('edit',14)} اصلاح سفارش</button><button class="btn btn-primary btn-sm" data-action="resubmit-order" data-id="${esc(o.id)}">${icon('send',14)} ارسال مجدد به انبار</button>`:''}`;
+ return orderSummaryRow(o,{className:`sd-flow-card sd-flow-card-1line ${sdStatusAccent(o.status)}`,statusHtml:badge(o.status),itemCount:items.length,extras:[{html:sdTypeBadge(o)},...extras],actionsHtml:actions});
 }
 function salesFlowRowsV27(orders){ return (orders||[]).map(sdFlowCard).join(''); }
 function renderSalesFlowV25(orders){
@@ -312,22 +298,17 @@ function renderSalesSettlementV25(orders){
   </section>`;
 }
 function settlementPendingRowsV27(rows){
-  return rows.map(o=>`<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-id="${esc(o.id)}">
-    <strong class="stl-queue-customer">${esc(storeAwareOrderName(o))}</strong>
-    <span class="stl-queue-order"><span>شماره سفارش</span><bdi>${esc(fa(o.orderNo||'—'))}</bdi></span>
-  </button>`).join('') || '<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
+ return rows.map(o=>orderSummaryRow(o,{selectable:true,className:`stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}`,statusHtml:badge(o.status),itemCount:activeItemsOf(o).length})).join('')||'<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
 }
+
 function invoiceRowsV27(rows){
-  return rows.flatMap(o => (o.payments && o.payments.length>1 ? o.payments : [o.payment]).filter(Boolean).map(pay => {
-    const run = pay.deliveryRun || null; // v37.5.0 — برای سفارش‌های فروشگاه هر سرویس یک فاکتور جداگانه دارد
-    return `<article class="sd-invoice-row">
-    <div><span class="sd-invoice-no">${esc(fa(pay.invoiceNumber||'—'))}${run?` <span class="st-run-chip st-run-r${run}">سرویس ${run===2?'دوم':'اول'}</span>`:''}</span><strong>${esc(storeAwareOrderName(o))}</strong><small>${esc(storeAwareOrderPhone(o))}</small></div>
-    <b class="sd-invoice-amount">${o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount||0)}</b>
-    <div>${verificationBadges(pay)}</div>
-    <div class="sd-invoice-status">${o.transportWorkflow===1&&o.status==='CLOSED'?'<span class="badge green">فاکتور بسته شد</span>':o.status==='EXITED'?'<span class="badge green">خروج ثبت شد</span>':(run&&o.status==='CLOSED')?'<span class="badge green">نهایی و بسته‌شده</span>':'<span class="badge orange">آماده خروج</span>'}<small>${formatDateTime24(pay.verifiedAt||o.updatedAt||o.createdAt)}</small></div>
-    <div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('eye',13)} فاکتور</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${o.id}"${run?` data-run="${run}"`:''}>${icon('receipt',13)} چاپ</button></div>
-  </article>`;
-  })).join('')||sdEmpty('receipt','فاکتور نهایی‌شده‌ای وجود ندارد','پس از تسویه، فاکتور در این فهرست قرار می‌گیرد.');
+ return rows.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{
+  const run=pay.deliveryRun||null;
+  const status=o.transportWorkflow===1&&o.status==='CLOSED'?'<span class="badge green">فاکتور بسته شد</span>':o.status==='EXITED'?'<span class="badge green">خروج ثبت شد</span>':(run&&o.status==='CLOSED')?'<span class="badge green">نهایی و بسته‌شده</span>':'<span class="badge orange">آماده خروج</span>';
+  const extras=[{html:`فاکتور ${esc(fa(pay.invoiceNumber||'—'))}`},...(run?[{html:`سرویس ${run===2?'دوم':'اول'}`}]:[]),{html:o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount||0)},{html:verificationBadges(pay)},{html:`زمان تسویه: ${esc(formatDateTime24(pay.verifiedAt||o.updatedAt||o.createdAt))}`}];
+  const actions=`<button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}"${run?` data-run="${run}"`:''}>${icon('eye',13)} فاکتور</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${esc(o.id)}"${run?` data-run="${run}"`:''}>${icon('receipt',13)} چاپ</button>`;
+  return orderSummaryRow(o,{className:'sd-invoice-row',statusHtml:status,itemCount:activeItemsOf(o).length,extras,actionsHtml:actions});
+ })).join('')||sdEmpty('receipt','فاکتور نهایی‌شده‌ای وجود ندارد','پس از تسویه، فاکتور در این فهرست قرار می‌گیرد.');
 }
 function stlEmptyHtml(){
   return `<div class="stl-empty"><div class="stl-empty-ico">${icon('receipt',26)}</div><b>یک سفارش از فهرست انتخاب کنید</b><span>بعد از انتخاب، قیمت‌گذاری اقلام و ثبت تسویه در همین بخش انجام می‌شود.</span></div>`;
@@ -341,21 +322,13 @@ function stlFormHtml(o){
 
 /* ---------- تب ۵: سفارش‌های روزهای آتی ---------- */
 function futureOrderRowsV25(orders){
-  const rows=(orders||[]).map(o=>{
-    const actions=`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${o.id}">${icon('eye',13)} جزئیات</button>`+
-      (o.orderType==='REMOTE'?`<button class="btn btn-ghost btn-sm" data-action="future-edit" data-id="${o.id}">${icon('edit',13)} ویرایش زمان</button><button class="btn btn-ghost btn-sm danger-text" data-action="future-cancel" data-id="${o.id}">${icon('trash',13)} لغو</button>`:'');
-    return `<article class="fx-row">
-      <div class="fx-row-top">
-        <div class="fx-row-date"><small>ورود به انبار</small><strong>${esc(dateLabel(o.scheduledDate))}</strong><b>${esc(fa(time24(o.scheduledAt)))}</b></div>
-        <div class="fx-row-info"><div class="fx-row-badges"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${sdTypeBadge(o)}</div><h3>${esc(storeAwareOrderName(o))}</h3><p>${esc(storeAwareOrderPhone(o))}</p></div>
-        <div class="fx-row-status">${badge(o.status)}</div>
-      </div>
-      ${depositSummaryHtml(o.deposit)}
-      <div class="fx-row-meta"><span><b>تاریخ تحویل:</b> ${o.deliveryDate?esc(dateLabel(o.deliveryDate)):'ثبت نشده'}</span><span><b>مقصد:</b> ${esc(o.dispatchPlace||'ثبت نشده')}</span><span><b>اقلام:</b> ${qty(activeItemsOf(o).length)} قلم</span><span><b>ثبت:</b> ${formatDateTime24(o.createdAt)}</div>
-      <div class="fx-row-actions">${actions}</div>
-    </article>`;
-  }).join('');
-  return rows||sdEmpty('calendar','سفارشی برای روزهای آینده برنامه‌ریزی نشده است','سفارش‌های آینده پس از ثبت در این تقویم قرار می‌گیرند.');
+ const rows=(orders||[]).map(o=>{
+  const actions=`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات سفارش</button>`+(o.orderType==='REMOTE'?`<button class="btn btn-ghost btn-sm" data-action="future-edit" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش زمان</button><button class="btn btn-ghost btn-sm danger-text" data-action="future-cancel" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:'');
+  const extras=[{html:sdTypeBadge(o)},{html:`ورود به انبار: ${esc(dateLabel(o.scheduledDate))} ${esc(fa(time24(o.scheduledAt)))}`},{html:`تاریخ تحویل: ${o.deliveryDate?esc(dateLabel(o.deliveryDate)):'ثبت نشده'}`},{html:`مقصد: ${esc(o.dispatchPlace||'ثبت نشده')}`},{html:`شماره تماس: ${esc(storeAwareOrderPhone(o)||'—')}`}];
+  if(o.deposit)extras.push({html:depositSummaryHtml(o.deposit),className:'order-summary-deposit'});
+  return orderSummaryRow(o,{className:'fx-row',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras,actionsHtml:actions});
+ }).join('');
+ return rows||sdEmpty('calendar','سفارشی برای روزهای آینده برنامه‌ریزی نشده است','سفارش‌های آینده پس از ثبت در این تقویم قرار می‌گیرند.');
 }
 function futureFormV38(orders){
   const future=salesFutureOrders(orders||[]);
@@ -712,12 +685,7 @@ function renderGateHistory(visits,hideHeading=false){
 function renderGateExit(orders){
   return `<section class="sd-panel">
     <div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico" style="background:var(--green-bg);color:var(--green)">${icon('check',19)}</span><div><h2>فاکتورهای آماده خروج</h2><p>فقط فاکتورهای تسویه‌شده در این کارتابل قابل کنترل هستند.</p></div></div><div class="sd-count"><strong>${qty(orders.length)}</strong><span>آماده</span></div></div>
-    <div class="gt-exit-list" id="gateExitRows">${orders.map(o=>`<article class="gt-exit-row">
-      <div class="gt-exit-main"><strong>${esc(storeAwareOrderName(o))}</strong><div class="sd-chips"><span class="sd-invoice-no" style="margin-bottom:0">${esc(fa(o.payment?.invoiceNumber||'—'))}</span>${plateViewHtml(o.customer?.plate, 'بدون پلاک', true)}<span class="sd-chip">${esc(storeAwareOrderPhone(o))}</span></div></div>
-      <div class="gt-exit-amount"><b>${money(o.payment?.totalAmount)}</b><small>تسویه ${dt(o.payment?.verifiedAt)}</small></div>
-      <div>${verificationBadges(o.payment)}</div>
-      <div class="toolbar"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${o.id}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${o.id}">${icon('check',14)} کنترل خروج</button></div>
-    </article>`).join('')||sdEmpty('check','فاکتور آماده خروج وجود ندارد','پس از تسویه هر سفارش، فاکتور آن برای کنترل خروج اینجا قرار می‌گیرد.')}</div>
+    <div class="gt-exit-list" id="gateExitRows">${orders.map(o=>orderSummaryRow(o,{className:'gt-exit-row',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:[{html:`فاکتور ${esc(fa(o.payment?.invoiceNumber||'—'))}`},{html:plateViewHtml(o.customer?.plate,'بدون پلاک',true)},{html:`شماره تماس: ${esc(storeAwareOrderPhone(o))}`},{html:`مبلغ: ${money(o.payment?.totalAmount)}`},{html:`تسویه: ${esc(dt(o.payment?.verifiedAt))}`},{html:verificationBadges(o.payment)}],actionsHtml:`<button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${esc(o.id)}">${icon('check',14)} کنترل خروج</button>`})).join('')||sdEmpty('check','فاکتور آماده خروج وجود ندارد','پس از تسویه هر سفارش، فاکتور آن برای کنترل خروج اینجا قرار می‌گیرد.')}</div>
     <div id="exitEditor" style="padding:0 20px 20px"></div>
   </section>`;
 }
@@ -826,8 +794,8 @@ function wh38StoreHeader(o){
   return `<div class="wh38-store-head" title="${esc(tip)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong class="wh38-store-name" title="${esc(name)}">${esc(name)}</strong><span class="wh38-store-meta">${qty(activeItemsOf(o).length)} قلم • ${esc(created)}${place?` • ${esc(place)}`:''}</span>${badge(o.status)}</div>`;
 }
 function wh38StoreList(orders,kind){
-  if(kind==='incoming') return `<div class="wh38-store-list whsin22-list">${orders.map(o=>`<article class="wh38-card wh38-store-card whsin22-card"><div class="whsin22-id"><strong class="whsin22-store" title="${esc(o.storeName||'فروشگاه')}">${esc(o.storeName||'فروشگاه')}</strong><small class="whsin22-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="order-code">شماره سفارش ${esc(fa(o.orderNo||'—'))}</span><span class="whsin22-time" title="ثبت: ${esc(formatDateTime24(o.createdAt))}${o.scheduledAt?` • زمان ارسال: ${esc(formatDateTime24(o.scheduledAt))}`:''}">${icon('calendar',13)} ${esc(formatDateTime24(o.createdAt))}</span><div class="whsin22-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="wh38-store-details" data-id="${o.id}">${icon('eye',14)} جزئیات</button></div></article>`).join('')}</div>`;
-  if(kind==='preparing') return `<div class="wh38-store-list whsin22-list">${orders.map(o=>`<article class="wh38-card wh38-store-card whsin22-card whprep23-card"><div class="whsin22-id"><strong class="whsin22-store" title="${esc(o.storeName||'فروشگاه')}">${esc(o.storeName||'فروشگاه')}</strong><small class="whsin22-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="whprep23-count">${qty(activeItemsOf(o).length)} قلم</span><div class="whsin22-actions"><button type="button" class="btn btn-primary btn-sm" data-action="wh38-start" data-id="${o.id}">${icon('eye',14)} جزئیات</button></div></article>`).join('')}</div>`;
+  if(kind==='incoming') return `<div class="wh38-store-list whsin22-list">${orders.map(o=>`<article class="wh38-card wh38-store-card whsin22-card order-summary-row"><div class="whsin22-id order-summary-cell order-summary-identity"><strong class="whsin22-store" title="${esc(o.storeName||'فروشگاه')}">${esc(o.storeName||'فروشگاه')}</strong><small class="whsin22-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="order-code order-summary-cell">شماره سفارش ${esc(fa(o.orderNo||'—'))}</span><span class="whsin22-time order-summary-cell" title="ثبت: ${esc(formatDateTime24(o.createdAt))}${o.scheduledAt?` • زمان ارسال: ${esc(formatDateTime24(o.scheduledAt))}`:''}">${icon('calendar',13)} ${esc(formatDateTime24(o.createdAt))}</span><span class="order-summary-cell order-summary-status">${badge(o.status)}</span><span class="order-summary-cell">${qty((o.items||[]).filter(i=>i.itemStatus!=='CANCELLED').length)} قلم</span><div class="whsin22-actions order-summary-cell order-summary-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="wh38-store-details" data-id="${o.id}">${icon('eye',14)} جزئیات</button></div></article>`).join('')}</div>`;
+  if(kind==='preparing') return `<div class="wh38-store-list whsin22-list">${orders.map(o=>`<article class="wh38-card wh38-store-card whsin22-card whprep23-card order-summary-row"><div class="whsin22-id order-summary-cell order-summary-identity"><strong class="whsin22-store" title="${esc(o.storeName||'فروشگاه')}">${esc(o.storeName||'فروشگاه')}</strong><small class="whsin22-customer">مشتری: ${esc(o.customer?.name||'—')}</small></div><span class="order-code order-summary-cell">شماره سفارش ${esc(fa(o.orderNo||'—'))}</span><span class="order-summary-cell">تاریخ ${esc(formatDateTime24(o.createdAt))}</span><span class="order-summary-cell order-summary-status">${badge(o.status)}</span><span class="whprep23-count order-summary-cell">${qty(activeItemsOf(o).length)} قلم</span><div class="whsin22-actions order-summary-cell order-summary-actions"><button type="button" class="btn btn-primary btn-sm" data-action="wh38-start" data-id="${o.id}">${icon('eye',14)} جزئیات</button></div></article>`).join('')}</div>`;
   return `<div class="wh38-store-list">${orders.map((o,i)=>`<article class="wh38-card wh38-store-card">
     <div class="wh38-no">${fa(String(i+1).padStart(2,'0'))}</div>
     <div class="wh38-store-card-main">
@@ -863,12 +831,8 @@ async function wh38AcceptFromDetails(id,btn){
   }catch(e){ toast(e.message); if(btn)btn.disabled=false; }
 }
 function wh38List(orders,kind){
-  if(!orders.length) return sdEmpty(kind==='incoming'?'truck':'scale',kind==='incoming'?'سفارش ورودی جدیدی نیست':'سفارشی در مرحله آماده‌سازی نیست','');
-  return `<div class="wh38-list wh38-incoming-list order-compact-scroll">${orders.map((o,i)=>`<article class="wh38-card wh38-incoming-card order-compact-row" data-order="${esc(o.id)}">
-    <span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(storeAwareOrderName(o))}</strong>${badge(o.status)}<span>${qty(activeItemsOf(o).length)} قلم</span>${o.deliveryDate?`<span>تاریخ تحویل: ${esc(dateLabel(o.deliveryDate))}</span>`:''}<span>${esc(formatDateTime24(o.createdAt))}</span>
-    <button type="button" class="btn btn-secondary btn-sm" data-action="wh38-order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات</button>
-    ${kind==='incoming'?`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-accept" data-id="${esc(o.id)}">تأیید دریافت</button>`:`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-start" data-id="${esc(o.id)}">شروع آماده‌سازی</button>`}
-  </article>`).join('')}</div>`;
+ if(!orders.length)return sdEmpty(kind==='incoming'?'truck':'scale',kind==='incoming'?'سفارش ورودی جدیدی نیست':'سفارشی در مرحله آماده‌سازی نیست','');
+ return `<div class="wh38-list wh38-incoming-list order-compact-scroll">${orders.map(o=>orderSummaryRow(o,{className:'wh38-card wh38-incoming-card order-compact-row',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:o.deliveryDate?[{html:`تاریخ تحویل: ${esc(dateLabel(o.deliveryDate))}`}]:[],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-action="wh38-order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>${kind==='incoming'?`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-accept" data-id="${esc(o.id)}">تأیید دریافت</button>`:`<button type="button" class="btn btn-primary btn-sm" data-action="wh38-start" data-id="${esc(o.id)}">شروع آماده‌سازی</button>`}`})).join('')}</div>`;
 }
 async function wh38Paint(phase){
   if(phase==='history') return; // سوابق با فیلترهای کاربر؛ نوسازی خودکار ۷ ثانیه‌ای فیلترها را به‌هم نمی‌زند
@@ -1220,8 +1184,9 @@ function st38DeliveredDetails(o){
 }
 function st38DeliveredRow(o){
  const d=o.dispatch||{},run=Number(d.run)||0;
- return `<article class="st38-delivered-card order-compact-row"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${run?`<span>سرویس ${run===2?'دوم':'اول'}</span>`:''}<span>${d.storeReceiptConfirmedAt?'دریافت تأیید شد':'منتظر تأیید دریافت'}</span><span>${esc(formatDateTime24(d.deliveredAt))}</span><span>${qty((d.lines||[]).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-action="store-delivery-details" data-id="${esc(o.id)}" data-run="${run}">جزئیات</button></article>`;
+ return orderSummaryRow(o,{className:'st38-delivered-card order-compact-row',statusHtml:`<span class="badge ${d.storeReceiptConfirmedAt?'green':'orange'}">${d.storeReceiptConfirmedAt?'دریافت تأیید شد':'منتظر تأیید دریافت'}</span>`,itemCount:(d.lines||[]).length,extras:[...(run?[{html:`سرویس ${run===2?'دوم':'اول'}`}]:[]),{html:`زمان تحویل: ${esc(formatDateTime24(d.deliveredAt))}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-action="store-delivery-details" data-id="${esc(o.id)}" data-run="${run}">جزئیات سفارش</button>`});
 }
+
 async function confirmStoreDelivery(el){
  const run=Number(el.dataset.run)||0,label=run===2?'سرویس دوم':run===1?'سرویس اول':'';
  if(!confirm(run?`اقلام و وزن محمولهٔ ${label} را کنترل کرده‌اید و دریافت همین محموله را تأیید می‌کنید؟ (محمولهٔ دیگر جداگانه تأیید می‌شود)`:'اقلام و وزن تحویل‌شده را کنترل کرده‌اید و دریافت این سفارش را تأیید می‌کنید؟'))return;
@@ -1244,8 +1209,10 @@ function st38TransitDetails(o){
 }
 function st38OrderBadge(o){const d=o.dispatch;if(!d)return badge(o.status);const labels={ASSIGNED:'به راننده واگذار شد',DRIVER_EXIT_REPORTED:'منتظر تأیید خروج',IN_TRANSIT:'در حال ارسال'};const tone={ASSIGNED:'orange',DRIVER_EXIT_REPORTED:'purple',IN_TRANSIT:'blue'};return `<span class="badge ${tone[d.status]||'gray'}">${esc(labels[d.status]||d.status)}</span>`}
 function st38Row(o){
- return `<article class="st38-row order-compact-row"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${st38OrderBadge(o)}<span>${qty(o.dispatch?dspScopedItems(o).length:activeItemsOf(o).length)} قلم</span>${o.dispatch?.run?`<span>سرویس ${o.dispatch.run===2?'دوم':'اول'}</span>`:''}<span>ثبت: ${esc(formatDateTime24(o.createdAt))}</span><button type="button" class="btn btn-secondary btn-sm" data-action="${o.dispatch?'store-delivery-details':'store-order-details'}" data-id="${esc(o.id)}" data-run="${Number(o.dispatch?.run)||0}">جزئیات</button></article>`;
+ const run=Number(o.dispatch?.run)||0;
+ return orderSummaryRow(o,{className:'st38-row order-compact-row',statusHtml:st38OrderBadge(o),itemCount:o.dispatch?dspScopedItems(o).length:activeItemsOf(o).length,extras:run?[{html:`سرویس ${run===2?'دوم':'اول'}`}]:[],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-action="${o.dispatch?'store-delivery-details':'store-order-details'}" data-id="${esc(o.id)}" data-run="${run}">جزئیات سفارش</button>`});
 }
+
 // All orders remain visible as one order even when their two services progress separately.
 const ST_REGISTERED_LABELS={
   STORE_PENDING_SALES:'در انتظار بررسی فروش', SCHEDULED_REMOTE:'تأیید شده، در انتظار زمان ارسال به انبار',
@@ -1260,14 +1227,9 @@ function stRegisteredRow(o){
   const status=ST_REGISTERED_LABELS[o.status]||o.status||'نامشخص';
   const stageLabels={SENT_TO_SALES:'منتظر راننده',ASSIGNED:'راننده تعیین شد',DRIVER_EXIT_REPORTED:'منتظر خروج',IN_TRANSIT:'در مسیر',DELIVERED:'تحویل ثبت شد',SALES_FINALIZED:'نهایی‌شده نزد فروش',CLOSED:'نهایی‌شده نزد فروش',RECEIPT_CONFIRMED:'دریافت تأیید شد'};
   const service=(run)=>{const sr=o.storeRun||{},stage=run===1?sr.r1Stage:sr.r2Stage,full=run===1?sr.r1StageLabel:sr.r2StageLabel;const weights=(sr.items||[]).some(v=>Number(run===1?v.r1Kg:v.r2Kg)>0);const label=stage?(stageLabels[stage]||full||stage):(weights?'وزن‌کشی ثبت شده':'در انتظار');return `<span class="st-registered-service" title="${esc(full||label)}">سرویس ${run===1?'اول':'دوم'}: ${esc(label)}</span>`;};
-  return `<article class="st-registered-card" data-store-order-id="${esc(o.id)}">
-    <span class="order-code" aria-label="شماره سفارش">${esc(fa(o.orderNo||'—'))}</span>
-    <span class="st-registered-time">ثبت: ${esc(formatDateTime24(o.createdAt))}</span>
-    <span class="badge ${o.status==='CANCELLED'?'gray':o.status==='CLOSED'?'green':'blue'}">${esc(status)}</span>
-    <span class="st-registered-count">${qty(items.length)} قلم فعال</span>
-    ${showProgress&&o.storeRun?.enabled?`<span class="st-registered-services">${service(1)}${service(2)}</span>`:''}
-    <span class="st-registered-actions"><button type="button" class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button type="button" class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش</button><button type="button" class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:''}</span>
-  </article>`;
+  const extras=showProgress&&o.storeRun?.enabled?[{html:service(1)},{html:service(2)}]:[];
+  const actions=`<button type="button" class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${esc(o.id)}">${icon('eye',13)} جزئیات سفارش</button>${o.status==='STORE_PENDING_SALES'?`<button type="button" class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${esc(o.id)}">${icon('edit',13)} ویرایش</button><button type="button" class="btn btn-ghost btn-sm danger-text" data-action="cancel-store-order" data-id="${esc(o.id)}">${icon('trash',13)} لغو</button>`:''}`;
+  return orderSummaryRow(o,{className:'st-registered-card',statusHtml:`<span class="badge ${o.status==='CANCELLED'?'gray':o.status==='CLOSED'?'green':'blue'}">${esc(status)}</span>`,itemCount:items.length,extras,actionsHtml:actions}).replace(' data-order=', ' data-store-order-id="'+esc(o.id)+'" data-order=');
 }
 async function renderStoreRegistered(){
   const root=$('#content'),limit=25;

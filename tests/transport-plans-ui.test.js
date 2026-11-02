@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'../public/dispatch-ui.js'),'ut
 const code=source.slice(source.indexOf('function transportPlanRows('));
 const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 test('نمای ترابری برای دو سرویس ردیف جدا و وضعیت مستقل دارد و داده را امن نمایش می‌دهد',()=>{
- const ctx=vm.createContext({esc,fa:x=>x});vm.runInContext(code,ctx);
+ const ctx=vm.createContext({esc,fa:x=>x,qty:String,formatDateTime24:x=>x||'—',storeAwareOrderName:o=>o.customerName||'—'});const app=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');vm.runInContext(app.slice(app.indexOf('function orderSummaryRow('),app.indexOf('\nconst app =')),ctx);vm.runInContext(code,ctx);
  const rows=ctx.transportPlanRows([{id:'o',orderNo:'101',customerName:'<فروشگاه>',services:[{run:1,assignment:{driverName:'<الف>',vehicleType:'وانت',vehiclePlate:'123'},departed:true,tripStatus:'IN_TRANSIT'},{run:2,assignment:{driverName:'ب'},canDepart:true}]}]);
  assert.match(rows,/&lt;فروشگاه&gt;/);assert.match(rows,/&lt;الف&gt;/);assert.match(rows,/سرویس اول/);assert.match(rows,/سرویس دوم/);assert.match(rows,/در مسیر/);assert.match(rows,/آماده ثبت خروج/);assert.equal((rows.match(/data-tp="details"/g)||[]).length,2);
 });

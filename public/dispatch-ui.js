@@ -565,11 +565,12 @@ function paintReturns(data) {
 /* Transport planning; old open dispatches remain separately traceable. */
 function transportPlanRows(orders){
  return orders.flatMap(o=>(o.services||[]).map(s=>{
-  const a=s.assignment, service=s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
+  const a=s.assignment,service=s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
   const state=s.tripStatus==='CLOSED'?'مدارک بازگشته':s.tripStatus==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':s.departed?'در مسیر':s.canDepart?'آماده ثبت خروج':s.handedOver?'در انتظار فاکتور':'در انتظار تحویل انبار';
-  return `<article class="dsp-card order-compact-row"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(o.customerName||'—')}</strong><span>${esc(service)}</span><span>${esc(state)}</span><span>${esc(a?.driverName||'راننده تعیین نشده')}</span><span>${esc(a?.vehicleType||'')} ${esc(fa(a?.vehiclePlate||''))}</span><button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات</button></article>`;
+  return orderSummaryRow(o,{className:'dsp-card order-compact-row',name:o.customerName||'—',statusHtml:`<span class="badge blue">${esc(state)}</span>`,itemCount:(o.items||[]).length,extras:[{html:esc(service)},{html:`راننده: ${esc(a?.driverName||'تعیین نشده')}`},{html:`خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات سفارش</button>`});
  })).join('');
 }
+
 async function renderTransportPlanQueue(){
  const host=$('#transportPlans');if(!host)return;
  try{

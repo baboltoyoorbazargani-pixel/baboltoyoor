@@ -1,0 +1,46 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
+test('مرورگر: ردیف سفارش در کارتابل‌ها و همه عرض‌ها هم‌فرمت و هم‌ارتفاع است',{skip:!process.env.BT_CHROMIUM_PATH,timeout:120000},async()=>{
+ const {chromium}=require('playwright-core'),port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p))})});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-unified-')),base=`http://127.0.0.1:${port}`,proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});let browser;
+ try{
+  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve()}});proc.once('exit',c=>reject(Error('exit '+c)))});
+  browser=await chromium.launch({executablePath:process.env.BT_CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext(),post=async(u,data)=>{const r=await ctx.request.post(base+u,{data});assert(r.ok(),u+' '+await r.text());return r.json()};
+  await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
+  const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});
+  const kinds=['remote','flow','future','settlement','sales-store','warehouse','warehouse-store-incoming','warehouse-store-preparing','delivery','transport','store-registered','store-delivery','store-delivered','gate','invoice'];
+  for(const kind of kinds){
+   await page.evaluate(kind=>{
+    if(app.timer)clearInterval(app.timer);if(app.wh38?.timer)clearInterval(app.wh38.timer);
+    const o={id:'example',orderNo:'000123',orderType:'REMOTE',status:'WAREHOUSE_PREPARING',createdAt:'2026-11-01T08:30:00Z',updatedAt:'2026-11-01T09:00:00Z',scheduledDate:'2026-11-05',scheduledAt:'2026-11-05T08:00:00Z',dispatchPlace:'مقصد با نام طولانی برای آزمایش پیمایش',customer:{name:'مشتری آزمایشی با نام بسیار طولانی برای کنترل چیدمان کامل ردیف سفارش',phone:'09121112222'},items:[{id:'i1',product:{name:'محصول نمونه'},requestedQty:5,requestedUnit:'کیلوگرم'}],payment:{invoiceNumber:'000321',totalAmount:1000,verifiedAt:'2026-11-01T10:00:00Z'}};
+    const store={...o,orderType:'STORE',storeName:'فروشگاه شعبه 1 حمزه کلا',status:'STORE_PENDING_SALES'},el=document.querySelector('#content');let html='';
+    document.querySelector('#appView').dataset.cartablePage=kind.startsWith('warehouse')?'warehouse':kind==='gate'?'gate':kind.startsWith('store')?'store':kind==='transport'?'drivers':'sales';
+    const wrap=x=>`<div class="order-compact-scroll">${x}</div>`;
+    if(kind==='remote')html=`<div class="phone-queue-list-v40">${remotePhoneQueueRowsV40([o]).html}</div>`;
+    if(kind==='flow')html=`<div class="sd-flow-list">${sdFlowCard(o,0)}</div>`;
+    if(kind==='future')html=`<div class="fx-list-grid">${futureOrderRowsV25([o])}</div>`;
+    if(kind==='settlement')html=`<aside class="stl-queue-panel"><div class="stl-queue-list">${settlementPendingRowsV27([{...o,status:'SETTLEMENT_PENDING'}])}</div></aside>`;
+    if(kind==='sales-store'){app.salesStoreTab='incoming';html=renderSalesStoresV41([store],{});}
+    if(kind==='warehouse')html=wh38List([o],'incoming');
+    if(kind==='warehouse-store-incoming')html=`<div class="wh38-store-pane">${wh38StoreList([store],'incoming')}</div>`;
+    if(kind==='warehouse-store-preparing')html=`<div class="wh38-store-pane">${wh38StoreList([{...store,status:'WAREHOUSE_PREPARING'}],'preparing')}</div>`;
+    if(kind==='delivery')html=wrap(salesDeliverySummaryRow({...o,transportService:{label:'در مسیر',run:0,driverName:'راننده نمونه',lines:[]}}));
+    if(kind==='transport')html=wrap(transportPlanRows([{...o,customerName:o.customer.name,services:[{run:0,assignment:{driverName:'راننده نمونه',vehicleType:'وانت',vehiclePlate:'12ب34567'},departed:true}]}]));
+    if(kind==='store-registered')html=wrap(stRegisteredRow(store));
+    if(kind==='store-delivery')html=wrap(st38Row({...store,dispatch:{run:1,status:'IN_TRANSIT',lines:[]}}));
+    if(kind==='store-delivered')html=wrap(st38DeliveredRow({...store,dispatch:{run:2,status:'DELIVERED',lines:[]}}));
+    if(kind==='gate')html=renderGateExit([{...o,status:'SETTLED'}]);
+    if(kind==='invoice')html=`<div class="sd-invoice-list">${invoiceRowsV27([{...o,status:'SETTLED'}])}</div>`;
+    el.innerHTML=html;
+   },kind);
+   for(const width of [1280,768,390,320]){
+    await page.setViewportSize({width,height:900});
+    const row=page.locator('#content .order-summary-row:visible,#content .sales-delivery-summary-row:visible').first();await row.waitFor();
+    const g=await row.evaluate(el=>{const r=el.getBoundingClientRect(),cells=[...el.children].filter(x=>x.matches('.order-summary-cell,.sales-distribution-cell')),buttons=[...el.querySelectorAll('.order-summary-actions .btn,.sales-distribution-actions .btn')].filter(x=>x.offsetParent!==null);return {height:r.height,cells:cells.map(x=>({h:x.getBoundingClientRect().height,cy:x.getBoundingClientRect().top+x.getBoundingClientRect().height/2,top:x.getBoundingClientRect().top,bottom:x.getBoundingClientRect().bottom})),buttons:buttons.map(x=>({h:x.getBoundingClientRect().height,top:x.getBoundingClientRect().top,bottom:x.getBoundingClientRect().bottom})),top:r.top,bottom:r.bottom,scroll:document.documentElement.scrollWidth,viewport:innerWidth};});
+    assert(Math.abs(g.height-54)<1,`${kind}/${width} row ${JSON.stringify(g)}`);for(const c of g.cells){assert(Math.abs(c.h-38)<1,`${kind}/${width} cell ${JSON.stringify(g)}`);assert(c.top>=g.top-1&&c.bottom<=g.bottom+1,`${kind}/${width} bounds ${JSON.stringify(g)}`);}for(const b of g.buttons){assert(Math.abs(b.h-36)<1,`${kind}/${width} button ${JSON.stringify(g)}`);assert(b.top>=g.top-1&&b.bottom<=g.bottom+1,`${kind}/${width} bounds ${JSON.stringify(g)}`);}assert(g.scroll<=g.viewport+1,`${kind}/${width} page overflow ${JSON.stringify(g)}`);
+   }
+  }
+  assert.deepEqual(errors,[]);
+ }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true})}
+});

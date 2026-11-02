@@ -27,14 +27,11 @@ test('flow card is a compact single-line card without the product list',()=>{
   assert.match(card,/sdTypeBadge\(o\)/);
 });
 
-test('every info value on the flow card carries its label',()=>{
+test('flow uses common order row with labeled details and retains operational actions',()=>{
   const card=slice(ui,'function sdFlowCard','function salesFlowRowsV27');
-  for(const label of ['شماره سفارش','شماره تماس','محل ارسال','تعداد اقلام','زمان ثبت','آخرین اقدام','زمان ارسال'])
-    assert.ok(card.includes(`'${label}'`)||card.includes(label),label);
-  assert.match(card,/class="sd-fmeta"><i>\$\{label\}:<\/i>/);
-  // شماره تماس از همان منبع آگاه از فروشگاه می‌آید و محل ارسال مقدار پیش‌فرض دارد
-  assert.match(card,/storeAwareOrderPhone\(o\)/);
-  assert.match(card,/o\.dispatchPlace\|\|'ثبت نشده'/);
+  for(const label of ['شماره تماس','محل ارسال','آخرین اقدام','زمان ارسال'])assert.ok(card.includes(label),label);
+  const shared=slice(app,'function orderSummaryRow','const app =');for(const label of ['شماره سفارش','تاریخ','قلم'])assert.ok(shared.includes(label),label);
+  assert.match(card,/orderSummaryRow\(o/);assert.match(card,/storeAwareOrderPhone\(o\)/);assert.match(card,/o\.dispatchPlace\|\|'ثبت نشده'/);
 });
 
 test('compact flow styles and tighter list spacing are in the final stylesheet',()=>{
