@@ -1154,3 +1154,6 @@
 #appView #content .order-summary-row .store-receipt-summary{margin:0!important;align-self:center!important;flex-wrap:nowrap!important;white-space:nowrap!important}
 #appView #content #orderLines .sd-line.sd-line-compact .sd-line-cell > .input-shell{height:44px!important;min-height:44px!important;max-height:44px!important}
 #appView #content .order-summary-row > .order-summary-actions{flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important}
+/* Keep settlement failures visible and recoverable rather than leaving an empty panel. */
+#appView #content .stl-load-error{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;margin:8px 0;border:1px solid #d98989;border-radius:10px;background:#fff5f5;color:#8f1d1d}
+#appView #content .stl-load-error span{flex:1 1 220px;white-space:normal;overflow-wrap:anywhere}

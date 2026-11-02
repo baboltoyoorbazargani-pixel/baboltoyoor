@@ -547,6 +547,7 @@ function paintSalesPaneV29(tab,data){
     pane.innerHTML=salesV29RenderPane(tab,data);
     pane.dataset.renderedV29='1';
     bindSalesPaneV29(tab);
+    if(tab==='settlement' && stl.orderId) void stlOpen(stl.orderId);
     return;
   }
   if(tab==='onsite'){
@@ -1524,7 +1525,8 @@ function transportSalesInvoicePanel(order){
  if(!hand){host.innerHTML='<section class="sd-panel sd-pad"><h2>فاکتور پخش</h2><p>در انتظار تحویل کالا به راننده و ثبت امضای دستی در انبار.</p></section>';return;}
  if(invoice){
   const stage=order.transportReturn?transportClosureFormHtml(order):order.transportDeparture?transportReturnFormHtml(): '<p>فاکتور آماده چاپ است؛ تأیید خروج بر عهده ترابری است.</p>';
-  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>پیش‌نمایش و چاپ فاکتور</button>${stage}</section>`;
+  const deviceWarning=order.transportReturn&&stl.devicesError?`<div class="stl-load-error" role="alert"><b>فهرست دستگاه‌های پوز دریافت نشد.</b><span>سایر روش‌های تسویه قابل استفاده‌اند؛ برای انتخاب پوز، فرم را دوباره بارگیری کنید.</span><button type="button" class="btn btn-secondary btn-sm" data-stl="retry" data-id="${esc(order.id)}">بارگیری دوباره فرم</button></div>`:'';
+  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>پیش‌نمایش و چاپ فاکتور</button>${deviceWarning}${stage}</section>`;
   host.querySelector('[data-ti-preview]').onclick=()=>transportDraftPreview(order.id);
   if(order.transportReturn)bindTransportClosure(host,order);else if(order.transportDeparture)bindTransportReturn(host,order);
   return;
