@@ -17,5 +17,5 @@ jobs:
           node --test tests/warehouse-weighing-browser.test.js tests/warehouse-delivered-browser.test.js tests/warehouse-store-document-browser.test.js tests/transport-handover-browser.test.js > browser.log 2>&1
           result=$?
           cat browser.log
-          if [ "$result" != 0 ]; then echo "::error title=Browser output::$(base64 -w0 browser.log)"; fi
+          if [ "$result" != 0 ]; then base64 -w0 browser.log | fold -w3000 | while read -r chunk; do echo "::error title=Browser output chunk::$chunk"; done; fi
           exit "$result"

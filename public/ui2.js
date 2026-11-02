@@ -916,7 +916,7 @@ function whDocumentTares(line){
   const amount=rows.reduce((sum,row)=>{const n=Number(row[key]);return sum+(Number.isFinite(n)&&n>0?(count?n:Math.round(n*1000)):0);},0);
   return amount?`<span class="whd-tare-chip"><span>${label}</span><b>${qty(count?amount:amount/1000)} ${count?'عدد':'کیلوگرم'}</b></span>`:'';
  }).join('');
- const incomplete=line.missingWeighings?'<span class="whd-tare-unknown">بخشی از جزئیات ثبت نشده</span>':'';
+ const incomplete=line.missingWeighings?'<span class="whd-tare-unknown">بخشی از جزئیات ثبت نشده</span>':(!Array.isArray(line.weighings)?'<span class="whd-tare-unknown">جزئیات ثبت نشده</span>':'');
  return chips||incomplete?chips+incomplete:'<span class="whd-tare-empty">—</span>';
 }
 function whDocumentProducts(lines){

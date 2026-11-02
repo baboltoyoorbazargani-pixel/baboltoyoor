@@ -14,7 +14,7 @@
 .whd-store-meta>span{flex-wrap:wrap}
 .whd-table-scroll{max-width:100%;overflow-x:auto}
 .whd-doc table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid #e3e6ea;border-radius:6px;font-size:11px}
-.whd-col-number{width:34px}.whd-col-product{width:24%}.whd-col-tares{width:50%}.whd-col-weight{width:19%}
+.whd-col-number{width:34px}.whd-col-product{width:24%}.whd-col-tares{width:50%}.whd-col-weight{width:auto}
 .whd-doc th,.whd-doc td{line-height:1.4;vertical-align:middle;overflow-wrap:anywhere;text-align:right}
 .whd-doc th{background:#f6f7f9;color:#67707d;font-size:10px;padding:4px 6px;border-bottom:1px solid #e3e6ea}
 .whd-doc td{font-size:11px;padding:3px 6px;border-bottom:1px solid #eef0f3}
