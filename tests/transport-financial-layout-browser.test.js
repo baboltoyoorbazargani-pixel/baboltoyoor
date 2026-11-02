@@ -21,6 +21,7 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
   await post(wh,`/api/orders/${order.id}/warehouse/accept`,{});await post(wh,`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:2}]});
   await post(transport,`/api/transport/plans/${order.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id});
   const doc=(await get(wh,`/api/warehouse/delivered/${order.id}`)).order;await post(wh,`/api/warehouse/transport-handovers/${order.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken});
+  await sales.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__prints=(window.parent.__prints||0)+1;};});
   const page=await sales.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(()=>go('sales','settlement'));
   const queue=page.locator(`[data-stl=select][data-id="${order.id}"]`);await queue.waitFor();
   // A failed order request must leave a visible, retryable error instead of a blank panel.
@@ -40,7 +41,12 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
  await price.fill('12x');await page.locator('[data-ti-form] button[type=submit]').click();assert.equal((await get(sales,`/api/orders/${order.id}`)).order.transportInvoice,undefined);await price.fill('1234567');
  await page.locator('[data-ti-form] button[type=submit]').click();await page.locator('[data-ti-preview]').waitFor();
  const prepared=(await get(sales,`/api/orders/${order.id}`)).order.transportInvoice;assert.equal(prepared.priceLines[0].unitPrice,1234567);assert.equal(prepared.totalAmount,2379134);
- await post(transport,`/api/transport/shipments/${order.id}/depart`,{invoicePaperGiven:true,invoiceNumber:prepared.invoiceNumber});await page.locator(`[data-stl=select][data-id="${order.id}"]`).click();await page.locator('[data-ts-return]').waitFor();
+ // Printing is an explicit request, not proof that a printer succeeded. The
+ // order must remain accessible from delivery even if printing is cancelled.
+ await page.locator('[data-ti-preview]').click();await page.locator('#modal [data-ti-print]').click();await page.locator('[data-delivery-tab=assigned]').waitFor();
+ const deliveryRow=page.locator(`[data-delivery-order="${order.id}"]`);await deliveryRow.locator('[data-action=sales-delivery-details]').click();await page.locator('#modal [data-action=transport-sales-work]').click();await page.locator('#transportDeliveryWork [data-ti-preview]').waitFor();assert.equal(await page.evaluate(()=>app.sub.sales),'delivery');
+ await page.locator('#modal [data-action=close-modal]').first().click();await post(transport,`/api/transport/shipments/${order.id}/depart`,{invoicePaperGiven:true,invoiceNumber:prepared.invoiceNumber});
+ await page.evaluate(async()=>{const fresh=await fetchSalesCache(true);paintSalesPaneV29('delivery',fresh)});await page.locator('[data-delivery-tab=inTransit]').click();await page.locator(`[data-delivery-section=inTransit] [data-delivery-order="${order.id}"] [data-action=sales-delivery-details]`).click();await page.locator('#modal [data-action=transport-sales-work]').click();await page.locator('#transportDeliveryWork [data-ts-return]').waitFor();assert.equal(await page.evaluate(()=>app.sub.sales),'delivery');
  await page.route('**/api/payment-devices',route=>route.fulfill({status:503,json:{error:'فهرست پوز در دسترس نیست'}}));
  await page.locator('[data-ts-return] [name=documents]').check();await page.locator('[data-ts-return] [name=outcome]').selectOption('DELIVERED');await page.locator('[data-ts-return] [name=signature]').check();await page.locator('[data-ts-return] button[type=submit]').click();await page.locator('[data-ts-close]').waitFor();await page.locator('.stl-load-error').waitFor();assert.match(await page.locator('.stl-load-error').innerText(),/پوز/);await page.locator('[data-ts-kg]').fill('۰٫۵');await page.unroute('**/api/payment-devices');await page.locator('[data-ts-devices-retry]').click();await page.locator('.stl-load-error').waitFor({state:'detached'});assert.equal(await page.locator('[data-ts-kg]').inputValue(),'۰٫۵');
  await page.locator('[data-ts-kg]').fill('۰٫۵');assert.match(await page.locator('[data-ts-total]').innerText(),/۱٬۷۶۱٬۸۵۰/);

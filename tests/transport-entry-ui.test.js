@@ -30,7 +30,8 @@ test('اعلان ترابری به صف مستقل و خروج به کارتاب
  calls.length=0;c.app.user.roleCode='sales';c.api=async()=>({order:{id:'id2',orderType:'REMOTE',transportWorkflow:1,deliveryMode:'DELIVERY',status:'SETTLEMENT_PENDING'}});c.fetchSalesCache=async()=>{c.app.salesCache={dispatchDeliveries:{inTransit:[{id:'id2'}]}}};c.openSalesDeliveryDetails=id=>calls.push(['details',id]);
  await c.openNotificationTarget('n','TRANSPORT_DEPARTED','sales','order','id2');assert.deepEqual(calls,[['go','sales','delivery'],['details','id2']]);assert.equal(c.app.salesDeliveryTab,'inTransit');
 });
-test('بازکردن فاکتور از کارتابل پس از آماده‌شدن میز تسویه انجام می‌شود',async()=>{
- const events=[],c={app:{page:'sales',sub:{sales:'delivery'}},go:async(p,s)=>{events.push('go');c.app.page=p;c.app.sub.sales=s;},fetchSalesCache:async()=>{events.push('fetch');return{orders:[]}},paintSalesPaneV29:(tab)=>events.push('paint-'+tab),stlOpen:id=>events.push('open-'+id)};
- vm.createContext(c);vm.runInContext(fragment(appSource,'async function goTransportSalesWork(', 'async function bootstrap('),c);await c.goTransportSalesWork('id');assert.deepEqual(events,['go','fetch','paint-settlement','open-id']);
+test('اعلان پیش از فاکتور به تسویه و پس از فاکتور به کارتابل پخش می‌رود',async()=>{
+ const events=[],c={app:{page:'sales',sub:{sales:'delivery'}},order:{},api:async()=>({order:c.order}),closeModal:()=>{},go:async(p,s)=>{events.push('go-'+s);c.app.page=p;c.app.sub.sales=s;},fetchSalesCache:async()=>{events.push('fetch');return{orders:[]}},paintSalesPaneV29:(tab)=>events.push('paint-'+tab),stlOpen:id=>events.push('settlement-'+id),openTransportDeliveryWork:id=>events.push('delivery-'+id)};
+ vm.createContext(c);vm.runInContext(fragment(appSource,'async function goTransportSalesWork(', 'async function bootstrap('),c);await c.goTransportSalesWork('id');assert.deepEqual(events,['go-settlement','fetch','paint-settlement','settlement-id']);
+ events.length=0;c.order={transportInvoice:{status:'PREPARED'},transportDeparture:{}};await c.goTransportSalesWork('id');assert.deepEqual(events,['go-delivery','delivery-id']);assert.equal(c.app.salesDeliveryTab,'inTransit');
 });

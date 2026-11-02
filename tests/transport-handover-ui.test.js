@@ -48,7 +48,7 @@ test('محاسبه فرم فروش با مرجوعی جزئی و کامل مطا
 test('ثبت بازگشت فروش نیازمند تأیید مدارک و امضای کاغذی در حالت تحویل‌شده است',async()=>{
  let consent=true;const calls=[],button={disabled:false},err={textContent:''},sigbox={hidden:true},f={elements:{documents:{checked:true},outcome:{value:'DELIVERED'},signature:{checked:false},note:{value:''}},querySelector:s=>({'[data-ts-signature]':sigbox,'[data-ts-error]':err,'[type=submit]':button})[s]};
  const ctx=vm.createContext({confirm:()=>consent,api:async(...a)=>calls.push(a),toast:()=>{},stlOpen:async()=>{},encodeURIComponent,JSON});
- vm.runInContext(fragment('function bindTransportReturn(host,order){','function transportClosureFormHtml(order){'),ctx);ctx.bindTransportReturn({querySelector:()=>f},{id:'ord'});f.elements.outcome.onchange();assert.equal(sigbox.hidden,false);
+ vm.runInContext(fragment('function bindTransportReturn(host,order,','function transportClosureFormHtml(order){'),ctx);ctx.bindTransportReturn({querySelector:()=>f},{id:'ord'});f.elements.outcome.onchange();assert.equal(sigbox.hidden,false);
  await f.onsubmit({preventDefault(){}});assert.equal(calls.length,0);assert.match(err.textContent,/امضای دستی/);
  f.elements.signature.checked=true;consent=false;await f.onsubmit({preventDefault(){}});assert.equal(calls.length,0);
  consent=true;await f.onsubmit({preventDefault(){}});assert.deepEqual(JSON.parse(calls[0][1].body),{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true,note:''});

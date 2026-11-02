@@ -1412,6 +1412,14 @@ async function handleLogout(){
   const f=$('#loginForm'); if(f){f.reset();}
 }
 async function goTransportSalesWork(id){
+  const order=(await api('/api/orders/'+encodeURIComponent(id))).order;
+  if(order?.transportInvoice){
+    app.salesDeliveryTab=order.transportReturn?'delivered':order.transportDeparture?'inTransit':'assigned';
+    await go('sales','delivery');
+    if(app.page==='sales'&&app.sub.sales==='delivery')return openTransportDeliveryWork(id);
+    return;
+  }
+  closeModal();
   await go('sales','settlement');
   const data=await fetchSalesCache(true);
   if(app.page!=='sales'||app.sub.sales!=='settlement')return;
@@ -1432,7 +1440,7 @@ async function bootstrap(){
     if(e.target.id==='modal'){closeModal();return;}
     const el=e.target.closest('[data-action]'); if(!el)return; const a=el.dataset.action;
     if(a==='close-modal')return closeModal();
-    if(a==='transport-sales-work'){const id=el.dataset.id;closeModal();return goTransportSalesWork(id);}
+    if(a==='transport-sales-work'){try{return await goTransportSalesWork(el.dataset.id);}catch(err){toast(err.message||'دریافت اطلاعات سفارش ناموفق بود.');return;}}
     if(a==='print-invoice'){e.stopPropagation();return printInvoice(el.dataset.id,Number(el.dataset.run)||null);}
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
     if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
@@ -2378,7 +2386,7 @@ function salesFutureOrders(orders){
   const todayIso=today();
   return orders.filter(o=>o.orderType==='REMOTE'&&o.status==='SCHEDULED_REMOTE'&&String(o.scheduledDate||'')>=todayIso).sort((a,b)=>String(a.scheduledAt||'').localeCompare(String(b.scheduledAt||'')));
 }
-function salesAllInSettlement(orders){return orders.filter(o=>o.orderType!=='STORE'&&((['SETTLEMENT_PENDING','SETTLED','EXITED'].includes(o.status)&&!['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status))||((o.payments||[]).length>0&&!['SETTLEMENT_PENDING','SETTLED','EXITED'].includes(o.status)))).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')))} // v37.6.0 // v37.5.0 — فاکتورهای هر سرویس سفارش فروشگاه بسته‌شده هم دیده می‌شوند
+function salesAllInSettlement(orders){return orders.filter(o=>o.orderType!=='STORE'&&!(o.status==='SETTLEMENT_PENDING'&&o.transportWorkflow===1&&o.deliveryMode==='DELIVERY'&&o.transportInvoice)&&((['SETTLEMENT_PENDING','SETTLED','EXITED'].includes(o.status)&&!['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status))||((o.payments||[]).length>0&&!['SETTLEMENT_PENDING','SETTLED','EXITED'].includes(o.status)))).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')))} // v37.6.0 // v37.5.0 — فاکتورهای هر سرویس سفارش فروشگاه بسته‌شده هم دیده می‌شوند
 
 
 function salesEmptyV25(name,title,subtitle){return `<div class="sales-empty-v25"><div>${icon(name,28)}</div><strong>${esc(title)}</strong><span>${esc(subtitle)}</span></div>`}

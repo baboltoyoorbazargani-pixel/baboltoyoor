@@ -1084,32 +1084,32 @@
 .iran-plate-legacy{border-radius:4px!important}
 
 /* فرم فاکتور و تسویهٔ گردش پخش: شبکهٔ مستقل، هم‌اندازه و واکنش‌گرا. */
-#appView #content .tr-invoice-panel{box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
-#appView #content .tr-invoice-panel>.section-space{min-width:0;max-width:100%;overflow-x:auto}
-#appView #content .tr-form{display:grid;gap:10px;min-width:0;max-width:100%;margin-top:12px}
-#appView #content .tr-form :is(h3,h4,p){margin:0;line-height:1.7;overflow-wrap:anywhere}
-#appView #content .tr-table-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
-#appView #content .tr-table-scroll table{width:100%;min-width:560px;table-layout:fixed;border-collapse:collapse}
-#appView #content .tr-table-scroll th,#appView #content .tr-table-scroll td{padding:7px;vertical-align:middle;overflow-wrap:anywhere}
-#appView #content .tr-invoice-table th:first-child{width:38%}
-#appView #content .tr-return-table th:first-child{width:30%}
-#appView #content .tr-form :is(input:not([type=checkbox]),select){box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:38px;height:38px;margin:0;padding:0 9px;border:1px solid var(--bt-line-2,#d6e0e7);border-radius:8px;background-color:#fff;color:var(--bt-ink,#263746);font:inherit;line-height:normal}
-#appView #content .tr-form input:focus-visible,#appView #content .tr-form select:focus-visible{outline:2px solid var(--bt-brand,#b3132a);outline-offset:1px}
-#appView #content .tr-form input[type=checkbox]{width:18px;height:18px;min-width:18px;vertical-align:middle}
-#appView #content .tr-adjustments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-#appView #content .tr-form .tr-field,#appView #content .tr-return-form>div>label{display:grid!important;grid-template-rows:auto 38px!important;align-content:end!important;gap:4px!important;min-width:0!important;width:100%;font-size:12px;line-height:1.5}
-#appView #content .tr-form .tr-field>span{white-space:normal;overflow-wrap:anywhere}
-#appView #content .tr-totals,#appView #content .tr-close-form [data-ts-sum]{padding:9px 11px;border:1px solid var(--bt-line,#dce4eb);border-radius:8px;background:#f7fafc;line-height:1.7}
-#appView #content .tr-form [role=alert]:empty{display:none}
-#appView #content .tr-form [role=alert]:not(:empty){padding:8px;color:#9d1c26;background:#fff4f4;border-radius:8px}
-#appView #content .tr-close-form [data-ts-payments]{display:grid;gap:8px;min-width:0}
-#appView #content .tr-payment-row{grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:end!important;gap:8px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
-#appView #content .tr-payment-row [data-ts-extra]{display:contents!important}
-#appView #content .tr-payment-row [data-ts-extra][hidden]{display:none!important}
-#appView #content .tr-payment-row [data-ts-remove]{width:100%;min-width:0;min-height:38px;align-self:end}
-#appView #content .tr-form .modal-actions{display:flex;flex-wrap:wrap;gap:8px}
-@media(max-width:900px){#appView #content .tr-payment-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:420px){#appView #content .tr-adjustments{grid-template-columns:minmax(0,1fr)}#appView #content .tr-payment-row{grid-template-columns:minmax(0,1fr)!important}}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-invoice-panel{box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-invoice-panel>.section-space{min-width:0;max-width:100%;overflow-x:auto}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form{display:grid;gap:10px;min-width:0;max-width:100%;margin-top:12px}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form :is(h3,h4,p){margin:0;line-height:1.7;overflow-wrap:anywhere}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-table-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-table-scroll table{width:100%;min-width:560px;table-layout:fixed;border-collapse:collapse}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-table-scroll th,:is(#appView #content,#modal #transportDeliveryWork) .tr-table-scroll td{padding:7px;vertical-align:middle;overflow-wrap:anywhere}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-invoice-table th:first-child{width:38%}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-return-table th:first-child{width:30%}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form :is(input:not([type=checkbox]),select){box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:38px;height:38px;margin:0;padding:0 9px;border:1px solid var(--bt-line-2,#d6e0e7);border-radius:8px;background-color:#fff;color:var(--bt-ink,#263746);font:inherit;line-height:normal}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form input:focus-visible,:is(#appView #content,#modal #transportDeliveryWork) .tr-form select:focus-visible{outline:2px solid var(--bt-brand,#b3132a);outline-offset:1px}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form input[type=checkbox]{width:18px;height:18px;min-width:18px;vertical-align:middle}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-adjustments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form .tr-field,:is(#appView #content,#modal #transportDeliveryWork) .tr-return-form>div>label{display:grid!important;grid-template-rows:auto 38px!important;align-content:end!important;gap:4px!important;min-width:0!important;width:100%;font-size:12px;line-height:1.5}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form .tr-field>span{white-space:normal;overflow-wrap:anywhere}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-totals,:is(#appView #content,#modal #transportDeliveryWork) .tr-close-form [data-ts-sum]{padding:9px 11px;border:1px solid var(--bt-line,#dce4eb);border-radius:8px;background:#f7fafc;line-height:1.7}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form [role=alert]:empty{display:none}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form [role=alert]:not(:empty){padding:8px;color:#9d1c26;background:#fff4f4;border-radius:8px}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-close-form [data-ts-payments]{display:grid;gap:8px;min-width:0}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row{grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:end!important;gap:8px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row [data-ts-extra]{display:contents!important}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row [data-ts-extra][hidden]{display:none!important}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row [data-ts-remove]{width:100%;min-width:0;min-height:38px;align-self:end}
+:is(#appView #content,#modal #transportDeliveryWork) .tr-form .modal-actions{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:900px){:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:420px){:is(#appView #content,#modal #transportDeliveryWork) .tr-adjustments{grid-template-columns:minmax(0,1fr)}:is(#appView #content,#modal #transportDeliveryWork) .tr-payment-row{grid-template-columns:minmax(0,1fr)!important}}
 
 /* قالب واحد خلاصه سفارش: سلول‌ها و دکمه‌ها در یک ارتفاع، پیمایش فقط در فهرست. */
 #appView #content :is(.phone-queue-list-v40,.sd-flow-list,.fx-list-grid,.stl-queue-panel .stl-queue-list,.stl-queue .stl-queue-list,.sales-store-subpanel-v43 .sd-store-list-v40,.wh38-store-pane .whsin22-list,.gt-exit-list,.sd-invoice-list){display:block!important;overflow-x:auto!important;max-width:100%;min-width:0}
@@ -1157,3 +1157,10 @@
 /* Keep settlement failures visible and recoverable rather than leaving an empty panel. */
 #appView #content .stl-load-error{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;margin:8px 0;border:1px solid #d98989;border-radius:10px;background:#fff5f5;color:#8f1d1d}
 #appView #content .stl-load-error span{flex:1 1 220px;white-space:normal;overflow-wrap:anywhere}
+
+/* صف باریک تسویه: اطلاعات اصلی در خود ستون، بدون پیمایش افقی. */
+#appView #content .stl-queue-panel .stl-queue-list,#appView #content .stl-queue .stl-queue-list{overflow-x:hidden!important;overflow-y:auto!important}
+#appView #content .stl-queue-list .stl-queue-item-card{box-sizing:border-box!important;display:flex!important;align-items:center!important;flex-wrap:nowrap!important;width:100%!important;min-width:0!important;max-width:100%!important;height:54px!important;min-height:54px!important;max-height:54px!important;margin:0 0 8px!important;padding:7px 10px!important;gap:0!important;text-align:right!important;overflow:hidden!important}
+#appView #content .stl-queue-list .stl-queue-customer{display:block!important;flex:1 1 0!important;min-width:0!important;max-width:none!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-weight:700!important}
+#appView #content .stl-queue-list .stl-queue-order{display:flex!important;flex:0 0 auto!important;align-items:center!important;gap:4px!important;min-width:0!important;max-width:57%!important;margin:0!important;padding:0 9px 0 0!important;border-inline-start:1px solid #cbd5df!important;white-space:nowrap!important;overflow:hidden!important;font-size:12px!important}
+#appView #content .stl-queue-list .stl-queue-order bdi{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
