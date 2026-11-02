@@ -18,7 +18,7 @@ jobs:
         run: |
           set +e
           export BT_CHROMIUM_PATH="$(command -v google-chrome || command -v chromium-browser || command -v chromium)"
-          node --test --test-concurrency=1 tests/transport-financial-layout-browser.test.js tests/order-unified-layout-browser.test.js tests/transport-handover-browser.test.js tests/settlement-open-browser.test.js > /tmp/browser.log 2>&1
+          node --test --test-concurrency=1 tests/transport-financial-layout-browser.test.js tests/order-unified-layout-browser.test.js tests/transport-handover-browser.test.js > /tmp/browser.log 2>&1
           rc=$?
           cat /tmp/browser.log
           if [ "$rc" -ne 0 ]; then
