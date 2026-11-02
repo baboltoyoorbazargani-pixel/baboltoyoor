@@ -16,7 +16,7 @@ test('مرورگر: نام‌های طولانی داخل کارت فروش، ا
   const product=(await post('/api/admin/products',{quickCode:'99',name:productName,defaultUnit:'کیلوگرم'})).product;
   await post('/api/admin/users',{username:'auditshop',roleCode:'store',fullName:storeName,storeName,position:'تست',password:'Changed!2345',mustChangePassword:false});
   const visit=(await post('/api/visits',{name:customerName,phone:'09120001234',noVehicle:true,district:'منطقه',purpose:'خرید'})).visit;
-  await post('/api/orders',{visitId:visit.id,items:[{productId:product.id,requestedQty:100,requestedUnit:'کیلوگرم'}]});
+  await post('/api/orders',{visitId:visit.id,deliveryMode:'PICKUP',items:[{productId:product.id,requestedQty:100,requestedUnit:'کیلوگرم'}]});
   await post('/api/login',{username:'auditshop',password:'Changed!2345'},shopCtx);
   const page=await ctx.newPage(),shopPage=await shopCtx.newPage();await page.goto(base+'/',{waitUntil:'networkidle'});await shopPage.goto(base+'/',{waitUntil:'networkidle'});
   async function contained(p,selector,expected,width){

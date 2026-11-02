@@ -5,7 +5,7 @@ const {spawn}=require('node:child_process');const fs=require('node:fs'),os=requi
 const exe=process.env.BT_CHROMIUM_PATH;
 test('مرورگر: چیدمان ردیف‌های انبار، سرویس فروشگاه و قیمت روز در عرض‌های گوناگون', {skip:!exe,timeout:90000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-alignment-'));const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});let browser;
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-alignment-'));const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345',BT_EXPERIMENTAL_TRANSPORT_WORKFLOW:'0'},stdio:['ignore','pipe','pipe']});let browser;
  try{
   await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('exit '+c)));});
   browser=await chromium.launch({executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext(),base=`http://127.0.0.1:${port}`;

@@ -25,3 +25,10 @@ test('جزئیات فروش و انبار تخصیص مستقل را نشان م
  ctx.app.features.experimentalTransport=false;assert.doesNotMatch(ctx.transportOrderServiceHtml(order,true),/data-store-transport-return=/);
  assert.equal(ctx.transportOrderServiceHtml({...order,transportWorkflow:undefined},true),'');
 });
+
+test('جزئیات ترابری با مشخصات افقی و اقلام جدول‌بندی‌شده، مقادیر را امن نگه می‌دارد',()=>{
+ let html='';const ctx=vm.createContext({esc,fa:x=>x,qty:x=>x,openModal:(title,body)=>{html=body},$:()=>null});vm.runInContext(code,ctx);
+ ctx.transportPlanDetails({id:'o',orderNo:'1',customerName:'<مشتری>',dispatchPlace:'نشانی طولانی',items:[{productName:'<کالا>',requestedQty:4,requestedUnit:'عدد'}]},{run:2,assignment:{driverName:'راننده'},handedOver:true},{drivers:[],vehicles:[]});
+ assert.match(html,/tp-detail-grid/);assert.match(html,/tp-items-table/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/سرویس دوم/);assert.doesNotMatch(html,/<li>/);assert.doesNotMatch(html,/id="tpAssign"/);
+ const css=fs.readFileSync(path.join(__dirname,'../public/compatibility.css'),'utf8');assert.match(css,/tp-detail-grid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);assert.match(css,/tp-detail-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
