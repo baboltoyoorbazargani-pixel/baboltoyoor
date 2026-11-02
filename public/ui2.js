@@ -876,6 +876,10 @@ async function whDeliveredPaint(host){
   }
   await whDeliveredLoad();
 }
+function whDeliveredRow(o){
+ const handover=o.deliveryMode==='DELIVERY'?(o.handedOverToDriver?'تحویل به راننده ثبت شد':(o.driverName?'در انتظار تحویل به راننده':'در انتظار تعیین راننده')):'وزن نهایی ثبت شد';
+ return orderSummaryRow(o,{className:'wh-delivered-row',name:o.customerName||'—',statusHtml:`<span class="badge blue">${handover}</span>`,itemCount:o.itemCount,extras:[{html:`سند ${esc(fa(o.warehouseDocumentNo||'—'))}`},{html:`${qty(o.deliveredKg)} کیلوگرم`},{html:`ثبت وزن: ${esc(formatDateTime24(o.completedAt))}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-details" data-id="${esc(o.id)}" ${o.deliveryMode==='DELIVERY'&&!o.driverName?'disabled title="پس از تعیین راننده قابل چاپ است"':''}>${icon('eye',14)} جزئیات و چاپ</button>`});
+}
 async function whDeliveredLoad(){
   const st=app.whDelivered,seq=++st.seq;
   try{
@@ -883,7 +887,7 @@ async function whDeliveredLoad(){
     if(seq!==st.seq||app.wh38.phase!=='delivered')return;
     if(d.offset>=d.total&&d.offset>0){st.offset=Math.max(0,Math.ceil(d.total/d.limit-1)*d.limit);return whDeliveredLoad();}
     const host=$('#whDeliveredRows');if(!host)return;
-    host.innerHTML=`<div class="order-compact-scroll wh-delivered-list">${d.orders.map(o=>`<article class="order-compact-row wh-delivered-row"><span class="order-code">سند ${esc(fa(o.warehouseDocumentNo||'—'))}</span><span class="order-code">سفارش ${esc(fa(o.orderNo))}</span><strong>${esc(o.customerName)}</strong><span>${qty(o.itemCount)} قلم</span><span>${qty(o.deliveredKg)} کیلوگرم</span><span>${esc(formatDateTime24(o.completedAt))}</span>${o.deliveryMode==='DELIVERY'?`<span>${o.handedOverToDriver?'تحویل به راننده ثبت شد':(o.driverName?'در انتظار تحویل به راننده':'در انتظار تعیین راننده')}</span>`:''}<button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-details" data-id="${esc(o.id)}" ${o.deliveryMode==='DELIVERY'&&!o.driverName?'disabled title="پس از تعیین راننده قابل چاپ است"':''}>${icon('eye',14)} جزئیات و چاپ</button></article>`).join('')||'<div class="empty">سفارش وزن‌نهایی‌شده‌ای یافت نشد.</div>'}</div><div class="wh-delivered-pages"><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-prev" ${d.offset===0?'disabled':''}>قبلی</button><span>${qty(d.total)} سفارش${d.total?` • ${qty(d.offset+1)} تا ${qty(Math.min(d.offset+d.limit,d.total))}`:''}</span><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-next" ${d.offset+d.limit>=d.total?'disabled':''}>بعدی</button></div>`;
+    host.innerHTML=`<div class="order-compact-scroll wh-delivered-list">${d.orders.map(whDeliveredRow).join('')||'<div class="empty">سفارش وزن‌نهایی‌شده‌ای یافت نشد.</div>'}</div><div class="wh-delivered-pages"><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-prev" ${d.offset===0?'disabled':''}>قبلی</button><span>${qty(d.total)} سفارش${d.total?` • ${qty(d.offset+1)} تا ${qty(Math.min(d.offset+d.limit,d.total))}`:''}</span><button type="button" class="btn btn-secondary btn-sm" data-action="wh-delivered-next" ${d.offset+d.limit>=d.total?'disabled':''}>بعدی</button></div>`;
   }catch(e){const host=$('#whDeliveredRows');if(host&&seq===st.seq)host.innerHTML=`<div class="empty">خطا در دریافت سفارش‌ها: ${esc(e.message)}</div>`;}
 }
 function whDeliveredDocument(o){
@@ -953,6 +957,11 @@ function renderWhStoreDocuments(){
   host.addEventListener('click',e=>{const btn=e.target.closest('[data-store-doc-action]');if(!btn)return;e.stopPropagation();if(btn.dataset.storeDocAction==='refresh'){loadWhStoreDocuments();}else if(btn.dataset.storeDocAction==='prev'){st.offset=Math.max(0,st.offset-50);loadWhStoreDocuments();}else if(btn.dataset.storeDocAction==='next'){st.offset+=50;loadWhStoreDocuments();}else if(btn.dataset.storeDocAction==='details'){whStoreDocumentDetails(btn.dataset.id,Number(btn.dataset.run));}});
   loadWhStoreDocuments();
 }
+function whStoreDocumentRow(x){
+ const driver=x.driverName?'تحویل‌گیرنده: '+esc(x.driverName):(x.driverStatus==='PENDING'?'در انتظار تعیین راننده':'نام راننده در سوابق موجود نیست');
+ const status=typeof x.handedOverToDriver==='boolean'?(x.handedOverToDriver?'تحویل به راننده ثبت شد':'در انتظار تحویل به راننده'):(x.driverName?'راننده تعیین شده':'در انتظار راننده');
+ return orderSummaryRow(x,{className:'wh-delivered-row',name:x.storeName||'—',statusHtml:`<span class="badge blue">${status}</span>`,itemCount:x.itemCount,extras:[{html:`سند ${esc(fa(x.warehouseDocumentNo||'—'))}`},{html:`سرویس ${x.run===2?'دوم':'اول'}`},{html:driver}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="details" data-id="${esc(x.orderId)}" data-run="${x.run}" ${x.driverName?'':(x.driverStatus==='PENDING'?'disabled title="پس از تعیین راننده قابل چاپ است"':'disabled title="نام راننده در سوابق موجود نیست"')}>${icon('eye',14)} جزئیات و چاپ</button>`});
+}
 async function loadWhStoreDocuments(){
   const st=app.whStoreDocs,seq=++st.seq;
   try{
@@ -960,7 +969,7 @@ async function loadWhStoreDocuments(){
     if(seq!==st.seq)return;
     if(d.offset>=d.total&&d.offset>0){st.offset=Math.max(0,Math.ceil(d.total/d.limit-1)*d.limit);return loadWhStoreDocuments();}
     const host=document.querySelector('[data-wh-store-doc-rows]');if(!host)return;
-    host.innerHTML=`<div class="order-compact-scroll wh-delivered-list">${d.documents.map(x=>`<article class="order-compact-row wh-delivered-row"><span class="order-code">سند ${esc(fa(x.warehouseDocumentNo||'—'))}</span><span class="order-code">سفارش ${esc(fa(x.orderNo))}</span><strong>${esc(x.storeName)}</strong><span>سرویس ${x.run===2?'دوم':'اول'}</span><span>${x.driverName?'تحویل‌گیرنده: '+esc(x.driverName):(x.driverStatus==='PENDING'?'در انتظار تعیین راننده':'نام راننده در سوابق موجود نیست')}</span><span>${qty(x.itemCount)} قلم</span>${typeof x.handedOverToDriver==='boolean'?`<span>${x.handedOverToDriver?'تحویل به راننده ثبت شد':'در انتظار تحویل به راننده'}</span>`:''}<button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="details" data-id="${esc(x.orderId)}" data-run="${x.run}" ${x.driverName?'':(x.driverStatus==='PENDING'?'disabled title="پس از تعیین راننده قابل چاپ است"':'disabled title="نام راننده در سوابق موجود نیست"')}>${icon('eye',14)} جزئیات و چاپ</button></article>`).join('')||'<div class="empty">سند سرویس فروشگاهی یافت نشد.</div>'}</div><div class="wh-delivered-pages"><button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="prev" ${d.offset===0?'disabled':''}>قبلی</button><span>${qty(d.total)} سند${d.total?` • ${qty(d.offset+1)} تا ${qty(Math.min(d.offset+d.limit,d.total))}`:''}</span><button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="next" ${d.offset+d.limit>=d.total?'disabled':''}>بعدی</button></div>`;
+    host.innerHTML=`<div class="order-compact-scroll wh-delivered-list">${d.documents.map(whStoreDocumentRow).join('')||'<div class="empty">سند سرویس فروشگاهی یافت نشد.</div>'}</div><div class="wh-delivered-pages"><button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="prev" ${d.offset===0?'disabled':''}>قبلی</button><span>${qty(d.total)} سند${d.total?` • ${qty(d.offset+1)} تا ${qty(Math.min(d.offset+d.limit,d.total))}`:''}</span><button type="button" class="btn btn-secondary btn-sm" data-store-doc-action="next" ${d.offset+d.limit>=d.total?'disabled':''}>بعدی</button></div>`;
   }catch(e){const host=document.querySelector('[data-wh-store-doc-rows]');if(host&&seq===st.seq)host.innerHTML=`<div class="empty">خطا در دریافت اسناد: ${esc(e.message)}</div>`;}
 }
 function whStoreDocument(o){

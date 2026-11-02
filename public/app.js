@@ -3995,15 +3995,7 @@ function whhBody(d,opts){
     .map(([ic,l,v,u],k)=>`<div class="whh-kpi ${k===3&&s.outOfStock?'is-warn':''}"><span class="whh-kpi-ico">${icon(ic,18)}</span><div><small>${l}</small><b>${v}${u?` <em>${u}</em>`:''}</b></div></div>`).join('');
   const days=new Map(); (d.rows||[]).forEach(r=>{ if(!days.has(r.day)) days.set(r.day,[]); days.get(r.day).push(r); });
   const list=[...days.entries()].map(([day,rows])=>`<section class="whh-day"><header class="whh-day-head"><b>${dateLabel(day)}</b><span>${qty(rows.length)} سفارش • ${qty(rows.reduce((t,r)=>t+r.deliveredKg,0))} کیلوگرم</span></header>
-    ${rows.map(r=>`<article class="whh-row">
-      <div class="whh-time"><b>${whhTime(r.completedAt)}</b><small>ثبت وزن</small></div>
-      <div class="whh-main"><div class="sd-chips"><span class="order-code">${esc(fa(r.orderNo))}</span>${sdTypeBadge(r)}${badge(r.status)}</div>
-        <h4>${esc(r.customerName)}</h4><p>${r.customerPhone?`<span dir="ltr">${esc(fa(r.customerPhone))}</span> • `:''}${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}${r.deliveryDate?` • تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`:''}</p></div>
-      <div class="whh-figs"><span><small>اقلام</small><b>${qty(r.itemCount)}</b></span><span><small>وزن تحویلی</small><b>${qty(r.deliveredKg)}</b></span>${r.outOfStock?`<span class="is-warn"><small>ناموجود</small><b>${qty(r.outOfStock)}</b></span>`:''}</div>
-      <div class="whh-by"><small>ثبت‌کننده</small><b>${esc(r.completedBy)}</b>${r.acceptedAt?`<small>دریافت ${whhTime(r.acceptedAt)}</small>`:''}</div>
-      ${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[]):''}
-      <details class="whh-details"><summary>جزئیات اقلام</summary>${whhItemsHtml(r.items,r.orderType==='STORE')}</details>
-    </article>`).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
+    ${rows.map(r=>`<div class="whh-record">${orderSummaryRow(r,{className:'whh-row',name:r.customerName||'—',statusHtml:badge(r.status),itemCount:r.itemCount,extras:[{html:sdTypeBadge(r)},{html:`تلفن: ${esc(fa(r.customerPhone||'—'))}`},{html:`مقصد: ${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}`},...(r.deliveryDate?[{html:`تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`}]:[]),{html:`وزن تحویلی: ${qty(r.deliveredKg)} کیلوگرم`},...(r.outOfStock?[{html:`ناموجود: ${qty(r.outOfStock)}`}]:[]),{html:`ثبت‌کننده: ${esc(r.completedBy||'—')}`},{html:`ثبت وزن: ${whhTime(r.completedAt)}`},...(r.acceptedAt?[{html:`دریافت: ${whhTime(r.acceptedAt)}`}]:[])],actionsHtml:`${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[]):''}<button type="button" class="btn btn-secondary btn-sm" data-whh-detail aria-expanded="false">جزئیات اقلام</button>`})}<div class="whh-details" hidden>${whhItemsHtml(r.items,r.orderType==='STORE')}</div></div>` ).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
   const prod=(s.byProduct||[]).map(p=>`<tr><td data-label="کالا">${esc(p.productName)}</td><td data-label="سفارش">${qty(p.orders)}</td><td data-label="وزن (کیلوگرم)">${qty(p.deliveredKg)}</td><td data-label="ناموجود">${p.outOfStock?`<b class="danger-text">${qty(p.outOfStock)}</b>`:'—'}</td></tr>`).join('');
   const rets=(d.returns||[]).map(x=>`<li><div><span class="order-code">${esc(fa(x.orderNo))}</span><b>${esc(x.customerName)}</b></div><p>${esc(x.reason||'بدون توضیح')}</p><small>${esc(formatDateTime24(x.at))} • ${esc(x.by)}</small></li>`).join('');
   return `<div class="whh-kpis">${kpis}</div>
@@ -4057,6 +4049,8 @@ async function loadWarehouseHistory(){
     const b=$('#whhBody'); if(b) b.innerHTML=whhBody(d);
   }catch(err){ const b=$('#whhBody'); if(b) b.innerHTML=`<div class="empty">خطا در دریافت سوابق انبار: ${esc(err.message)}</div>`; }
 }
+document.addEventListener('click',e=>{const b=e.target.closest('[data-whh-detail]');if(!b)return;const detail=b.closest('.whh-record')?.querySelector('.whh-details');if(!detail)return;detail.hidden=!detail.hidden;b.setAttribute('aria-expanded',String(!detail.hidden));});
+
 function printWarehouseHistory(){
   const d=app.whHist.data; if(!d) return toast('ابتدا سوابق بارگذاری شود.');
   const s=d.summary||{};

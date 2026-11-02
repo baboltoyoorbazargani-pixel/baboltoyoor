@@ -1145,3 +1145,9 @@
 #appView #content .dsp-list .dsp-card.dsp-card-compact{box-sizing:border-box!important;height:54px!important;min-height:54px!important;max-height:54px!important;padding:7px 14px!important}
 #appView #content .dsp-list .dsp-card.dsp-card-compact :is(.dsp-card-head,.dsp-card-actions){height:38px!important;min-height:38px!important;max-height:38px!important;align-items:center!important}
 #appView #content .dsp-list .dsp-card.dsp-card-compact .btn{height:36px!important;min-height:36px!important;max-height:36px!important;white-space:nowrap!important}
+#appView #content .whh-day,#appView #content .whh-record{min-width:0;max-width:100%}
+#appView #content .whh-record{overflow-x:auto}
+#appView #content .whh-record .whh-details[hidden]{display:none!important}
+/* Equal-sized editable cells across all order-entry variants, without clipping suggestions. */
+#appView #content :is(#orderLines,#phone-lines,#future-lines,#store-lines,.sd-line) .sd-line-cell > .input-shell{box-sizing:border-box!important;height:44px!important;min-height:44px!important;max-height:44px!important}
+#appView #content :is(#orderLines,#phone-lines,#future-lines,#store-lines,.sd-line) .sd-line-cell > .input-shell :is(input,select){box-sizing:border-box!important;height:100%!important;min-height:0!important;max-height:100%!important}
