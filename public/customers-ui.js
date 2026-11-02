@@ -224,17 +224,38 @@ function custCodeOf(raw) {
   return m ? m[1].padStart(5, '0') : s;
 }
 
-async function gateCodeLookup() {
-  const input = $('#gateCustCode');
-  const raw = (input?.value || '').trim();
-  if (!raw) return toast('کد مشتری را وارد کنید.');
+let gateSearchTimer = null;
+let gateSearchSeq = 0;
+let gateSearchMatches = [];
+function gateSearchReset() {
+  clearTimeout(gateSearchTimer); gateSearchSeq++; gateSearchMatches=[];
+  const results=$('#gateCustomerResults'); if(results)results.innerHTML='';
+}
+async function gateSearchCustomers(raw, input, seq, exact=false) {
+  const results=$('#gateCustomerResults');
+  if(!input || !results || !raw)return;
+  results.textContent='در حال جستجو…';
   try {
-    const d = await api('/api/customers/search?q=' + encodeURIComponent(raw));
-    const want = custCodeOf(raw);
-    const exact = (d.customers || []).find((x) => String(x.code).toUpperCase() === want);
-    if (!exact) return toast('مشتری با این کد پیدا نشد.');
-    gateFillCustomer(exact);
-  } catch (err) { toast(err.message); }
+    const d=await api('/api/customers/search?q='+encodeURIComponent(raw));
+    if(seq!==gateSearchSeq || !input.isConnected || $('#gateCustCode')!==input || input.value.trim()!==raw)return;
+    gateSearchMatches=d.customers||[];
+    const match=exact && gateSearchMatches.find(x=>String(x.code).toUpperCase()===custCodeOf(raw));
+    if(match){gateSearchReset();gateFillCustomer(match);return;}
+    results.innerHTML=gateSearchMatches.length?gateSearchMatches.map((c,i)=>`<button type="button" class="gate-customer-result" data-action="gate-search-pick" data-index="${i}"><strong>${custEsc(c.name||'—')}</strong><span>کد ${custEsc(fa(c.code||'—'))} • ${custEsc(fa(c.phone||'—'))}</span></button>`).join(''):'<p>مشتری پیدا نشد.</p>';
+  } catch(err) {
+    if(seq===gateSearchSeq && input.isConnected && $('#gateCustCode')===input)results.textContent='خطا در جستجوی مشتری؛ دوباره تلاش کنید.';
+  }
+}
+function gateSearchInput(input) {
+  gateSearchReset();
+  const id=$('#gateCustId'),code=$('#gateCustomerCodeValue');if(id)id.value='';if(code)code.value='';custGateChip(null);
+  const raw=input.value.trim();if(!raw)return;
+  const seq=gateSearchSeq;gateSearchTimer=setTimeout(()=>gateSearchCustomers(raw,input,seq),200);
+}
+function gateCodeLookup() {
+  const input=$('#gateCustCode'),raw=(input?.value||'').trim();
+  if(!raw)return toast('عبارت جستجوی مشتری را وارد کنید.');
+  gateSearchReset();gateSearchCustomers(raw,input,gateSearchSeq,true);
 }
 
 function gateFillCustomer(c) {
@@ -247,6 +268,9 @@ function gateFillCustomer(c) {
   bindPlate();
   $('#gateCustId').value = c.id;
   $('#gateCustCode').value = c.code;
+  $('#gateCustomerCodeValue').value = c.code;
+  const noVehicle=$('#noVehicle'); if(noVehicle){noVehicle.checked=c.vehicleType==='بدون وسیله';$('#plateBox').hidden=noVehicle.checked;}
+  gateSearchReset();
   $('#plateSuggest').innerHTML = '';
   custGateChip(c);
 }
@@ -262,7 +286,8 @@ function pickCustomer(i) {
 function gateClearCustomer() {
   const id = $('#gateCustId'); if (id) id.value = '';
   const code = $('#gateCustCode'); if (code) code.value = '';
-  custGateChip(null);
+  const stored=$('#gateCustomerCodeValue');if(stored)stored.value='';
+  gateSearchReset();custGateChip(null);
 }
 
 // رویدادهای سراسری کارت‌های مشتری در نگهبانی و مودال‌ها
@@ -270,10 +295,16 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return;
   if (el.dataset.action === 'gate-code-lookup') return gateCodeLookup();
+  if (el.dataset.action === 'gate-search-pick') { const c=gateSearchMatches[Number(el.dataset.index)];if(c)gateFillCustomer(c);return; }
   if (el.dataset.action === 'gate-cust-clear') return gateClearCustomer();
 });
+document.addEventListener('input', (e) => { if(e.target.id==='gateCustCode')gateSearchInput(e.target); });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.id === 'gateCustCode') { e.preventDefault(); gateCodeLookup(); }
+  if(e.target.id==='gateCustCode'){
+    if(e.key==='Escape'){gateSearchReset();e.preventDefault();return;}
+    if(e.key==='ArrowDown'){const first=$('#gateCustomerResults button');if(first){e.preventDefault();first.focus();}return;}
+    if(e.key==='Enter'){e.preventDefault();if(gateSearchMatches.length)gateFillCustomer(gateSearchMatches[0]);else gateCodeLookup();return;}
+  }
   const row = e.target.closest?.('[data-action="cust-open"]');
   if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); custDetail(row.dataset.id); }
 });

@@ -1,0 +1,25 @@
+name: Gate live search and onsite layout browser checks
+on:
+  push:
+    branches: [arena/c2b207f9-baboltoyoor]
+    paths: [.github/workflows/arena-147-browser.yml]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts playwright-core@1.50.1
+      - name: Chromium
+        shell: bash
+        run: |
+          CHROME=$(command -v google-chrome || command -v chromium || command -v chromium-browser)
+          test -x "$CHROME"
+          failed=0
+          for file in tests/gate-search-onsite-layout-browser.test.js tests/form-browser.test.js tests/long-text-browser.test.js tests/sales-products-browser.test.js tests/transport-resources-browser.test.js; do
+            if BT_CHROMIUM_PATH="$CHROME" node --test "$file" > /tmp/output.log 2>&1; then echo "$file passed"; else failed=1; encoded=$(tail -90 /tmp/output.log | base64 -w0); echo "::error title=$file::$encoded"; fi
+          done
+          exit "$failed"

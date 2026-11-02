@@ -100,15 +100,17 @@ async function openOrder(visitId){
         <div class="sd-oe-banner-actions"><span class="badge orange">در انتظار ثبت سفارش</span><button class="btn btn-primary btn-lg" data-action="submit-order" data-id="${visitId}">${icon('send',17)} ثبت و ارسال به انبار</button></div>
       </div>
       <div class="sd-oe-customer">
-        <span class="sd-avatar lg">${esc(initials(v.customer?.name||''))}</span>
-        <div class="sd-oe-customer-id"><span>مشتری</span><strong>${esc(v.customer?.name||'—')}</strong>
-          <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${plateViewHtml(v.customer?.plate, 'بدون پلاک', true)}<span class="sd-chip">${icon('phone',12)} ${esc(v.customer?.phone||'—')}</span><span class="sd-chip">ورود ${formatDateTime24(v.createdAt)}</span></span>
+        <div class="onsite-customer-facts" aria-label="مشخصات مشتری">
+          <div><span>مشتری</span><strong>${esc(v.customer?.name||'—')}</strong></div>
+          <div><span>شماره تماس</span><strong dir="auto">${esc(v.customer?.phone||'—')}</strong></div>
+          <div><span>پلاک</span>${plateViewHtml(v.customer?.plate, 'بدون پلاک', true)}</div>
+          <div><span>زمان ورود</span><strong>${esc(formatDateTime24(v.createdAt))}</strong></div>
         </div>
         <div class="sd-stepper"><span class="done">۱ مشتری</span><i></i><span class="active">۲ سفارش</span><i></i><span>۳ انبار</span></div>
       </div>
       <div class="sd-oe-layout">
         <section class="sd-panel">
-          ${app.features?.experimentalTransport?deliveryModeInputHtml('onsite'):''}
+          ${app.features?.experimentalTransport?`<div class="sd-onsite-delivery">${deliveryModeInputHtml('onsite')}</div>`:''}
           <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع دو رقمی انتخاب کنید؛ توضیحات هر ردیف جداگانه ثبت می‌شود.</p></div><span class="sd-chip">کیلوگرم / بسته / عدد / کارتن</span></div>
           <div class="sd-lines-body"><div id="orderLines" class="sd-lines"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-secondary" data-action="add-line">${icon('plus',16)} افزودن ردیف محصول</button><span style="font-size:11.5px;color:var(--muted)">برای حذف هر ردیف از آیکن سطل استفاده کنید.</span></div>
@@ -668,7 +670,7 @@ function renderGateEntry(){
         <div class="gt-fieldset">
           <div class="gt-fieldset-title">${icon('user',16)} مشخصات مشتری</div>
           <div class="gt-entry-cust">
-            <div class="cust-code-entry"><div class="field"><label for="gateCustCode">کد مشتری <small>(برای مشتری قبلی)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerCode" autocomplete="off" placeholder="مثلاً C-00001"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><div id="gateCustChip"></div></div>
+            <div class="cust-code-entry"><div class="field"><label for="gateCustCode">جستجوی مشتری <small>(کد، نام، تماس یا پلاک)</small></label><div class="cust-code-row"><div class="input-shell"><span>${icon('search',16)}</span><input id="gateCustCode" name="customerSearch" autocomplete="off" placeholder="کد، نام، تماس یا پلاک" aria-controls="gateCustomerResults" aria-autocomplete="list"></div><button type="button" class="btn btn-secondary" data-action="gate-code-lookup">جستجو</button></div></div><input type="hidden" name="customerId" id="gateCustId"><input type="hidden" name="customerCode" id="gateCustomerCodeValue"><div id="gateCustomerResults" class="gate-customer-results" aria-live="polite"></div><div id="gateCustChip"></div></div>
             <div class="field"><label for="gateCustomerName">نام و نام خانوادگی</label><div class="input-shell"><span>${icon('user',16)}</span><input id="gateCustomerName" name="name" required placeholder="نام مشتری"></div></div>
             <div class="field"><label for="gateCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="gateCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
           </div>

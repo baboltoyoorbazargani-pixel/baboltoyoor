@@ -1,0 +1,39 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
+const executablePath=process.env.BT_CHROMIUM_PATH;
+test('مرورگر: جستجوی زنده نگهبانی، هویت حضوری و پلاک مستطیلی',{skip:!executablePath,timeout:120000},async()=>{
+ const {chromium}=require('playwright-core');const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-gate-search-')),base=`http://127.0.0.1:${port}`;
+ const env={...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'};delete env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW;
+ const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env,stdio:['ignore','pipe','pipe']});let browser;
+ try{
+  await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('server exit '+c)));});
+  browser=await chromium.launch({executablePath,args:['--no-sandbox','--disable-dev-shm-usage']});const admin=await browser.newContext(),gate=await browser.newContext({viewport:{width:1280,height:900}}),sales=await browser.newContext({viewport:{width:1280,height:900}});
+  const post=async(ctx,url,data)=>{const r=await ctx.request.post(base+url,{data});assert(r.ok(),url+' '+r.status()+' '+await r.text());return r.json();};
+  await post(admin,'/api/login',{username:'admin',password:'Initial!2345'});await post(admin,'/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
+  for(const [username,roleCode] of [['gate1','gate'],['sales1','sales']])await post(admin,'/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:'Changed!2345',mustChangePassword:false});
+  const a=(await post(admin,'/api/customers',{name:'علی نمونه',phone:'09121112233',vehicleType:'خودرو',plate:'12ب345-67'})).customer;
+  const b=(await post(admin,'/api/customers',{name:'بهار نمونه',phone:'09129998877',vehicleType:'بدون وسیله'})).customer;
+  await post(gate,'/api/login',{username:'gate1',password:'Changed!2345'});await post(sales,'/api/login',{username:'sales1',password:'Changed!2345'});
+  const page=await gate.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});await page.locator('#railNav [data-cartable=entry]').click();await page.locator('#gateCustCode').waitFor();
+  const input=page.locator('#gateCustCode'),results=page.locator('#gateCustomerResults');
+  await page.route('**/api/customers/search?*',async route=>{const q=new URL(route.request().url()).searchParams.get('q');if(q==='علی')await new Promise(r=>setTimeout(r,900));await route.continue();});
+  const stale=page.waitForRequest(r=>r.url().includes('/api/customers/search?')&&new URL(r.url()).searchParams.get('q')==='علی');await input.fill('علی');await stale;await input.fill('بهار');await results.getByRole('button',{name:/بهار نمونه/}).waitFor();await page.waitForTimeout(1100);assert.equal(await results.getByRole('button',{name:/علی نمونه/}).count(),0);await page.unroute('**/api/customers/search?*');
+  await input.fill('علی');await results.getByRole('button',{name:/علی نمونه/}).waitFor();await input.press('Enter');assert.equal(await page.locator('#gateCustId').inputValue(),a.id);assert.equal(await page.locator('#gateCustomerCodeValue').inputValue(),a.code);
+  await input.fill('۰۹۱۲۹۹۹');assert.equal(await page.locator('#gateCustId').inputValue(),'');await results.getByRole('button',{name:/بهار نمونه/}).waitFor();await input.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await page.locator('#gateCustId').inputValue(),b.id);assert.equal(await page.locator('#noVehicle').isChecked(),true);
+  await input.fill('12ب345');await results.getByRole('button',{name:/علی نمونه/}).waitFor();await results.getByRole('button',{name:/علی نمونه/}).click();assert.equal(await page.locator('#noVehicle').isChecked(),false);assert.equal(await page.locator('#plateBox').isVisible(),true);
+  await input.fill('مشتری ناموجود');await results.getByText('مشتری پیدا نشد.').waitFor();assert.equal(await page.locator('#gateCustId').inputValue(),'');assert.equal(await page.locator('#gateCustomerCodeValue').inputValue(),'');
+  await input.fill(a.code);await results.getByRole('button',{name:/علی نمونه/}).waitFor();await page.locator('[data-action=gate-code-lookup]').click();assert.equal(await page.locator('#gateCustId').inputValue(),a.id);
+  const rect=await page.locator('#plateBox .iran-plate').evaluate(el=>({radius:getComputedStyle(el).borderTopLeftRadius,width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));assert.equal(rect.radius,'4px');assert(rect.width>rect.height*2);
+  const response=page.waitForResponse(r=>r.url().endsWith('/api/visits')&&r.request().method()==='POST');await page.locator('#gateForm button[type=submit]').click();const res=await response;assert.equal(res.status(),201);const visit=(await res.json()).visit;assert.equal(visit.customerId,a.id);await page.locator('#gateCustCode').waitFor();assert.equal(await page.locator('#gateCustId').inputValue(),'');
+  const sp=await sales.newPage();sp.on('pageerror',e=>errors.push(e.message));await sp.goto(base+'/',{waitUntil:'networkidle'});await sp.locator('#railNav [data-cartable=onsite]').click();await sp.locator(`[data-action=open-order][data-id="${visit.id}"]`).click();await sp.locator('.onsite-customer-facts').waitFor();
+  for(const width of [1280,768,390,320]){
+   await sp.setViewportSize({width,height:900});
+   const layout=await sp.evaluate(()=>{const facts=document.querySelector('.onsite-customer-facts'),boxes=[...facts.children].map(e=>e.getBoundingClientRect()),panel=document.querySelector('.sd-oe-layout .sd-panel').getBoundingClientRect(),choice=document.querySelector('.sd-onsite-delivery').getBoundingClientRect(),shell=document.querySelector('.sd-onsite-delivery .input-shell').getBoundingClientRect(),plate=document.querySelector('.onsite-customer-facts .iran-plate');return{boxes:boxes.map(x=>x.toJSON()),panel:panel.toJSON(),choice:choice.toJSON(),shell:shell.toJSON(),radius:getComputedStyle(plate).borderRadius,pageWidth:document.documentElement.scrollWidth,viewport:innerWidth};});
+   assert(layout.boxes.every(b=>Math.abs(b.height-layout.boxes[0].height)<1),`equal heights ${width}`);if(width>=768)assert(layout.boxes.every(b=>Math.abs(b.top-layout.boxes[0].top)<1),`one row ${width}`);assert(layout.choice.left>=layout.panel.left-1&&layout.choice.right<=layout.panel.right+1&&layout.shell.left>=layout.panel.left-1&&layout.shell.right<=layout.panel.right+1,`delivery in panel ${width}`);assert.equal(layout.radius,'4px');assert(layout.pageWidth<=layout.viewport+1,`page overflow ${width}: ${layout.pageWidth}`);
+  }
+  await sp.setViewportSize({width:1280,height:900});await sp.locator('[data-delivery-mode]').selectOption('PICKUP');assert.equal(await sp.locator('[data-delivery-mode]').inputValue(),'PICKUP');assert.deepEqual(errors,[]);
+  await admin.close();await gate.close();await sales.close();
+ }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
+});
