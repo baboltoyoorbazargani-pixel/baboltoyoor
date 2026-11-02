@@ -1188,3 +1188,22 @@
 @media(max-width:900px){#appView #content .gt-exit-card{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none}#appView #content .gt-exit-actions{grid-column:1/-1;grid-row:auto;justify-content:flex-start}}
 @media(max-width:480px){#appView #content .gt-exit-actions .btn{flex:1;padding-inline:6px}}
 @media(min-width:1600px){#appView #content .gt-exit-card{grid-template-columns:repeat(8,minmax(0,1fr)) auto;grid-template-rows:minmax(42px,auto)}#appView #content .gt-exit-actions{grid-column:9;grid-row:1}}
+
+/* فرم‌های نگهبانی و فروش: ردیف‌های کوتاه و استفاده از عرض کارتابل. */
+@media(min-width:641px){#appView #content .gt-entry-vehicle-fields{grid-template-columns:minmax(110px,.65fr) minmax(120px,.75fr) minmax(150px,1.3fr)!important}}
+#appView #content .sd-search input{border:0!important;box-shadow:none!important;background:transparent!important;min-height:0!important;height:100%!important;padding:0!important}
+#appView #content .sd-search input:focus{border:0!important;box-shadow:none!important}
+#appView[data-cartable-page="sales"]:has(#sales-v29-pane-remote:not([hidden]),#sales-v29-pane-flow:not([hidden]),#sales-v29-pane-settlement:not([hidden])) .content{max-width:none!important}
+#appView[data-cartable-page="sales"]:has(#sales-v29-pane-remote:not([hidden]),#sales-v29-pane-flow:not([hidden]),#sales-v29-pane-settlement:not([hidden])) .workspace{padding-inline:12px!important}
+#appView #content .telephone-form-v25{padding:16px!important}
+#appView #content .telephone-form-v25 .phone-form-title{display:block;margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--line)}
+#appView #content .telephone-form-v25 .phone-form-title h2{margin:0!important;line-height:1.5!important}
+#appView #content .sales-remote-customer-grid-v40 .transport-delivery-choice{min-width:0;margin:0}
+#appView #content .sales-remote-customer-grid-v40 .transport-delivery-choice small,#appView #content #futureOrderFormV25 .fx-top-grid .transport-delivery-choice small{display:block;line-height:1.4}
+@media(min-width:901px){#appView #content .sales-remote-customer-grid-v40{grid-template-columns:minmax(140px,.85fr) minmax(140px,.85fr) minmax(180px,1.3fr) minmax(180px,1fr)!important}#appView #content .sales-remote-place-v40{grid-column:auto!important}}
+@media(min-width:701px){#appView #content #futureOrderFormV25 .fx-top-grid>.fx-addr-field,#appView #content #futureOrderFormV25 .fx-top-grid>.transport-delivery-choice{grid-column:span 6!important}}
+@media(max-width:700px){#appView #content #futureOrderFormV25 .fx-top-grid>.transport-delivery-choice{grid-column:1/-1!important}}
+#appView #content .stl-layout{gap:10px!important}
+#appView #content .stl-pane{gap:10px!important}
+#appView [data-dash-role="sales"] .role-dash-card[data-sales-daily] strong{font-size:clamp(17px,1.5vw,25px)!important;line-height:1.4;overflow-wrap:anywhere}
+.sales-daily-detail{display:grid;gap:8px;line-height:1.8}.sales-daily-detail p{margin:2px 0;color:var(--muted,#64748b)}.sales-daily-row,.sales-daily-total{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:8px;border-bottom:1px solid var(--line,#dce4eb)}.sales-daily-row span{overflow-wrap:anywhere}.sales-daily-row b,.sales-daily-total b{text-align:left}.sales-daily-total{background:#f7fafc;border-radius:8px;font-weight:800}
