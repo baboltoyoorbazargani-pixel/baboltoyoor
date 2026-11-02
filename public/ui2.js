@@ -97,20 +97,21 @@ async function openOrder(visitId){
           <button class="btn btn-secondary" data-action="back-order-intake">${icon('arrow',15)} بازگشت</button>
           <div><h2>ثبت سفارش مشتری حضوری</h2><p>اقلام را با کد سریع یا نام محصول انتخاب کنید؛ پس از ثبت، سفارش مستقیم به انبار می‌رود.</p></div>
         </div>
-        <div class="sd-oe-banner-actions"><span class="badge orange">در انتظار ثبت سفارش</span><button class="btn btn-primary btn-lg" data-action="submit-order" data-id="${visitId}">${icon('send',17)} ثبت و ارسال به انبار</button></div>
+        <div class="sd-oe-banner-actions"><div class="sd-stepper"><span class="done">۱ مشتری</span><i></i><span class="active">۲ سفارش</span><i></i><span>۳ انبار</span></div><span class="badge orange">در انتظار ثبت سفارش</span><button class="btn btn-primary btn-lg" data-action="submit-order" data-id="${visitId}">${icon('send',17)} ثبت و ارسال به انبار</button></div>
       </div>
       <div class="sd-oe-customer">
-        <div class="onsite-customer-facts" aria-label="مشخصات مشتری">
-          <div><span>مشتری</span><strong>${esc(v.customer?.name||'—')}</strong></div>
-          <div><span>شماره تماس</span><strong dir="auto">${esc(v.customer?.phone||'—')}</strong></div>
-          <div><span>پلاک</span>${plateViewHtml(v.customer?.plate, 'بدون پلاک', true)}</div>
-          <div><span>زمان ورود</span><strong>${esc(formatDateTime24(v.createdAt))}</strong></div>
+        <div class="onsite-customer-scroll" role="region" aria-label="مشخصات مشتری و روش تحویل" tabindex="0">
+          <div class="onsite-customer-facts">
+            <div><span>نام مشتری:</span><strong>${esc(v.customer?.name||'—')}</strong></div>
+            <div><span>شماره تماس:</span><strong dir="auto">${esc(v.customer?.phone||'—')}</strong></div>
+            <div><span>پلاک:</span>${plateViewHtml(v.customer?.plate, 'بدون پلاک', true)}</div>
+            <div><span>زمان ورود:</span><strong>${esc(formatDateTime24(v.createdAt))}</strong></div>
+            ${app.features?.experimentalTransport?`<div class="sd-onsite-delivery" title="سفارش بیعانه‌دار فقط تحویل در انبار است.">${deliveryModeInputHtml('onsite')}</div>`:''}
+          </div>
         </div>
-        <div class="sd-stepper"><span class="done">۱ مشتری</span><i></i><span class="active">۲ سفارش</span><i></i><span>۳ انبار</span></div>
       </div>
       <div class="sd-oe-layout">
         <section class="sd-panel">
-          ${app.features?.experimentalTransport?`<div class="sd-onsite-delivery">${deliveryModeInputHtml('onsite')}</div>`:''}
           <div class="sd-lines-head"><div><h3>اقلام سفارش</h3><p>محصول را با نام یا کد سریع دو رقمی انتخاب کنید؛ توضیحات هر ردیف جداگانه ثبت می‌شود.</p></div><span class="sd-chip">کیلوگرم / بسته / عدد / کارتن</span></div>
           <div class="sd-lines-body"><div id="orderLines" class="sd-lines"></div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-secondary" data-action="add-line">${icon('plus',16)} افزودن ردیف محصول</button><span style="font-size:11.5px;color:var(--muted)">برای حذف هر ردیف از آیکن سطل استفاده کنید.</span></div>
