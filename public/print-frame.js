@@ -24,7 +24,7 @@
     if(options.query)frame.dataset.printQuery=options.query;
     frame.srcdoc=html;document.body.appendChild(frame);
   }
-  function html(source){const job=begin();if(job)mount(job,source);}
+  function html(source){const job=begin();if(!job)return false;mount(job,source);return true;}
   async function url(path,options={}){
     const job=begin(options);if(!job){if(options.key)sessionStorage.removeItem(options.key);return;}
     try{

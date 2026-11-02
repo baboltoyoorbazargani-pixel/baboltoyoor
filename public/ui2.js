@@ -298,7 +298,11 @@ function renderSalesSettlementV25(orders){
   </section>`;
 }
 function settlementPendingRowsV27(rows){
- return rows.map(o=>orderSummaryRow(o,{selectable:true,className:`stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}`,statusHtml:badge(o.status),itemCount:activeItemsOf(o).length})).join('')||'<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
+ return rows.map(o=>{
+  const name=storeAwareOrderName(o),number=fa(o.orderNo||'—');
+  const description=`${name}، شماره سفارش ${number}، تاریخ ${formatDateTime24(o.createdAt)}، ${qty(activeItemsOf(o).length)} قلم، آماده تسویه`;
+  return `<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-id="${esc(o.id)}" title="${esc(description)}" aria-label="${esc(description)}"><span class="stl-queue-customer" title="${esc(name)}">${esc(name)}</span><span class="stl-queue-order">سفارش <bdi>${esc(number)}</bdi></span></button>`;
+ }).join('')||'<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
 }
 
 function invoiceRowsV27(rows){
@@ -1533,20 +1537,48 @@ function transportDraftInvoiceHtml(order,invoice){
  return `<div class="inv38-sheet inv38-compact"><div class="inv38-head"><div class="inv38-sales-title">فاکتور فروش و تحویل</div><div class="inv38-meta"><div><span>شماره فاکتور</span><b>${esc(fa(invoice.invoiceNumber||'—'))}</b></div><div><span>تاریخ ثبت</span><b>${esc(dt(invoice.createdAt))}</b></div><div><span>شماره سفارش</span><b>${esc(fa(order.orderNo||'—'))}</b></div></div></div><div class="inv38-rule"></div><div class="inv38-cust"><div><span>مشتری</span><b>${esc(invoice.customerName||'—')}</b></div><div><span>شماره تماس</span><b>${esc(fa(invoice.customerPhone||'—'))}</b></div><div><span>وضعیت</span><b>پیش از تحویل و تعیین تسویه</b></div></div><div class="inv38-table-scroll"><table class="inv38-table"><thead><tr><th>#</th><th>محصول</th><th>وزن ارسالی</th><th>فی</th><th>مبلغ</th></tr></thead><tbody>${lines.map((l,i)=>`<tr><td>${fa(String(i+1))}</td><td>${esc(l.productName||'—')}</td><td>${qty(l.deliveredKg)} کیلوگرم</td><td>${money(l.unitPrice)}</td><td>${money(l.amount)}</td></tr>`).join('')}</tbody></table></div><div class="inv38-bottom"><div class="inv38-total"><div class="inv38-total-box"><div><span>جمع اقلام</span><b>${money(invoice.subtotalAmount)}</b></div><div><span>تخفیف</span><b>${money(invoice.discountAmount)}</b></div><div><span>اضافات</span><b>${money(invoice.additionsAmount)}</b></div><div class="grand"><span>مبلغ پیش از مرجوعی</span><b>${money(invoice.totalAmount)}</b></div></div></div><div class="inv38-verify"><div class="inv38-verify-box"><div class="inv38-vitem"><span>امضای دستی مشتری پس از دریافت کالا</span><strong>${esc(invoice.customerName||'—')} – ${esc(fa(invoice.customerPhone||'—'))}</strong></div></div></div></div><p>این سند به‌تنهایی تأیید تحویل، امضا یا تسویه نیست.</p></div>`;
 }
 async function transportDraftPreview(id){
- try{const data=await api('/api/sales/transport-invoices/'+encodeURIComponent(id));openModal('فاکتور پیش از خروج',transportDraftInvoiceHtml(data,data.invoice)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-ti-print>چاپ فاکتور</button></div>`);$('#modal [data-ti-print]').addEventListener('click',()=>transportDraftPrint(id));BTPrintDigits.convert(document.querySelector('#modal .inv38-sheet'));}catch(e){toast(e.message);}
+ try{const data=await api('/api/sales/transport-invoices/'+encodeURIComponent(id));openModal('فاکتور پیش از خروج',transportDraftInvoiceHtml(data,data.invoice)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-ti-print>چاپ فاکتور</button></div>`);$('#modal [data-ti-print]').addEventListener('click',async e=>{const button=e.currentTarget;button.disabled=true;const requested=await transportDraftPrint(id);button.disabled=false;if(requested&&app.page==='sales'&&app.sub.sales==='settlement'){closeModal();stlClose();app.salesDeliveryTab='assigned';await go('sales','delivery');}});BTPrintDigits.convert(document.querySelector('#modal .inv38-sheet'));}catch(e){toast(e.message);}
 }
 async function transportDraftPrint(id){
- try{const data=await api('/api/sales/transport-invoices/'+encodeURIComponent(id));BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/design.css"><link rel="stylesheet" href="/invoice-compact.css"><title>فاکتور ${esc(fa(data.invoice.invoiceNumber))}</title><style>body{margin:0;padding:12mm;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:0}</style></head><body>${transportDraftInvoiceHtml(data,data.invoice)}<script src="/print-ready.js"><\/script></body></html>`));}catch(e){toast(e.message);}
+ try{const data=await api('/api/sales/transport-invoices/'+encodeURIComponent(id));return BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/design.css"><link rel="stylesheet" href="/invoice-compact.css"><title>فاکتور ${esc(fa(data.invoice.invoiceNumber))}</title><style>body{margin:0;padding:12mm;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:0}</style></head><body>${transportDraftInvoiceHtml(data,data.invoice)}<script src="/print-ready.js"><\/script></body></html>`));}catch(e){toast(e.message);return false;}
 }
-function transportSalesInvoicePanel(order){
- const host=$('#stlMain'),hand=order.transportHandovers?.['0'],invoice=order.transportInvoice;
+// Keep return and financial closure inside the delivery cartable. Fetch a fresh
+// order and ignore responses belonging to an already closed/replaced modal.
+async function openTransportDeliveryWork(id){
+ openModal('فاکتور و بازگشت مدارک پخش','<div id="transportDeliveryWork" role="region">در حال دریافت اطلاعات سفارش…</div>');
+ const host=$('#transportDeliveryWork');
+ async function load(){
+  if(!host?.isConnected)return;
+  host.innerHTML='<div role="status">در حال دریافت اطلاعات سفارش…</div>';
+  try{
+   const data=await api('/api/orders/'+encodeURIComponent(id));
+   if(!host.isConnected||$('#transportDeliveryWork')!==host)return;
+   const order=data.order;
+   if(!order||order.status!=='SETTLEMENT_PENDING'||!order.transportInvoice)throw Error('این فاکتور دیگر در مرحله کار پخش نیست.');
+   let devices=[],devicesError=false;
+   if(order.transportReturn){try{devices=(await api('/api/payment-devices')).devices||[];}catch(_){devicesError=true;}}
+   if(!host.isConnected||$('#transportDeliveryWork')!==host)return;
+   Object.assign(stl,{orderId:id,order,devices,devicesError});
+   const done=async()=>{closeModal();stlReset();app.salesDeliveryTab='history';try{if(app.salesFetchPromise)await app.salesFetchPromise.catch(()=>{});const fresh=await fetchSalesCache(true);if(app.page==='sales'&&app.sub.sales==='delivery')paintSalesPaneV29('delivery',fresh);}catch(e){toast('فاکتور بسته شد اما نوسازی فهرست ناموفق بود.');}};
+   transportSalesInvoicePanel(order,host,load,done);
+   if(order.transportReturn){app.salesDeliveryTab='delivered';void fetchSalesCache(true).then(fresh=>{if(host.isConnected&&app.page==='sales'&&app.sub.sales==='delivery')paintSalesPaneV29('delivery',fresh);}).catch(()=>{});}
+  }catch(e){
+   if(!host.isConnected||$('#transportDeliveryWork')!==host)return;
+   host.innerHTML=`<div class="stl-load-error" role="alert"><b>اطلاعات پخش باز نشد.</b><span>${esc(e.message||'خطا در دریافت اطلاعات')}</span><button type="button" class="btn btn-secondary" data-tr-work-retry>تلاش دوباره</button></div>`;
+   host.querySelector('[data-tr-work-retry]').onclick=load;
+  }
+ }
+ return load();
+}
+function transportSalesInvoicePanel(order,host=$('#stlMain'),reload=()=>stlOpen(order.id),onClosed=null){
+ const hand=order.transportHandovers?.['0'],invoice=order.transportInvoice;
  if(!hand){host.innerHTML='<section class="sd-panel sd-pad"><h2>فاکتور پخش</h2><p>در انتظار ثبت تحویل فیزیکی کالا به راننده در انبار.</p></section>';return;}
  if(invoice){
   const stage=order.transportReturn?transportClosureFormHtml(order):order.transportDeparture?transportReturnFormHtml(): '<p>فاکتور آماده چاپ است؛ تأیید خروج بر عهده ترابری است.</p>';
   const deviceWarning=order.transportReturn&&stl.devicesError?`<div class="stl-load-error" role="alert"><b>فهرست دستگاه‌های پوز دریافت نشد.</b><span>سایر روش‌های تسویه قابل استفاده‌اند؛ برای انتخاب پوز، فهرست دستگاه‌ها را دوباره دریافت کنید.</span><button type="button" class="btn btn-secondary btn-sm" data-ts-devices-retry>دریافت دوباره دستگاه‌ها</button></div>`:'';
-  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>پیش‌نمایش و چاپ فاکتور</button>${deviceWarning}${stage}</section>`;
-  host.querySelector('[data-ti-preview]').onclick=()=>transportDraftPreview(order.id);
-  if(order.transportReturn)bindTransportClosure(host,order);else if(order.transportDeparture)bindTransportReturn(host,order);
+  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>${onClosed?'چاپ مجدد فاکتور':'پیش‌نمایش و چاپ فاکتور'}</button>${deviceWarning}${stage}</section>`;
+  host.querySelector('[data-ti-preview]').onclick=()=>onClosed?transportDraftPrint(order.id):transportDraftPreview(order.id);
+  if(order.transportReturn)bindTransportClosure(host,order,onClosed);else if(order.transportDeparture)bindTransportReturn(host,order,reload);
   return;
  }
  const lines=(hand.document?.items||[]).filter(i=>!i.outOfStock&&Number(i.deliveredKg)>0);
@@ -1564,10 +1596,10 @@ function transportSalesInvoicePanel(order){
 }
 // Sales explicitly records the physical paperwork and then the financial close.
 function transportReturnFormHtml(){return `<form data-ts-return class="tr-form tr-return-form"><h3>بازگشت مدارک راننده</h3><p>خروج به معنی دریافت توسط مشتری نیست. مدارک برگشتی را بررسی کنید.</p><label><input type="checkbox" name="documents" required> مدارک این سفارش به فروش بازگشته است.</label><div><label>نتیجه تحویل <select name="outcome" required><option value="">انتخاب کنید</option><option value="DELIVERED">تحویل به مشتری</option><option value="NOT_DELIVERED">تحویل‌نشده</option></select></label></div><label data-ts-signature hidden><input type="checkbox" name="signature"> امضای دستی مشتری روی سند کاغذی بررسی شد.</label><div><label>یادداشت <input name="note" maxlength="500"></label></div><button class="btn btn-primary" type="submit">ثبت بازگشت مدارک</button><p data-ts-error role="alert"></p></form>`;}
-function bindTransportReturn(host,order){
+function bindTransportReturn(host,order,reload=()=>stlOpen(order.id)){
  const f=host.querySelector('[data-ts-return]'),sig=f.querySelector('[data-ts-signature]');
  f.elements.outcome.onchange=()=>{sig.hidden=f.elements.outcome.value!=='DELIVERED';if(sig.hidden)f.elements.signature.checked=false;};
- f.onsubmit=async e=>{e.preventDefault();if(!f.elements.documents.checked)return;if(f.elements.outcome.value==='DELIVERED'&&!f.elements.signature.checked){f.querySelector('[data-ts-error]').textContent='ابتدا امضای دستی مشتری روی سند بررسی و تأیید شود.';return;}if(!confirm('بازگشت مدارک و نتیجه انتخاب‌شده را ثبت می‌کنید؟'))return;const button=f.querySelector('[type=submit]');button.disabled=true;try{await api('/api/sales/transport-returns/'+encodeURIComponent(order.id),{method:'POST',body:JSON.stringify({documentsReturned:true,outcome:f.elements.outcome.value,customerSignatureOnPaper:f.elements.signature.checked,note:f.elements.note.value})});toast('بازگشت مدارک ثبت شد؛ فاکتور هنوز بسته نشده است.');await stlOpen(order.id);}catch(err){f.querySelector('[data-ts-error]').textContent=err.message;button.disabled=false;}};
+ f.onsubmit=async e=>{e.preventDefault();if(!f.elements.documents.checked)return;if(f.elements.outcome.value==='DELIVERED'&&!f.elements.signature.checked){f.querySelector('[data-ts-error]').textContent='ابتدا امضای دستی مشتری روی سند بررسی و تأیید شود.';return;}if(!confirm('بازگشت مدارک و نتیجه انتخاب‌شده را ثبت می‌کنید؟'))return;const button=f.querySelector('[type=submit]');button.disabled=true;try{await api('/api/sales/transport-returns/'+encodeURIComponent(order.id),{method:'POST',body:JSON.stringify({documentsReturned:true,outcome:f.elements.outcome.value,customerSignatureOnPaper:f.elements.signature.checked,note:f.elements.note.value})});toast('بازگشت مدارک ثبت شد؛ فاکتور هنوز بسته نشده است.');await reload();}catch(err){f.querySelector('[data-ts-error]').textContent=err.message;button.disabled=false;}};
 }
 function transportClosureFormHtml(order){
  const notDelivered=order.transportReturn.outcome==='NOT_DELIVERED',lines=order.transportInvoice.priceLines||[];
@@ -1588,7 +1620,7 @@ function transportMoneyNumber(value){const text=en(String(value??'')).trim();if(
 function transportFormatMoneyInput(input){const raw=en(input.value),caret=input.selectionStart??raw.length;if(!/^[0-9,٬\s]*$/.test(raw)){input.setCustomValidity('فقط عدد معتبر وارد کنید.');return;}input.setCustomValidity('');const before=raw.slice(0,caret).replace(/\D/g,'').length,digits=raw.replace(/\D/g,'');input.value=fa(digits.replace(/\B(?=(\d{3})+(?!\d))/g,'٬'));let pos=0,count=0;while(pos<input.value.length&&count<before){if(/[0-9]/.test(en(input.value[pos])))count++;pos++;}input.setSelectionRange(pos,pos);}
 function transportPaymentRowHtml(devices){return `<div data-ts-payrow class="stl-payment-row tr-payment-row"><label class="tr-field"><span>روش</span><select data-ts-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option><option value="CHECK">چک</option><option value="CREDIT">معوق</option></select></label><label class="tr-field"><span>مبلغ (ریال)</span><input data-ts-amount inputmode="numeric" required></label><div data-ts-extra hidden></div><button type="button" class="btn btn-secondary btn-sm" data-ts-remove>حذف</button></div>`;}
 
-function bindTransportClosure(host,order){
+function bindTransportClosure(host,order,onClosed=null){
  const f=host.querySelector('[data-ts-close]'),invoice=order.transportInvoice,devices=stl.devices||[],paymentHost=f.querySelector('[data-ts-payments]');
  const retryDevices=host.querySelector('[data-ts-devices-retry]');
  if(retryDevices)retryDevices.onclick=async()=>{
@@ -1605,7 +1637,7 @@ function bindTransportClosure(host,order){
  f.querySelectorAll('[data-ts-kg]').forEach(el=>el.addEventListener('input',recalc));
  f.querySelector('[data-ts-add]').onclick=()=>{if(paymentHost.querySelectorAll('[data-ts-payrow]').length>=20)return toast('حداکثر ۲۰ ردیف تسویه مجاز است.');paymentHost.insertAdjacentHTML('beforeend',transportPaymentRowHtml(devices));const row=paymentHost.lastElementChild;row.querySelector('[data-ts-type]').onchange=()=>details(row);row.querySelector('[data-ts-amount]').oninput=e=>{transportFormatMoneyInput(e.target);recalc();};row.querySelector('[data-ts-remove]').onclick=()=>{row.remove();recalc();};recalc();};
  f.onsubmit=async e=>{e.preventDefault();const total=recalc(),error=f.querySelector('[data-ts-error]');if(total===null){error.textContent='وزن مرجوعی را بررسی کنید.';return;}const rows=[...f.querySelectorAll('[data-ts-payrow]')],methods=rows.map(row=>{const v=k=>row.querySelector('[data-ts-'+k+']')?.value||'';return {type:v('type'),amount:transportMoneyNumber(v('amount')),deviceId:v('device'),reference:v('reference'),bank:v('bank'),checkNumber:v('check'),dueDate:v('due')};});if(total>0&&!methods.length){error.textContent='برای مبلغ قابل تسویه حداقل یک روش مشخص کنید.';return;}if(total===0&&methods.length){error.textContent='برای مبلغ صفر، ردیف تسویه ثبت نکنید.';return;}if(methods.some(m=>m.amount===null||m.amount<1||m.amount>1e12)){error.textContent='مبلغ هر روش باید عدد صحیح بین ۱ و ۱٬۰۰۰٬۰۰۰٬۰۰۰٬۰۰۰ ریال باشد.';return;}if(methods.reduce((sum,m)=>sum+m.amount,0)!==total){error.textContent='جمع روش‌های تسویه باید دقیقاً برابر مبلغ قابل تسویه باشد.';return;}if(methods.some(m=>m.type==='POS'&&!m.deviceId)){error.textContent='دستگاه پوز فعال را انتخاب کنید.';return;}if(methods.some(m=>m.type==='CARD_TRANSFER'&&(!m.bank.trim()||!m.reference.trim()))){error.textContent='بانک مقصد و شناسه پیگیری کارت‌به‌کارت الزامی است.';return;}if(methods.some(m=>m.type==='CHECK'&&(!m.bank.trim()||!m.checkNumber.trim()||!m.dueDate))){error.textContent='بانک، شماره و تاریخ سررسید چک الزامی است.';return;}if(!f.elements.checked.checked)return;if(!confirm('فاکتور با مرجوعی و روش‌های تسویه ثبت‌شده بسته شود؟ این عملیات قابل بازگشت نیست.'))return;
-  const returns=[...f.querySelectorAll('[data-ts-line]')].map(row=>({itemId:row.dataset.id,returnKg:en(row.querySelector('[data-ts-kg]').value).trim().replace(/٫/g,'.'),reason:row.querySelector('[data-ts-reason]').value}));const button=f.querySelector('[type=submit]');button.disabled=true;try{await api('/api/sales/transport-invoices/'+encodeURIComponent(order.id)+'/close',{method:'POST',body:JSON.stringify({returns,settlementMethods:methods})});toast('فاکتور بسته شد؛ معوق و چک‌های وصول‌نشده جداگانه پیگیری می‌شوند.');if(app.salesCache)app.salesCache.fetchedAt=0;stlClose();await renderSales('settlement');}catch(err){error.textContent=err.message;button.disabled=false;}};
+  const returns=[...f.querySelectorAll('[data-ts-line]')].map(row=>({itemId:row.dataset.id,returnKg:en(row.querySelector('[data-ts-kg]').value).trim().replace(/٫/g,'.'),reason:row.querySelector('[data-ts-reason]').value}));const button=f.querySelector('[type=submit]');button.disabled=true;try{await api('/api/sales/transport-invoices/'+encodeURIComponent(order.id)+'/close',{method:'POST',body:JSON.stringify({returns,settlementMethods:methods})});toast('فاکتور بسته شد؛ معوق و چک‌های وصول‌نشده جداگانه پیگیری می‌شوند.');if(app.salesCache)app.salesCache.fetchedAt=0;if(onClosed)await onClosed();else{stlClose();await renderSales('settlement');}}catch(err){error.textContent=err.message;button.disabled=false;}};
  recalc();
 }
 function invoiceHtml(o,paySel){

@@ -23,7 +23,7 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
     if(kind==='remote')html=`<div class="phone-queue-list-v40">${remotePhoneQueueRowsV40([o]).html}</div>`;
     if(kind==='flow')html=`<div class="sd-flow-list">${sdFlowCard(o,0)}</div>`;
     if(kind==='future')html=`<div class="fx-list-grid">${futureOrderRowsV25([o])}</div>`;
-    if(kind==='settlement')html=`<aside class="stl-queue-panel"><div class="stl-queue-list">${settlementPendingRowsV27([{...o,status:'SETTLEMENT_PENDING'}])}</div></aside>`;
+    if(kind==='settlement')html=`<aside class="stl-queue-panel" style="width:min(330px,100%)"><div class="stl-queue-list">${settlementPendingRowsV27([{...o,status:'SETTLEMENT_PENDING'}])}</div></aside>`;
     if(kind==='sales-store'){app.salesStoreTab='incoming';html=renderSalesStoresV41([store],{});}
     if(kind==='warehouse')html=wh38List([o],'incoming');
     if(kind==='warehouse-store-incoming')html=`<div class="wh38-store-pane">${wh38StoreList([store],'incoming')}</div>`;
@@ -45,8 +45,9 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
    },kind);
    for(const width of [1280,768,390,320]){
     await page.setViewportSize({width,height:900});
-    const row=page.locator('#content .order-summary-row:visible,#content .sales-delivery-summary-row:visible').first();await row.waitFor();
+    const row=page.locator('#content .order-summary-row:visible,#content .sales-delivery-summary-row:visible,#content .stl-queue-item:visible').first();await row.waitFor();
     const g=await row.evaluate(el=>{const r=el.getBoundingClientRect(),cells=[...el.children].filter(x=>x.matches('.order-summary-cell,.sales-distribution-cell')),buttons=[...el.querySelectorAll('.order-summary-actions .btn,.sales-distribution-actions .btn')].filter(x=>x.offsetParent!==null);return {height:r.height,cells:cells.map(x=>({h:x.getBoundingClientRect().height,cy:x.getBoundingClientRect().top+x.getBoundingClientRect().height/2,top:x.getBoundingClientRect().top,bottom:x.getBoundingClientRect().bottom})),buttons:buttons.map(x=>({h:x.getBoundingClientRect().height,top:x.getBoundingClientRect().top,bottom:x.getBoundingClientRect().bottom})),top:r.top,bottom:r.bottom,scroll:document.documentElement.scrollWidth,viewport:innerWidth};});
+    if(kind==='settlement'){const q=await row.evaluate(el=>({row:el.getBoundingClientRect().width,list:el.parentElement.clientWidth-parseFloat(getComputedStyle(el.parentElement).paddingLeft)-parseFloat(getComputedStyle(el.parentElement).paddingRight),scroll:el.parentElement.scrollWidth,client:el.parentElement.clientWidth,title:el.title,aria:el.getAttribute('aria-label')}));assert(q.scroll<=q.client+1,JSON.stringify(q));assert(Math.abs(q.row-q.list)<1,JSON.stringify(q));assert.match(q.title,/مشتری آزمایشی با نام بسیار طولانی/);assert.equal(q.aria,q.title);}
     assert(Math.abs(g.height-54)<1,`${kind}/${width} row ${JSON.stringify(g)}`);for(const c of g.cells){assert(Math.abs(c.h-38)<1,`${kind}/${width} cell ${JSON.stringify(g)}`);assert(c.top>=g.top-1&&c.bottom<=g.bottom+1,`${kind}/${width} bounds ${JSON.stringify(g)}`);}for(const b of g.buttons){assert(Math.abs(b.h-36)<1,`${kind}/${width} button ${JSON.stringify(g)}`);assert(b.top>=g.top-1&&b.bottom<=g.bottom+1,`${kind}/${width} bounds ${JSON.stringify(g)}`);}assert(g.scroll<=g.viewport+1,`${kind}/${width} page overflow ${JSON.stringify(g)}`);
    }
   }
