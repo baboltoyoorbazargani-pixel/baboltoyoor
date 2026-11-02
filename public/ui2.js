@@ -547,6 +547,7 @@ function paintSalesPaneV29(tab,data){
     pane.innerHTML=salesV29RenderPane(tab,data);
     pane.dataset.renderedV29='1';
     bindSalesPaneV29(tab);
+    if(tab==='settlement' && stl.orderId) void stlOpen(stl.orderId);
     return;
   }
   if(tab==='onsite'){
@@ -1524,7 +1525,8 @@ function transportSalesInvoicePanel(order){
  if(!hand){host.innerHTML='<section class="sd-panel sd-pad"><h2>فاکتور پخش</h2><p>در انتظار تحویل کالا به راننده و ثبت امضای دستی در انبار.</p></section>';return;}
  if(invoice){
   const stage=order.transportReturn?transportClosureFormHtml(order):order.transportDeparture?transportReturnFormHtml(): '<p>فاکتور آماده چاپ است؛ تأیید خروج بر عهده ترابری است.</p>';
-  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>پیش‌نمایش و چاپ فاکتور</button>${stage}</section>`;
+  const deviceWarning=order.transportReturn&&stl.devicesError?`<div class="stl-load-error" role="alert"><b>فهرست دستگاه‌های پوز دریافت نشد.</b><span>سایر روش‌های تسویه قابل استفاده‌اند؛ برای انتخاب پوز، فهرست دستگاه‌ها را دوباره دریافت کنید.</span><button type="button" class="btn btn-secondary btn-sm" data-ts-devices-retry>دریافت دوباره دستگاه‌ها</button></div>`:'';
+  host.innerHTML=`<section class="sd-panel sd-pad tr-invoice-panel"><h2>فاکتور پخش ${esc(fa(invoice.invoiceNumber))}</h2>${transportOrderServiceHtml(order,false)}<button type="button" class="btn btn-secondary" data-ti-preview>پیش‌نمایش و چاپ فاکتور</button>${deviceWarning}${stage}</section>`;
   host.querySelector('[data-ti-preview]').onclick=()=>transportDraftPreview(order.id);
   if(order.transportReturn)bindTransportClosure(host,order);else if(order.transportDeparture)bindTransportReturn(host,order);
   return;
@@ -1570,6 +1572,16 @@ function transportPaymentRowHtml(devices){return `<div data-ts-payrow class="stl
 
 function bindTransportClosure(host,order){
  const f=host.querySelector('[data-ts-close]'),invoice=order.transportInvoice,devices=stl.devices||[],paymentHost=f.querySelector('[data-ts-payments]');
+ const retryDevices=host.querySelector('[data-ts-devices-retry]');
+ if(retryDevices)retryDevices.onclick=async()=>{
+  retryDevices.disabled=true;
+  try{
+   const data=await api('/api/payment-devices');if(!host.isConnected||stl.orderId!==order.id)return;
+   devices.splice(0,devices.length,...(data.devices||[]));stl.devicesError=false;
+   f.querySelectorAll('[data-ts-device]').forEach(select=>{const previous=select.value;select.innerHTML='<option value="">انتخاب کنید</option>'+devices.filter(d=>d.isActive!==false).map(d=>`<option value="${esc(d.id)}">${esc(d.title)} — ${esc(d.bank||'')}</option>`).join('');select.value=previous;});
+   retryDevices.closest('.stl-load-error')?.remove();
+  }catch(err){toast(err.message||'دریافت دستگاه‌ها ناموفق بود.');retryDevices.disabled=false;}
+ };
  const recalc=()=>{const lines=[...f.querySelectorAll('[data-ts-line]')],total=transportClosureAmount(invoice,lines.map(r=>r.querySelector('[data-ts-kg]').value));f.querySelector('[data-ts-total]').textContent=total===null?'وزن مرجوعی نامعتبر است':money(total);const sum=f.querySelector('[data-ts-sum]');if(sum){const rows=[...f.querySelectorAll('[data-ts-payrow]')],values=rows.map(r=>transportMoneyNumber(r.querySelector('[data-ts-amount]')?.value));sum.textContent=values.some(x=>x===null)?'مبلغ روش تسویه نامعتبر است.':`جمع روش‌های تسویه: ${money(values.reduce((a,b)=>a+b,0))}${total===null?'':` • اختلاف با مبلغ قابل تسویه: ${money(total-values.reduce((a,b)=>a+b,0))}`}`;}return total;};
  const details=row=>{const type=row.querySelector('[data-ts-type]').value,box=row.querySelector('[data-ts-extra]');let h='';if(type==='POS')h=`<label class="tr-field"><span>دستگاه پوز</span><select data-ts-device><option value="">انتخاب کنید</option>${devices.filter(d=>d.isActive!==false).map(d=>`<option value="${esc(d.id)}">${esc(d.title)} — ${esc(d.bank||'')}</option>`).join('')}</select></label><label class="tr-field"><span>شماره پیگیری</span><input data-ts-reference></label>`;if(type==='CARD_TRANSFER')h='<label class="tr-field"><span>بانک مقصد</span><input data-ts-bank></label><label class="tr-field"><span>شناسه پیگیری</span><input data-ts-reference></label>';if(type==='CHECK')h='<label class="tr-field"><span>بانک</span><input data-ts-bank></label><label class="tr-field"><span>شماره چک</span><input data-ts-check></label><label class="tr-field"><span>تاریخ سررسید</span><input type="date" data-ts-due></label>';box.innerHTML=h;box.hidden=!h;};
  f.querySelectorAll('[data-ts-kg]').forEach(el=>el.addEventListener('input',recalc));

@@ -3208,6 +3208,7 @@ function salesV29Activate(tab){
       pane.innerHTML=salesV29RenderPane(tab,salesV29Data());
       pane.dataset.renderedV29='1';
       bindSalesPaneV29(tab);
+      if(tab==='settlement' && stl.orderId) void stlOpen(stl.orderId);
     }else if(tab==='onsite'){
       pane.querySelector('#salesSearchV25')?.focus({preventScroll:true});
     }
@@ -3541,20 +3542,48 @@ function stlBindSig(){
 }
 function stlClearSig(){ stl.signaturePad?.clear(); stl.sig=false; stlUpdateSigState();
 }
+let stlOpenSequence=0;
 async function stlOpen(id){
+  const host=$('#stlMain'); if(!host || !id)return;
+  const seq=++stlOpenSequence;
+  const current=()=>seq===stlOpenSequence && host.isConnected && $('#stlMain')===host;
+  host.innerHTML='<div class="stl-empty" role="status">در حال دریافت اطلاعات سفارش…</div>';
   try{
-    const [d,p,driverData,deviceData]=await Promise.all([api('/api/orders/'+id), api('/api/prices'), api('/api/dispatch/drivers'), api('/api/payment-devices')]);
+    const d=await api('/api/orders/'+encodeURIComponent(id));
+    if(!current())return;
     const o=d.order;
-    if(o.status!=='SETTLEMENT_PENDING'){ toast('این سفارش دیگر در مرحله تسویه نیست.'); return renderSales('settlement'); }
-    Object.assign(stl, {orderId:id, order:o, items:stlItemsOf(o,p.prices||[]), drivers:driverData.drivers||[], devices:deviceData.devices||[], paymentRows:[{type:'CASH',amount:''}], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false});
+    if(!o || o.status!=='SETTLEMENT_PENDING'){
+      stlReset();host.innerHTML=stlEmptyHtml();toast('این سفارش دیگر در مرحله تسویه نیست.');
+      if(app.page==='sales'&&app.sub.sales==='settlement')await renderSales('settlement');
+      return;
+    }
+    const transport=o.transportWorkflow===1&&o.deliveryMode==='DELIVERY'&&o.orderType!=='STORE';
+    let prices=[],drivers=[],devices=[],devicesError=false;
+    if(transport){
+      // Pricing and legacy driver lists are not needed by the transport form.
+      // POS devices are only needed when the documents have returned.
+      if(o.transportReturn){
+        try{devices=(await api('/api/payment-devices')).devices||[];}catch(_){devicesError=true;}
+      }
+    }else{
+      const [p,driverData,deviceData]=await Promise.all([api('/api/prices'),api('/api/dispatch/drivers'),api('/api/payment-devices')]);
+      prices=p.prices||[];drivers=driverData.drivers||[];devices=deviceData.devices||[];
+    }
+    if(!current())return;
+    Object.assign(stl, {orderId:id, order:o, items:stlItemsOf(o,prices), drivers, devices, devicesError, paymentRows:[{type:'CASH',amount:''}], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false});
     stl.discountAmount=Number(o.payment?.discountAmount ?? o.dispatch?.discountAmount ?? 0);
     stl.additionsAmount=Number(o.payment?.additionsAmount ?? o.dispatch?.additionsAmount ?? 0);
     app.selectedSettlement=id;
     document.querySelectorAll('.stl-queue-item').forEach(b=>b.classList.toggle('active', b.dataset.id===id));
     stlPaintForm();
-  }catch(e){ toast(e.message) }
+  }catch(e){
+    if(!current())return;
+    host.innerHTML=`<div class="stl-load-error" role="alert"><b>فرم سفارش باز نشد.</b><span>${esc(e.message||'خطا در دریافت اطلاعات سفارش')}</span><button type="button" class="btn btn-secondary btn-sm" data-stl="retry" data-id="${esc(id)}">تلاش دوباره</button></div>`;
+    toast(e.message||'خطا در دریافت اطلاعات سفارش');
+  }
 }
-function stlClose(){ stl.signaturePad?.dispose(); stlReset(); const host=$('#stlMain'); if(host) host.innerHTML=stlEmptyHtml(); document.querySelectorAll('.stl-queue-item.active').forEach(b=>b.classList.remove('active')); }
+
+function stlClose(){ stlOpenSequence++; stl.signaturePad?.dispose(); stlReset(); const host=$('#stlMain'); if(host) host.innerHTML=stlEmptyHtml(); document.querySelectorAll('.stl-queue-item.active').forEach(b=>b.classList.remove('active')); }
 function stlValidateDispatch(){
   const errs=[];
   const active=stl.items.filter(stlActive);
@@ -3640,7 +3669,7 @@ if(!window.__stlBoundV374){
   document.addEventListener('click', e=>{
     const t=e.target.closest && e.target.closest('[data-stl]'); if(!t) return;
     const a=t.dataset.stl;
-    if(a==='select') return stlOpen(t.dataset.id);
+    if(a==='select'||a==='retry') return stlOpen(t.dataset.id);
     if(a==='close') return stlClose();
     if(a==='send-dispatch') return sendToDispatch(stl.orderId, ()=>stlOpen(stl.orderId));
     if(a==='sig-clear') return stlClearSig();
