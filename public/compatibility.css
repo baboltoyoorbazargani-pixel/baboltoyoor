@@ -1019,3 +1019,12 @@
 /* در کنترل‌هایی که کادر مشترک ندارند نیز محل فوکوس صفحه‌کلید دیده شود. */
 #appView :is(input,select,textarea):not(.input-shell *):focus-visible,
 #modal :is(input,select,textarea):not(.input-shell *):focus-visible{outline:2px solid #a8172e!important;outline-offset:2px}
+
+/* پخش فروش: ردیف فشرده مانند سفارش‌های فروشگاه، با جداکنندهٔ هر مشخصه. */
+#appView #content .sales-delivery-summary-row{box-sizing:border-box;min-height:52px!important;padding:7px 14px!important;gap:0!important;border:1px solid var(--line,#dce4eb);border-radius:12px;background:#fff;margin-bottom:8px}
+#appView #content .sales-delivery-summary-row>.sales-distribution-cell{display:flex;align-items:center;min-height:32px;padding-inline:14px;flex-shrink:0}
+#appView #content .sales-delivery-summary-row>.sales-distribution-cell:first-child{padding-inline-start:0}
+#appView #content .sales-delivery-summary-row>.sales-distribution-cell+.sales-distribution-cell{border-inline-start:1px solid #cbd5df}
+#appView #content .sales-delivery-summary-row>.sales-distribution-identity{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:150px}
+#appView #content .sales-delivery-summary-row .sales-distribution-identity small{font-size:11.5px;color:var(--muted,#64748b)}
+#appView #content .sales-delivery-summary-row>.sales-distribution-actions{margin-inline-start:auto;padding-inline-end:0}

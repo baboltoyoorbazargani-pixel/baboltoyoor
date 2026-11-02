@@ -780,7 +780,7 @@ async function go(page,sub){
   try{
     if(page==='dashboard'){setHeader('مرکز کنترل','داشبورد مدیریتی','نمای کامل وضعیت عملیات و جریان مشتریان');await renderDashboard()}
     else if(page==='gate'){if(['dashboard','reports'].includes(app.sub.gate)){setHeader('نگهبانی',app.sub.gate==='reports'?'گزارش‌های نگهبانی':'داشبورد نگهبانی','نمای خلاصه کارتابل نگهبانی');await renderRoleCartableDashboard('gate',app.sub.gate);return}setHeader('نگهبانی','کارتابل نگهبانی','ورود مشتری، سوابق مراجعه و کنترل خروج در یک فضای عملیاتی');await renderGate(app.sub.gate||'entry')}
-    else if(page==='sales'){if(app.sub.sales==='products'){setHeader('فروش','محصولات و قیمت‌ها','جستجو و به‌روزرسانی قیمت روز محصولات');await renderProductsPage();return}if(app.sub.sales==='history'){setHeader('فروش','سوابق سفارش و فاکتور','جستجو و پیگیری گردش سفارش‌ها');await renderSalesHistory();return}if(['dashboard','reports'].includes(app.sub.sales)){setHeader('فروش',app.sub.sales==='reports'?'گزارش‌های فروش':'داشبورد فروش','نمای خلاصه کارتابل فروش');await renderRoleCartableDashboard('sales',app.sub.sales);return}setHeader('فروش','کارتابل فروش','شش بخش عملیاتی، از ثبت سفارش تا بازبینی نهایی تحویل راننده');await renderSales(app.sub.sales==='intake'?'onsite':(app.sub.sales||'onsite'))}
+    else if(page==='sales'){if(app.sub.sales==='products'){setHeader('فروش','محصولات و قیمت‌ها','جستجو و به‌روزرسانی قیمت روز محصولات');await renderProductsPage();return}if(app.sub.sales==='history'){setHeader('فروش','سوابق سفارش و فاکتور','جستجو و پیگیری گردش سفارش‌ها');await renderSalesHistory();return}if(['dashboard','reports'].includes(app.sub.sales)){setHeader('فروش',app.sub.sales==='reports'?'گزارش‌های فروش':'داشبورد فروش','نمای خلاصه کارتابل فروش');await renderRoleCartableDashboard('sales',app.sub.sales);return}setHeader('فروش','کارتابل فروش','شش بخش عملیاتی، از ثبت سفارش تا بازبینی نهایی پخش');await renderSales(app.sub.sales==='intake'?'onsite':(app.sub.sales||'onsite'))}
     else if(page==='warehouse'){if(['dashboard','reports'].includes(app.sub.warehouse)){setHeader('انبار',app.sub.warehouse==='reports'?'گزارش‌های انبار':'داشبورد انبار','نمای خلاصه کارتابل انبار');await renderRoleCartableDashboard('warehouse',app.sub.warehouse);return}if(app.sub.warehouse==='history'){setHeader('انبار','سوابق مراجعه','سوابق مراجعه و وضعیت مشتریان ثبت‌شده');const v=await api('/api/visits');$('#content').innerHTML=renderGateHistory(v.visits||[],true);return}if(app.wh38)app.wh38.phase=['incoming','preparing','delivered','stores'].includes(app.sub.warehouse)?app.sub.warehouse:'incoming';setHeader('انبار','کارتابل انبار','صف سفارش‌ها، آماده‌سازی و پیگیری فروشگاه‌ها');await renderWarehouse()}
     else if(page==='store'){if(['dashboard','reports'].includes(app.sub.store)){setHeader('فروشگاه',app.sub.store==='reports'?'گزارش‌های فروشگاه':'داشبورد فروشگاه','خلاصه وضعیت سفارش‌ها');await renderRoleCartableDashboard('store',app.sub.store);return}setHeader('فروشگاه','کارتابل فروشگاه','ثبت سفارش و پیگیری تایید فروش تا زمان ورود به انبار');await renderStorePortal()}
     else if(page==='scale'){setHeader('باسکول','کارتابل باسکول','ثبت ورود و خروج وسیله‌ها، محاسبه خالص بار و ثبت کالا');await renderScale()}
@@ -2860,7 +2860,7 @@ function renderNav(){
   // v37.10.0 — هر ورودی: [کلید، عنوان، آیکن موضوعی بخش، کلید شمارنده]؛ آیکن و شمارنده دیگر قاطی نمی‌شوند.
   const entries={
     gate:[['entry','ثبت ورود','entry',null],['waiting','در انتظار اقدام فروش','bell','gateEntry'],['exit','کنترل خروج','exitDoor','gateExit'],['dispatch','تحویل راننده','truck','gateDispatchPending'],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
-    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['delivery','تحویل راننده','truck',null],['transport-resources','رانندگان و خودروها','truck',null],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['customers','مشتریان و معوق','users',null],['products','محصولات','package',null],['reports','گزارش‌ها','reports',null]],
+    sales:[['dashboard','داشبورد','dashboard',null],['onsite','حضوری','user','salesIntake'],['remote','غیرحضوری','phone','salesRemote'],['flow','درجریان','flow','salesFlow'],['stores','فروشگاه‌ها','store','store'],['settlement','تسویه','receipt','salesSettlement'],['delivery','پخش','truck',null],['future','سفارش‌های روزهای آتی','calendar','salesFuture'],['history','سوابق سفارش و فاکتور','history',null],['customers','مشتریان و معوق','users',null],['products','محصولات','package',null],['reports','گزارش‌ها','reports',null]],
     warehouse:[['dashboard','داشبورد','dashboard',null],['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'],['preparing','تحویل و آماده‌سازی','scale','warehousePreparingRegular'],['delivered','تحویل شده','check',null],['stores','فروشگاه‌ها','store','warehouseStores'],['returns','مرجوعی‌ها','receipt',null],['transport-resources','رانندگان و خودروها','truck',null],['history','سوابق مراجعه','history',null],['reports','گزارش‌ها','reports',null]],
     dispatch:[['dashboard','داشبورد','dashboard',null],['transport-resources','رانندگان و خودروها','driver',null],['orders','سفارشات','route','dispatchPending'],['reports','گزارشات','reports',null]],
     store:[['dashboard','داشبورد','dashboard',null],['create','ثبت سفارش','clipboard',null],['registered','ثبت‌شده','history',null],['delivery','تحویل','truck',null],['reports','گزارشات','reports',null]],
@@ -2902,7 +2902,7 @@ const SALES_LABELS_V29 = {
   stores:['فروشگاه‌ها','تأیید و زمان‌بندی','sales'],
   flow:['در جریان','ارسال‌شده به انبار','truck'],
   settlement:['تسویه','فاکتور و خروج','receipt'],
-  delivery:['تحویل راننده','پیگیری ارسال و تأیید تحویل','check'],
+  delivery:['پخش','پیگیری ارسال و تأیید تحویل','check'],
   future:['سفارش‌های روزهای آتی','برنامه‌ریزی ارسال','calendar']
 };
 
@@ -3390,7 +3390,7 @@ function stlFooterHtml(o){
   return `<footer class="stl-actions stl-actions-bottom"><div class="stl-footer-scroll"><div class="stl-primary-actions">
     ${stlDispatchControls(o,returnControl)}
     ${dispatched?'':`<button type="button" class="stl-submit" id="stlSubmitBtn" data-stl="submit">${icon('receipt',18)} تأیید و صدور فاکتور</button>`}
-  </div></div>${dispatched?`<div class="stl-dispatch-lock"><b>مرحلهٔ بعد</b><span>تأیید خروج راننده توسط نگهبان؛ سپس ثبت تحویل و بازبینی نهایی فروش در تب تحویل راننده.</span></div>`:''}</footer>`;
+  </div></div>${dispatched?`<div class="stl-dispatch-lock"><b>مرحلهٔ بعد</b><span>تأیید خروج راننده توسط نگهبان؛ سپس ثبت تحویل و بازبینی نهایی فروش در تب پخش.</span></div>`:''}</footer>`;
 }
 function stlEmptyHtml(){ return `<div class="stl-empty"><div class="stl-empty-ico">${icon('receipt',24)}</div><b>یک سفارش از فهرست انتخاب کنید</b><span>بعد از انتخاب، اقلام، قیمت‌ها و ثبت تسویه در این بخش انجام می‌شود.</span></div>`; }
 function renderSalesSettlementV25(orders){
@@ -3469,7 +3469,7 @@ function stlFormHtml(o){
       <div class="stl-weight-summary">جمع وزن تحویلی: <b id="stlTotalKg">${qty(stlKg())} کیلوگرم</b></div>
     </div>
     <div class="stl-invoice-bottom"><div class="stl-totals stl-financial-column">${stlAdjustmentsHtml(o)}</div><div class="stl-verification-column">
-    ${dispatchStarted?`<div class="stl-dispatch-lock"><b>سفارش به پخش واگذار شده است.</b><span>از این فرم برای صدور فاکتور یا برگشت به انبار استفاده نمی‌شود. راننده مبلغ و وزن را می‌بیند؛ پس از تحویل، بازبینی نهایی در تب «تحویل راننده» انجام می‌شود.</span></div>`:`<div class="stl-section"><div class="stl-section-head"><h3>اطلاعات مشتری</h3></div><div>${esc(o.customer?.name||'—')} – ${esc(o.customer?.phone||'—')}</div></div>`}
+    ${dispatchStarted?`<div class="stl-dispatch-lock"><b>سفارش به پخش واگذار شده است.</b><span>از این فرم برای صدور فاکتور یا برگشت به انبار استفاده نمی‌شود. راننده مبلغ و وزن را می‌بیند؛ پس از تحویل، بازبینی نهایی در تب «پخش» انجام می‌شود.</span></div>`:`<div class="stl-section"><div class="stl-section-head"><h3>اطلاعات مشتری</h3></div><div>${esc(o.customer?.name||'—')} – ${esc(o.customer?.phone||'—')}</div></div>`}
     </div></div>
     ${dispatchStarted?'':`<div class="stl-section stl-payment-section"><div class="stl-section-head"><h3>${icon('receipt',17)} روش‌های تسویه</h3><span class="stl-hint-inline">پرداخت ترکیبی مجاز است؛ جمع مبالغ باید با مانده پس از کسر بیعانه برابر باشد.</span></div>${stlPaymentRowsHtml()}</div>`}
     <div id="stlErrors" class="stl-errors" hidden style="margin-top:8px"></div>

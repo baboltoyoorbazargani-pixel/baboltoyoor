@@ -37,3 +37,14 @@ test('ردیف و جزئیات گردش جدید عدم تحویل را صریح
  const html=c.renderSalesDeliveryV38({pending:[o]});assert(html.includes('تحویل شده / بازگشت'));assert(!html.includes('data-action="sales-finalize-driver-delivery"'));
  c.app.features.experimentalTransport=false;assert(c.transportSalesDetailsHtml(o).includes('فقط برای مشاهده'));assert(!c.transportSalesDetailsHtml(o).includes('transport-sales-work'));
 });
+
+test('ردیف پخش برای سفارش عادی و هر سرویس فروشگاه ساختار یکسان و جزئیات مستقل دارد',()=>{
+ const c=context();const inputs=[{id:'regular',orderNo:'100',orderType:'REMOTE',customer:{name:'مشتری عادی'},transportService:{run:0,label:'در مسیر',driverName:'راننده عادی',lines:[]}},...[1,2].map(run=>({id:'store',orderNo:'200',orderType:'STORE',storeName:'فروشگاه نمونه',customer:{name:'نام مشتری'},transportService:{run,label:'در انتظار تخصیص',driverName:'راننده فروشگاه',lines:[]}})),{id:'legacy',orderNo:'300',orderType:'REMOTE',customer:{name:'مشتری قدیمی'},dispatch:{status:'ASSIGNED',driverName:'راننده قدیمی'}}];
+ for(const o of inputs){const html=c.salesDeliverySummaryRow(o);assert.match(html,/sales-delivery-summary-row/);assert((html.match(/sales-distribution-cell/g)||[]).length>=7);assert.match(html,/شماره سفارش/);assert.match(html,/تاریخ/);assert.match(html,/راننده:/);assert.match(html,/جزئیات سفارش/);assert(html.includes(`data-id="${o.id}"`));assert(html.includes(`data-run="${o.transportService?.run??o.dispatch?.run??0}"`));}
+ assert.match(c.salesDeliverySummaryRow(inputs[1]),/سرویس اول/);assert.match(c.salesDeliverySummaryRow(inputs[2]),/سرویس دوم/);assert.match(c.salesDeliverySummaryRow(inputs[1]),/مشتری: نام مشتری/);
+ const css=read('public/compatibility.css');assert.match(css,/sales-distribution-cell\+\.sales-distribution-cell\{border-inline-start:1px solid/);assert.match(css,/sales-delivery-panel \.sales-delivery-column-list\{[^}]*overflow-x:auto/);
+});
+test('در ناوبری فروش پخش جای نام قبلی را گرفته و منوی منابع تنها برای فروش حذف است',()=>{
+ const nav=app.slice(app.indexOf('function renderNav(){'));const sales=nav.match(/    sales:\[.*?\],\n    warehouse:/s)?.[0]||'';assert.match(sales,/\['delivery','پخش','truck',null\]/);assert.doesNotMatch(sales,/transport-resources|تحویل راننده/);
+ const warehouse=nav.match(/    warehouse:\[.*?\],\n    dispatch:/s)?.[0]||'';const dispatch=nav.match(/    dispatch:\[.*?\],\n    store:/s)?.[0]||'';assert.match(warehouse,/transport-resources/);assert.match(dispatch,/transport-resources/);assert.match(app,/delivery:\['پخش'/);
+});
