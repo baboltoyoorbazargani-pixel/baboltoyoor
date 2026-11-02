@@ -1225,3 +1225,4 @@
 #modal .wh-weight-line input{box-sizing:border-box;width:100%;height:38px;min-width:0;padding:4px 7px;border:1px solid #cfd8df;border-radius:8px;font:inherit;direction:ltr;text-align:right}
 #modal .wh-weight-net b{height:38px;display:flex;align-items:center;white-space:nowrap;color:#14764a}
 #modal .wh-weight-summary{padding:9px 0;font-weight:800}#modal [data-wt-error]{color:#a51c2b}#modal [data-wt-error]:empty{display:none}
+#appView #content .sr-weight-net{font-size:11px;color:#14764a;white-space:nowrap;flex:0 0 auto}
