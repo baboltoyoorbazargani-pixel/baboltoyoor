@@ -61,3 +61,10 @@ test('بستن فاکتور فقط پس از تأیید صریح و با مقا�
  form.elements.checked.checked=true;await form.onsubmit({preventDefault(){}});assert.equal(submitted.length,0);
  consent=true;await form.onsubmit({preventDefault(){}});assert.equal(submitted[0][0],'/api/sales/transport-invoices/x/close');assert.deepEqual(JSON.parse(submitted[0][1].body),{returns:[{itemId:'item',returnKg:'2',reason:'مرجوعی'}],settlementMethods:[]});assert.equal(closed,1);assert.equal(reset,1);assert.equal(ctx.app.salesCache.fetchedAt,0);
 });
+test('ورود مبلغ پخش ارقام فارسی، انگلیسی و عربی را بدون پنهان کردن متن نامعتبر می‌پذیرد',()=>{
+ const en=s=>String(s).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+ const fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);const ctx=vm.createContext({en,fa});vm.runInContext(fragment('function transportMoneyNumber(value){','function transportPaymentRowHtml('),ctx);
+ for(const s of ['1234567','۱٬۲۳۴٬۵۶۷','١,٢٣٤,٥٦٧','1 234 567'])assert.equal(ctx.transportMoneyNumber(s),1234567,s);
+ for(const s of ['123x','-3','۱٫۲','9007199254740992',','])assert.equal(ctx.transportMoneyNumber(s),null,s);
+ const field={value:'1234567',selectionStart:4,setSelectionRange(a,b){this.caret=[a,b]},setCustomValidity(message){this.validity=message}};ctx.transportFormatMoneyInput(field);assert.equal(field.value,'۱٬۲۳۴٬۵۶۷');assert.deepEqual(field.caret,[5,5]);assert.equal(field.validity,'');field.value='12x3';field.selectionStart=3;ctx.transportFormatMoneyInput(field);assert.equal(field.value,'12x3');assert.match(field.validity,/عدد معتبر/);
+});

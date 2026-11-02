@@ -104,6 +104,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET',`/api/orders/${third.id}`,null,sales)).order.transportHandovers,undefined);
   let hand=(await ok('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken},wh)).handover;
   const saleNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(saleNotice.navSection,'settlement');
+  const assignNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_ASSIGNED');assert.equal(assignNotice.navSection,'settlement');assert.equal(assignNotice.isRead,false);
   const transportNotice=(await ok('GET','/api/notifications',null,transport)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(transportNotice.navSection,'orders');
   assert.equal(hand.document.warehouseDocumentNo,doc.warehouseDocumentNo);assert.equal(hand.document.items[0].deliveredKg,2.5);
   assert.equal((await call('POST',`/api/orders/${third.id}/warehouse/reopen-preparing`,{},sales)).status,409);
