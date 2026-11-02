@@ -11,12 +11,17 @@ test('سند مشتری پخش محل امضای راننده و مشتری دا
  assert.match(html,/امضاء مشتری پس از تحویل/);assert.match(html,/امضاء راننده هنگام دریافت از انبار/);assert.match(html,/&lt;راننده&gt;/);assert.match(html,/امانت/);
  const old=ctx.whDeliveredDocument(base);assert.doesNotMatch(old,/راننده/);assert.match(old,/<span>امضاء<\/span>/);
 });
-test('ثبت تحویل فقط با تأیید صریح انجام می‌شود و متن سند در درخواست نیست',async()=>{
- const calls=[];let confirmed=false;const ctx=vm.createContext({confirm:()=>confirmed,api:async(...args)=>calls.push(args),closeModal:()=>calls.push('close'),toast:()=>{},whDeliveredLoad:async()=>calls.push('regular'),loadWhStoreDocuments:async()=>calls.push('store'),encodeURIComponent,JSON});
- vm.runInContext(fragment('async function whTransportHandover(','async function whDeliveredPrint(id){'),ctx);
+test('تحویل با تأیید فیزیکی ثبت و سند بلافاصله برای چاپ ارسال می‌شود',async()=>{
+ const calls=[];let confirmed=false,fail=false;const ctx=vm.createContext({confirm:()=>confirmed,api:async(...args)=>{calls.push(args);if(fail)throw Error('network');return {handover:{document:{warehouseDocumentNo:'W-1'}}};},closeModal:()=>calls.push('close'),toast:x=>calls.push(x),whPrintDocument:(doc,run)=>calls.push(['print',doc,run]),whDeliveredLoad:async()=>calls.push('regular'),loadWhStoreDocuments:async()=>calls.push('store'),encodeURIComponent,JSON});
+ vm.runInContext(fragment('async function whTransportHandover(','function whPrintDocument('),ctx);
  const btn={disabled:false};await ctx.whTransportHandover(btn,'o',0,'token');assert.equal(calls.length,0);assert.equal(btn.disabled,false);
- confirmed=true;await ctx.whTransportHandover(btn,'o',0,'token');assert.equal(btn.disabled,true);assert.equal(calls[0][0],'/api/warehouse/transport-handovers/o');assert.deepEqual(JSON.parse(calls[0][1].body),{run:0,handoverToken:'token',signedPaperConfirmed:true});assert(calls.includes('regular'));
- calls.length=0;const btn2={disabled:false};await ctx.whTransportHandover(btn2,'o',2,'token2');assert(calls.includes('store'));
+ confirmed=true;await ctx.whTransportHandover(btn,'o',0,'token');assert.equal(btn.disabled,true);assert.equal(calls[0][0],'/api/warehouse/transport-handovers/o');assert.deepEqual(JSON.parse(calls[0][1].body),{run:0,handoverToken:'token',physicalHandoverConfirmed:true});assert(calls.some(x=>Array.isArray(x)&&x[0]==='print'&&x[2]===0));assert(calls.includes('regular'));
+ calls.length=0;const btn2={disabled:false};await ctx.whTransportHandover(btn2,'o',2,'token2');assert(calls.includes('store'));assert(calls.some(x=>Array.isArray(x)&&x[0]==='print'&&x[2]===2));
+ calls.length=0;fail=true;const btn3={disabled:false};await ctx.whTransportHandover(btn3,'o',0,'token');assert.equal(btn3.disabled,false);assert(!calls.some(x=>Array.isArray(x)&&x[0]==='print'));assert(!calls.includes('close'));
+});
+test('ثبت تحویل در کارتابل انبار برای مدیر و انبار مجاز است',()=>{
+ const ctx=vm.createContext({app:{page:'warehouse',user:{roleCode:'admin'}},normalizeRole:x=>x});vm.runInContext(fragment('function whCanRegisterHandover(){','async function whDeliveredDetails(id){'),ctx);
+ assert.equal(ctx.whCanRegisterHandover(),true);ctx.app.user.roleCode='warehouse';assert.equal(ctx.whCanRegisterHandover(),true);ctx.app.user.roleCode='sales';assert.equal(ctx.whCanRegisterHandover(),false);ctx.app.user.roleCode='admin';ctx.app.page='sales';assert.equal(ctx.whCanRegisterHandover(),false);
 });
 test('فاکتور پیش از خروج تسویه یا تحویل را تأیید نمی‌کند و ارقام و محتوای سند ایمن است',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ'});

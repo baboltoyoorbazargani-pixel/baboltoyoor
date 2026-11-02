@@ -102,7 +102,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken},wh)).status,500);
   rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec('DROP TRIGGER test_handover_abort');assert.equal(rawDb.prepare("SELECT COUNT(*) AS n FROM audit WHERE entity_id=? AND action='TRANSPORT_WAREHOUSE_HANDOVER'").get(third.id).n,0);rawDb.close();
   assert.equal((await ok('GET',`/api/orders/${third.id}`,null,sales)).order.transportHandovers,undefined);
-  let hand=(await ok('POST',`/api/warehouse/transport-handovers/${third.id}`,{signedPaperConfirmed:true,handoverToken:doc.handoverToken},wh)).handover;
+  let hand=(await ok('POST',`/api/warehouse/transport-handovers/${third.id}`,{physicalHandoverConfirmed:true,handoverToken:doc.handoverToken},wh)).handover;assert.equal(hand.physicalHandoverConfirmed,true);assert.equal(hand.signedPaperConfirmed,false);
   const saleNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(saleNotice.navSection,'settlement');
   const assignNotice=(await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_ASSIGNED');assert.equal(assignNotice.navSection,'settlement');assert.equal(assignNotice.isRead,false);
   const transportNotice=(await ok('GET','/api/notifications',null,transport)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_WAREHOUSE_HANDOVER');assert.equal(transportNotice.navSection,'orders');
@@ -202,7 +202,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal(doc1.driverName,'راننده');assert.equal(doc2.driverName,'راننده دوم');
   assert.notEqual(doc1.warehouseDocumentNo,doc2.warehouseDocumentNo);assert.equal(doc1.lines[0].deliveredKg,1);assert.equal(doc2.lines[0].deliveredKg,2);
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.transportHandovers,undefined);
-  hand=(await ok('POST',`/api/warehouse/transport-handovers/${o.id}`,{run:1,signedPaperConfirmed:true,handoverToken:doc1.handoverToken},wh)).handover;
+  hand=(await ok('POST',`/api/warehouse/transport-handovers/${o.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc1.handoverToken},wh)).handover;assert.equal(hand.signedPaperConfirmed,false);
   assert.equal(hand.driverName,'راننده');assert.equal(hand.document.warehouseDocumentNo,doc1.warehouseDocumentNo);
   const serviceViews=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===o.id).services;assert.equal(serviceViews[0].canDepart,true);assert.equal(serviceViews[1].canDepart,false);assert.equal(serviceViews[0].warehouseDocumentNo,doc1.warehouseDocumentNo);
   assert.equal((await call('POST',`/api/transport/plans/${o.id}/assign`,{run:1,driverId:driver2.id,vehicleId:vehicle2.id},transport)).status,409);

@@ -896,26 +896,33 @@ function whDeliveredDocument(o){
   const driver=o.deliveryMode==='DELIVERY'?esc(o.driverName||'—'):'';
   return `<div class="whd-doc"><div class="whd-head"><div class="whd-document-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></div><div class="whd-meta"><span><span class="whd-label">نام مشتری:</span><b>${customer}</b></span><span><span class="whd-label">شماره تماس:</span><b dir="ltr">${phone}</b></span><span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo))}</b></span><span><span class="whd-label">تاریخ ثبت سفارش:</span><b>${esc(formatDateTime24(o.createdAt))}</b></span></div></div><div class="whd-table-scroll"><table><colgroup><col class="whd-col-number"><col class="whd-col-product"><col class="whd-col-request"><col class="whd-col-weight"></colgroup><thead><tr><th>ردیف</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن نهایی (کیلوگرم)</th></tr></thead><tbody>${o.items.map((i,k)=>`<tr><td class="whd-number">${fa(k+1)}</td><td><b>${esc(i.productName)}</b></td><td class="whd-quantity">${i.requestedQty==null?'—':qty(i.requestedQty)+' '+esc(i.requestedUnit)}</td><td class="whd-quantity">${i.outOfStock?'ناموجود':qty(i.deliveredKg)}</td></tr>`).join('')||'<tr><td colspan="4">جزئیات اقلام در سابقه موجود نیست.</td></tr>'}</tbody></table></div><section class="whd-acknowledgement"><p class="whd-declaration">اینجانب (${customer}) اقلام فوق را صحیح و سالم تحویل گرفته و اقلام تحویلی به صورت امانت تا زمان پرداخت مبلغی ریالی آن نزد اینجانب امانت می باشد.</p><div class="whd-signature"><span>${driver?'امضاء مشتری پس از تحویل':'امضاء'}</span><b>${customer} – ${phone}</b></div>${driver?`<p class="whd-declaration">اینجانب (${driver}) اقلام فوق را از انبار برای حمل و تحویل به مشتری دریافت نمودم.</p><div class="whd-signature"><span>امضاء راننده هنگام دریافت از انبار</span><b>${driver} – ${esc(fa(o.driverPhone||'—'))}</b></div>`:''}</section></div>`;
 }
+function whCanRegisterHandover(){return app.page==='warehouse' && ['warehouse','admin'].includes(normalizeRole(app.user?.roleCode));}
 async function whDeliveredDetails(id){
   try{
     const {order}=await api('/api/warehouse/delivered/'+encodeURIComponent(id));
-    openModal('جزئیات سند انبار',whDeliveredDocument(order)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-delivered-print>${icon('receipt',16)} چاپ سند انبار</button>${order.handoverToken&&normalizeRole(app.user?.roleCode)==='warehouse'?'<button type="button" class="btn btn-primary" data-wh-handover>ثبت تحویل فیزیکی به راننده</button>':''}</div>`);
+    openModal('جزئیات سند انبار',whDeliveredDocument(order)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-delivered-print>${icon('receipt',16)} چاپ سند انبار</button>${order.handoverToken&&whCanRegisterHandover()?'<button type="button" class="btn btn-primary" data-wh-handover>ثبت تحویل و چاپ سند</button>':''}</div>`);
     $('#modal [data-wh-delivered-print]').addEventListener('click',()=>whDeliveredPrint(id));
     $('#modal [data-wh-handover]')?.addEventListener('click',e=>whTransportHandover(e.currentTarget,id,0,order.handoverToken));
     BTPrintDigits.convert(document.querySelector('#modal .whd-doc'));
   }catch(e){toast(e.message);}
 }
 async function whTransportHandover(button,id,run,token){
-  if(!confirm('آیا کالا را به راننده تحویل داده‌اید و امضای دستی او را روی همین سند گرفته‌اید؟ این ثبت، تحویل به مشتری یا تسویه نیست.'))return;
+  if(!confirm('آیا کالا را واقعاً به راننده تحویل داده‌اید؟ پس از ثبت، سند برای چاپ باز می‌شود؛ امضای دستی راننده را روی نسخه چاپی بگیرید. این ثبت، تحویل به مشتری یا تسویه نیست.'))return;
   button.disabled=true;
-  try{await api('/api/warehouse/transport-handovers/'+encodeURIComponent(id),{method:'POST',body:JSON.stringify({run,handoverToken:token,signedPaperConfirmed:true})});closeModal();toast('تحویل فیزیکی به راننده ثبت شد.');if(run)await loadWhStoreDocuments();else await whDeliveredLoad();}
-  catch(e){button.disabled=false;toast(e.message);}
+  let result;
+  try{result=await api('/api/warehouse/transport-handovers/'+encodeURIComponent(id),{method:'POST',body:JSON.stringify({run,handoverToken:token,physicalHandoverConfirmed:true})});}
+  catch(e){button.disabled=false;toast(e.message);return;}
+  closeModal();
+  toast('تحویل فیزیکی ثبت شد. سند را چاپ و امضای دستی راننده را دریافت کنید.');
+  try{whPrintDocument(result.handover.document,run);}catch(e){toast('تحویل ثبت شد اما چاپ باز نشد؛ از جزئیات سند دوباره چاپ کنید.');}
+  if(run)void loadWhStoreDocuments();else void whDeliveredLoad();
+}
+function whPrintDocument(doc,run){
+  const body=run?whStoreDocument(doc):whDeliveredDocument(doc);
+  BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${body}<script src="/print-ready.js"><\/script></body></html>`));
 }
 async function whDeliveredPrint(id){
-  try{
-    const {order}=await api('/api/warehouse/delivered/'+encodeURIComponent(id));
-    BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css"><title>سند انبار ${esc(fa(order.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${whDeliveredDocument(order)}<script src="/print-ready.js"><\/script></body></html>`));
-  }catch(e){toast(e.message);}
+  try{const {order}=await api('/api/warehouse/delivered/'+encodeURIComponent(id));whPrintDocument(order,0);}catch(e){toast(e.message);}
 }
 /* ---------- v37.36.0 — سربرگ «سوابق و گزارشات» فروشگاه‌ها در کارتابل انبار ---------- */
 app.whStoreHist = app.whStoreHist || { range:'today', from:'', to:'', q:'', data:null, seq:0 };
@@ -978,10 +985,10 @@ function whStoreDocument(o){
   return `<div class="whd-doc"><div class="whd-head"><div class="whd-document-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></div><div class="whd-meta whd-store-meta"><span><span class="whd-label">فروشگاه:</span><b>${shop}</b></span><span><span class="whd-label">تحویل‌گیرنده:</span><b>${driver}</b></span><span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo))}</b></span><span><span class="whd-label">تاریخ ثبت سفارش:</span><b>${esc(formatDateTime24(o.createdAt))}</b></span><span><span class="whd-label">سرویس:</span><b>${run}</b></span></div></div><div class="whd-table-scroll"><table><colgroup><col class="whd-col-number"><col class="whd-col-product"><col class="whd-col-request"><col class="whd-col-weight"></colgroup><thead><tr><th>ردیف</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن ارسالی (کیلوگرم)</th></tr></thead><tbody>${o.lines.map((i,k)=>`<tr><td class="whd-number">${fa(k+1)}</td><td><b>${esc(i.productName)}</b></td><td class="whd-quantity">${i.requestedQty==null?'نامشخص':qty(i.requestedQty)+' '+esc(i.requestedUnit)}</td><td class="whd-quantity">${i.deliveredKg==null?'نامشخص':qty(i.deliveredKg)}</td></tr>`).join('')}</tbody></table></div><section class="whd-acknowledgement"><p class="whd-declaration">اینجانب (${driver}) اقلام فوق را صحیح و سالم از انبار جهت حمل و تحویل به ${shop} دریافت نمودم.</p><div class="whd-signature"><span>امضاء تحویل‌گیرنده</span><b>${driver}</b></div></section></div>`;
 }
 async function whStoreDocumentDetails(id,run){
-  try{const {document:doc}=await api('/api/warehouse/store-documents/'+encodeURIComponent(id)+'/'+run);openModal('سند انبار سرویس '+(run===2?'دوم':'اول'),whStoreDocument(doc)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-store-print>${icon('receipt',16)} چاپ سند انبار</button>${doc.handoverToken&&normalizeRole(app.user?.roleCode)==='warehouse'?'<button type="button" class="btn btn-primary" data-wh-handover>ثبت تحویل فیزیکی به راننده</button>':''}</div>`);$('#modal [data-wh-store-print]').addEventListener('click',()=>whStoreDocumentPrint(id,run));$('#modal [data-wh-handover]')?.addEventListener('click',e=>whTransportHandover(e.currentTarget,id,run,doc.handoverToken));}catch(e){toast(e.message);}
+  try{const {document:doc}=await api('/api/warehouse/store-documents/'+encodeURIComponent(id)+'/'+run);openModal('سند انبار سرویس '+(run===2?'دوم':'اول'),whStoreDocument(doc)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-store-print>${icon('receipt',16)} چاپ سند انبار</button>${doc.handoverToken&&whCanRegisterHandover()?'<button type="button" class="btn btn-primary" data-wh-handover>ثبت تحویل و چاپ سند</button>':''}</div>`);$('#modal [data-wh-store-print]').addEventListener('click',()=>whStoreDocumentPrint(id,run));$('#modal [data-wh-handover]')?.addEventListener('click',e=>whTransportHandover(e.currentTarget,id,run,doc.handoverToken));}catch(e){toast(e.message);}
 }
 async function whStoreDocumentPrint(id,run){
-  try{const {document:doc}=await api('/api/warehouse/store-documents/'+encodeURIComponent(id)+'/'+run);BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${whStoreDocument(doc)}<script src="/print-ready.js"><\/script></body></html>`));}catch(e){toast(e.message);}
+  try{const {document:doc}=await api('/api/warehouse/store-documents/'+encodeURIComponent(id)+'/'+run);whPrintDocument(doc,run);}catch(e){toast(e.message);}
 }
 function markWhsRange(){ $$('.wh-store-hist .whh-range').forEach(b=>b.classList.toggle('active',b.dataset.range===app.whStoreHist.range)); }
 async function loadWhStoreHistory(){
@@ -1081,7 +1088,18 @@ async function wh38Finalize(id){
   const items=$$('#wh38Body [data-wh38-weight]').map(w=>{ const out=$(`#wh38Body [data-wh38-oos="${w.dataset.wh38Weight}"]`)?.checked||false; return {itemId:w.dataset.wh38Weight, deliveredKg:out?0:n(w.value), outOfStock:out}; });
   if(!items.length)return toast('قلمی برای ثبت وزن وجود ندارد.');
   if(items.some(x=>!x.outOfStock&&x.deliveredKg<=0))return toast('برای همه اقلام موجود وزن نهایی معتبر وارد کنید.');
-  try{ await api('/api/orders/'+id+'/warehouse',{method:'POST',body:JSON.stringify({items})}); toast('وزن نهایی ثبت شد و سفارش برای تسویه فروش ارسال شد.'); await refreshIndicators(); wh38Shell('preparing'); }catch(e){ toast(e.message); }
+  let result;
+  try{result=await api('/api/orders/'+id+'/warehouse',{method:'POST',body:JSON.stringify({items})});}
+  catch(e){toast(e.message);return;}
+  if(app.page!=='warehouse')return;
+  void refreshIndicators();
+  const order=result.order;
+  if(order?.transportWorkflow===1&&order.deliveryMode==='DELIVERY'){
+    app.sub.warehouse='delivered';renderNav();wh38Shell('delivered');
+    if(order.transportAssignments?.['0']?.driverId){toast('وزن نهایی ثبت شد؛ پس از تحویل کالا، تحویل به راننده را ثبت کنید.');await whDeliveredDetails(id);}
+    else toast('وزن نهایی ثبت شد؛ پس از تعیین راننده در ترابری، از بخش تحویل‌شده سند را باز کنید.');
+  }else{toast('وزن نهایی ثبت شد و سفارش برای تسویه فروش ارسال شد.');wh38Shell('preparing');}
+
 }
 /* ---------------- v37.4.0 — سفارش فروشگاه: برگهٔ دو سرویس ارسال انبار ---------------- */
 const SR38_STATUS_LABEL={AWAITING_R1:'در انتظار سرویس اول',IN_SHIPPING:'در حال ارسال',MOVED_R2:'در انتظار سرویس دوم',COMPLETED:'تکمیل‌شده',CLOSED_SHORT:'بسته با کسری'};
@@ -1522,7 +1540,7 @@ async function transportDraftPrint(id){
 }
 function transportSalesInvoicePanel(order){
  const host=$('#stlMain'),hand=order.transportHandovers?.['0'],invoice=order.transportInvoice;
- if(!hand){host.innerHTML='<section class="sd-panel sd-pad"><h2>فاکتور پخش</h2><p>در انتظار تحویل کالا به راننده و ثبت امضای دستی در انبار.</p></section>';return;}
+ if(!hand){host.innerHTML='<section class="sd-panel sd-pad"><h2>فاکتور پخش</h2><p>در انتظار ثبت تحویل فیزیکی کالا به راننده در انبار.</p></section>';return;}
  if(invoice){
   const stage=order.transportReturn?transportClosureFormHtml(order):order.transportDeparture?transportReturnFormHtml(): '<p>فاکتور آماده چاپ است؛ تأیید خروج بر عهده ترابری است.</p>';
   const deviceWarning=order.transportReturn&&stl.devicesError?`<div class="stl-load-error" role="alert"><b>فهرست دستگاه‌های پوز دریافت نشد.</b><span>سایر روش‌های تسویه قابل استفاده‌اند؛ برای انتخاب پوز، فهرست دستگاه‌ها را دوباره دریافت کنید.</span><button type="button" class="btn btn-secondary btn-sm" data-ts-devices-retry>دریافت دوباره دستگاه‌ها</button></div>`:'';
