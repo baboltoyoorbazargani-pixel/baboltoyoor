@@ -32,3 +32,7 @@ test('جزئیات ترابری با مشخصات افقی و اقلام جدو�
  assert.match(html,/tp-detail-grid/);assert.match(html,/tp-items-table/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/سرویس دوم/);assert.doesNotMatch(html,/<li>/);assert.doesNotMatch(html,/id="tpAssign"/);
  const css=fs.readFileSync(path.join(__dirname,'../public/compatibility.css'),'utf8');assert.match(css,/tp-detail-grid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);assert.match(css,/tp-detail-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
+
+test('صف سفارش‌های ترابری جهت ردیف را صریحاً افقی و پیمایش را محدود به فهرست می‌کند',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../public/compatibility.css'),'utf8');assert.match(css,/#transportPlans \.order-compact-row\{flex-direction:row!important/);assert.match(code,/adm-list order-compact-scroll tp-plan-list/);
+});

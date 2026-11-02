@@ -1029,6 +1029,10 @@
 #appView #content .sales-delivery-summary-row .sales-distribution-identity small{font-size:11.5px;color:var(--muted,#64748b)}
 #appView #content .sales-delivery-summary-row>.sales-distribution-actions{margin-inline-start:auto;padding-inline-end:0}
 
+/* در صف ترابری، استایل قدیمی dsp-card جهت را ستونی می‌کرد. */
+#appView #content #transportPlans .order-compact-row{flex-direction:row!important}
+#appView #content #transportPlans .tp-plan-list{overflow-x:auto;max-width:100%;min-width:0}
+
 /* جزئیات ترابری: مشخصات کنار هم، با شکست کنترل‌شده و بدون بریدن متن. */
 #modal .tp-detail{display:grid;gap:16px;min-width:0;max-width:100%}
 #modal .tp-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
