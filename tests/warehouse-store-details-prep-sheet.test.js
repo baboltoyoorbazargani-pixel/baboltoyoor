@@ -35,10 +35,11 @@ test('کارت آماده‌سازی فقط فروشگاه، مشتری و تع�
   const prep = list.slice(list.indexOf("if(kind==='preparing')"), list.indexOf('return `<div class="wh38-store-list">${orders.map((o,i)'));
   assert.match(prep, /whsin22-store[^>]*>\$\{esc\(o\.storeName\|\|'فروشگاه'\)\}/, 'نام فروشگاه نیست');
   assert.match(prep, /مشتری: \$\{esc\(o\.customer\?\.name\|\|'—'\)\}/, 'نام مشتری نیست');
-  assert.match(prep, /whprep23-count">\$\{qty\(activeItemsOf\(o\)\.length\)\} قلم/, 'تعداد اقلام نیست');
+  assert.match(prep, /whprep23-count order-summary-cell">\$\{qty\(activeItemsOf\(o\)\.length\)\} قلم/, 'تعداد اقلام نیست');
   assert.match(prep, /data-action="wh38-start" data-id="\$\{o\.id\}">\$\{icon\('eye',14\)\} جزئیات</, 'دکمهٔ جزئیات نیست');
-  // روی کارت آماده‌سازی هیچ چیز اضافه‌ای نیست: نه اقلام، نه شماره/تاریخ، نه چیپ سرویس
-  assert.doesNotMatch(prep, /wh38-items|wh38StoreHeader|sr38Chips|orderNo|formatDateTime24|wh38-no/);
+  // اطلاعات مشترک شماره، تاریخ و وضعیت اضافه شده‌اند؛ جزئیات اقلام همچنان در برگه است.
+  assert.match(prep, /orderNo/);assert.match(prep, /formatDateTime24/);assert.match(prep, /badge\(o\.status\)/);
+  assert.doesNotMatch(prep, /wh38-items|wh38StoreHeader|sr38Chips|wh38-no/);
   // جزئیات همان برگهٔ کاملِ ثبت وزن را باز می‌کند (مسیر قبلی wh38-start)
   assert.match(ui, /else if\(a==='wh38-start'\)\{ el\.disabled=true; const r=await api\('\/api\/orders\/'\+id\+'\/warehouse\/start-preparing'/);
   assert.match(ui, /if\(r\.order&&r\.order\.storeRun&&r\.order\.storeRun\.enabled\) sr38Sheet\(r\.order\); else wh38Sheet\(r\.order\);/);

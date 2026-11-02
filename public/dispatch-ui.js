@@ -259,8 +259,9 @@ function paintDispatch(data) {
 }
 function dspDispatchCard(o) {
  const d=o.dispatch||{};
- return `<article class="dsp-card order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${dspBadge(d.status)}<span>راننده: ${esc(d.driverName||'تعیین نشده')}</span><span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات</button></article>`;
+ return orderSummaryRow(o,{className:'dsp-card order-compact-row',name:dspCustomer(o),statusHtml:dspBadge(d.status),itemCount:dspScopedItems(o).length,extras:[{html:`راننده: ${esc(d.driverName||'تعیین نشده')}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-dsp="details" data-id="${esc(o.id)}" data-run="${d.run||''}">جزئیات محموله</button>`});
 }
+
 async function dspDispatchClick(e) {
   const el = e.target.closest('[data-dsp]'); if (!el) return;
   if (el.dataset.dsp === 'tab') { dsp.tab = el.dataset.tab; return renderDispatchPage(); }
@@ -430,8 +431,11 @@ async function renderGateDispatchPage() {
 }
 function gateDispatchCard(o, action = '') {
  const d=o.dispatch||{};
- return `<article class="dsp-card ${o.orderType==='STORE'?'dsp-card-storefree':''} order-compact-row" data-order="${esc(o.id)}"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(dspCustomer(o))}</strong>${o.orderType==='STORE'?'<span class="badge green">فروشگاه — بدون مبلغ</span>':''}<span>راننده: ${esc(d.driverName||'—')}</span>${plateViewHtml(d.driverPlate, '—', true)}${dspBadge(d.status)}<span>${qty(dspScopedItems(o).length)} قلم</span><button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}" data-run="${Number(d.run)||0}">جزئیات محموله</button>${action==='exit'?`<button class="btn btn-primary btn-sm" type="button" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`:''}</article>`;
+ const extras=[...(o.orderType==='STORE'?[{html:'<span class="badge green">فروشگاه — بدون مبلغ</span>'}]:[]),{html:`راننده: ${esc(d.driverName||'—')}`},{html:plateViewHtml(d.driverPlate,'—',true)}];
+ const actions=`<button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}" data-run="${Number(d.run)||0}">جزئیات محموله</button>${action==='exit'?`<button class="btn btn-primary btn-sm" type="button" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`:''}`;
+ return orderSummaryRow(o,{className:`dsp-card ${o.orderType==='STORE'?'dsp-card-storefree':''} order-compact-row`,name:dspCustomer(o),statusHtml:dspBadge(d.status),itemCount:dspScopedItems(o).length,extras,actionsHtml:actions});
 }
+
 function gateHomeDispatchMarkup(data) {
   const leaving = data.leaving || [];
   if (!leaving.length) return '';
@@ -565,11 +569,12 @@ function paintReturns(data) {
 /* Transport planning; old open dispatches remain separately traceable. */
 function transportPlanRows(orders){
  return orders.flatMap(o=>(o.services||[]).map(s=>{
-  const a=s.assignment, service=s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
+  const a=s.assignment,service=s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
   const state=s.tripStatus==='CLOSED'?'مدارک بازگشته':s.tripStatus==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':s.departed?'در مسیر':s.canDepart?'آماده ثبت خروج':s.handedOver?'در انتظار فاکتور':'در انتظار تحویل انبار';
-  return `<article class="dsp-card order-compact-row"><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><strong>${esc(o.customerName||'—')}</strong><span>${esc(service)}</span><span>${esc(state)}</span><span>${esc(a?.driverName||'راننده تعیین نشده')}</span><span>${esc(a?.vehicleType||'')} ${esc(fa(a?.vehiclePlate||''))}</span><button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات</button></article>`;
+  return orderSummaryRow(o,{className:'dsp-card order-compact-row',name:o.customerName||'—',statusHtml:`<span class="badge blue">${esc(state)}</span>`,itemCount:(o.items||[]).length,extras:[{html:esc(service)},{html:`راننده: ${esc(a?.driverName||'تعیین نشده')}`},{html:`خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات سفارش</button>`});
  })).join('');
 }
+
 async function renderTransportPlanQueue(){
  const host=$('#transportPlans');if(!host)return;
  try{

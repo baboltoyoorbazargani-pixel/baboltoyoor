@@ -3,6 +3,21 @@ const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
 function storeAwareOrderName(o){return o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—')}
 function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':(o?.customer?.phone||'—')}
+// Shared compact order row. Callers supply only trusted markup for status and actions;
+// customer data and labels are escaped here. A store service remains a separate row.
+function orderSummaryRow(o,opts={}){
+ const cell=(content,cls='')=>`<span class="order-summary-cell ${cls}">${content}</span>`;
+ const name=opts.name??storeAwareOrderName(o),number=opts.orderNo??o.orderNo??'—',date=opts.createdAt??o.createdAt;
+ const identity=`<strong>${esc(name||'—')}</strong>${opts.identityDetail?`<small>${esc(opts.identityDetail)}</small>`:''}`;
+ const extras=(opts.extras||[]).filter(x=>x&&x.html).map(x=>cell(x.html,x.className||'')).join('');
+ const itemCount=opts.itemCount===undefined?'':cell(`${qty(opts.itemCount)} قلم`,'order-summary-count');
+ const status=opts.statusHtml?cell(opts.statusHtml,'order-summary-status'):'';
+ const actions=opts.actionsHtml?cell(opts.actionsHtml,'order-summary-actions'):'';
+ const contents=cell(identity,'order-summary-identity')+cell(`شماره سفارش ${esc(fa(number))}`,'order-code')+cell(`تاریخ ${esc(formatDateTime24(date))}`,'order-summary-date')+status+itemCount+extras+actions;
+ const classes=`order-summary-row ${opts.className||''}`;
+ if(opts.selectable)return `<button type="button" class="${classes}" data-stl="select" data-id="${esc(o.id)}">${contents}</button>`;
+ return `<article class="${classes}" data-order="${esc(o.id)}">${contents}</article>`;
+}
 
 const app = {
   salesStoreTab: 'incoming',
@@ -2638,8 +2653,9 @@ async function refreshWhDashToday(){
 }
 
 function salesHistoryRow(o){
- return `<article class="sales-history-row"><div><b>سفارش ${esc(fa(o.orderNo||'—'))}</b> <span>${esc(o.customerName)}</span><small>${esc(formatDateTime24(o.createdAt))} · ${esc(o.phone||'')}</small></div><div>${badge(o.status)} <span>${qty(o.invoiceCount)} فاکتور</span></div><button type="button" class="btn btn-secondary btn-sm" data-sales-history-id="${esc(o.id)}">جزئیات و رویدادها</button></article>`;
+ return orderSummaryRow(o,{className:'sales-history-row',name:o.customerName||'—',statusHtml:badge(o.status),extras:[{html:`شماره تماس: ${esc(o.phone||'—')}`},{html:`${qty(o.invoiceCount||0)} فاکتور`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-sales-history-id="${esc(o.id)}">جزئیات و رویدادها</button>`});
 }
+
 async function refreshSalesOverview(){
  const host=$('#salesLiveOverview');if(!host)return;
  try{const [d,work]=await Promise.all([api('/api/sales/overview'),api('/api/workload')]);if(!host.isConnected)return;const keys=['salesIntake','salesRemote','salesFlow','store','salesSettlement','salesFuture'],counts=keys.map(k=>Number(work.counts?.[k]||0)),max=Math.max(1,...counts);document.querySelectorAll('[data-dash-role="sales"] .role-dash-card').forEach((card,i)=>{const number=card.querySelector(':scope > strong'),bar=card.querySelector('.role-dash-bar i');if(number)number.textContent=qty(counts[i]);if(bar)bar.style.width=Math.max(6,Math.round(counts[i]*100/max))+'%';});host.innerHTML=`<div class="sales-live-head"><div><h3>فروش امروز</h3><p>بر اساس تاریخ سرور · بروزرسانی هر ۶ ثانیه</p></div><span class="badge green">زنده</span></div><div class="sales-live-metrics"><div><small>سفارش‌های ثبت‌شده امروز</small><strong>${qty(d.ordersToday)}</strong></div><div><small>فاکتورهای صادرشده امروز</small><strong>${qty(d.invoicesToday)}</strong></div><div><small>جمع فاکتورهای امروز پس از مرجوعی</small><strong>${money(d.salesTotal)}</strong></div><div><small>در انتظار تسویه</small><strong>${qty(d.pendingSettlement)}</strong></div><div><small>برگشتی به فروش</small><strong>${qty(d.returned)}</strong></div><div><small>سفارش‌های لغوشده از ثبت‌های امروز</small><strong>${qty(d.cancelledToday)}</strong></div></div><div class="sales-live-head"><h3>آخرین سفارش‌ها</h3><button type="button" class="btn btn-secondary btn-sm" data-cartable="history" data-role-page="sales">همه سوابق</button></div><div class="sales-history-list">${d.recent.map(salesHistoryRow).join('')||'<div class="empty">هنوز سفارشی ثبت نشده است.</div>'}</div>`;}catch(e){if(host.isConnected)host.innerHTML=`<div class="empty">خطا در دریافت اطلاعات فروش: ${esc(e.message)}</div>`;}
@@ -3979,15 +3995,7 @@ function whhBody(d,opts){
     .map(([ic,l,v,u],k)=>`<div class="whh-kpi ${k===3&&s.outOfStock?'is-warn':''}"><span class="whh-kpi-ico">${icon(ic,18)}</span><div><small>${l}</small><b>${v}${u?` <em>${u}</em>`:''}</b></div></div>`).join('');
   const days=new Map(); (d.rows||[]).forEach(r=>{ if(!days.has(r.day)) days.set(r.day,[]); days.get(r.day).push(r); });
   const list=[...days.entries()].map(([day,rows])=>`<section class="whh-day"><header class="whh-day-head"><b>${dateLabel(day)}</b><span>${qty(rows.length)} سفارش • ${qty(rows.reduce((t,r)=>t+r.deliveredKg,0))} کیلوگرم</span></header>
-    ${rows.map(r=>`<article class="whh-row">
-      <div class="whh-time"><b>${whhTime(r.completedAt)}</b><small>ثبت وزن</small></div>
-      <div class="whh-main"><div class="sd-chips"><span class="order-code">${esc(fa(r.orderNo))}</span>${sdTypeBadge(r)}${badge(r.status)}</div>
-        <h4>${esc(r.customerName)}</h4><p>${r.customerPhone?`<span dir="ltr">${esc(fa(r.customerPhone))}</span> • `:''}${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}${r.deliveryDate?` • تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`:''}</p></div>
-      <div class="whh-figs"><span><small>اقلام</small><b>${qty(r.itemCount)}</b></span><span><small>وزن تحویلی</small><b>${qty(r.deliveredKg)}</b></span>${r.outOfStock?`<span class="is-warn"><small>ناموجود</small><b>${qty(r.outOfStock)}</b></span>`:''}</div>
-      <div class="whh-by"><small>ثبت‌کننده</small><b>${esc(r.completedBy)}</b>${r.acceptedAt?`<small>دریافت ${whhTime(r.acceptedAt)}</small>`:''}</div>
-      ${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[]):''}
-      <details class="whh-details"><summary>جزئیات اقلام</summary>${whhItemsHtml(r.items,r.orderType==='STORE')}</details>
-    </article>`).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
+    ${rows.map(r=>`<div class="whh-record">${orderSummaryRow(r,{className:'whh-row',name:r.customerName||'—',statusHtml:badge(r.status),itemCount:r.itemCount,extras:[{html:sdTypeBadge(r)},{html:`تلفن: ${esc(fa(r.customerPhone||'—'))}`},{html:`مقصد: ${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}`},...(r.deliveryDate?[{html:`تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`}]:[]),{html:`وزن تحویلی: ${qty(r.deliveredKg)} کیلوگرم`},...(r.outOfStock?[{html:`ناموجود: ${qty(r.outOfStock)}`}]:[]),{html:`ثبت‌کننده: ${esc(r.completedBy||'—')}`},{html:`ثبت وزن: ${whhTime(r.completedAt)}`},...(r.acceptedAt?[{html:`دریافت: ${whhTime(r.acceptedAt)}`}]:[])],actionsHtml:`${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[]):''}<button type="button" class="btn btn-secondary btn-sm" data-whh-detail aria-expanded="false">جزئیات اقلام</button>`})}<div class="whh-details" hidden>${whhItemsHtml(r.items,r.orderType==='STORE')}</div></div>` ).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
   const prod=(s.byProduct||[]).map(p=>`<tr><td data-label="کالا">${esc(p.productName)}</td><td data-label="سفارش">${qty(p.orders)}</td><td data-label="وزن (کیلوگرم)">${qty(p.deliveredKg)}</td><td data-label="ناموجود">${p.outOfStock?`<b class="danger-text">${qty(p.outOfStock)}</b>`:'—'}</td></tr>`).join('');
   const rets=(d.returns||[]).map(x=>`<li><div><span class="order-code">${esc(fa(x.orderNo))}</span><b>${esc(x.customerName)}</b></div><p>${esc(x.reason||'بدون توضیح')}</p><small>${esc(formatDateTime24(x.at))} • ${esc(x.by)}</small></li>`).join('');
   return `<div class="whh-kpis">${kpis}</div>
@@ -4041,6 +4049,8 @@ async function loadWarehouseHistory(){
     const b=$('#whhBody'); if(b) b.innerHTML=whhBody(d);
   }catch(err){ const b=$('#whhBody'); if(b) b.innerHTML=`<div class="empty">خطا در دریافت سوابق انبار: ${esc(err.message)}</div>`; }
 }
+document.addEventListener('click',e=>{const b=e.target.closest('[data-whh-detail]');if(!b)return;const detail=b.closest('.whh-record')?.querySelector('.whh-details');if(!detail)return;detail.hidden=!detail.hidden;b.setAttribute('aria-expanded',String(!detail.hidden));});
+
 function printWarehouseHistory(){
   const d=app.whHist.data; if(!d) return toast('ابتدا سوابق بارگذاری شود.');
   const s=d.summary||{};

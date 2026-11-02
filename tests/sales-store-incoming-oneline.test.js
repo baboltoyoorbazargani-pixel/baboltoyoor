@@ -18,7 +18,7 @@ const view = (() => {
 
 test('کارت فشرده است و همهٔ دکمه‌ها در عرض محدود قابل چیدمان‌اند', () => {
   assert.match(view, /class="[^"]*ssin21-card/);
-  assert.match(view, /class="ssin21-actions"/);
+  assert.match(view, /class="ssin21-actions order-summary-cell order-summary-actions"/);
   for (const a of ['store-order-details-v25', 'sales-edit-store-order', 'store-approve-v25', 'store-quick-send-v40'])
     assert.ok(view.includes(`data-action="${a}"`), `دکمهٔ ${a} در کارت نیست`);
   const css = read('public/compatibility.css');
