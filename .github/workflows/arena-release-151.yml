@@ -1,0 +1,44 @@
+name: Arena publish 1.0.51 assets
+on: [push]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 27af38cb6935b78ea76c0cd00eff8f3c4757e18f
+      - name: Build and validate release assets
+        run: |
+          cat > /tmp/bt151-build.py <<'PYTHON'
+          import os,subprocess,hashlib,zipfile,shutil
+          from pathlib import Path
+          v='1.0.51';out=Path(os.environ.get('OUT','/tmp/bt151-assets'));out.mkdir(parents=True,exist_ok=True)
+          def write(z,name,data):
+           i=zipfile.ZipInfo(name,(2020,1,1,0,0,0));i.compress_type=zipfile.ZIP_DEFLATED;i.external_attr=0o100644<<16;z.writestr(i,data,compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          with zipfile.ZipFile(out/f'BabolToyor-App-{v}.zip','w') as z:
+           for f in sorted(f for f in files if f and not f.startswith('.github/')):write(z,f,Path(f).read_bytes())
+          shutil.copyfile('windows-installer/BabolToyor-Setup.cmd',out/f'BabolToyor-Setup-{v}.cmd')
+          with zipfile.ZipFile(out/f'BabolToyor-Windows-Setup-{v}.zip','w') as z:
+           for src,dst in [(out/f'BabolToyor-App-{v}.zip','app.zip'),(Path('windows-installer/BabolToyor-Setup.cmd'),'BabolToyor-Setup.cmd'),(Path('windows-installer/README-fa.md'),'README-fa.md'),(Path('windows-installer/INSTALL-STEPS-fa.md'),'INSTALL-STEPS-fa.md'),(Path('windows-installer/INSTALL-STEPS-fa.html'),'INSTALL-STEPS-fa.html')]:write(z,dst,src.read_bytes())
+          for f in ['domain-https-fa.md','reports-backup-update-fa.md']:shutil.copyfile('docs/'+f,out/f)
+          names=[f'BabolToyor-App-{v}.zip',f'BabolToyor-Setup-{v}.cmd',f'BabolToyor-Windows-Setup-{v}.zip','domain-https-fa.md','reports-backup-update-fa.md']
+          (out/f'SHA256SUMS-{v}.txt').write_text(''.join(f'{hashlib.sha256((out/n).read_bytes()).hexdigest()}  {n}\n' for n in names))
+          for n in names+[f'SHA256SUMS-{v}.txt']:print(hashlib.sha256((out/n).read_bytes()).hexdigest(),n)
+          PYTHON
+          python /tmp/bt151-build.py
+          unzip -t /tmp/bt151-assets/BabolToyor-App-1.0.51.zip | tail -1
+          unzip -t /tmp/bt151-assets/BabolToyor-Windows-Setup-1.0.51.zip | tail -1
+          cd /tmp/bt151-assets && sha256sum -c SHA256SUMS-1.0.51.txt
+      - name: Upload assets to draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          for file in /tmp/bt151-assets/*; do
+            name=$(basename "$file")
+            curl -fsS -o /dev/null -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/octet-stream" --data-binary "@$file" "https://uploads.github.com/repos/baboltoyoorbazargani-pixel/baboltoyoor/releases/431153363/assets?name=$name"
+            echo "Uploaded $name"
+          done
