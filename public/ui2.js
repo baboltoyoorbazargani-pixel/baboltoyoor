@@ -685,7 +685,7 @@ function renderGateHistory(visits,hideHeading=false){
 function gateExitRow(o){
   const field=(label,text,html)=>`<div class="gt-exit-field" title="${esc(label+': '+text)}"><small>${esc(label)}</small><span>${html??esc(text)}</span></div>`;
   const phone=storeAwareOrderPhone(o),name=storeAwareOrderName(o),plate=o.customer?.plate||'بدون پلاک';
-  return `<article class="gt-exit-card" data-order="${esc(o.id)}">${field('مشتری',name)}${field('شماره سفارش',fa(o.orderNo||'—'))}${field('شماره فاکتور',fa(o.payment?.invoiceNumber||'—'))}${field('پلاک',fa(plate),plateViewHtml(o.customer?.plate,'بدون پلاک',true))}${field('شماره تماس',fa(phone))}${field('مبلغ',String(o.payment?.totalAmount??'—'),money(o.payment?.totalAmount))}${field('زمان تسویه',dt(o.payment?.verifiedAt))}${field('تعداد اقلام',String(activeItemsOf(o).length),qty(activeItemsOf(o).length)+' قلم')}<div class="gt-exit-actions"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${esc(o.id)}">${icon('check',14)} کنترل خروج</button></div></article>`;
+  return `<article class="gt-exit-card" data-order="${esc(o.id)}">${field('مشتری',name)}${field('شماره و تاریخ سفارش',fa(o.orderNo||'—')+' • '+dt(o.createdAt))}${field('شماره فاکتور',fa(o.payment?.invoiceNumber||'—'))}${field('پلاک',fa(plate),plateViewHtml(o.customer?.plate,'بدون پلاک',true))}${field('شماره تماس',fa(phone))}${field('مبلغ',String(o.payment?.totalAmount??'—'),money(o.payment?.totalAmount))}${field('زمان تسویه',dt(o.payment?.verifiedAt))}${field('تعداد اقلام',String(activeItemsOf(o).length),qty(activeItemsOf(o).length)+' قلم')}<div class="gt-exit-actions"><button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}">${icon('eye',14)} فاکتور</button><button class="btn btn-success btn-sm" data-action="open-exit" data-id="${esc(o.id)}">${icon('check',14)} کنترل خروج</button></div></article>`;
 }
 function renderGateExit(orders){
   return `<section class="sd-panel gt-exit-panel">
@@ -712,7 +712,7 @@ function bindGate(tab){
     if(a==='pick-customer')return pickCustomer(Number(el.dataset.index));
   };
   const f=$('#gateForm'); if(f)f.addEventListener('submit',submitGate);
-  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;syncGateVehicleFields();});
+  const nv=$('#noVehicle'); if(nv)nv.addEventListener('change',()=>{const box=$('#plateBox');if(box)box.hidden=nv.checked;if(nv.checked&&$('#plateSuggest'))$('#plateSuggest').innerHTML='';syncGateVehicleFields();});
   f?.elements.vehicleType?.addEventListener('change',syncGateVehicleFields);syncGateVehicleFields();
   const history=$('#gateHistorySearch');if(history)history.addEventListener('input',()=>queueGateHistorySearch(history));
   if($('#plateBox'))$('#plateBox').innerHTML=plateEditorHtml('',f?.elements.vehicleType?.value||'');
