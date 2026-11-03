@@ -3305,6 +3305,13 @@ function paintSalesPaneV29(tab,data){
   }
 }
 
+function salesRefreshWarning(tab,failed){
+  const pane=app.salesV29.panes?.[tab];if(!pane)return;
+  let warning=pane.querySelector('[data-sales-refresh-warning]');
+  if(!failed){warning?.remove();return;}
+  if(!warning){warning=document.createElement('div');warning.dataset.salesRefreshWarning='1';warning.setAttribute('role','alert');warning.className='notice';warning.textContent='دریافت تازهٔ صف فروش ناموفق بود؛ اطلاعات نمایش‌داده‌شده ممکن است قدیمی یا ناقص باشد.';pane.prepend(warning);}
+}
+
 function startSalesLiveTimerV29(){
   if(app.timer){clearInterval(app.timer);app.timer=null;}
   app.timer=setInterval(async()=>{
@@ -3312,8 +3319,8 @@ function startSalesLiveTimerV29(){
     try{
       const tab=app.sub.sales;
       const data=await fetchSalesCache(true);
-      if(app.page==='sales'&&app.sub.sales===tab)paintSalesPaneV29(tab,data);
-    }catch{}
+      if(app.page==='sales'&&app.sub.sales===tab){paintSalesPaneV29(tab,data);salesRefreshWarning(tab,false);}
+    }catch{if(app.page==='sales'&&app.sub.sales===tab)salesRefreshWarning(tab,true);}
   },8000);
 }
 
@@ -3331,8 +3338,8 @@ function renderSales(tab='onsite'){
   if(!fresh||tab==='delivery'){
     void fetchSalesCache(true).then(data=>{
       app.salesCache=data;
-      if(app.page==='sales' && app.sub.sales===tab)paintSalesPaneV29(tab,data);
-    }).catch(()=>{});
+      if(app.page==='sales' && app.sub.sales===tab){paintSalesPaneV29(tab,data);salesRefreshWarning(tab,false);}
+    }).catch(()=>{if(app.page==='sales'&&app.sub.sales===tab)salesRefreshWarning(tab,true);});
   }else{
     paintSalesPaneV29(tab,app.salesCache);
   }
