@@ -4,7 +4,7 @@ const app=fs.readFileSync('public/app.js','utf8');
 const code=app.slice(app.indexOf('let stlOpenSequence=0;'),app.indexOf('\nfunction stlClose()',app.indexOf('let stlOpenSequence=0;')));
 function harness(api){
  const host={innerHTML:'',isConnected:true},painted=[],messages=[];
- const c={api,stl:{},app:{page:'sales',sub:{sales:'settlement'}},$:()=>host,document:{querySelectorAll:()=>[]},stlItemsOf:()=>[],stlPaintForm:()=>painted.push(c.stl.orderId),stlEmptyHtml:()=>'<p>empty</p>',stlReset:()=>{},renderSales:()=>{},toast:m=>messages.push(m),esc:s=>String(s).replace(/[<>&"]/g,x=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[x]))};
+ const c={captureEntityNotices:()=>[],finishEntityNotices:()=>{},api,stl:{},app:{page:'sales',sub:{sales:'settlement'}},$:()=>host,document:{querySelectorAll:()=>[]},stlItemsOf:()=>[],stlPaintForm:()=>painted.push(c.stl.orderId),stlEmptyHtml:()=>'<p>empty</p>',stlReset:()=>{},renderSales:()=>{},toast:m=>messages.push(m),esc:s=>String(s).replace(/[<>&"]/g,x=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[x]))};
  vm.createContext(c);vm.runInContext(code,c);return {c,host,painted,messages};
 }
 const order=(id,extra={})=>({id,status:'SETTLEMENT_PENDING',orderType:'REMOTE',transportWorkflow:1,deliveryMode:'DELIVERY',items:[],...extra});

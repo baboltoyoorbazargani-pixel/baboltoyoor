@@ -1,0 +1,16 @@
+name: Temporary notification browser checks
+on: [push, workflow_dispatch]
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright-core
+      - name: Browser checks
+        run: |
+          export BT_CHROMIUM_PATH=$(which google-chrome || which chromium || which chromium-browser)
+          node --test tests/notification-precision-browser.test.js tests/notification-browser.test.js tests/notification-roles-compact-browser.test.js tests/sales-delivery-tabs-browser.test.js

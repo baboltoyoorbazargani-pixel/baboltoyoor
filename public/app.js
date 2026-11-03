@@ -1674,7 +1674,7 @@ function closeNotifPanel(){$('#notificationPanel')?.classList.add('hidden')}
 function renderNotifPanel(d){
   const panel=$('#notificationPanel'); const list=d.notifications||[];
   const soundOn=notifSoundOn();
-  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="test-notif-sound">آزمایش صدا</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div id="notifAudioStatus" class="notice" role="status" ${app.notifAudioBlocked?'':'hidden'}>${app.notifAudioBlocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':''}</div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}" data-entity-type="${esc(n.entityType||'')}" data-entity-id="${esc(n.entityId||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
+  panel.innerHTML=`<div class="notification-head"><div><strong>اعلان‌های عملیاتی</strong><span>${faDigits(d.unread||0)} اعلان خوانده‌نشده</span></div><div class="notification-tools"><button type="button" class="btn btn-ghost btn-sm" data-action="toggle-notif-sound" aria-pressed="${soundOn}">${soundOn?'صدا: روشن':'صدا: خاموش'}</button><button type="button" class="btn btn-ghost btn-sm" data-action="test-notif-sound">آزمایش صدا</button><button type="button" class="btn btn-ghost btn-sm" data-action="read-notifications" ${d.unread?'':'disabled'}>خواندن همه</button></div></div><div id="notifAudioStatus" class="notice" role="status" ${app.notifAudioBlocked?'':'hidden'}>${app.notifAudioBlocked?'مرورگر اجازهٔ پخش صدا نداده است. روی «آزمایش صدا» بزنید و صدای دستگاه و مجوز سایت را بررسی کنید.':''}</div><div class="notification-list">${list.length?list.map(n=>`<button type="button" class="notification-item ${n.isRead?'':'unread'}" data-action="open-notification" data-id="${esc(n.id)}" data-type="${esc(n.type||'')}" data-role="${esc(n.targetRole||'')}" data-entity-type="${esc(n.entityType||'')}" data-entity-id="${esc(n.entityId||'')}"><span class="notification-dot"></span><span class="notification-body"><strong>${esc(n.message||'اعلان جدید')}</strong><small>${esc(notifTimeText(n.createdAt))}${n.navSection===null?' · وضعیت مورد تغییر کرده است':''}</small></span></button>`).join(''):'<p class="notification-empty">اعلانی برای شما وجود ندارد.</p>'}</div>`;
 }
 function applyNotifSnapshot(d){
   app.notifSnapshot=d;
@@ -1696,12 +1696,18 @@ async function toggleNotifications(){
     positionNotifPanel(); panel.classList.remove('hidden');
   }catch(e){toast(e.message)}
 }
-async function acknowledgeNotifications(id=''){
+async function acknowledgeNotifications(id='', options={}){
+  if(Array.isArray(id) && !id.length)return true;
   const userId=app.user?.id;
+  if(!userId)return false;
+  const prior=app.notifAckQueue||Promise.resolve();let release;
+  app.notifAckQueue=new Promise(resolve=>{release=resolve;});
+  await prior.catch(()=>{});
+  if(!app.user||app.user.id!==userId){release();return false;}
   // باز کردن، زنگ در حال پخش را فوراً متوقف می‌کند؛ یادآور دیگر اعلان‌ها بعداً ادامه می‌یابد.
   stopNotifReminder();
   try{
-    const d=await api('/api/notifications/read',{method:'POST',body:JSON.stringify(id?{id}:{})});
+    const d=await api('/api/notifications/read',{method:'POST',body:JSON.stringify(Array.isArray(id)?{ids:id}:(id?{id}:{}))});
     if(!app.user||app.user.id!==userId)return false;
     // در طول درخواست نیز ممکن است یک تازه‌سازی قدیمی صدا را دوباره فعال کرده باشد.
     stopNotifReminder();
@@ -1712,13 +1718,28 @@ async function acknowledgeNotifications(id=''){
     app.notifSnapshot=d;
     const bc=$('#bellCount'); if(bc){bc.textContent=qty(d.unread||0);bc.classList.toggle('hidden',!(d.unread>0));}
     if(app.notifUnread) startNotifReminder(false);
-    closeNotifPanel();
+    if(options.closePanel!==false)closeNotifPanel();
     renderNav();
     updateSalesDeliveryWorkCount();
     return true;
-  }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}
+  }catch(e){if(app.notifUnread)startNotifReminder(false);toast(e.message);return false;}finally{release();}
 }
 async function markNotificationsRead(id=''){ await acknowledgeNotifications(id); }
+// Capture only notices already visible to this account before fetching a detail.
+// New arrivals, other roles/sections and another store service remain unread.
+function captureEntityNotices(entityType,entityId,run=null){
+ const role=normalizeRole(app.user?.roleCode)==='admin'?app.adminActiveRole:normalizeRole(app.user?.roleCode);
+ const page=role==='dispatch'?'drivers':role;
+ const section=page==='drivers'?'orders':page==='driver'?'dashboard':app.sub?.[page];
+ if(!role||!section||app.page!==page||app.notifNavigationDepth)return [];
+ return (app.notifSnapshot?.notifications||[]).filter(n=>{
+  if(n.isRead||normalizeRole(n.targetRole)!==role||n.navSection!==section||n.entityType!==entityType||n.entityId!==entityId)return false;
+  if(run==null)return true;
+  const eventRun=n.run??(n.type==='STORE_RUN_R1_SENT'?1:n.type==='STORE_RUN_R2_SENT'?2:null);
+  return eventRun!=null && Number(eventRun)===Number(run);
+ }).map(n=>n.id);
+}
+function finishEntityNotices(ids){if(ids?.length)for(let i=0;i<ids.length;i+=5000)void acknowledgeNotifications(ids.slice(i,i+5000),{closePanel:false});}
 function focusNotificationElement(el){
   if(!el)return false;
   const card=el.closest('article,.sr-ship-row,.sd-queue-row')||el;
@@ -1728,26 +1749,29 @@ function focusNotificationElement(el){
   return true;
 }
 async function openNotificationTarget(id,type,role,entityType,entityId){
-  if(!await acknowledgeNotifications(id))return;
+  const finish=async ok=>{if(ok)await acknowledgeNotifications(id);return !!ok;};
+  const notice=(app.notifSnapshot?.notifications||[]).find(n=>n.id===id);
+  const run=Number(notice?.run)||(type==='STORE_RUN_R1_SENT'?1:type==='STORE_RUN_R2_SENT'?2:0);
   const route=notifRoute(type,role), mine=normalizeRole(app.user?.roleCode);
   if(!route){toast('مسیر این اعلان قدیمی مشخص نیست.');return;}
   if(mine!=='admin' && mine!==role){toast('این اعلان مربوط به کارتابل دیگری است.');return;}
   if(!entityId||!entityType){await go(route.page,route.sub);toast('شناسهٔ مورد در این اعلان قدیمی موجود نیست.');return;}
+  app.notifNavigationDepth=(app.notifNavigationDepth||0)+1;
   try{
     if(entityType==='visit'){
-      const visits=(await api('/api/visits')).visits||[];
+      const visits=(await api('/api/visits?id='+encodeURIComponent(entityId))).visits||[];
       const visit=visits.find(v=>v.id===entityId);
       await go(route.page,route.sub);
       if(!visit||visit.status!=='WAITING_SALES')return toast('این مراجعه دیگر در صف ثبت سفارش نیست.');
-      await openOrder(entityId);return;
+      return finish(await openOrder(entityId));
     }
     if(entityType==='return'){
       const sets=await Promise.all(['AT_SALES','AT_WAREHOUSE','RECEIVED'].map(status=>api('/api/returns?status='+status)));
       const ticket=sets.flatMap(x=>x.returns||[]).find(x=>x.id===entityId);
       if(!ticket){await go('returns');return toast('برگهٔ مرجوعی دیگر در دسترس نیست.');}
       dsp.retTab=ticket.status;await go('returns');
-      if(!focusNotificationElement(document.querySelector(`[data-return-id="${CSS.escape(entityId)}"]`)))toast('برگهٔ مرجوعی دیگر در دسترس نیست.');
-      return;
+      if(!focusNotificationElement(document.querySelector(`[data-return-id="${CSS.escape(entityId)}"]`)))return toast('برگهٔ مرجوعی دیگر در دسترس نیست.');
+      return finish(true);
     }
     if(entityType!=='order'){await go(route.page,route.sub);return toast('نوع مورد این اعلان قابل نمایش نیست.');}
     if(route.page==='gate'&&route.sub==='dispatch'){
@@ -1755,23 +1779,23 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       const found=[['leaving',data.leaving]].find(([,rows])=>(rows||[]).some(o=>o.id===entityId));
       if(found)app.gateDispatchTab=found[0];
       await go('gate','dispatch');
-      if(!found||!focusNotificationElement(document.querySelector(`[data-order="${CSS.escape(entityId)}"]`)))toast('این محموله دیگر در صف جاری نگهبانی نیست.');
-      return;
+      if(!found||!focusNotificationElement(document.querySelector(`[data-order="${CSS.escape(entityId)}"]`)))return toast('این محموله دیگر در صف جاری نگهبانی نیست.');
+      return finish(await dspOrderDetails(entityId,run||null));
     }
-    if(route.page==='store'){await go('store',route.sub);return openStoreOrderDetails(entityId);}
-    if(route.page==='driver'){await go('driver');return dspOrderDetails(entityId);}
-    if(route.page==='drivers'){adm.tab='dispatch';await go('drivers','orders');const el=document.querySelector(`[data-tp="details"][data-id="${CSS.escape(entityId)}"]`);if(el){focusNotificationElement(el);el.click();return;}return toast('این سفارش دیگر در صف جاری ترابری نیست.');}
+    if(route.page==='store'){await go('store',route.sub);return finish(await (run?openStoreDeliveryDetails(entityId,run):openStoreOrderDetails(entityId)));}
+    if(route.page==='driver'){await go('driver');return finish(await dspOrderDetails(entityId,run||null));}
+    if(route.page==='drivers'){adm.tab='dispatch';await go('drivers','orders');const el=document.querySelector(`[data-tp="details"][data-id="${CSS.escape(entityId)}"]${run?`[data-run="${run}"]`:''}`);if(el){focusNotificationElement(el);el.click();return finish(true);}return toast('این سفارش دیگر در صف جاری ترابری نیست.');}
     const order=(await api('/api/orders/'+encodeURIComponent(entityId))).order;
     if(route.page==='warehouse'){
       const phase=order.orderType==='STORE'?'stores':(order.status==='SETTLEMENT_PENDING'&&type==='TRANSPORT_ASSIGNED'?'delivered':order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming');
       if(order.orderType==='STORE')app.wh38.storeTab=order.status==='WAREHOUSE_PREPARING'?'preparing':'incoming';
       await go('warehouse',phase);
-      if(order.orderType==='STORE'&&order.status==='WAREHOUSE_PENDING')return wh38StoreDetails(entityId);
-      if(phase==='delivered')return whDeliveredDetails(entityId);
-      return openOrderDetails(entityId);
+      if(order.orderType==='STORE'&&order.status==='WAREHOUSE_PENDING')return finish(await wh38StoreDetails(entityId));
+      if(phase==='delivered')return finish(await whDeliveredDetails(entityId));
+      return finish(await openOrderDetails(entityId));
     }
     if(route.page==='sales'&&order.orderType==='STORE'&&order.transportWorkflow===1&&type==='STORE_RECEIPT_CONFIRMED'){
-      app.salesDeliveryTab='delivered';await go('sales','delivery');return openOrderDetails(entityId);
+      app.salesDeliveryTab='delivered';await go('sales','delivery');return finish(await openOrderDetails(entityId));
     }
     if(route.page==='sales'&&order.orderType==='STORE'){
       // صفحه فروش ممکن است دادهٔ چند ثانیه قبل را در حافظه داشته باشد.
@@ -1782,28 +1806,30 @@ async function openNotificationTarget(id,type,role,entityType,entityId){
       if(type==='STORE_RUN_R1_SENT'||type==='STORE_RUN_R2_SENT'){
         const run=type==='STORE_RUN_R2_SENT'?'2':'1';
         const el=document.querySelector(`[data-action="sr-ship-open"][data-order="${CSS.escape(entityId)}"][data-run="${run}"]`);
-        if(focusNotificationElement(el))return;
+        if(focusNotificationElement(el))return finish(await srSalesOpenShip(entityId,Number(run)));
+        return toast('این سرویس دیگر در صف ارسال فروش نیست.');
       }
-      return openOrderDetails(entityId);
+      return finish(await openOrderDetails(entityId));
     }
-    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='SETTLEMENT_PENDING')return goTransportSalesWork(entityId);
-    if(route.page==='sales'&&order.transportWorkflow===1&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='CLOSED'){app.salesDeliveryTab='history';await go('sales','delivery');return openOrderDetails(entityId);}
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='SETTLEMENT_PENDING')return finish(await goTransportSalesWork(entityId));
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.orderType!=='STORE'&&type==='TRANSPORT_ASSIGNED'&&order.status==='CLOSED'){app.salesDeliveryTab='history';await go('sales','delivery');return finish(await openOrderDetails(entityId));}
     if(route.page==='sales'&&type==='TRANSPORT_DEPARTED'&&order.transportWorkflow===1){
       app.salesDeliveryTab=order.status==='CLOSED'?'history':order.transportReturn?'delivered':'inTransit';
       await go('sales','delivery');await fetchSalesCache(true);
       const views=app.salesCache?.dispatchDeliveries||{};
-      if([...(views.assigned||[]),...(views.inTransit||[]),...(views.pending||[]),...(views.finalized||[])].some(o=>o.id===entityId))return openSalesDeliveryDetails(entityId);
-      return openOrderDetails(entityId);
+      if([...(views.assigned||[]),...(views.inTransit||[]),...(views.pending||[]),...(views.finalized||[])].some(o=>o.id===entityId))return finish(await openSalesDeliveryDetails(entityId,run||undefined));
+      return finish(await openOrderDetails(entityId));
     }
-    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.status==='SETTLEMENT_PENDING'&&['TRANSPORT_WAREHOUSE_HANDOVER','WAREHOUSE_DONE'].includes(type))return goTransportSalesWork(entityId);
+    if(route.page==='sales'&&order.transportWorkflow===1&&order.deliveryMode==='DELIVERY'&&order.status==='SETTLEMENT_PENDING'&&['TRANSPORT_WAREHOUSE_HANDOVER','WAREHOUSE_DONE'].includes(type))return finish(await goTransportSalesWork(entityId));
     await go(route.page,route.sub);
     if(route.page==='gate'){
       const el=document.querySelector(`[data-action="open-exit"][data-id="${CSS.escape(entityId)}"]`);
-      if(focusNotificationElement(el))return;
+      if(focusNotificationElement(el))return finish(await openExit(entityId,el));
       return toast('این فاکتور دیگر در صف کنترل خروج نیست.');
     }
-    return openOrderDetails(entityId);
+    return finish(await openOrderDetails(entityId));
   }catch(e){toast('مورد اعلان در دسترس نیست یا وضعیت آن تغییر کرده است: '+e.message);}
+  finally{app.notifNavigationDepth--; }
 }
 function notifyNewArrivals(d){
   const list=d?.notifications||[];
@@ -2157,6 +2183,7 @@ async function renderStorePortal(){
   app.timer=setInterval(async()=>{try{let x=(await api('/api/store/orders')).orders||[];if(app.sub.store==='delivery')x=app.storeDeliveryTab==='delivered'?x.filter(isStoreDeliveryComplete):x.filter(isStoreDeliveryInProgress);const el=$('#storeOrderList');if(el)el.innerHTML=storeOrderRowsV22(x)}catch{}},3500);
 }
 async function openStoreOrderDetails(id){
+ const notices=captureEntityNotices('order',id);
  try{
   const {order:o}=await api('/api/store/orders/'+encodeURIComponent(id));
   const active=(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED');
@@ -2172,14 +2199,15 @@ async function openStoreOrderDetails(id){
     ${st38RunSummaryHtml(o)}
     <h3 class="store-detail-items-title">اقلام سفارش</h3><div class="detail-item-list">${active.map(it=>{const v=progress.get(it.id),show=v&&!['STORE_PENDING_SALES','CANCELLED'].includes(o.status);return `<div class="detail-item-row"><div><strong>${esc(it.product?.name||'—')}</strong><small>${esc(it.description||'بدون توضیح')}</small>${show?`<small>${esc(v.runStatus==='IN_SHIPPING'?'وزن‌کشی ثبت شده':(v.runStatusLabel||SR38_STATUS_LABEL[v.runStatus]||'در انتظار'))} · وزن ثبت‌شده: سرویس اول ${qty(v.r1Kg||0)} و سرویس دوم ${qty(v.r2Kg||0)} کیلوگرم · جمع ${qty(v.totalKg||0)} کیلوگرم${v.shortageKg?` · کسری ${qty(v.shortageKg)} کیلوگرم`:''}</small>`:''}</div><b>${qty(it.requestedQty)} ${esc(it.requestedUnit||'')}</b></div>`;}).join('')||'<div class="empty">قلم فعالی برای این سفارش وجود ندارد.</div>'}</div>
     <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div></div>`);
- }catch(e){toast(e.message)}
+  finishEntityNotices(notices);return true;
+ }catch(e){toast(e.message);return false;}
 }
 async function openStoreOrderEdit(id){try{const o=(await api('/api/store/orders/'+id)).order;if(o.status!=='STORE_PENDING_SALES')return toast('ویرایش فقط پیش از بررسی فروش امکان‌پذیر است.');app.storeEditDraft=(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED').map(i=>({productId:i.productId,productLabel:i.product?.name||'',quickCode:i.product?.quickCode||'',requestedQty:String(i.requestedQty),requestedUnit:i.requestedUnit||'کیلوگرم',description:i.description||''}));openModal('ویرایش سفارش فروشگاه',`<form id="storeOrderEditForm" data-id="${esc(id)}"><div class="field"><label>نام مشتری</label><input name="name" required value="${esc(o.customer?.name||'')}"></div><div class="field"><label>شماره تماس</label><input name="phone" required value="${esc(o.customer?.phone||'')}"></div><div id="store-edit-lines" class="op-lines"></div><button type="button" class="btn btn-secondary" id="storeEditAdd">افزودن ردیف</button><label>یادداشت سفارش<textarea name="notes">${esc(o.notes||'')}</textarea></label><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary">ذخیره تغییرات</button></div></form>`);const paint=()=>{const b=$('#store-edit-lines');if(b){b.innerHTML=app.storeEditDraft.map((x,i)=>renderProductPickerLine(x,i,'storeedit')).join('');bindOperationLines('storeedit','storeEditDraft')}};paint();$('#storeEditAdd').onclick=()=>{app.storeEditDraft.push(defaultOrderLine());paint()};$('#storeOrderEditForm').addEventListener('submit',async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.currentTarget));const items=app.storeEditDraft.filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));if(!items.length)return toast('حداقل یک محصول معتبر وارد کنید.');const button=e.submitter;if(button)button.disabled=true;try{await api('/api/store/orders/'+encodeURIComponent(e.currentTarget.dataset.id),{method:'PUT',body:JSON.stringify({...f,items})});closeModal();toast('سفارش ویرایش شد.');if(app.page==='store')await renderStorePortal()}catch(err){if(button)button.disabled=false;toast(err.message)}});$('#storeOrderEditForm').addEventListener('click',e=>{const pick=e.target.closest('[data-action=op-pick-product]');if(pick){pickOperationProduct(+pick.dataset.index,pick.dataset.productId,pick.dataset.label,pick.dataset.quick,'storeedit','storeEditDraft');return}const remove=e.target.closest('[data-action=op-remove-line]');if(remove){app.storeEditDraft.splice(+remove.dataset.index,1);if(!app.storeEditDraft.length)app.storeEditDraft.push(defaultOrderLine());paint()}});}catch(e){toast(e.message)}}
 function storeOrderRowsV22(orders){return orders.map(o=>`<article class="store-order-row-v22"><div class="store-row-head"><div><span class="order-code">${esc(fa(o.orderNo||'—'))}</span><span class="date-chip">${o.scheduledDate?`${dateLabel(o.scheduledDate)} • ${esc((o.scheduledAt||'').slice(11,16)||'—')}`:'زمان ارسال پس از بررسی فروش'}</div>${badge(o.status)}</div><div class="store-row-customer"><b>${esc(storeAwareOrderName(o))}</b><span>${esc(storeAwareOrderPhone(o))}</span></div><div class="store-row-items">${(o.items||[]).filter(i=>i.itemStatus!=='CANCELLED').map(i=>`<div><span>${esc(i.product?.name||'')}</span><b>${qty(i.requestedQty)} ${esc(i.requestedUnit)}</b></div>`).join('')}</div><div class="store-row-foot"><span>ارسال: <b>${o.scheduledAt?`${dateLabel(o.scheduledDate)} • ${esc((o.scheduledAt||'').slice(11,16))}`:'توسط فروش تعیین می‌شود'}</b></span><span>ثبت: ${dt(o.createdAt)}</span><button class="btn btn-secondary btn-sm" data-action="store-order-details" data-id="${o.id}">${icon('eye',14)} جزئیات</button>${o.status==='STORE_PENDING_SALES'?`<button class="btn btn-secondary btn-sm" data-action="edit-store-order" data-id="${o.id}">${icon('edit',14)} ویرایش سفارش</button><button class="btn btn-ghost btn-sm" data-action="cancel-store-order" data-id="${o.id}">${icon('trash',14)} لغو</button>`:''}</div></article>`).join('')||'<div class="empty">هنوز سفارشی ثبت نشده است.</div>'}
 /* warehouse workbench — no modal */
 async function renderWarehouse(){
   if(app.timer){clearInterval(app.timer);app.timer=null}
-  const whTab=app.sub.warehouse||'incoming';const whStatus=whTab==='preparing'?'WAREHOUSE_PREPARING':'WAREHOUSE_PENDING';let orders=(await api('/api/orders?status='+whStatus)).orders||[];if(whTab==='stores'){orders=(await api('/api/orders')).orders||[];orders=orders.filter(o=>o.orderType==='STORE'&&['WAREHOUSE_PENDING','WAREHOUSE_PREPARING'].includes(o.status));}if(whTab==='history'){return renderWarehouseHistory();}
+  const whTab=app.sub.warehouse||'incoming';const whStatus=whTab==='preparing'?'WAREHOUSE_PREPARING':'WAREHOUSE_PENDING';let orders=(await fetchPagedList('/api/orders?status='+whStatus,'orders')).orders||[];if(whTab==='stores'){orders=(await fetchPagedList('/api/orders','orders')).orders||[];orders=orders.filter(o=>o.orderType==='STORE'&&['WAREHOUSE_PENDING','WAREHOUSE_PREPARING'].includes(o.status));}if(whTab==='history'){return renderWarehouseHistory();}
   $('#content').innerHTML=`<div class="warehouse-v21"><aside class="warehouse-queue-panel"><div class="queue-panel-head"><div><span class="eyebrow">WAREHOUSE QUEUE</span><h2>صف سفارش‌ها</h2><p>به‌صورت خودکار بروزرسانی می‌شود.</p></div><span class="queue-total"><strong>${qty(orders.length)}</strong><span>منتظر اقدام</span></span></div><div id="warehouseQueueV21">${warehouseQueueRowsV21(orders)}</div></aside><main class="warehouse-workbench"><div id="warehouseEditor" class="warehouse-editor-v21"><div class="workbench-empty"><div class="empty-icon">${icon('scale',28)}</div><h3>یک سفارش را انتخاب کنید</h3><p>فرم تحویل کامل سفارش در همین صفحه باز می‌شود.</p></div></div></main></div>`;
   bindWarehouseV21(); app.timer=setInterval(fetchWarehouseLiveV21,2500);
 }
@@ -2231,6 +2259,7 @@ function transportOrderServiceHtml(o,canReturn){
  return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':hand?'تحویل انبار به راننده ثبت شد':'در انتظار تحویل انبار';return `<div class="order-compact-row"><b>${run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
 }
 async function openOrderDetails(id){
+  const notices=captureEntityNotices('order',id);
   try{
     const d=await api('/api/orders/'+id); const o=d.order||{}; const items=o.items||[];
     const activeItems=items.filter(i=>i.itemStatus!=='CANCELLED');
@@ -2263,7 +2292,8 @@ async function openOrderDetails(id){
       <div class="sticky-actions"><span class="subtle">تمام تغییرات و ارجاع‌ها در سوابق مدیریتی ثبت می‌شوند.</span><div class="toolbar"><button class="btn btn-secondary" data-action="close-modal">بستن</button>${o.status==='RETURNED_TO_SALES'?`<button class="btn btn-secondary" data-action="edit-returned-order" data-id="${o.id}">${icon('edit',16)} اصلاح سفارش</button><button class="btn btn-primary" data-action="resubmit-order" data-id="${o.id}">${icon('send',16)} ارسال مجدد به انبار</button>`:''}${o.orderType==='STORE'&&o.status==='STORE_PENDING_SALES'?`<button class="btn btn-primary" data-action="sales-edit-store-order" data-id="${o.id}">${icon('edit',16)} ویرایش سفارش</button>`:''}</div></div>
     </div>`)
     document.querySelectorAll('#modal [data-store-transport-return]').forEach(button=>{button.onclick=async()=>{const run=Number(button.dataset.storeTransportReturn);if(!confirm(`آیا مدارک سرویس ${run===1?'اول':'دوم'} پس از دریافت فروشگاه به فروش بازگشته است؟`))return;button.disabled=true;try{const result=await api('/api/sales/store-transport/'+encodeURIComponent(o.id)+'/'+run+'/return',{method:'POST',body:JSON.stringify({documentsReturned:true})});toast(result.orderClosed?'مدارک ثبت شد و سفارش فروشگاه بسته شد.':'بازگشت مدارک این سرویس ثبت شد.');if(app.salesCache)app.salesCache.fetchedAt=0;if(app.page==='sales'&&app.sub.sales==='delivery'){const data=await fetchSalesCache(true);paintSalesPaneV29('delivery',data);}else if(app.page==='sales')await renderSales('stores');await openOrderDetails(o.id);}catch(err){button.disabled=false;toast(err.message);}};});
-  }catch(e){toast(e.message)}
+    finishEntityNotices(notices);return true;
+  }catch(e){toast(e.message);return false;}
 }
 
 
@@ -2842,14 +2872,27 @@ function updateOrderDraftSummary(){const box=$('#orderDraftSummary');if(!box)ret
 app.salesCache = app.salesCache || {orders:[], visits:[], dispatchDeliveries:{active:[],pending:[],finalized:[],finalizedTotal:0}, fetchedAt:0};
 app.salesFetchPromise = null;
 
+// Read all pages rather than comparing a complete workload with only the first 100 rows.
+async function fetchPagedList(url,key){
+ const rows=[],seen=new Set();let offset=0,total=Infinity;
+ while(offset<total){
+  const d=await api(url+(url.includes('?')?'&':'?')+'limit=200&offset='+offset);
+  const page=Array.isArray(d[key])?d[key]:[];
+  for(const row of page){if(!row?.id||!seen.has(row.id)){rows.push(row);if(row?.id)seen.add(row.id);}}
+  const count=page.length;total=Number.isFinite(Number(d.total))?Number(d.total):offset+count;
+  if(!count)break;
+  offset+=count;
+ }
+ return {[key]:rows,total:rows.length};
+}
 async function fetchSalesCache(force=false){
   const fresh=!force && app.salesCache && app.salesCache.fetchedAt && (Date.now()-app.salesCache.fetchedAt<5000);
   if(fresh) return app.salesCache;
   if(app.salesFetchPromise) return app.salesFetchPromise;
   const historyOffset=Math.max(0,Number(app.salesDeliveryHistoryOffset)||0);
   app.salesFetchPromise=Promise.all([
-    api('/api/orders'),
-    api('/api/visits').catch(()=>({visits:[]})),
+    fetchPagedList('/api/orders','orders'),
+    fetchPagedList('/api/visits?status=WAITING_SALES','visits'),
     (historyOffset?api('/api/sales/dispatch-deliveries?historyOffset='+historyOffset):api('/api/sales/dispatch-deliveries')).catch(()=>null),
     api('/api/sales/store-run-shipments').catch(()=>null) // v37.5.0 — «اقلام سرویس باید ارسال شوند»
   ]).then(([ordersResp,visitsResp,deliveryResp,shipResp])=>{
@@ -2885,8 +2928,7 @@ async function refreshIndicators(){
   // Workload and unread notifications have different meanings and independent failures.
   if(w && seq>(app.workloadAppliedSeq||0)){app.workloadAppliedSeq=seq;app.workload=w.counts||{};
     $$('[data-badge-key]').forEach(el=>{const n=badgeCount(el.dataset.badgeKey);el.textContent=n?qty(n):'';el.classList.toggle('hidden',n<=0)});
-    const keys={onsite:'salesIntake',remote:'salesRemote',stores:'store',flow:'salesFlow',settlement:'salesSettlement',delivery:'salesDeliveryPending',future:'salesFuture'};
-    $$('[data-sales-count]').forEach(el=>{const n=el.dataset.salesCount==='delivery'?Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0):Number(app.workload?.[keys[el.dataset.salesCount]]||0)+(el.dataset.salesCount==='stores'?Number(app.workload?.storeScheduled||0):0);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
+
   }
   if(noti && seq>(app.notifAppliedSeq||0)){app.notifAppliedSeq=seq;applyNotifSnapshot(noti);}
   updateSalesDeliveryWorkCount();
@@ -2894,8 +2936,7 @@ async function refreshIndicators(){
   renderNav();
 }
 function updateSalesDeliveryWorkCount(){
-  const n=Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0);
-  $$('[data-sales-count="delivery"]').forEach(el=>{el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
+  $$('[data-sales-count]').forEach(el=>{const n=navUnread('sales',el.dataset.salesCount);el.textContent=n?qty(n):'';el.classList.toggle('show',n>0)});
 }
 function navUnread(role,section){
   return (app.notifSnapshot?.notifications||[]).filter(n=>!n.isRead&&normalizeRole(n.targetRole)===role&&(!section||n.navSection===section)).length;
@@ -2954,15 +2995,7 @@ const SALES_LABELS_V29 = {
 };
 
 function renderSalesTabsV29(tab){
-  const counts={
-    onsite:Number(app.workload?.salesIntake||0),
-    remote:Number(app.workload?.salesRemote||0),
-    stores:Number((app.workload?.store||0)+(app.workload?.storeScheduled||0)),
-    flow:Number(app.workload?.salesFlow||0),
-    settlement:Number(app.workload?.salesSettlement||0),
-    delivery:Number(app.workload?.salesDeliveryActive||0)+Number(app.workload?.salesDeliveryPending||0),
-    future:Number(app.workload?.salesFuture||0)
-  };
+  const counts=Object.fromEntries(SALES_TABS_V29.map(id=>[id,navUnread('sales',id)]));
   return `<nav class="v26-sales-tabs v30-sales-tabs" aria-label="هفت بخش کارتابل فروش">${SALES_TABS_V29.map((id,i)=>{
     const [label,sub,ico]=SALES_LABELS_V29[id],count=counts[id];
     // IMPORTANT: no data-sub here. Legacy page handlers use data-sub and may route to gate.
@@ -3069,9 +3102,9 @@ function ensureSalesShellV29(){
     if(!orders.length)return `<div class="v33-wh-empty"><div>${icon(kind==='incoming'?'truck':'scale',34)}</div><strong>${kind==='incoming'?'سفارش ورودی جدیدی نیست':'سفارشی در مرحله آماده‌سازی نیست'}</strong><span>${kind==='incoming'?'با ارسال سفارش از فروش، اینجا نمایش داده می‌شود.':'پس از تأیید دریافت سفارش، برای ثبت وزن نهایی اینجا قرار می‌گیرد.'}</div>`;
     return `<div class="v33-wh-order-list">${orders.map((o,i)=>`<article class="v33-wh-order-card ${app.whV33.selected===o.id?'selected':''}"><div class="v33-wh-order-no">${fa(String(i+1).padStart(2,'0'))}</div><div class="v33-wh-order-main"><div class="v33-wh-order-top"><div><span class="v33-code">${esc(fa(o.orderNo||'—'))}</span>${o.orderType==='ONSITE'?'<span class="v33-type">حضوری</span>':salesKindBadge(o)}<h3>${esc(storeAwareOrderName(o))}</h3><p>${esc(storeAwareOrderPhone(o))} <i>•</i> ${esc(o.dispatchPlace||'محل ارسال ثبت نشده')}</p></div>${badge(o.status)}</div><div class="v33-wh-order-meta"><span><b>اقلام</b>${qty(activeItemsOf(o).length)} قلم</span><span><b>ثبت</b>${formatDateTime24(o.createdAt)}</span><span><b>آخرین اقدام</b>${formatDateTime24(o.updatedAt||o.createdAt)}</div><div class="v33-wh-products">${activeItemsOf(o).map((it,k)=>`<div><span>${fa(String(k+1))}</span><strong>${esc(it.product?.name||'—')}</strong><em>${qty(it.requestedQty)} ${esc(it.requestedUnit||'')}</em></div>`).join('')}</div><div class="v33-wh-actions">${kind==='incoming'?`<button type="button" class="btn btn-primary btn-lg" data-action="warehouse-accept-v33" data-id="${o.id}">${icon('check',19)} تأیید دریافت و ورود به آماده‌سازی</button>`:`<button type="button" class="btn btn-primary btn-lg" data-action="warehouse-start-prep-v33" data-id="${o.id}">${icon('scale',19)} شروع آماده‌سازی و ثبت وزن</button>`}</div></div></article>`).join('')}</div>`;
   }
-  async function whPaint(phase){const host=$('#warehousePhaseBodyV33');if(!host)return;const status=phase==='incoming'?'WAREHOUSE_PENDING':'WAREHOUSE_PREPARING';try{const orders=(await api('/api/orders?status='+encodeURIComponent(status))).orders||[];host.innerHTML=whOrderList(orders,phase)}catch(e){host.innerHTML='<div class="v33-wh-error">خطا در دریافت صف انبار.</div>'}}
+  async function whPaint(phase){const host=$('#warehousePhaseBodyV33');if(!host)return;const status=phase==='incoming'?'WAREHOUSE_PENDING':'WAREHOUSE_PREPARING';try{const orders=(await fetchPagedList('/api/orders?status='+encodeURIComponent(status),'orders')).orders||[];host.innerHTML=whOrderList(orders,phase)}catch(e){host.innerHTML='<div class="v33-wh-error">خطا در دریافت صف انبار.</div>'}}
   function whRenderShell(phase='incoming'){const c=$('#content');if(!c)return;c.onclick=null;app.whV33.phase=V33WH.includes(phase)?phase:'incoming';c.innerHTML=`<section class="v33-warehouse-shell"><div id="warehousePhaseBodyV33" class="v33-wh-phase"></div></section>`;bindWarehouseV33(c);whPaint(app.whV33.phase);if(app.whV33.timer)clearInterval(app.whV33.timer);app.whV33.timer=setInterval(()=>{if(app.page==='warehouse'&&!$('#warehousePhaseBodyV33 .v33-prep-sheet'))whPaint(app.whV33.phase)},7000)}
-  function bindWarehouseV33(c){c.onclick=async e=>{const t=e.target.closest('[data-wh-tab]');if(t){e.preventDefault();app.whV33.phase=t.dataset.whTab;whRenderShell(app.whV33.phase);return}const a=e.target.closest('[data-action]');if(!a)return;if(a.dataset.action==='warehouse-accept-v33'){a.disabled=true;try{const r=await api('/api/orders/'+a.dataset.id+'/warehouse/accept',{method:'POST'});app.whV33.phase='preparing';app.whV33.selected=r.order?.id||a.dataset.id;toast('سفارش تأیید شد و وارد مرحله آماده‌سازی شد.');await whRenderShell('preparing');await refreshIndicators()}catch(err){toast(err.message);a.disabled=false}return}if(a.dataset.action==='warehouse-open-prep-v33'){try{const d=await api('/api/orders/'+a.dataset.id);openWarehousePrepV33(d.order)}catch(err){toast(err.message)}return}if(a.dataset.action==='warehouse-start-prep-v33'){a.disabled=true;try{const r=await api('/api/orders/'+a.dataset.id+'/warehouse/start-preparing',{method:'POST'});toast('آماده‌سازی سفارش ثبت شد.');openWarehousePrepV33(r.order)}catch(err){toast(err.message);a.disabled=false}return}if(a.dataset.action==='warehouse-finalize-v33'){await finalizeWarehouseV33(a.dataset.id);return}if(a.dataset.action==='warehouse-return-v33'){const reason=prompt('دلیل ارجاع به فروش را وارد کنید:','اصلاح سفارش / اصلاح وزن')||'';if(!reason)return;try{await api('/api/orders/'+a.dataset.id+'/return-sales',{method:'POST',body:JSON.stringify({reason})});toast('سفارش به فروش ارجاع شد.');app.whV33.selected=null;await whPaint('preparing');await refreshIndicators()}catch(err){toast(err.message)}}}}
+  function bindWarehouseV33(c){c.onclick=async e=>{const t=e.target.closest('[data-wh-tab]');if(t){e.preventDefault();app.whV33.phase=t.dataset.whTab;whRenderShell(app.whV33.phase);return}const a=e.target.closest('[data-action]');if(!a)return;if(a.dataset.action==='warehouse-accept-v33'){const notices=captureEntityNotices('order',a.dataset.id);a.disabled=true;try{const r=await api('/api/orders/'+a.dataset.id+'/warehouse/accept',{method:'POST'});finishEntityNotices(notices);app.whV33.phase='preparing';app.whV33.selected=r.order?.id||a.dataset.id;toast('سفارش تأیید شد و وارد مرحله آماده‌سازی شد.');await whRenderShell('preparing');await refreshIndicators()}catch(err){toast(err.message);a.disabled=false}return}if(a.dataset.action==='warehouse-open-prep-v33'){try{const d=await api('/api/orders/'+a.dataset.id);openWarehousePrepV33(d.order)}catch(err){toast(err.message)}return}if(a.dataset.action==='warehouse-start-prep-v33'){a.disabled=true;try{const r=await api('/api/orders/'+a.dataset.id+'/warehouse/start-preparing',{method:'POST'});toast('آماده‌سازی سفارش ثبت شد.');openWarehousePrepV33(r.order)}catch(err){toast(err.message);a.disabled=false}return}if(a.dataset.action==='warehouse-finalize-v33'){await finalizeWarehouseV33(a.dataset.id);return}if(a.dataset.action==='warehouse-return-v33'){const reason=prompt('دلیل ارجاع به فروش را وارد کنید:','اصلاح سفارش / اصلاح وزن')||'';if(!reason)return;try{await api('/api/orders/'+a.dataset.id+'/return-sales',{method:'POST',body:JSON.stringify({reason})});toast('سفارش به فروش ارجاع شد.');app.whV33.selected=null;await whPaint('preparing');await refreshIndicators()}catch(err){toast(err.message)}}}}
   function openWarehousePrepV33(o){app.whV33.selected=o.id;const body=$('#warehousePhaseBodyV33');if(!body)return;const items=activeItemsOf(o);body.innerHTML=`<section class="v33-prep-sheet"><div class="v33-prep-head"><div><span class="v33-eyebrow">02 / آماده‌سازی و تحویل</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(storeAwareOrderPhone(o))} <i>•</i> سفارش ${esc(fa(o.orderNo||'—'))}</p></div><div>${badge(o.status)}</div></div><div class="v33-prep-progress"><span class="done">۱ سفارش ورودی</span><i></i><span class="active">۲ آماده‌سازی</span><i></i><span>۳ ارسال به تسویه فروش</span></div><div class="v33-prep-note"><b>ثبت وزن نهایی</b><span>برای هر قلم موجود، وزن واقعی تحویلی را فقط بر حسب کیلوگرم ثبت کنید. اقلام ناموجود را با گزینه «عدم موجودی» مشخص کنید.</span>${o.warehousePreparationStartedAt?`<em class="prep-started-chip">آماده‌سازی شروع شده • ${formatDateTime24(o.warehousePreparationStartedAt)}</em>`:''}</div><div class="v33-prep-items">${items.map((it,k)=>`<article class="v33-prep-item"><div class="v33-prep-num">${fa(String(k+1))}</div><div class="v33-prep-product"><div class="v33-prep-product-title"><strong>${esc(it.product?.name||'—')}</strong></div><div class="v33-request-strip"><span>مقدار درخواستی</span><b>${qty(it.requestedQty)} ${esc(it.requestedUnit||'')}</b></div></div><div class="v33-prep-desc"><span>توضیحات ردیف</span><p>${esc(it.description||'بدون توضیح')}</p></div><div class="v33-weight"><label>وزن نهایی تحویلی</label><div><input type="text" inputmode="decimal" data-v33-weight="${it.id}" placeholder="۰٫۰۰۰"><b>کیلوگرم</b></div></div><label class="v33-oos"><input type="checkbox" data-v33-oos="${it.id}"><span><strong>عدم موجودی</strong><small>این قلم موجود نیست</small></span></label></article>`).join('')}</div><div class="v33-prep-footer"><div><span>جمع وزن نهایی</span><strong id="v33WarehouseTotal">۰ کیلوگرم</strong></div><div class="toolbar"><button type="button" class="btn btn-secondary btn-lg" data-action="warehouse-return-v33" data-id="${o.id}">${icon('arrow',17)} ارجاع به فروش</button><button type="button" class="btn btn-primary btn-lg" data-action="warehouse-finalize-v33" data-id="${o.id}">${icon('send',19)} ثبت وزن نهایی و ارسال به فروش</button></div></div></section>`;$$('#warehousePhaseBodyV33 [data-v33-weight]').forEach(el=>el.addEventListener('input',updateWhTotalV33));$$('#warehousePhaseBodyV33 [data-v33-oos]').forEach(ch=>ch.addEventListener('change',()=>{const w=$(`#warehousePhaseBodyV33 [data-v33-weight="${ch.dataset.v33Oos}"]`);if(w){w.disabled=ch.checked;if(ch.checked)w.value=''}updateWhTotalV33()}));}
   function updateWhTotalV33(){const total=$$('#warehousePhaseBodyV33 [data-v33-weight]').reduce((s,e)=>s+(e.disabled?0:n(e.value)),0);const el=$('#v33WarehouseTotal');if(el)el.textContent=qty(total)+' کیلوگرم'}
   async function finalizeWarehouseV33(id){const items=$$('#warehousePhaseBodyV33 [data-v33-weight]').map(w=>{const out=$(`#warehousePhaseBodyV33 [data-v33-oos="${w.dataset.v33Weight}"]`)?.checked||false;return {itemId:w.dataset.v33Weight,deliveredKg:out?0:n(w.value),outOfStock:out}});if(!items.length)return toast('قلمی برای ثبت وزن وجود ندارد.');if(items.some(x=>!x.outOfStock&&x.deliveredKg<=0))return toast('برای همه اقلام موجود وزن نهایی معتبر وارد کنید.');try{await api('/api/orders/'+id+'/warehouse',{method:'POST',body:JSON.stringify({items})});toast('وزن نهایی ثبت شد و سفارش برای تسویه فروش ارسال شد.');app.whV33.selected=null;app.whV33.phase='preparing';await whPaint('preparing');await refreshIndicators()}catch(e){toast(e.message)}}
@@ -3573,6 +3606,7 @@ function stlClearSig(){ stl.signaturePad?.clear(); stl.sig=false; stlUpdateSigSt
 }
 let stlOpenSequence=0;
 async function stlOpen(id){
+  const notices=captureEntityNotices('order',id);
   const host=$('#stlMain'); if(!host || !id)return;
   const seq=++stlOpenSequence;
   const current=()=>seq===stlOpenSequence && host.isConnected && $('#stlMain')===host;
@@ -3605,6 +3639,7 @@ async function stlOpen(id){
     app.selectedSettlement=id;
     document.querySelectorAll('.stl-queue-item').forEach(b=>b.classList.toggle('active', b.dataset.id===id));
     stlPaintForm();
+    finishEntityNotices(notices);return true;
   }catch(e){
     if(!current())return;
     host.innerHTML=`<div class="stl-load-error" role="alert"><b>فرم سفارش باز نشد.</b><span>${esc(e.message||'خطا در دریافت اطلاعات سفارش')}</span><button type="button" class="btn btn-secondary btn-sm" data-stl="retry" data-id="${esc(id)}">تلاش دوباره</button></div>`;
