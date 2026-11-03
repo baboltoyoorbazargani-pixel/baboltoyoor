@@ -88,6 +88,7 @@ function dspQtyInvoiceMarkup(o, compact = false) { // v37.6.0 — پنل وزن�
   return `<section class="dsp-invoice ${compact ? 'is-compact' : ''}"><header><div><span class="dsp-invoice-kicker">DELIVERY WEIGHT DOC</span><h3>وزن‌های این محموله (بدون مبلغ)</h3></div><span class="badge green">فلوی فروشگاه</span></header><div class="dsp-invoice-scroll"><table><thead><tr><th>قلم</th><th>وزن تحویلی</th></tr></thead><tbody>${rows || '<tr><td colspan="2">قلمی ثبت نشده است.</td></tr>'}</tbody></table></div><footer><span>جمع وزن محموله <strong>${dspKg(totalKg)}</strong></span></footer></section>`;
 }
 async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیات محموله (وزن‌محور برای فروشگاه)
+  const notices=captureEntityNotices('order',orderId,run);
   try {
     // Gate and dispatch have deliberately restricted access to the generic order
     // endpoint. Use their own live, authorization-scoped lists instead.
@@ -131,7 +132,8 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
       ${['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch,store):''}
       <p class="adm-note">${store ? 'محمولهٔ فروشگاه‌ها کاملاً بدون مبلغ است؛ سند این تحویل «سند تحویل وزنی» است.' : 'ارزش ریالی فقط برای مشتریان عادی نمایش داده می‌شود.'}</p>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div></div>`);
-  } catch (err) { toast(err.message); }
+    finishEntityNotices(notices);return true;
+  } catch (err) { toast(err.message);return false; }
 }
 function dspPaymentRows(devices, due){return [{type:'CASH',amount:due}];}
 function dspBindPayments(devices, dueFn){
@@ -587,12 +589,14 @@ async function renderTransportPlanQueue(){
  }catch(err){if($('#transportPlans')===host)host.innerHTML=`<section class="sd-panel sd-pad" role="alert">خطا در دریافت برنامه ترابری: ${esc(err.message)} <button type="button" class="btn btn-secondary btn-sm" data-tp-retry>تلاش مجدد</button></section>`;host.querySelector('[data-tp-retry]')?.addEventListener('click',renderTransportPlanQueue);}
 }
 function transportPlanDetails(order,service,resources){
+ const notices=captureEntityNotices('order',order.id,service.run||null);
  const a=service.assignment,drivers=(resources.drivers||[]).filter(d=>d.isActive),vehicles=(resources.vehicles||[]).filter(v=>v.isActive);
  const items=(order.items||[]).map((i,index)=>`<tr><td>${fa(index+1)}</td><td>${esc(i.productName||'—')}</td><td>${qty(i.requestedQty)} ${esc(i.requestedUnit||'')}</td></tr>`).join('');
  const select=service.handedOver?'':`<form id="tpAssign" class="tp-assign"><label><span>راننده</span><select name="driverId" required><option value="">انتخاب راننده</option>${drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===a?.driverId?'selected':''}>${esc(d.fullName)} — ${esc(fa(d.phone||''))}</option>`).join('')}</select></label><label><span>خودرو</span><select name="vehicleId" required><option value="">انتخاب خودرو</option>${vehicles.map(v=>`<option value="${esc(v.id)}" ${v.id===a?.vehicleId?'selected':''}>${esc(v.vehicleType)} — ${esc(fa(v.plate))}</option>`).join('')}</select></label><button class="btn btn-primary btn-sm" type="submit">ثبت تخصیص</button><p data-tp-error role="alert"></p></form>`;
  const depart=service.canDepart?`<button type="button" class="btn btn-primary" data-tp-depart>تأیید خروج ${service.run?'این سرویس':'و تحویل فاکتور چاپی'}</button>`:'';
  const fact=(label,value)=>`<div class="tp-detail-cell"><dt>${label}</dt><dd>${esc(value||'—')}</dd></div>`;
  openModal('جزئیات برنامه ترابری',`<section class="tp-detail"><dl class="tp-detail-grid">${fact('شماره سفارش',fa(order.orderNo||'—'))}${fact('مشتری / فروشگاه',order.customerName)}${service.run?fact('سرویس',service.run===1?'سرویس اول':'سرویس دوم'):''}${fact('محل ارسال',order.dispatchPlace)}${fact('راننده',a?.driverName||'تعیین نشده')}${fact('خودرو و پلاک',`${a?.vehicleType||'—'} ${fa(a?.vehiclePlate||'')}`)}${fact('سند انبار',fa(service.warehouseDocumentNo||'—'))}${service.invoiceNumber?fact('شماره فاکتور',fa(service.invoiceNumber)):''}</dl><section class="tp-items"><h3>اقلام سفارش</h3><div class="table-wrap"><table class="tp-items-table"><thead><tr><th>ردیف</th><th>محصول</th><th>مقدار درخواستی</th></tr></thead><tbody>${items||'<tr><td colspan="3">قلمی ثبت نشده است.</td></tr>'}</tbody></table></div></section>${service.handedOver?'<p>تحویل انبار ثبت شده و تخصیص این سرویس دیگر قابل تغییر نیست.</p>':select}<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button>${depart}</div><p data-tp-depart-error role="alert"></p></section>`);
+ finishEntityNotices(notices);
  const form=$('#tpAssign');if(form)form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;try{await api('/api/transport/plans/'+encodeURIComponent(order.id)+'/assign',{method:'POST',body:JSON.stringify({run:service.run,driverId:form.elements.driverId.value,vehicleId:form.elements.vehicleId.value})});closeModal();toast('تخصیص ترابری ثبت شد.');await renderTransportPlanQueue();}catch(err){form.querySelector('[data-tp-error]').textContent=err.message;button.disabled=false;}};
  const button=$('#modal [data-tp-depart]');if(button)button.onclick=async()=>{const question=service.run?'آیا خروج واقعی این سرویس از انبار را تأیید می‌کنید؟':'آیا فاکتور چاپی با شماره نمایش‌داده‌شده به راننده تحویل شده و خروج واقعی انجام شده است؟';if(!confirm(question))return;button.disabled=true;try{const url=service.run?`/api/transport/store-shipments/${encodeURIComponent(order.id)}/${service.run}/depart`:`/api/transport/shipments/${encodeURIComponent(order.id)}/depart`;const body=service.run?{departureConfirmed:true}:{invoicePaperGiven:true,invoiceNumber:service.invoiceNumber};await api(url,{method:'POST',body:JSON.stringify(body)});closeModal();toast('خروج ثبت شد؛ دریافت مقصد هنوز تأیید نشده است.');await renderTransportPlanQueue();}catch(err){$('#modal [data-tp-depart-error]').textContent=err.message;button.disabled=false;}};
 }

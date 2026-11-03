@@ -26,7 +26,7 @@ test('delivery endpoint separates all lifecycle states and counts complete histo
 });
 test('delivery refresh failure preserves cached records and flags stale state, then clears warning on recovery',async()=>{
  let fail=true;const c={app:{salesCache:{dispatchDeliveries:{active:[{id:'keep'}],pending:[],finalized:[]}},salesFetchPromise:null},api:async p=>{if(p.includes('dispatch-deliveries')){if(fail)throw Error('offline');return{active:[{id:'new'}],pending:[],finalized:[],finalizedTotal:0}}return{}},Date,Promise};
- vm.createContext(c);const start=app.indexOf('async function fetchSalesCache(');vm.runInContext(app.slice(start,app.indexOf('\n}',start)+2),c);
+ vm.createContext(c);const helper=app.indexOf('async function fetchPagedList(');vm.runInContext(app.slice(helper,app.indexOf('\n}',helper)+2),c);const start=app.indexOf('async function fetchSalesCache(');vm.runInContext(app.slice(start,app.indexOf('\n}',start)+2),c);
  let result=await c.fetchSalesCache(true);assert.equal(result.dispatchDeliveries.active[0].id,'keep');assert.equal(result.dispatchDeliveries.error,true);assert(context().renderSalesDeliveryV38(result.dispatchDeliveries).includes('role="alert"'));
  fail=false;result=await c.fetchSalesCache(true);assert.equal(result.dispatchDeliveries.active[0].id,'new');assert.equal(result.dispatchDeliveries.error,false);
 });

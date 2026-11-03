@@ -35,6 +35,14 @@ test('notification acknowledgements and counts are per user, include all unread 
   r=await call('POST','/api/notifications/read',sales1,{id:'n0'});assert.equal(r.status,200);assert.equal(r.json.unread,81);assert.ok(!r.json.notifications.some(n=>n.id==='n0'&&!n.isRead));
   assert.equal((await call('GET','/api/notifications',sales1)).json.unread,81);
   assert.equal((await call('GET','/api/notifications',sales2)).json.unread,82,'another account must still see it');
+  r=await call('POST','/api/notifications/read',sales1,{ids:[]});assert.equal(r.json.unread,81,'empty ids must not mark every notice');
+  assert.equal((await call('POST','/api/notifications/read',sales1,{ids:['n1','gate']})).status,200);
+  assert.equal((await call('GET','/api/notifications',sales1)).json.unread,80);
+  assert.equal((await call('GET','/api/notifications',sales2)).json.unread,82);
+  assert.equal((await call('GET','/api/notifications',gate)).json.unread,1,'cannot mark another role');
+  assert.equal((await call('POST','/api/notifications/read',sales1,{ids:['n2',4]})).status,400);
+  assert.equal((await call('POST','/api/notifications/read',sales1,{id:''})).status,400);
+  assert.equal((await call('GET','/api/notifications',sales1)).json.unread,80,'invalid batch is atomic');
   await call('POST','/api/notifications/read',sales1,{});
   r=await call('GET','/api/notifications',sales1);assert.equal(r.json.unread,0);assert.ok(r.json.notifications.every(n=>n.isRead));assert.ok(r.json.notifications.every(n=>!('readBy' in n)));
   assert.equal((await call('GET','/api/workload',sales1)).json.counts.notifications,0);
