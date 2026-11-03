@@ -14,6 +14,10 @@ test('snapshot captures only the viewed role, section, entity and store service'
  vm.createContext(c);vm.runInContext(slice('function captureEntityNotices(', 'function focusNotificationElement('),c);
  const snap=c.captureEntityNotices('order','o',1);assert.deepEqual(Array.from(snap),['a','old']);
  c.app.notifSnapshot.notifications.push({id:'new',targetRole:'sales',navSection:'stores',entityType:'order',entityId:'o',run:1});assert.deepEqual(Array.from(snap),['a','old'],'new arrivals are not part of earlier snapshot');
+ const sent=[];c.acknowledgeNotifications=async ids=>sent.push(Array.from(ids));
+ c.app.user.id='sales2';c.finishEntityNotices(snap);assert.equal(sent.length,0,'account switched while details were loading');
+ c.app.user.id='sales1';c.app.sub.sales='delivery';c.finishEntityNotices(snap);assert.equal(sent.length,0,'section changed while details were loading');
+ c.app.sub.sales='stores';c.finishEntityNotices(snap);assert.deepEqual(sent,[['a','old']]);
  c.app.page='warehouse';assert.deepEqual(Array.from(c.captureEntityNotices('order','o',1)),[]);
  c.app.user.roleCode='admin';c.app.page='sales';c.app.adminActiveRole='sales';assert.deepEqual(Array.from(c.captureEntityNotices('order','o',2)),['b']);
 });
@@ -22,6 +26,7 @@ test('notification navigation acknowledges only after a successful detail opens'
  vm.createContext(c);vm.runInContext(slice('async function openNotificationTarget(', 'function notifyNewArrivals('),c);
  c.ok=false;await c.openNotificationTarget('n','T','sales','order','o');assert.deepEqual(actions,['go','open']);
  actions.length=0;c.ok=true;await c.openNotificationTarget('n','T','sales','order','o');assert.deepEqual(actions,['go','open','read:n']);
+ actions.length=0;c.app.user.id='first';c.openOrderDetails=async()=>{actions.push('open');c.app.user.id='second';return true;};await c.openNotificationTarget('n','T','sales','order','o');assert.deepEqual(actions,['go','open'],'account switch must not read for the new account');
  actions.length=0;c.api=async()=>{throw Error('offline')};await c.openNotificationTarget('n','T','sales','order','o');assert.deepEqual(actions,[]);
 });
 test('paged lists fetch beyond 200 and reject failures rather than showing an empty queue',async()=>{

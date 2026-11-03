@@ -1732,14 +1732,22 @@ function captureEntityNotices(entityType,entityId,run=null){
  const page=role==='dispatch'?'drivers':role;
  const section=page==='drivers'?'orders':page==='driver'?'dashboard':app.sub?.[page];
  if(!role||!section||app.page!==page||app.notifNavigationDepth)return [];
- return (app.notifSnapshot?.notifications||[]).filter(n=>{
+ const ids=(app.notifSnapshot?.notifications||[]).filter(n=>{
   if(n.isRead||normalizeRole(n.targetRole)!==role||n.navSection!==section||n.entityType!==entityType||n.entityId!==entityId)return false;
   if(run==null)return true;
   const eventRun=n.run??(n.type==='STORE_RUN_R1_SENT'?1:n.type==='STORE_RUN_R2_SENT'?2:null);
   return eventRun!=null && Number(eventRun)===Number(run);
  }).map(n=>n.id);
+ Object.defineProperties(ids,{account:{value:app.user?.id},role:{value:role},page:{value:page},section:{value:section}});
+ return ids;
 }
-function finishEntityNotices(ids){if(ids?.length)for(let i=0;i<ids.length;i+=5000)void acknowledgeNotifications(ids.slice(i,i+5000),{closePanel:false});}
+function finishEntityNotices(ids){
+ if(!ids?.length||app.user?.id!==ids.account||app.page!==ids.page)return;
+ const role=normalizeRole(app.user?.roleCode)==='admin'?app.adminActiveRole:normalizeRole(app.user?.roleCode);
+ const section=ids.page==='drivers'?'orders':ids.page==='driver'?'dashboard':app.sub?.[ids.page];
+ if(role!==ids.role||section!==ids.section)return;
+ for(let i=0;i<ids.length;i+=5000)void acknowledgeNotifications(ids.slice(i,i+5000),{closePanel:false});
+}
 function focusNotificationElement(el){
   if(!el)return false;
   const card=el.closest('article,.sr-ship-row,.sd-queue-row')||el;
@@ -1749,7 +1757,8 @@ function focusNotificationElement(el){
   return true;
 }
 async function openNotificationTarget(id,type,role,entityType,entityId){
-  const finish=async ok=>{if(ok)await acknowledgeNotifications(id);return !!ok;};
+  const startingAccount=app.user?.id;
+  const finish=async ok=>{if(ok && app.user?.id===startingAccount)await acknowledgeNotifications(id);return !!ok;};
   const notice=(app.notifSnapshot?.notifications||[]).find(n=>n.id===id);
   const run=Number(notice?.run)||(type==='STORE_RUN_R1_SENT'?1:type==='STORE_RUN_R2_SENT'?2:0);
   const route=notifRoute(type,role), mine=normalizeRole(app.user?.roleCode);
