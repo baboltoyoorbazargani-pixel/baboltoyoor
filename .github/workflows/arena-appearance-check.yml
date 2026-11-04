@@ -19,3 +19,14 @@ jobs:
           cat /tmp/results.txt
           if [ "$result" -ne 0 ]; then echo "::error title=BrowserTestLog::$(base64 -w0 /tmp/results.txt)"; fi
           exit "$result"
+      - name: Check baseline native print lifecycle
+        if: always()
+        run: |
+          export BT_CHROMIUM_PATH=$(which google-chrome || which chromium || which chromium-browser)
+          git show c63d8966c63b25dd89c07ee5c8eb95acdfec43bd:tests/print-no-popup-browser.test.js > tests/baseline-print.test.js
+          set +e
+          node --test tests/baseline-print.test.js > /tmp/baseline.txt 2>&1
+          result=$?
+          cat /tmp/baseline.txt
+          if [ "$result" -ne 0 ]; then echo "::error title=BaselinePrintLog::$(base64 -w0 /tmp/baseline.txt)"; fi
+          exit "$result"
