@@ -2975,7 +2975,9 @@ function renderNav(){
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];
   const sub=app.sub?.[page]||'dashboard';
   $('#railNav').innerHTML=`<div class="cartable-nav-title">${esc(ROLE[r]||'کارتابل')}</div>`+list.map(([key,label,ico,badgeKey])=>{
-    const active=sub===key || (key==='delivery'&&sub==='gate-dispatch') || (key==='orders'&&['dispatch','records'].includes(adm.tab));
+    // The internal legacy dispatch tab may remain selected while another
+    // cartable page is open; only the current section selects a rail item.
+    const active=sub===key || (key==='delivery'&&sub==='gate-dispatch');
     const count=navUnread(r,key);
     return `<button type="button" class="cartable-nav-item ${active?'active':''}" data-cartable="${key}" data-role-page="${page}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${count?navBadge(count):''}</button>`;
   }).join('');

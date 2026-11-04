@@ -19,9 +19,14 @@ test('مرورگر: یک کارتابل ترابری، منابع مستقل و 
   const order=(await post(sales,'/api/orders/remote',{name:'مشتری کارتابل',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledTime:'00:00',deliveryMode:'DELIVERY',items:[{productId:'p01',requestedQty:4,requestedUnit:'کیلوگرم'}]})).order;
   const page=await transport.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});
   assert.equal(await page.locator('#railNav [data-cartable=transport-resources]').count(),1);assert.equal(await page.locator('#railNav [data-cartable=drivers]').count(),0);
+  const active=async key=>{assert.deepEqual(await page.locator('#railNav .cartable-nav-item.active').evaluateAll(xs=>xs.map(x=>x.dataset.cartable)),[key]);};
+  await active('dashboard');
   const dash=page.locator('[data-dash-role=dispatch]');await dash.waitFor();assert.equal((await dash.locator('.role-dash-card').filter({hasText:'رانندگان فعال'}).locator('strong').innerText()).trim(),'۱');assert.equal((await dash.locator('.role-dash-card').filter({hasText:'سفارش‌های در برنامه'}).locator('strong').innerText()).trim(),'۱');
-  await dash.locator('[data-cartable=transport-resources]').click();await page.locator('#content').getByText('راننده مستقل').first().waitFor();
-  await page.locator('#railNav [data-cartable=orders]').click();await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).waitFor();
+  await dash.locator('[data-cartable=transport-resources]').click();await page.locator('#content').getByText('راننده مستقل').first().waitFor();await active('transport-resources');
+  await page.locator('#railNav [data-cartable=orders]').click();await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).waitFor();await active('orders');
+  await page.locator('#railNav [data-cartable=dashboard]').click();await page.locator('[data-dash-role=dispatch]').waitFor();await active('dashboard');
+  await page.locator('#railNav [data-cartable=reports]').click();await active('reports');
+  await page.locator('#railNav [data-cartable=orders]').click();await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).waitFor();await active('orders');
   assert.equal(await page.locator('#transportPlans .dsp-card').filter({hasText:'مشتری کارتابل'}).count(),1);assert.equal(await page.locator('[data-legacy-dispatch]').count(),0);
   for(const width of [1280,768,390,320]){
    await page.setViewportSize({width,height:900});
