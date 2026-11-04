@@ -31,6 +31,19 @@
   }
   return rows.join('\n');
  }
+ const layoutGroups={
+  phoneSections:{selector:'#phoneOrderFormV25',items:['customer','itemsHeading','items','add','notes','deposit','submit']},
+  phoneCustomer:{selector:'#phoneOrderFormV25 > .sales-remote-customer-grid-v40',items:['name','phone','place','delivery']}
+ };
+ function layoutCssFor(settings){
+  const rows=[];
+  for(const [group,definition] of Object.entries(layoutGroups)){
+   const order=settings?.layout?.[group];
+   if(!Array.isArray(order)||order.length!==definition.items.length||new Set(order).size!==order.length||order.some(x=>!definition.items.includes(x)))continue;
+   order.forEach((item,index)=>rows.push(definition.selector+' > [data-layout-item="'+item+'"]{order:'+index+' !important}'));
+  }
+  return rows.join('\n');
+ }
  const printSelectors={
   invoiceTable:{root:'.inv38-sheet',table:'.inv38-table'},
   warehouseTable:{root:'.whd-doc',table:'.whd-products'},
@@ -47,11 +60,11 @@
  }
  const safeMode=new URLSearchParams(global.location?.search||'').get('appearance')==='off';
  let applied=0,latest=null;
- function apply(settings){let style=document.getElementById('bt-published-appearance');if(!style){style=document.createElement('style');style.id='bt-published-appearance';document.head.appendChild(style);}style.textContent=safeMode?'':cssFor(settings);}
+ function apply(settings){let style=document.getElementById('bt-published-appearance');if(!style){style=document.createElement('style');style.id='bt-published-appearance';document.head.appendChild(style);}style.textContent=safeMode?'':cssFor(settings)+'\n'+layoutCssFor(settings);}
  async function refresh(){
   const seq=++applied;
   try{const response=await fetch('/api/appearance',{cache:'no-store',credentials:'same-origin'});if(!response.ok)throw Error('appearance fetch');const data=await response.json();if(seq!==applied)return;latest=data;apply(data.settings);}catch(_){/* Keep the last known style; never replace it with a stale/empty response. */}
  }
- global.BTAppearance={cssFor,printCssFor:(settings,target)=>safeMode?'':printCssFor(settings,target),refresh,safeMode,get latest(){return latest;}};
+ global.BTAppearance={cssFor,layoutCssFor,printCssFor:(settings,target)=>safeMode?'':printCssFor(settings,target),refresh,safeMode,get latest(){return latest;}};
  void refresh();global.setInterval(refresh,20000);
 })(window);

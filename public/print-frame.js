@@ -5,7 +5,7 @@
   function notify(message){if(typeof global.toast==='function')global.toast(message);}
   function dispose(job){
     if(!job || active!==job)return;
-    clearTimeout(job.timer);
+    clearTimeout(job.timer);clearTimeout(job.pendingTimer);job.notice?.remove();
     if(job.key)sessionStorage.removeItem(job.key);
     job.frame?.remove();active=null;
   }
@@ -43,8 +43,17 @@
     if(job.key){sessionStorage.removeItem(job.key);job.key='';}
     // Keep the document alive until printing/cancellation has finished. Some
     // browsers return from print() before firing afterprint.
-    win.addEventListener('afterprint',()=>setTimeout(()=>dispose(job),1000),{once:true});
-    job.timer=setTimeout(()=>dispose(job),120000);
+    win.addEventListener('afterprint',()=>{clearTimeout(job.pendingTimer);job.notice?.remove();job.timer=setTimeout(()=>dispose(job),1000);},{once:true});
+    // Some browser/driver combinations never emit afterprint. Do not silently
+    // remove a document while its print dialog may still be open. Instead the
+    // operator can explicitly release the job after closing that dialog.
+    job.pendingTimer=setTimeout(()=>{
+      if(active!==job)return;
+      const notice=document.createElement('div');job.notice=notice;notice.className='bt-print-pending';notice.setAttribute('role','status');
+      const text=document.createElement('span');text.textContent='اگر پنجره چاپ بسته شده و چاپ بعدی باز نمی‌شود، ابتدا از بسته بودن پنجره چاپ مطمئن شوید.';
+      const button=document.createElement('button');button.type='button';button.textContent='آزادسازی چاپ بعدی';button.addEventListener('click',()=>{if(global.confirm('پنجره چاپ را بسته‌اید؟ این کار نتیجه یا انجام‌شدن چاپ را تأیید نمی‌کند.'))dispose(job);});
+      notice.append(text,button);document.body.appendChild(notice);
+    },5000);
     try{win.focus();win.print();}catch(e){dispose(job);notify('باز کردن گفت‌وگوی چاپ ناموفق بود.');}
   }
   function fail(win,message){const job=active;if(job?.frame?.contentWindow!==win)return;dispose(job);notify(message||'آماده‌سازی چاپ ناموفق بود.');}
