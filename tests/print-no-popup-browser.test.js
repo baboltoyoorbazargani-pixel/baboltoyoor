@@ -25,7 +25,13 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
     const frame=page.frameLocator('iframe[title="سند آماده چاپ"]');await frame.locator(selector).first().waitFor();
     const body=await frame.locator('body').innerText();assert.match(body,text);assert.doesNotMatch(body,/[0-9٠-٩]/);assert.equal(await frame.locator('.bt-print-tools').count(),0);assert.equal(await frame.locator('.service-tools:not([hidden])').count(),0);
     const expected={'.inv38-sheet':['.inv38-table th','rgb(238, 238, 255)','13px'],'.service-sheet':['.service-table th','rgb(255, 255, 238)','14px'],'.whd-doc':['.whd-products th','rgb(238, 255, 238)','12px']}[selector];
-    if(expected){const style=await frame.locator(expected[0]).first().evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,size:getComputedStyle(e).fontSize,font:getComputedStyle(e).fontFamily}));assert.equal(style.background,expected[1]);assert.equal(style.color,'rgb(0, 0, 0)');assert.equal(style.size,expected[2]);assert.match(style.font,selector==='.service-sheet'?/Vazirmatn/:/Tahoma/);}
+    if(expected){const style=await frame.locator(expected[0]).first().evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,size:getComputedStyle(e).fontSize,font:getComputedStyle(e).fontFamily}));assert.equal(style.background,expected[1]);assert.equal(style.color,'rgb(0, 0, 0)');assert.equal(style.size,expected[2]);assert.match(style.font,selector==='.service-sheet'?/Vazirmatn/:/Tahoma/);
+      // Render the actual generated print document to PDF, with background printing disabled.
+      let markup=await frame.locator('html').evaluate(e=>e.outerHTML);markup=markup.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<head>/i,`<head><base href="${base}/">`);
+      const pdfPage=await ctx.newPage();await pdfPage.setViewportSize({width:700,height:1000});await pdfPage.setContent(markup,{waitUntil:'load'});await pdfPage.emulateMedia({media:'print'});await pdfPage.evaluate(()=>document.fonts.ready);
+      assert.match(await pdfPage.locator('body').innerText(),text);if(selector==='.whd-doc')assert.ok(await pdfPage.locator('.whd-signature').first().isVisible());if(selector==='.service-sheet')assert.ok(await pdfPage.locator('.service-signatures').isVisible());
+      const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);await pdfPage.close();
+    }
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
     await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
     await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});
