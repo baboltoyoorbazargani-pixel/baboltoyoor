@@ -11,6 +11,9 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   browser=await chromium.launch({executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext();
   await ctx.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__printCalls=(window.parent.__printCalls||0)+1;};});
   for(const [url,data] of [['/api/login',{username:'admin',password:'Initial!2345'}],['/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'}]]){const r=await ctx.request.post(base+url,{data});assert.equal(r.status(),200);}
+  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}}};
+  let response=await ctx.request.put(base+'/api/admin/appearance/draft',{data:{draftRevision:0,settings:design}});assert.equal(response.status(),200);
+  response=await ctx.request.post(base+'/api/admin/appearance/publish',{data:{version:0,draftRevision:1}});assert.equal(response.status(),200);
   const page=await ctx.newPage(),errors=[],popups=[];page.on('pageerror',e=>errors.push(e.message));page.on('popup',p=>popups.push(p));await page.goto(base+'/',{waitUntil:'networkidle'});
   const order={id:'o',orderNo:'001234',orderType:'REMOTE',customer:{name:'مشتری 34',phone:'09121234567'},items:[{id:'i',product:{name:'مرغ 2'},deliveredKg:5,unitPrice:2000,finalAmount:10000}],payment:{invoiceNumber:'000001',totalAmount:10000,customerName:'مشتری 34',customerPhone:'09121234567'}};
   await ctx.route('**/api/orders/o',r=>r.fulfill({json:{order}}));
@@ -21,12 +24,15 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
     await page.waitForFunction(n=>window.__printCalls===n+1,before,{timeout:12000});
     const frame=page.frameLocator('iframe[title="سند آماده چاپ"]');await frame.locator(selector).first().waitFor();
     const body=await frame.locator('body').innerText();assert.match(body,text);assert.doesNotMatch(body,/[0-9٠-٩]/);assert.equal(await frame.locator('.bt-print-tools').count(),0);assert.equal(await frame.locator('.service-tools:not([hidden])').count(),0);
+    const expected={'.inv38-sheet':['.inv38-table th','rgb(238, 238, 255)','13px'],'.service-sheet':['.service-table th','rgb(255, 255, 238)','14px'],'.whd-doc':['.whd-products th','rgb(238, 255, 238)','12px']}[selector];
+    if(expected){const style=await frame.locator(expected[0]).first().evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,size:getComputedStyle(e).fontSize,font:getComputedStyle(e).fontFamily}));assert.equal(style.background,expected[1]);assert.equal(style.color,'rgb(0, 0, 0)');assert.equal(style.size,expected[2]);assert.match(style.font,selector==='.service-sheet'?/Vazirmatn/:/Tahoma/);}
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
     await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
     await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});
   }
   await check(()=>page.evaluate(()=>printInvoice('o',null)),'.inv38-sheet',/مشتری ۳۴/);
   await check(()=>page.evaluate(()=>printStoreService('o',1)),'.service-sheet',/فروشگاه ۱/);
+  await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-123',orderNo:'123',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:[{productName:'مرغ',deliveredKg:5,weighings:[]}]},0)),'.whd-doc',/مشتری ۳۴/);
   for(const fn of ['printWarehouseHistory','printWhStoreHistory']){
    await page.evaluate(({fn,history})=>Object.assign(fn==='printWhStoreHistory'?app.whStoreHist:app.whHist,{data:history,q:'',result:''}),{fn,history});
    await check(()=>page.evaluate(fn=>window[fn](),fn),'table',/مشتری ۳۴/);

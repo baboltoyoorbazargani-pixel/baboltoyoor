@@ -1274,7 +1274,7 @@ async function openInvoicePrint(id,run){
     const pay=pickInvoicePayment(d.order,run);
     if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');
     sessionStorage.setItem(key,JSON.stringify({title:(d.order?.orderType==='STORE'?'سند تحویل وزنی':'فاکتور')+' '+fa(pay?.invoiceNumber||''),html:invoiceHtml(d.order,pay)}));
-    await BTPrintFrame.url('/invoice-print.html',{key});
+    await BTPrintFrame.url('/invoice-print.html',{key,appearanceTarget:'invoiceTable'});
   }catch(e){sessionStorage.removeItem(key);toast(e.message)}
 }
 async function printInvoice(id,run){return openInvoicePrint(id,run)}
@@ -2176,7 +2176,7 @@ function storeServicePrintButtons(id,runs){
 }
 function storeAvailableRuns(o){return [1,2].filter(run=>{const sh=run===1?o?.storeRunOps?.r1Shipment:o?.storeRunOps?.r2Shipment;return sh?.itemIds?.length||Object.keys(sh?.weights||{}).length||[...(o?.dispatchRuns||[]),...(o?.dispatches||[]),o?.dispatch].some(d=>Number(d?.run)===run&&(d?.shipmentItemIds?.length||Object.keys(d?.shipmentWeights||{}).length))||(o?.payments||[]).some(p=>Number(p.deliveryRun)===run&&p.priceLines?.length);});}
 function printStoreService(id,run){
-  return BTPrintFrame.url('/store-service-print.html',{query:new URLSearchParams({id,run}).toString()});
+  return BTPrintFrame.url('/store-service-print.html',{query:new URLSearchParams({id,run}).toString(),appearanceTarget:'storeServiceTable'});
 }
 function storeOrderDispatches(o){return [...(Array.isArray(o?.dispatches)?o.dispatches:[]),...(o?.dispatch?[o.dispatch]:[])].filter((d,i,a)=>a.findIndex(x=>x.id===d.id&&x.run===d.run)===i)}
 function isStoreDeliveryComplete(o){if(o?.storeReceiptConfirmedAt)return true;const ds=storeOrderDispatches(o);return ds.length>0&&ds.every(d=>!!d.storeReceiptConfirmedAt)}

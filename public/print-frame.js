@@ -22,9 +22,13 @@
     frame.style.cssText='position:fixed;left:-10000px;top:0;width:1000px;height:1000px;border:0;opacity:0;pointer-events:none;visibility:visible!important';
     if(options.key)frame.dataset.printKey=options.key;
     if(options.query)frame.dataset.printQuery=options.query;
+    // Fixed selectors and typed values only; never serialize arbitrary settings
+    // into HTML. The latest successfully fetched publication is reused offline.
+    const css=global.BTAppearance?.printCssFor?.(global.BTAppearance?.latest?.settings,options.appearanceTarget)||'';
+    if(css)html=html.replace(/<\/head>/i,()=>'<style id="bt-print-appearance">'+css+'</style></head>');
     frame.srcdoc=html;document.body.appendChild(frame);
   }
-  function html(source){const job=begin();if(!job)return false;mount(job,source);return true;}
+  function html(source,options={}){const job=begin();if(!job)return false;mount(job,source,options);return true;}
   async function url(path,options={}){
     const job=begin(options);if(!job){if(options.key)sessionStorage.removeItem(options.key);return;}
     try{
