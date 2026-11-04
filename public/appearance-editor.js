@@ -33,7 +33,7 @@ async function renderAppearanceEditor(){
  const status=$local('appearanceStatus'),error=$local('appearanceError'),sample=$local('appearanceSample'),targetSelect=$local('appearanceTarget');
  const pickers={background:$local('appearanceBackgroundPicker'),color:$local('appearanceColorPicker')};
  const layoutDefs={
-  phoneSections:[['customer','مشخصات مشتری و روش تحویل'],['itemsHeading','عنوان اقلام'],['items','ردیف‌های محصول'],['add','افزودن محصول'],['notes','یادداشت'],['deposit','بیعانه'],['submit','ثبت سفارش']],
+  phoneSections:[['customer','مشخصات مشتری و روش تحویل'],['items','اقلام و افزودن محصول'],['notes','یادداشت'],['deposit','بیعانه'],['submit','ثبت سفارش']],
   phoneCustomer:[['name','نام مشتری'],['phone','شماره تماس'],['place','محل ارسال'],['delivery','روش تحویل']]
  };
  const layoutSelect=$local('layoutGroup'),layoutItems=$local('layoutItems'),preview=$local('layoutPreview');

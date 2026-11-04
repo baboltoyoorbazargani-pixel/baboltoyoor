@@ -13,7 +13,7 @@ test('پیش‌نویس خصوصی، انتشار اتمی و بازگردانی
   const sales=(await call('POST','/api/login',{username:'sales1',password:'Changed!2345'})).cookie;
   let s=await call('GET','/api/appearance');assert.equal(s.data.version,0);assert.deepEqual(s.data.settings,{screen:{},print:{}});
   assert.equal((await call('GET','/api/admin/appearance',null,sales)).status,403);
-  const draft={screen:{navigation:{background:'#ABCDEF',fontSize:16}},print:{invoice:{color:'#000000'}},layout:{phoneCustomer:['phone','name','place','delivery'],phoneSections:['customer','itemsHeading','items','add','notes','deposit','submit']}};
+  const draft={screen:{navigation:{background:'#ABCDEF',fontSize:16}},print:{invoice:{color:'#000000'}},layout:{phoneCustomer:['phone','name','place','delivery'],phoneSections:['customer','items','notes','deposit','submit']}};
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:0,settings:draft},sales)).status,403);
   s=await call('PUT','/api/admin/appearance/draft',{draftRevision:0,settings:draft},admin);assert.equal(s.status,200);assert.equal(s.data.draftRevision,1);
   assert.equal((await call('GET','/api/appearance')).data.version,0,'draft must not change live appearance');

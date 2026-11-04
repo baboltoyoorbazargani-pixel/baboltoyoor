@@ -32,7 +32,7 @@
   return rows.join('\n');
  }
  const layoutGroups={
-  phoneSections:{selector:'#phoneOrderFormV25',items:['customer','itemsHeading','items','add','notes','deposit','submit']},
+  phoneSections:{selector:'#phoneOrderFormV25',items:['customer','items','notes','deposit','submit']},
   phoneCustomer:{selector:'#phoneOrderFormV25 > .sales-remote-customer-grid-v40',items:['name','phone','place','delivery']}
  };
  function layoutCssFor(settings){

@@ -209,9 +209,9 @@ function renderSalesRemoteV32(orders){
         <div class="field sales-remote-place-v40" data-layout-item="place"><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
         ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
       </div>
-      <div class="sales-items-head-v25" data-layout-item="itemsHeading"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>با کلیدهای جهت‌دار محصول را انتخاب کنید؛ Enter از مقدار و واحد به توضیح می‌رود و در پایان ردیف، قلم بعدی را باز می‌کند. Insert نیز ردیف جدید می‌افزاید؛ ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
-      <div id="phone-lines" class="op-lines" data-layout-item="items"></div>
-      <div class="sales-lines-add-v41" data-layout-item="add"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div>
+      <div class="phone-items-design-group" data-layout-item="items"><div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>با کلیدهای جهت‌دار محصول را انتخاب کنید؛ Enter از مقدار و واحد به توضیح می‌رود و در پایان ردیف، قلم بعدی را باز می‌کند. Insert نیز ردیف جدید می‌افزاید؛ ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
+      <div id="phone-lines" class="op-lines"></div>
+      <div class="sales-lines-add-v41"><button type="button" class="btn btn-secondary" data-action="phone-add-line">${icon('plus',18)} افزودن ردیف محصول</button></div></div>
       <div class="sd-note-box sales-phone-notes-v40" data-layout-item="notes"><div class="sd-note-head"><span>${icon('info',17)}</span><div><strong>یادداشت تکمیلی</strong><small>هماهنگی مشتری، بسته‌بندی یا نکته‌ای که لازم است فروش و انبار بدانند.</small></div></div><textarea aria-label="یادداشت تکمیلی سفارش" name="notes" maxlength="1000" rows="4" placeholder="توضیحات سفارش را اینجا وارد کنید..."></textarea><div class="sd-note-foot"><span>حداکثر ۱۰۰۰ نویسه</span><span>متن برای واحد فروش و انبار ذخیره می‌شود.</span></div></div>
       ${depositEntryHtml('phone')}
       <div class="sales-form-bottom-v25" data-layout-item="submit"><span class="form-helper-v32">واحدهای مجاز: کیلوگرم، بسته، عدد، کارتن</span><button type="submit" class="btn btn-primary btn-lg">${icon('send',18)} ثبت و ارسال به انبار</button></div>
