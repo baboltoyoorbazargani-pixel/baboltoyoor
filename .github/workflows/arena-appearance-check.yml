@@ -23,9 +23,12 @@ jobs:
         if: always()
         run: |
           export BT_CHROMIUM_PATH=$(which google-chrome || which chromium || which chromium-browser)
-          git show c63d8966c63b25dd89c07ee5c8eb95acdfec43bd:tests/print-no-popup-browser.test.js > tests/baseline-print.test.js
+          mkdir /tmp/baseline-app
+          git archive c63d8966c63b25dd89c07ee5c8eb95acdfec43bd | tar -x -C /tmp/baseline-app
+          ln -s "$PWD/node_modules" /tmp/baseline-app/node_modules
+          cd /tmp/baseline-app
           set +e
-          node --test tests/baseline-print.test.js > /tmp/baseline.txt 2>&1
+          node --test tests/print-no-popup-browser.test.js > /tmp/baseline.txt 2>&1
           result=$?
           cat /tmp/baseline.txt
           if [ "$result" -ne 0 ]; then echo "::error title=BaselinePrintLog::$(base64 -w0 /tmp/baseline.txt)"; fi
