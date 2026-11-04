@@ -12,6 +12,7 @@
   buttonSecondary:'#appView .btn-secondary, #modal .btn-secondary',
   input:'#appView input, #appView select, #appView textarea, #modal input, #modal select, #modal textarea'
  };
+ const fontSelectors={navigation:'#appView .rail-nav .nav-label',navigationActive:'#appView .rail-nav .cartable-nav-item.active .nav-label',header:'#appView .workspace-header h1'};
  const safeColor=x=>typeof x==='string'&&/^#[0-9a-f]{6}$/i.test(x);
  function cssFor(settings){
   const screen=settings?.screen;if(!screen||typeof screen!=='object'||Array.isArray(screen))return '';
@@ -20,7 +21,7 @@
    const v=screen[name];if(!v||typeof v!=='object')continue;const parts=[];
    if(safeColor(v.background))parts.push('background:'+v.background+' !important');
    if(safeColor(v.color))parts.push('color:'+v.color+' !important');
-   if(Number.isInteger(v.fontSize)&&v.fontSize>=9&&v.fontSize<=30)parts.push('font-size:'+v.fontSize+'px !important');
+   if(Number.isInteger(v.fontSize)&&v.fontSize>=9&&v.fontSize<=30){if(fontSelectors[name])rows.push(fontSelectors[name]+'{font-size:'+v.fontSize+'px !important}');else parts.push('font-size:'+v.fontSize+'px !important');}
    if(Number.isInteger(v.borderRadius)&&v.borderRadius>=0&&v.borderRadius<=30)parts.push('border-radius:'+v.borderRadius+'px !important');
    if(Number.isInteger(v.spacing)&&v.spacing>=0&&v.spacing<=24)parts.push('padding:'+v.spacing+'px !important');
    if(parts.length)rows.push(sel+'{'+parts.join(';')+'}');
