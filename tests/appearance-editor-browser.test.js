@@ -16,7 +16,7 @@ test('مدیر پیش‌نویس را می‌بیند، سپس منتشر و ب�
   const initial=await s.locator('#appView .rail').evaluate(e=>getComputedStyle(e).backgroundColor);
   await a.locator('#layoutGroup').selectOption('phoneCustomer');await a.locator('[data-layout-down=name]').click();assert.equal(await a.locator('#layoutItems [data-layout-key]').first().getAttribute('data-layout-key'),'phone');
   const preview=a.frameLocator('#layoutPreview');await preview.locator('#phoneOrderFormV25').waitFor();assert.equal(await preview.locator('[data-layout-item=phone]').evaluate(e=>getComputedStyle(e).order),'0');
-  await preview.locator('[data-layout-item=name]').dragTo(preview.locator('[data-layout-item=place]'));assert.equal(await a.locator('#layoutItems [data-layout-key]').nth(2).getAttribute('data-layout-key'),'name');await a.locator('[data-layout-up=name]').click();
+  await preview.locator('[data-layout-item=name]').dragTo(preview.locator('[data-layout-item=place]'));await a.waitForFunction(()=>document.querySelectorAll('#layoutItems [data-layout-key]')[2]?.dataset.layoutKey==='name');assert.equal(await a.locator('#layoutItems [data-layout-key]').nth(2).getAttribute('data-layout-key'),'name');await a.locator('[data-layout-up=name]').click();
   assert.equal(await s.locator('#phoneOrderFormV25 [data-layout-item=phone]').evaluate(e=>getComputedStyle(e).order),'0');
   await a.locator('#layoutGroup').selectOption('phoneSections');await a.locator('[data-layout-down=customer]').click();assert.equal(await a.locator('#layoutItems [data-layout-key]').first().getAttribute('data-layout-key'),'items');
 
