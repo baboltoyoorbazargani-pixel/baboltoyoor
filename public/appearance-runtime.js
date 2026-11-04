@@ -59,12 +59,29 @@
   return rows.join('\n');
  }
  const safeMode=new URLSearchParams(global.location?.search||'').get('appearance')==='off';
- let applied=0,latest=null;
- function apply(settings){let style=document.getElementById('bt-published-appearance');if(!style){style=document.createElement('style');style.id='bt-published-appearance';document.head.appendChild(style);}style.textContent=safeMode?'':cssFor(settings)+'\n'+layoutCssFor(settings);}
+ let applied=0,latest=null,layoutSettings=null;
+ function syncLayout(){
+  if(safeMode||!layoutSettings)return;
+  for(const [group,definition] of Object.entries(layoutGroups)){
+   const wanted=layoutSettings.layout?.[group],valid=Array.isArray(wanted)&&wanted.length===definition.items.length&&new Set(wanted).size===wanted.length&&wanted.every(x=>definition.items.includes(x));
+   const order=valid?wanted:definition.items;
+   const parent=document.querySelector(definition.selector);if(!parent||parent.contains(document.activeElement))continue;
+   const children=Array.from(parent.children).filter(el=>definition.items.includes(el.getAttribute('data-layout-item')));
+   if(children.length===0)continue;
+   // Refuse ambiguous or unexpected structures rather than moving an
+   // operational field into a different container.
+   if(children.length!==parent.children.length||new Set(children.map(el=>el.getAttribute('data-layout-item'))).size!==children.length)continue;
+   const sorted=children.slice().sort((a,b)=>order.indexOf(a.getAttribute('data-layout-item'))-order.indexOf(b.getAttribute('data-layout-item')));
+   if(children.every((el,i)=>el===sorted[i]))continue;
+   sorted.forEach(el=>parent.appendChild(el));
+  }
+ }
+ function apply(settings){layoutSettings=settings;let style=document.getElementById('bt-published-appearance');if(!style){style=document.createElement('style');style.id='bt-published-appearance';document.head.appendChild(style);}style.textContent=safeMode?'':cssFor(settings)+'\n'+layoutCssFor(settings);syncLayout();}
  async function refresh(){
   const seq=++applied;
   try{const response=await fetch('/api/appearance',{cache:'no-store',credentials:'same-origin'});if(!response.ok)throw Error('appearance fetch');const data=await response.json();if(seq!==applied)return;latest=data;apply(data.settings);}catch(_){/* Keep the last known style; never replace it with a stale/empty response. */}
  }
  global.BTAppearance={cssFor,layoutCssFor,printCssFor:(settings,target)=>safeMode?'':printCssFor(settings,target),refresh,safeMode,get latest(){return latest;}};
+ if(global.MutationObserver){const content=document.getElementById('content');if(content){let pending=false;const schedule=()=>{if(pending)return;pending=true;global.setTimeout(()=>{pending=false;syncLayout();},0);};new global.MutationObserver(schedule).observe(content,{childList:true,subtree:true});content.addEventListener('focusout',schedule);}}
  void refresh();global.setInterval(refresh,20000);
 })(window);
