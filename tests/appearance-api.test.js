@@ -20,6 +20,8 @@ test('پیش‌نویس خصوصی، انتشار اتمی و بازگردانی
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:0,settings:draft},admin)).status,409);
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{screen:{navigation:{background:'red;display:none'}}}},admin)).status,400);
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{screen:{navigation:{display:'none'}}}},admin)).status,400);
+  for(const styles of [{background:'#000000'},{fontSize:15},{fontFamily:'url(evil)'},{color:'#ffffff'}])assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{print:{warehouseTable:styles}}},admin)).status,400);
+  assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{screen:{panel:{fontFamily:'invalid'}}}},admin)).status,400);
   assert.equal((await call('POST','/api/admin/appearance/publish',{version:0,draftRevision:0},admin)).status,409);
   const {DatabaseSync}=require('node:sqlite');let raw=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
   raw.exec("CREATE TRIGGER fail_appearance BEFORE INSERT ON audit WHEN NEW.action='APPEARANCE_PUBLISHED' BEGIN SELECT RAISE(ABORT, 'test failure'); END");raw.close();

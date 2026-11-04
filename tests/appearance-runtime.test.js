@@ -12,3 +12,10 @@ test('only the latest response applies; fetch failure preserves the last good st
  h.calls[0]({ok:true,json:async()=>({version:1,settings:{screen:{panel:{color:'#000000'}}}})});await new Promise(r=>setImmediate(r));assert.match(h.style.textContent,/#112233/);assert.doesNotMatch(h.style.textContent,/#000000/);
  const fail=h.c.window.BTAppearance.refresh();h.calls[2]({ok:false});await fail;assert.match(h.style.textContent,/#112233/);
 });
+
+test('print appearance accepts only fixed supported elements and safe values',()=>{
+ const h=harness(),fn=h.c.window.BTAppearance.printCssFor;
+ const settings={print:{invoiceTable:{background:'#eeeeff',fontSize:14,fontFamily:'tahoma'},warehouseTable:{background:'#000000',fontSize:15,fontFamily:'Tahoma;display:none'}}};
+ const css=fn(settings,'invoiceTable');assert.match(css,/\.inv38-table th\{background:#eeeeff !important;color:#000000 !important/);assert.match(css,/font-size:14px/);assert.match(css,/font-family:Tahoma/);
+ assert.equal(fn(settings,'warehouseTable'),'');assert.equal(fn(settings,'constructor'),'');assert.doesNotMatch(css,/display:none/);
+});
