@@ -30,7 +30,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
       let markup=await frame.locator('html').evaluate(e=>e.outerHTML);markup=markup.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<head>/i,`<head><base href="${base}/">`);
       const pdfPage=await ctx.newPage();await pdfPage.setViewportSize({width:700,height:1000});await pdfPage.setContent(markup,{waitUntil:'load'});await pdfPage.emulateMedia({media:'print'});await pdfPage.evaluate(()=>document.fonts.ready);
       assert.match(await pdfPage.locator('body').innerText(),text);if(selector==='.whd-doc')assert.ok(await pdfPage.locator('.whd-signature').first().isVisible());if(selector==='.service-sheet')assert.ok(await pdfPage.locator('.service-signatures').isVisible());
-      const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);await pdfPage.close();
+      const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);if(selector==='.whd-doc'&&await pdfPage.locator('.whd-products tbody tr').count()>10)assert.ok((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length>1,'long document spans more than one A4 page');await pdfPage.close();
     }
     if(selector==='.whd-doc')assert.deepEqual(await frame.locator('.whd-doc').evaluate(el=>[...el.children].map(x=>x.dataset.layoutItem)),['head','products','signature','total']);
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
@@ -40,6 +40,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   await check(()=>page.evaluate(()=>printInvoice('o',null)),'.inv38-sheet',/مشتری ۳۴/);
   await check(()=>page.evaluate(()=>printStoreService('o',1)),'.service-sheet',/فروشگاه ۱/);
   await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-123',orderNo:'123',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:[{productName:'مرغ',deliveredKg:5,weighings:[]}]},0)),'.whd-doc',/مشتری ۳۴/);
+  await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-124',orderNo:'124',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:Array.from({length:70},(_,i)=>({productName:'محصول '+i,deliveredKg:i+1,weighings:[]}))},0)),'.whd-doc',/مشتری ۳۴/);
   for(const fn of ['printWarehouseHistory','printWhStoreHistory']){
    await page.evaluate(({fn,history})=>Object.assign(fn==='printWhStoreHistory'?app.whStoreHist:app.whHist,{data:history,q:'',result:''}),{fn,history});
    await check(()=>page.evaluate(fn=>window[fn](),fn),'table',/مشتری ۳۴/);
