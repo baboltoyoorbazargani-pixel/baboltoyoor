@@ -16,7 +16,7 @@ test('مدیر پیش‌نویس را می‌بیند، سپس منتشر و ب�
   const initial=await s.locator('#appView .rail').evaluate(e=>getComputedStyle(e).backgroundColor);
   await a.locator('#layoutGroup').selectOption('gateContact');await a.locator('#gridEnabled').check();await a.locator('#gridItem').selectOption('name');
   await a.locator('#gridX').fill('0');await a.locator('#gridY').fill('0');await a.locator('#gridW').fill('6');await a.locator('#gridH').fill('100');await a.locator('#gridApply').click();await a.getByText('مختصات نامعتبر است یا دو جزء همپوشانی دارند. ابتدا جزء را به ردیف خالی منتقل کنید.').waitFor();
-  await a.locator('#appearanceSave').click();await a.getByText('ابتدا مختصات واردشده را اعمال کنید.').waitFor();await a.locator('#gridY').fill('1');await a.locator('#gridApply').click();
+  await a.locator('#appearanceSave').click();await a.getByText('ابتدا مختصات واردشده را اعمال کنید.').waitFor();await a.locator('#layoutReset').click();assert.equal(await a.locator('#gridW').inputValue(),'6');await a.locator('#gridY').fill('1');await a.locator('#gridApply').click();
   let gp=a.frameLocator('#layoutPreview');await gp.locator('#gateForm').waitFor();assert.equal(await gp.locator('[data-layout-item=name]').evaluate(e=>getComputedStyle(e).gridRowStart),'2');assert.equal(await gp.locator('[data-layout-item=name]').evaluate(e=>getComputedStyle(e).gridColumnEnd),'span 6');
   // Drag a real preview field to an empty grid row using pointer events.
   const gridSearch=gp.locator('[data-layout-item=search]'),gridParent=gp.locator('.gt-entry-cust');await gridSearch.scrollIntoViewIfNeeded();const source=await gridSearch.boundingBox(),area=await gridParent.boundingBox();assert(source&&area);
