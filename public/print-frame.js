@@ -24,7 +24,8 @@
     if(options.query)frame.dataset.printQuery=options.query;
     // Fixed selectors and typed values only; never serialize arbitrary settings
     // into HTML. The latest successfully fetched publication is reused offline.
-    const css=global.BTAppearance?.printCssFor?.(global.BTAppearance?.latest?.settings,options.appearanceTarget)||'';
+    job.settings=global.BTAppearance?.latest?.settings;job.appearanceTarget=options.appearanceTarget;
+    const css=global.BTAppearance?.printCssFor?.(job.settings,options.appearanceTarget)||'';
     if(css)html=html.replace(/<\/head>/i,()=>'<style id="bt-print-appearance">'+css+'</style></head>');
     frame.srcdoc=html;document.body.appendChild(frame);
   }
@@ -54,7 +55,7 @@
       const button=document.createElement('button');button.type='button';button.textContent='آزادسازی چاپ بعدی';button.addEventListener('click',()=>{if(global.confirm('پنجره چاپ را بسته‌اید؟ این کار نتیجه یا انجام‌شدن چاپ را تأیید نمی‌کند.'))dispose(job);});
       notice.append(text,button);document.body.appendChild(notice);
     },5000);
-    try{win.focus();win.print();}catch(e){dispose(job);notify('باز کردن گفت‌وگوی چاپ ناموفق بود.');}
+    try{global.BTAppearance?.applyPrintLayout?.(job.settings,job.appearanceTarget,win.document);win.focus();win.print();}catch(e){dispose(job);notify('باز کردن گفت‌وگوی چاپ ناموفق بود.');}
   }
   function fail(win,message){const job=active;if(job?.frame?.contentWindow!==win)return;dispose(job);notify(message||'آماده‌سازی چاپ ناموفق بود.');}
   global.BTPrintFrame={html,url,ready,fail};

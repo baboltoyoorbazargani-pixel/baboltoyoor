@@ -11,7 +11,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   browser=await chromium.launch({executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext();
   await ctx.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__printCalls=(window.parent.__printCalls||0)+1;};});
   for(const [url,data] of [['/api/login',{username:'admin',password:'Initial!2345'}],['/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'}]]){const r=await ctx.request.post(base+url,{data});assert.equal(r.status(),200);}
-  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}}};
+  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}},layout:{warehouseSections:['head','products','signature','total']}};
   let response=await ctx.request.put(base+'/api/admin/appearance/draft',{data:{draftRevision:0,settings:design}});assert.equal(response.status(),200);
   response=await ctx.request.post(base+'/api/admin/appearance/publish',{data:{version:0,draftRevision:1}});assert.equal(response.status(),200);
   const page=await ctx.newPage(),errors=[],popups=[];page.on('pageerror',e=>errors.push(e.message));page.on('popup',p=>popups.push(p));await page.goto(base+'/',{waitUntil:'networkidle'});
@@ -30,8 +30,9 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
       let markup=await frame.locator('html').evaluate(e=>e.outerHTML);markup=markup.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<head>/i,`<head><base href="${base}/">`);
       const pdfPage=await ctx.newPage();await pdfPage.setViewportSize({width:700,height:1000});await pdfPage.setContent(markup,{waitUntil:'load'});await pdfPage.emulateMedia({media:'print'});await pdfPage.evaluate(()=>document.fonts.ready);
       assert.match(await pdfPage.locator('body').innerText(),text);if(selector==='.whd-doc')assert.ok(await pdfPage.locator('.whd-signature').first().isVisible());if(selector==='.service-sheet')assert.ok(await pdfPage.locator('.service-signatures').isVisible());
-      const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);await pdfPage.close();
+      const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);if(selector==='.whd-doc'&&await pdfPage.locator('.whd-products tbody tr').count()>10)assert.ok((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length>1,'long document spans more than one A4 page');await pdfPage.close();
     }
+    if(selector==='.whd-doc')assert.deepEqual(await frame.locator('.whd-doc').evaluate(el=>[...el.children].map(x=>x.dataset.layoutItem)),['head','products','signature','total']);
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
     await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
     await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});
@@ -39,6 +40,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   await check(()=>page.evaluate(()=>printInvoice('o',null)),'.inv38-sheet',/مشتری ۳۴/);
   await check(()=>page.evaluate(()=>printStoreService('o',1)),'.service-sheet',/فروشگاه ۱/);
   await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-123',orderNo:'123',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:[{productName:'مرغ',deliveredKg:5,weighings:[]}]},0)),'.whd-doc',/مشتری ۳۴/);
+  await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-124',orderNo:'124',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:Array.from({length:70},(_,i)=>({productName:'محصول '+i,deliveredKg:i+1,weighings:[]}))},0)),'.whd-doc',/مشتری ۳۴/);
   for(const fn of ['printWarehouseHistory','printWhStoreHistory']){
    await page.evaluate(({fn,history})=>Object.assign(fn==='printWhStoreHistory'?app.whStoreHist:app.whHist,{data:history,q:'',result:''}),{fn,history});
    await check(()=>page.evaluate(fn=>window[fn](),fn),'table',/مشتری ۳۴/);
