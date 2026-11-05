@@ -28,3 +28,19 @@ test('per-form layout emits fixed selectors and rejects malformed or unsafe orde
  assert.equal(fn({layout:{phoneCustomer:['phone','name','place','delivery"]{display:none}']}}),'');
  assert.equal(fn({layout:{unknown:['whatever']}}),'');
 });
+
+test('grid positions are bounded and cannot overlap or inject CSS',()=>{
+ const fn=harness().c.window.BTAppearance.gridCssFor;
+ const good={search:{x:0,y:0,w:4,h:72},name:{x:0,y:1,w:6,h:110},phone:{x:8,y:0,w:4,h:72}};
+ const css=fn({grid:{gateContact:good}});assert.match(css,/grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);assert.match(css,/grid-row:2 !important;min-height:110px/);
+ assert.equal(fn({grid:{gateContact:{...good,name:{x:0,y:0,w:6,h:110}}}}),'');
+ assert.equal(fn({grid:{gateContact:{...good,name:{x:'0;display:none',y:1,w:6,h:110}}}}),'');
+});
+test('print layout preserves all elements and fails closed on bad configuration',()=>{
+ const fn=harness().c.window.BTAppearance.applyPrintLayout;let children=['head','products','total','signature'].map(k=>({getAttribute:()=>k}));
+ const root={get children(){return children},appendChild(el){children=children.filter(x=>x!==el);children.push(el)}};
+ const doc={querySelector:()=>root};fn({layout:{warehouseSections:['head','products','signature','total']}},'warehouseTable',doc);
+ assert.equal(children.map(x=>x.getAttribute()).join(','),'head,products,signature,total');
+ fn({layout:{warehouseSections:['head','head','signature','total']}},'warehouseTable',doc);assert.equal(children.map(x=>x.getAttribute()).join(','),'head,products,signature,total');
+ fn({},'warehouseTable',doc);assert.equal(children.map(x=>x.getAttribute()).join(','),'head,products,total,signature');
+});

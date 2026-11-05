@@ -11,7 +11,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   browser=await chromium.launch({executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext();
   await ctx.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__printCalls=(window.parent.__printCalls||0)+1;};});
   for(const [url,data] of [['/api/login',{username:'admin',password:'Initial!2345'}],['/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'}]]){const r=await ctx.request.post(base+url,{data});assert.equal(r.status(),200);}
-  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}}};
+  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}},layout:{warehouseSections:['head','products','signature','total']}};
   let response=await ctx.request.put(base+'/api/admin/appearance/draft',{data:{draftRevision:0,settings:design}});assert.equal(response.status(),200);
   response=await ctx.request.post(base+'/api/admin/appearance/publish',{data:{version:0,draftRevision:1}});assert.equal(response.status(),200);
   const page=await ctx.newPage(),errors=[],popups=[];page.on('pageerror',e=>errors.push(e.message));page.on('popup',p=>popups.push(p));await page.goto(base+'/',{waitUntil:'networkidle'});
@@ -32,6 +32,7 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
       assert.match(await pdfPage.locator('body').innerText(),text);if(selector==='.whd-doc')assert.ok(await pdfPage.locator('.whd-signature').first().isVisible());if(selector==='.service-sheet')assert.ok(await pdfPage.locator('.service-signatures').isVisible());
       const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);await pdfPage.close();
     }
+    if(selector==='.whd-doc')assert.deepEqual(await frame.locator('.whd-doc').evaluate(el=>[...el.children].map(x=>x.dataset.layoutItem)),['head','products','signature','total']);
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
     await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
     await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});

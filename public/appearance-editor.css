@@ -8,3 +8,6 @@
 .bt-print-pending{position:fixed;z-index:10000;bottom:15px;left:15px;right:15px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;background:#fff7df;color:#332b10;border:1px solid #c99c26;border-radius:8px;box-shadow:0 4px 14px #0003}.bt-print-pending button{padding:8px 12px;cursor:pointer}
 
 .phone-items-design-group{display:grid;gap:17px}
+
+.layout-grid-controls{border:1px solid #c3cfdd;border-radius:8px;padding:10px;margin:12px 0}.layout-grid-controls>label{display:flex;align-items:center;gap:8px}.layout-grid-controls #gridFields{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:10px 0}.layout-grid-controls #gridFields label{display:grid;gap:3px}.layout-grid-controls #gridFields input{width:85px;min-height:38px}.layout-grid-controls [hidden]{display:none!important}
+.layout-preview-scroll{max-width:100%;overflow:auto}
