@@ -13,7 +13,7 @@ test('پیش‌نویس خصوصی، انتشار اتمی و بازگردانی
   const sales=(await call('POST','/api/login',{username:'sales1',password:'Changed!2345'})).cookie;
   let s=await call('GET','/api/appearance');assert.equal(s.data.version,0);assert.deepEqual(s.data.settings,{screen:{},print:{}});
   assert.equal((await call('GET','/api/admin/appearance',null,sales)).status,403);
-  const draft={screen:{navigation:{background:'#ABCDEF',fontSize:16}},print:{invoice:{color:'#000000'}}};
+  const draft={screen:{navigation:{background:'#ABCDEF',fontSize:16}},print:{invoice:{color:'#000000'}},layout:{phoneCustomer:['phone','name','place','delivery'],phoneSections:['customer','items','notes','deposit','submit']}};
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:0,settings:draft},sales)).status,403);
   s=await call('PUT','/api/admin/appearance/draft',{draftRevision:0,settings:draft},admin);assert.equal(s.status,200);assert.equal(s.data.draftRevision,1);
   assert.equal((await call('GET','/api/appearance')).data.version,0,'draft must not change live appearance');
@@ -22,6 +22,8 @@ test('پیش‌نویس خصوصی، انتشار اتمی و بازگردانی
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{screen:{navigation:{display:'none'}}}},admin)).status,400);
   for(const styles of [{background:'#000000'},{fontSize:15},{fontFamily:'url(evil)'},{color:'#ffffff'}])assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{print:{warehouseTable:styles}}},admin)).status,400);
   assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{screen:{panel:{fontFamily:'invalid'}}}},admin)).status,400);
+  for(const order of [['name','phone','place','place'],['name','phone','place'],['name','phone','place','delivery','evil']])assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{layout:{phoneCustomer:order}}},admin)).status,400);
+  assert.equal((await call('PUT','/api/admin/appearance/draft',{draftRevision:1,settings:{layout:{unknown:['name']}}},admin)).status,400);
   assert.equal((await call('POST','/api/admin/appearance/publish',{version:0,draftRevision:0},admin)).status,409);
   const {DatabaseSync}=require('node:sqlite');let raw=new DatabaseSync(path.join(dir,'baboltoyoor.db'));
   raw.exec("CREATE TRIGGER fail_appearance BEFORE INSERT ON audit WHEN NEW.action='APPEARANCE_PUBLISHED' BEGIN SELECT RAISE(ABORT, 'test failure'); END");raw.close();
@@ -30,7 +32,7 @@ test('پیش‌نویس خصوصی، انتشار اتمی و بازگردانی
   raw=new DatabaseSync(path.join(dir,'baboltoyoor.db'));raw.exec('DROP TRIGGER fail_appearance');raw.close();
   s=await call('POST','/api/admin/appearance/publish',{version:0,draftRevision:1},admin);assert.equal(s.status,200);assert.equal(s.data.version,1);
   s=await call('GET','/api/appearance');assert.equal(s.data.version,1);assert.equal(s.data.settings.screen.navigation.background,'#abcdef');assert(!('draft' in s.data));
-  await stop();await start();s=await call('GET','/api/appearance');assert.equal(s.data.version,1);assert.equal(s.data.settings.print.invoice.color,'#000000');
+  await stop();await start();s=await call('GET','/api/appearance');assert.equal(s.data.version,1);assert.equal(s.data.settings.print.invoice.color,'#000000');assert.deepEqual(s.data.settings.layout.phoneCustomer,['phone','name','place','delivery']);
   const admin2=(await call('POST','/api/login',{username:'admin',password:'Changed!2345'})).cookie;
   s=await call('POST','/api/admin/appearance/restore',{version:1,draftRevision:2},admin2);assert.equal(s.status,200);assert.equal(s.data.version,2);assert.deepEqual(s.data.published,{screen:{},print:{}});
  }finally{await stop();fs.rmSync(dir,{recursive:true,force:true});}

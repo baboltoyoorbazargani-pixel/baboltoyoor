@@ -13,6 +13,7 @@ test('مرورگر: Enter و Insert در سفارش غیرحضوری قلم بع
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(()=>go('sales','remote'));const form=page.locator('#phoneOrderFormV25');await form.waitFor();
   await form.locator('[name=name]').fill('مشتری تست');await form.locator('[name=name]').press('Enter');await form.locator('[name=phone]').fill('09121112233');await form.locator('[name=phone]').press('Enter');await form.locator('[name=dispatchPlace]').fill('بابل');await form.locator('[name=dispatchPlace]').press('Enter');
+  await form.locator('[data-delivery-mode]').selectOption('PICKUP'); // satisfy the independent required delivery field before testing item validation
   const qty0=form.locator('[data-op-qty="phone-0"]');
   // میانبر حتی در ردیف ناقص باید مانند دکمه، ردیف تازه بسازد.
   await qty0.fill('2');await qty0.press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-1');

@@ -19,3 +19,12 @@ test('print appearance accepts only fixed supported elements and safe values',()
  const css=fn(settings,'invoiceTable');assert.match(css,/\.inv38-table th\{background:#eeeeff !important;color:#000000 !important/);assert.match(css,/font-size:14px/);assert.match(css,/font-family:Tahoma/);
  assert.equal(fn(settings,'warehouseTable'),'');assert.equal(fn(settings,'constructor'),'');assert.doesNotMatch(css,/display:none/);
 });
+
+test('per-form layout emits fixed selectors and rejects malformed or unsafe orders',()=>{
+ const fn=harness().c.window.BTAppearance.layoutCssFor;
+ const css=fn({layout:{phoneCustomer:['phone','name','place','delivery']}});
+ assert.match(css,/#phoneOrderFormV25 > \.sales-remote-customer-grid-v40 > \[data-layout-item="phone"\]\{order:0 !important\}/);
+ assert.equal(fn({layout:{phoneCustomer:['phone','phone','place','delivery']}}),'');
+ assert.equal(fn({layout:{phoneCustomer:['phone','name','place','delivery"]{display:none}']}}),'');
+ assert.equal(fn({layout:{unknown:['whatever']}}),'');
+});

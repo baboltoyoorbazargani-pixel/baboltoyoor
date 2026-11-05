@@ -59,6 +59,11 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   const real=await browser.newContext({storageState:await ctx.storageState()});
   await real.addInitScript(()=>{if(window!==window.top){const original=window.print.bind(window);window.print=()=>{window.parent.__nativeCalls=(window.parent.__nativeCalls||0)+1;return original();};window.addEventListener('beforeprint',()=>{window.parent.__beforePrint=true;});window.addEventListener('afterprint',()=>{window.parent.__afterPrint=true;});}});
   await real.route('**/api/orders/o',r=>r.fulfill({json:{order}}));const actual=await real.newPage();let actualPopups=0;actual.on('popup',()=>actualPopups++);await actual.goto(base+'/',{waitUntil:'networkidle'});await actual.evaluate(()=>printInvoice('o',null));
-  await actual.waitForFunction(()=>window.__nativeCalls===1 && window.__beforePrint && window.__afterPrint, null,{timeout:12000});assert.equal(actualPopups,0);await actual.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});await real.close();
+  await actual.waitForFunction(()=>window.__nativeCalls===1 && window.__beforePrint, null,{timeout:12000});assert.equal(actualPopups,0);
+  // Chromium headless may never deliver afterprint. In that case the operator
+  // must explicitly release the job; this does not assert a physical print.
+  await actual.waitForFunction(()=>window.__afterPrint||document.querySelector('.bt-print-pending'),null,{timeout:12000});
+  if(!await actual.evaluate(()=>!!window.__afterPrint)){actual.once('dialog',d=>d.accept());await actual.getByRole('button',{name:'آزادسازی چاپ بعدی'}).click();}
+  await actual.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});await real.close();
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
 });

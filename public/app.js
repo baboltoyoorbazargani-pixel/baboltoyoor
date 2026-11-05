@@ -2462,7 +2462,7 @@ function futureOrderRowsV25(orders){
 // disabled compatibility mode keeps the old forms available for emergencies.
 function deliveryModeInputHtml(prefix){
  const id="delivery-mode-"+String(prefix||"order");
- return `<div class="field transport-delivery-choice"><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
+ return `<div class="field transport-delivery-choice"${prefix==='phone'?' data-layout-item="delivery"':''}><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
 }
 function readDeliveryMode(root,deposit){
  if(!app.features?.experimentalTransport)return {};
@@ -2471,8 +2471,8 @@ function readDeliveryMode(root,deposit){
  if(mode==='DELIVERY'&&deposit)throw Error('سفارش دارای بیعانه قابل ارسال توسط پخش نیست؛ تحویل در انبار را انتخاب کنید.');
  return {transportWorkflow:true,deliveryMode:mode};
 }
-function depositEntryHtml(){
- return `<section class="deposit-entry"><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
+function depositEntryHtml(prefix){
+ return `<section class="deposit-entry"${prefix==='phone'?' data-layout-item="deposit"':''}><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
  <div class="deposit-fields" data-deposit-fields hidden><label>مبلغ بیعانه (ریال)<input class="adm-input" data-deposit-amount inputmode="numeric" autocomplete="off" placeholder="مبلغ دریافتی"></label><label>نوع پرداخت<select class="adm-select" data-deposit-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option></select></label><label data-deposit-pos hidden>دستگاه فعال<select class="adm-select" data-deposit-device><option value="">انتخاب دستگاه</option></select></label><label data-deposit-bank-wrap hidden>بانک / حساب مقصد<input class="adm-input" data-deposit-bank maxlength="100"></label><label data-deposit-reference-wrap hidden>شماره پیگیری<input class="adm-input" data-deposit-reference maxlength="100" placeholder="شناسه تراکنش"></label></div></section>`;
 }
 function readOrderDeposit(form){
