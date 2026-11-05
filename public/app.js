@@ -52,7 +52,6 @@ const ICONS = {
   user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.3 3.5-6 8-6s7.2 1.7 8 6"/>',
   users:'<circle cx="9" cy="8" r="3"/><path d="M2.5 20c.6-3.4 2.8-5 6.5-5"/><circle cx="17" cy="9" r="2.5"/><path d="M14 15c2.8.1 5.3 1.6 6 5"/>',
   lock:'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-  palette:'<circle cx="12" cy="12" r="9"/><path d="M12 21c-2-3-1-5 2-5h2a5 5 0 0 0 5-5"/><circle cx="7.5" cy="10" r=".8"/><circle cx="11" cy="7" r=".8"/><circle cx="15" cy="8" r=".8"/>',
   bell:'<path d="M18 8a6 6 0 0 0-12 0c0 6.5-3 7-3 9h18c0-2-3-2.5-3-9Z"/><path d="M10 21h4"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/>',
@@ -814,7 +813,6 @@ async function go(page,sub){
     else if(page==='activity'){if(r!=='admin')return go(own);setHeader('مدیریت','تاریخچه فعالیت‌ها','ردیابی کامل عملیات کاربران با زمان، IP و جزئیات');await renderActivityPage()}
     else if(page==='backups'){if(r!=='admin')return go(own);setHeader('مدیریت','پشتیبان‌گیری و بازیابی','ساخت، دریافت و بازیابی نسخه‌های پشتیبان');await renderBackupsPage()}
     else if(page==='reports'){if(r!=='admin')return go(own);setHeader('مدیریت','گزارش‌های پیشرفته','گزارش از همه بخش‌های سامانه با انتخاب ستون و فیلتر، خروجی Excel و PDF');await renderReportsPage()}
-    else if(page==='appearance'){if(r!=='admin')return go(own);setHeader('مدیریت','تنظیم ظاهر','پیش‌نمایش و انتشار طرح مشترک');await renderAppearanceEditor()}
     else if(page==='admin'){if(r!=='admin')return go(own);setHeader('مدیریت','مدیریت سیستم','کاتالوگ کالا، قیمت روز، حساب‌های کاربری و ردپای فعالیت‌ها');await renderAdmin()}
   }catch(e){toast(e.message)}
 }
@@ -1274,7 +1272,7 @@ async function openInvoicePrint(id,run){
     const pay=pickInvoicePayment(d.order,run);
     if(run&&!pay)return toast('سند این سرویس هنوز صادر نشده است.');
     sessionStorage.setItem(key,JSON.stringify({title:(d.order?.orderType==='STORE'?'سند تحویل وزنی':'فاکتور')+' '+fa(pay?.invoiceNumber||''),html:invoiceHtml(d.order,pay)}));
-    await BTPrintFrame.url('/invoice-print.html',{key,appearanceTarget:'invoiceTable'});
+    await BTPrintFrame.url('/invoice-print.html',{key});
   }catch(e){sessionStorage.removeItem(key);toast(e.message)}
 }
 async function printInvoice(id,run){return openInvoicePrint(id,run)}
@@ -2176,7 +2174,7 @@ function storeServicePrintButtons(id,runs){
 }
 function storeAvailableRuns(o){return [1,2].filter(run=>{const sh=run===1?o?.storeRunOps?.r1Shipment:o?.storeRunOps?.r2Shipment;return sh?.itemIds?.length||Object.keys(sh?.weights||{}).length||[...(o?.dispatchRuns||[]),...(o?.dispatches||[]),o?.dispatch].some(d=>Number(d?.run)===run&&(d?.shipmentItemIds?.length||Object.keys(d?.shipmentWeights||{}).length))||(o?.payments||[]).some(p=>Number(p.deliveryRun)===run&&p.priceLines?.length);});}
 function printStoreService(id,run){
-  return BTPrintFrame.url('/store-service-print.html',{query:new URLSearchParams({id,run}).toString(),appearanceTarget:'storeServiceTable'});
+  return BTPrintFrame.url('/store-service-print.html',{query:new URLSearchParams({id,run}).toString()});
 }
 function storeOrderDispatches(o){return [...(Array.isArray(o?.dispatches)?o.dispatches:[]),...(o?.dispatch?[o.dispatch]:[])].filter((d,i,a)=>a.findIndex(x=>x.id===d.id&&x.run===d.run)===i)}
 function isStoreDeliveryComplete(o){if(o?.storeReceiptConfirmedAt)return true;const ds=storeOrderDispatches(o);return ds.length>0&&ds.every(d=>!!d.storeReceiptConfirmedAt)}
@@ -2462,7 +2460,7 @@ function futureOrderRowsV25(orders){
 // disabled compatibility mode keeps the old forms available for emergencies.
 function deliveryModeInputHtml(prefix){
  const id="delivery-mode-"+String(prefix||"order");
- return `<div class="field transport-delivery-choice"${prefix==='phone'?' data-layout-item="delivery"':''}><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
+ return `<div class="field transport-delivery-choice"><label for="${esc(id)}">روش تحویل سفارش</label><div class="input-shell"><select id="${esc(id)}" name="deliveryMode" data-delivery-mode required><option value="">روش تحویل را انتخاب کنید</option><option value="DELIVERY">ارسال توسط پخش</option><option value="PICKUP">تحویل در انبار</option></select></div><small>سفارش بیعانه‌دار فقط تحویل در انبار است.</small></div>`;
 }
 function readDeliveryMode(root,deposit){
  if(!app.features?.experimentalTransport)return {};
@@ -2471,8 +2469,8 @@ function readDeliveryMode(root,deposit){
  if(mode==='DELIVERY'&&deposit)throw Error('سفارش دارای بیعانه قابل ارسال توسط پخش نیست؛ تحویل در انبار را انتخاب کنید.');
  return {transportWorkflow:true,deliveryMode:mode};
 }
-function depositEntryHtml(prefix){
- return `<section class="deposit-entry"${prefix==='phone'?' data-layout-item="deposit"':''}><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
+function depositEntryHtml(){
+ return `<section class="deposit-entry"><button type="button" class="btn btn-secondary deposit-toggle" data-deposit-toggle aria-pressed="false">＋ ثبت بیعانه</button><span class="deposit-hint">در صورت دریافت بیعانه فعال کنید؛ سفارش بیعانه‌دار به پخش ارسال نمی‌شود.</span>
  <div class="deposit-fields" data-deposit-fields hidden><label>مبلغ بیعانه (ریال)<input class="adm-input" data-deposit-amount inputmode="numeric" autocomplete="off" placeholder="مبلغ دریافتی"></label><label>نوع پرداخت<select class="adm-select" data-deposit-type><option value="CASH">نقدی</option><option value="POS">پوز</option><option value="CARD_TRANSFER">کارت‌به‌کارت</option></select></label><label data-deposit-pos hidden>دستگاه فعال<select class="adm-select" data-deposit-device><option value="">انتخاب دستگاه</option></select></label><label data-deposit-bank-wrap hidden>بانک / حساب مقصد<input class="adm-input" data-deposit-bank maxlength="100"></label><label data-deposit-reference-wrap hidden>شماره پیگیری<input class="adm-input" data-deposit-reference maxlength="100" placeholder="شناسه تراکنش"></label></div></section>`;
 }
 function readOrderDeposit(form){
@@ -2971,7 +2969,7 @@ function renderNav(){
       const list=entries[role];
       $('#railNav').innerHTML=`<button type="button" class="cartable-nav-home" data-admin-home><span class="nav-icon">${icon('arrow',18)}</span><span class="nav-label">بازگشت به کارتابل‌ها</span></button><div class="cartable-nav-title">${esc(ROLE[role]||role)}</div>`+list.map(([key,label,ico,badgeKey])=>`<button type="button" class="cartable-nav-item ${(app.sub?.[railPage]||'dashboard')===key?'active':''}" data-cartable="${key}" data-role-page="${railPage}"><span class="nav-icon">${icon(ico,19)}</span><span class="nav-label">${label}</span>${navUnread(role,key)?navBadge(navUnread(role,key)):''}</button>`).join('');return;
     }
-    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',navUnread('gate')],['sales','کارتابل فروش','sales',navUnread('sales')],['warehouse','کارتابل انبار','warehouse',navUnread('warehouse')],['dispatch','کارتابل ترابری','truck',navUnread('dispatch')],['store','کارتابل فروشگاه','store',navUnread('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['users','کاربران','user',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['appearance','طراحی ظاهر','palette',0],['admin','تنظیمات سیستم','settings',0]];
+    const items=[['dashboard','داشبورد مدیر','dashboard',0],['gate','کارتابل نگهبانی','shield',navUnread('gate')],['sales','کارتابل فروش','sales',navUnread('sales')],['warehouse','کارتابل انبار','warehouse',navUnread('warehouse')],['dispatch','کارتابل ترابری','truck',navUnread('dispatch')],['store','کارتابل فروشگاه','store',navUnread('store')],['reports','گزارش‌ها','reports',0],['customers','مشتریان','users',0],['users','کاربران','user',0],['store-branches','شعب فروشگاه','store',0],['payment-devices','دستگاه‌های پوز','pos',0],['activity','سوابق فعالیت','activity',0],['backups','پشتیبان‌گیری و بازیابی','settings',0],['admin','تنظیمات سیستم','settings',0]];
     $('#railNav').innerHTML='<div class="cartable-nav-title admin-root-title">مدیریت سامانه</div>'+items.map(([p,l,i,c])=>p==='gate'||p==='sales'||p==='warehouse'||p==='dispatch'||p==='store'?`<button type="button" class="cartable-nav-item" data-admin-cartable="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`:`<button type="button" class="cartable-nav-item ${app.page===p?'active':''}" data-page="${p}"><span class="nav-icon">${icon(i,19)}</span><span class="nav-label">${l}</span>${c?navBadge(c):''}</button>`).join('');return;
   }
   const list=entries[r]||[['dashboard','داشبورد','dashboard'],['reports','گزارش‌ها','reports']];

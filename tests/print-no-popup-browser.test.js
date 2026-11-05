@@ -11,10 +11,10 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   browser=await chromium.launch({executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});const ctx=await browser.newContext();
   await ctx.addInitScript(()=>{if(window!==window.top)window.print=()=>{window.parent.__printCalls=(window.parent.__printCalls||0)+1;};});
   for(const [url,data] of [['/api/login',{username:'admin',password:'Initial!2345'}],['/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'}]]){const r=await ctx.request.post(base+url,{data});assert.equal(r.status(),200);}
-  const design={screen:{},print:{invoiceTable:{background:'#eeeeff',fontSize:13,fontFamily:'tahoma'},warehouseTable:{background:'#eeffee',fontSize:12,fontFamily:'tahoma'},storeServiceTable:{background:'#ffffee',fontSize:14,fontFamily:'vazirmatn'}},layout:{warehouseSections:['head','products','signature','total']}};
-  let response=await ctx.request.put(base+'/api/admin/appearance/draft',{data:{draftRevision:0,settings:design}});assert.equal(response.status(),200);
-  response=await ctx.request.post(base+'/api/admin/appearance/publish',{data:{version:0,draftRevision:1}});assert.equal(response.status(),200);
   const page=await ctx.newPage(),errors=[],popups=[];page.on('pageerror',e=>errors.push(e.message));page.on('popup',p=>popups.push(p));await page.goto(base+'/',{waitUntil:'networkidle'});
+  assert.equal(await page.locator('#railNav [data-page=appearance]').count(),0);assert.equal(await page.evaluate(()=>typeof window.BTAppearance),'undefined');
+  await page.evaluate(()=>go('gate','entry'));await page.locator('#gateForm').waitFor();for(const id of ['gateCustCode','gateCustomerName','gateCustomerPhone','gateVehicleType','gateCarType','gatePurpose','plateBox'])assert.equal(await page.locator('#'+id).count(),1);
+  await page.evaluate(()=>go('sales','remote'));await page.locator('#phoneOrderFormV25').waitFor();assert.equal(await page.locator('#phoneOrderFormV25 [data-layout-item]').count(),0);assert.deepEqual(await page.locator('#phoneOrderFormV25 .sales-remote-customer-grid-v40 input').evaluateAll(els=>els.map(el=>el.name)),['name','phone','dispatchPlace']);
   const order={id:'o',orderNo:'001234',orderType:'REMOTE',customer:{name:'مشتری 34',phone:'09121234567'},items:[{id:'i',product:{name:'مرغ 2'},deliveredKg:5,unitPrice:2000,finalAmount:10000}],payment:{invoiceNumber:'000001',totalAmount:10000,customerName:'مشتری 34',customerPhone:'09121234567'}};
   await ctx.route('**/api/orders/o',r=>r.fulfill({json:{order}}));
   await ctx.route('**/api/orders/o/store-run/print/*',r=>r.fulfill({json:{document:{orderNo:'123',storeName:'فروشگاه 1',dispatchPlace:'بابل',sentAt:'2026-10-30',lines:[{productName:'مرغ 2',deliveredKg:25}]}}}));
@@ -24,15 +24,13 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
     await page.waitForFunction(n=>window.__printCalls===n+1,before,{timeout:12000});
     const frame=page.frameLocator('iframe[title="سند آماده چاپ"]');await frame.locator(selector).first().waitFor();
     const body=await frame.locator('body').innerText();assert.match(body,text);assert.doesNotMatch(body,/[0-9٠-٩]/);assert.equal(await frame.locator('.bt-print-tools').count(),0);assert.equal(await frame.locator('.service-tools:not([hidden])').count(),0);
-    const expected={'.inv38-sheet':['.inv38-table th','rgb(238, 238, 255)','13px'],'.service-sheet':['.service-table th','rgb(255, 255, 238)','14px'],'.whd-doc':['.whd-products th','rgb(238, 255, 238)','12px']}[selector];
-    if(expected){const style=await frame.locator(expected[0]).first().evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color,size:getComputedStyle(e).fontSize,font:getComputedStyle(e).fontFamily}));assert.equal(style.background,expected[1]);assert.equal(style.color,'rgb(0, 0, 0)');assert.equal(style.size,expected[2]);assert.match(style.font,selector==='.service-sheet'?/Vazirmatn/:/Tahoma/);
-      // Render the actual generated print document to PDF, with background printing disabled.
+    if(['.inv38-sheet','.service-sheet','.whd-doc'].includes(selector)){
+      assert.equal(await frame.locator('#bt-print-appearance').count(),0);
       let markup=await frame.locator('html').evaluate(e=>e.outerHTML);markup=markup.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<head>/i,`<head><base href="${base}/">`);
       const pdfPage=await ctx.newPage();await pdfPage.setViewportSize({width:700,height:1000});await pdfPage.setContent(markup,{waitUntil:'load'});await pdfPage.emulateMedia({media:'print'});await pdfPage.evaluate(()=>document.fonts.ready);
       assert.match(await pdfPage.locator('body').innerText(),text);if(selector==='.whd-doc')assert.ok(await pdfPage.locator('.whd-signature').first().isVisible());if(selector==='.service-sheet')assert.ok(await pdfPage.locator('.service-signatures').isVisible());
       const pdf=await pdfPage.pdf({format:'A4',printBackground:false});assert.ok(pdf.length>5000);if(selector==='.whd-doc'&&await pdfPage.locator('.whd-products tbody tr').count()>10)assert.ok((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length>1,'long document spans more than one A4 page');await pdfPage.close();
     }
-    if(selector==='.whd-doc')assert.deepEqual(await frame.locator('.whd-doc').evaluate(el=>[...el.children].map(x=>x.dataset.layoutItem)),['head','products','signature','total']);
     assert.equal(popups.length,0);assert.equal(ctx.pages().length,1);
     await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
     await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});
@@ -62,10 +60,9 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   await real.addInitScript(()=>{if(window!==window.top){const original=window.print.bind(window);window.print=()=>{window.parent.__nativeCalls=(window.parent.__nativeCalls||0)+1;return original();};window.addEventListener('beforeprint',()=>{window.parent.__beforePrint=true;});window.addEventListener('afterprint',()=>{window.parent.__afterPrint=true;});}});
   await real.route('**/api/orders/o',r=>r.fulfill({json:{order}}));const actual=await real.newPage();let actualPopups=0;actual.on('popup',()=>actualPopups++);await actual.goto(base+'/',{waitUntil:'networkidle'});await actual.evaluate(()=>printInvoice('o',null));
   await actual.waitForFunction(()=>window.__nativeCalls===1 && window.__beforePrint, null,{timeout:12000});assert.equal(actualPopups,0);
-  // Chromium headless may never deliver afterprint. In that case the operator
-  // must explicitly release the job; this does not assert a physical print.
-  await actual.waitForFunction(()=>window.__afterPrint||document.querySelector('.bt-print-pending'),null,{timeout:12000});
-  if(!await actual.evaluate(()=>!!window.__afterPrint)){actual.once('dialog',d=>d.accept());await actual.getByRole('button',{name:'آزادسازی چاپ بعدی'}).click();}
+  // Headless Chromium may not emit afterprint; only use a synthetic event to
+  // verify cleanup. This does not demonstrate a physical print or dialog close.
+  if(!await actual.evaluate(()=>!!window.__afterPrint))await actual.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));
   await actual.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});await real.close();
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
 });
