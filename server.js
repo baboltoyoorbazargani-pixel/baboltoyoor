@@ -26,7 +26,7 @@ try { autoBackup.runDue(); } catch (e) { log.error('auto-backup', 'scheduler sta
 
 // وظایف زمان‌بندی‌شده: فعال‌سازی سفارش‌های آینده و پاک‌سازی نشست‌های منقضی
 const timers = [
-  setInterval(() => { try { activateDueRemoteOrders(); } catch (e) { log.error('scheduler', 'activation failed', { error: e.message }); } }, 15000),
+  setInterval(() => { try { store.refresh(); activateDueRemoteOrders(); } catch (e) { log.error('scheduler', 'activation failed', { error: e.message }); } }, 15000),
   setInterval(() => sec.pruneSessions(), 5 * 60 * 1000),
   setInterval(() => { try { autoBackup.runDue(); } catch (e) { log.error('auto-backup', 'scheduler failed', {error:e.message}); } }, 60 * 1000),
 ];

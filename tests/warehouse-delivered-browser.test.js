@@ -2,10 +2,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 const executablePath=process.env.BT_CHROMIUM_PATH;
-test('انبار: وزن نهایی، سوابق فقط خواندنی، جزئیات و چاپ سند بدون مبلغ',{skip:!executablePath,timeout:90000},async()=>{
+test('انبار قدیمی: وزن نهایی، سوابق فقط خواندنی، بازگشایی و چاپ سند بدون مبلغ',{skip:!executablePath,timeout:90000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-wh-delivered-')),base=`http://127.0.0.1:${port}`;
- const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});let browser;
+ const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345',BT_PICKUP_STAGING:'false'},stdio:['ignore','pipe','pipe']});let browser;
  try{
   await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('server exit '+c)));});
   browser=await chromium.launch({executablePath,args:['--no-sandbox','--disable-dev-shm-usage']});const admin=await browser.newContext(),wh=await browser.newContext({viewport:{width:1280,height:900}}),sales=await browser.newContext();
