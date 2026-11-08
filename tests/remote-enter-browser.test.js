@@ -12,7 +12,7 @@ test('مرورگر: Enter و Insert در سفارش غیرحضوری قلم بع
   const post=async(url,data)=>{const r=await ctx.request.post(base+url,{data});assert.ok(r.ok(),`${url}: ${r.status()} ${await r.text()}`);return r.json();};
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(()=>go('sales','remote'));const form=page.locator('#phoneOrderFormV25');await form.waitFor();
-  await form.locator('[name=name]').fill('مشتری تست');await form.locator('[name=name]').press('Enter');await form.locator('[name=phone]').fill('09121112233');await form.locator('[name=phone]').press('Enter');await form.locator('[name=dispatchPlace]').fill('بابل');await form.locator('[name=dispatchPlace]').press('Enter');
+  await form.locator('[name=name]').fill('مشتری تست');await form.locator('[name=name]').press('Enter');await form.locator('[name=phone]').fill('09121112233');await form.locator('[name=phone]').press('Enter');await form.locator('[data-delivery-mode]').selectOption('DELIVERY');await form.locator('[name=dispatchPlace]').fill('بابل');await form.locator('[name=dispatchPlace]').press('Enter');
   await form.locator('[data-delivery-mode]').selectOption('PICKUP'); // satisfy the independent required delivery field before testing item validation
   const qty0=form.locator('[data-op-qty="phone-0"]');
   // میانبر حتی در ردیف ناقص باید مانند دکمه، ردیف تازه بسازد.
@@ -33,7 +33,7 @@ test('مرورگر: Enter و Insert در سفارش غیرحضوری قلم بع
   await form.locator('[data-op-unit="phone-1"]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3);assert.equal(await page.evaluate(()=>document.activeElement.dataset.opProductSearch),'phone-2');
   await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
   await form.locator('[data-action="phone-add-line"]').click();assert.equal(await form.locator('[data-op-product-search]').count(),3,'manual add remains available');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
-  await form.locator('[name=dispatchPlace]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3,'Insert works elsewhere inside form');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
+  await form.locator('[name=phone]').press('Insert');assert.equal(await form.locator('[data-op-product-search]').count(),3,'Insert works elsewhere inside form');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();
   await form.locator('[data-op-qty="phone-1"]').focus();const cdp=await ctx.newCDPSession(page);await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Insert',code:'Numpad0',windowsVirtualKeyCode:45});await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Insert',code:'Numpad0',windowsVirtualKeyCode:45});assert.equal(await form.locator('[data-op-product-search]').count(),3,'numpad Insert with Num Lock off');await form.locator('[data-action="op-remove-line"][data-index="2"]').click();await cdp.detach();
   await form.locator('[data-op-qty="phone-1"]').press('Control+Insert');assert.equal(await form.locator('[data-op-product-search]').count(),2,'clipboard shortcuts are preserved');
   await form.locator('[data-deposit-toggle]').click();await form.locator('[data-deposit-amount]').fill('1000');await form.locator('[data-deposit-amount]').press('Enter');

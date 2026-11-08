@@ -44,7 +44,7 @@ test('انبار قدیمی: وزن نهایی، سوابق فقط خواندن�
   r=await get(wh,`/api/warehouse/delivered/${o.id}`);data=await r.json();assert.equal(data.order.items[0].deliveredKg,3);assert.equal(data.order.warehouseDocumentNo,docNo);assert.equal(data.order.items[1].outOfStock,true);assert(!JSON.stringify(data).includes('3000'));assert(!JSON.stringify(data).includes('unitPrice'));
   // More than one page is reachable without truncating older documents.
   for(let i=0;i<51;i++){
-    const other=(await post(sales,'/api/orders/remote',{name:'مشتری صفحه',phone:'09121112233',dispatchPlace:'بابل',scheduledDate:date,scheduledAt:date+'T00:00',deliveryMode:'PICKUP',items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]})).order;
+    const other=(await post(sales,'/api/orders/remote',{name:'مشتری صفحه',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledAt:date+'T00:00',deliveryMode:'PICKUP',items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]})).order;
     await post(wh,`/api/orders/${other.id}/warehouse/accept`,{});await post(wh,`/api/orders/${other.id}/warehouse`,{items:[{itemId:other.items[0].id,deliveredKg:1}]});
   }
   const firstPage=await (await get(wh,'/api/warehouse/delivered')).json(),secondPage=await (await get(wh,'/api/warehouse/delivered?offset=50')).json();
