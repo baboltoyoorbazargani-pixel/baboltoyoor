@@ -29,13 +29,12 @@ jobs:
           node --test --test-concurrency=1 "${selected[@]}" > /tmp/browser-result-$SHARD.txt 2>&1
           result=$?
           cat /tmp/browser-result-$SHARD.txt
-          if [ "$result" -ne 0 ]; then
-            python - "$SHARD" <<'PY'
+          python - "$SHARD" <<'PY'
           import base64,sys
           s=sys.argv[1]; data=open('/tmp/browser-result-'+s+'.txt','rb').read()
-          print('::error title=BrowserTestLog'+s+'::'+base64.b64encode(data[-40000:]).decode())
+          for i in range(0,len(data),2200):
+            print('::notice title=BrowserLog'+s+'-'+str(i//2200)+'::'+base64.b64encode(data[i:i+2200]).decode())
           PY
-          fi
           exit "$result"
       - uses: actions/upload-artifact@v4
         if: always()
