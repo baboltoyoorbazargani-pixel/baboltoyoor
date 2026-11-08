@@ -23,9 +23,9 @@ test('ثبت وزن صفر در سرویس اول، قلم را به سرویس 
   assert.match(handler, /sr38Post\(id,'move',\{itemId:el\.dataset\.item\}\)/, 'وزن صفر باید همان مسیر انتقال به سرویس دوم را صدا بزند');
   assert.match(handler, /قلم به سرویس دوم منتقل شد/, 'پیام انتقال به سرویس دوم نیست');
   assert.match(handler, /run===2/, 'در سرویس دوم وزن صفر نباید دوباره انتقال بدهد');
-  // وزن مثبت همچنان ثبت می‌شود و پیامش جای قلم در فاکتور همان سرویس را می‌گوید
+  // وزن مثبت ذخیره می‌شود، اما به معنای تحویل فیزیکی نیست
   assert.match(handler, /sr38Post\(id,'weights',\{run,items:\[\{itemId:el\.dataset\.item,deliveredKg:kg,weighings:whWeightPayload\(inp\)\}\]\}\)/);
-  assert.match(handler, /مقدار ثبت‌شده وارد فاکتور همین سرویس می‌شود/);
+  assert.match(handler, /تا ارسال سرویس و تحویل به راننده، تحویل فیزیکی ثبت نمی‌شود/);
 });
 
 test('در پایان فرم دکمهٔ ارسال سرویس اول به فروش هست', () => {
