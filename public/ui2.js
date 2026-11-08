@@ -1017,7 +1017,7 @@ function whDocumentProducts(lines,print=false){
  const rows=lines.map((line,index)=>{
   const available=!line.outOfStock, n=line.deliveredKg==null?NaN:Number(line.deliveredKg);
   if(available){if(Number.isFinite(n)&&n>=0)grams+=Math.round(n*1000);else unknown=true;}
-  return `<tr><td class="whd-number">${fa(index+1)}</td><td class="whd-product"><b>${esc(line.productName||'—')}</b></td>${print?'':`<td class="whd-tare-cell">${available?whDocumentTares(line):'<span class="whd-tare-empty">—</span>'}</td>`}<td class="whd-quantity whd-net">${available?(Number.isFinite(n)&&n>=0?qty(n):'نامشخص'):'ناموجود'}</td></tr>`;
+  return `<tr><td class="whd-number">${fa(index+1)}</td><td class="whd-product"><b>${esc(line.productName||'—')}</b></td>${print?'':`<td class="whd-tare-cell"><div class="whd-tare-scroll">${available?whDocumentTares(line):'<span class="whd-tare-empty">—</span>'}</div></td>`}<td class="whd-quantity whd-net">${available?(Number.isFinite(n)&&n>=0?qty(n):'نامشخص'):'ناموجود'}</td></tr>`;
  }).join('')||`<tr><td colspan="${print?3:4}">جزئیات اقلام در سابقه موجود نیست.</td></tr>`;
  return `<div class="whd-table-scroll"><table class="whd-products${print?' whd-print-products':''}"><colgroup><col class="whd-col-number"><col class="whd-col-product">${print?'':'<col class="whd-col-tares">'}<col class="whd-col-weight"></colgroup><thead><tr><th>ردیف</th><th>محصول</th>${print?'':'<th>ناخالصی‌های کسرشده</th>'}<th>جمع خالص (کیلوگرم)</th></tr></thead><tbody>${rows}</tbody></table></div><div class="whd-total"><span>جمع کل خالص</span><strong>${unknown?'نامشخص':qty(grams/1000)+' کیلوگرم'}</strong></div>`;
 }

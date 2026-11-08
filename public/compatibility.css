@@ -1251,3 +1251,15 @@
 #appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields .field{display:flex;flex-direction:row!important;align-items:center!important;gap:10px;min-width:0;width:100%}
 #appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields label{white-space:nowrap;flex:0 0 auto;margin:0}
 #appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields .input-shell{flex:1;min-width:0}
+
+/* Product price selection for a single-sheet printout. */
+#modal .price-pick{display:grid;gap:10px;min-width:0}
+#modal .price-pick p{margin:0}
+#modal .price-pick-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#modal .price-pick-controls input{flex:1 1 180px;min-width:0;border:1px solid #cfd6de;border-radius:8px;padding:9px;font:inherit}
+#modal .price-pick-list{max-height:45vh;overflow:auto;border:1px solid #e2e6ec;border-radius:8px}
+#modal .price-pick-item{display:flex;align-items:center;gap:9px;padding:8px;border-bottom:1px solid #edf0f3}
+#modal .price-pick-item[hidden]{display:none!important}
+#modal .price-pick-item span{flex:1;min-width:0;overflow-wrap:anywhere}
+#modal .price-pick-item small{white-space:nowrap;color:#667085}
+#modal .price-pick [data-price-error]:empty{display:none}
