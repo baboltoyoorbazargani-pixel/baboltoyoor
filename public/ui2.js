@@ -203,10 +203,11 @@ function renderSalesRemoteV32(orders){
   return `<section class="sales-pane-v25 sales-pane-v40" data-sales-pane="remote"><div class="sales-panel-v25 telephone-form-v25">
     <div class="sales-section-title-v25 phone-form-title"><h2>ثبت سفارش غیرحضوری</h2></div>
     <form id="phoneOrderFormV25" class="sales-form-v25 sales-form-v40">
+      ${salesCustomerPickerHtml('phone')}
       <div class="sales-customer-grid-v25 sales-remote-customer-grid-v40">
         <div class="field contact-field-v41"><label for="phoneCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',18)}</span><input id="phoneCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
         <div class="field contact-field-v41"><label for="phoneCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input id="phoneCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
-        <div class="field sales-remote-place-v40"><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
+        <div class="field sales-remote-place-v40" data-sales-dispatch-place><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
         ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
       </div>
       ${app.features?.pickupStaging?jalaliInput('تاریخ تحویل در انبار','deliveryDate',today(),true):''}
@@ -348,12 +349,13 @@ function futureFormV38(orders){
       <div class="fx-card-head"><span class="fx-ico">${icon('calendar',16)}</span><h3>ثبت سفارش برنامه‌ریزی‌شده</h3><span class="fx-list-count">${qty(future.length)} برنامه فعال</span></div>
       <div class="fx-card-body fx-body-compact"><p class="fx-intro">مشتری، <b>زمان ورود به کارتابل انبار</b> و اقلام را وارد کنید؛ سفارش در زمان سررسید خودکار وارد صف انبار می‌شود.</p>
         <form id="futureOrderFormV25" class="fx-form fx-form-compact">
+          ${salesCustomerPickerHtml('future')}
           <div class="fx-grid-2 future-contact-grid-v40 fx-top-grid">
             <div class="field future-contact-field-v40 contact-field-v41"><label for="futureCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',16)}</span><input id="futureCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
             <div class="field future-contact-field-v40 contact-field-v41"><label for="futureCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',16)}</span><input id="futureCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
             ${jalaliDateTimeInput('زمان ورود به کارتابل انبار','scheduledDate','scheduledTime',nextDayIso(),'08:00',true)}
             ${jalaliInput('تاریخ تحویل','deliveryDate','',true)}
-            <div class="field fx-addr-field"><label for="futureDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input id="futureDispatchPlace" name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
+            <div class="field fx-addr-field" data-sales-dispatch-place><label for="futureDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',16)}</span><input id="futureDispatchPlace" name="dispatchPlace" required placeholder="آدرس یا محل ارسال"></div></div>
             ${app.features?.experimentalTransport?deliveryModeInputHtml('future'):''}
           </div>
           <div class="sd-lines-head fx-lines-head"><h3>اقلام سفارش</h3></div>

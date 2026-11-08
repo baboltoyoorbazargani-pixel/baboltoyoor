@@ -2480,6 +2480,30 @@ function futureOrderRowsV25(orders){
   return rows||salesEmptyV25('calendar','سفارشی برای روزهای آینده برنامه‌ریزی نشده است','سفارش‌های آینده پس از ثبت در این تقویم قرار می‌گیرند.');
 }
 
+// A selected record stays linked while its name or phone is edited.
+function salesCustomerPickerHtml(prefix){
+ const id=prefix+'CustomerSearch';
+ return `<div class="sales-customer-picker"><label for="${id}">جستجوی مشتری ثبت‌شده</label><input id="${id}" type="search" autocomplete="off" maxlength="80" placeholder="نام، شماره تماس یا کد مشتری" aria-controls="${id}Results" aria-expanded="false"><input type="hidden" name="customerId"><div id="${id}Results" class="sales-customer-results" aria-live="polite"></div><small data-sales-customer-selection>برای مشتری جدید، نام و شماره تماس را وارد کنید.</small><button type="button" class="btn btn-secondary btn-sm" data-sales-customer-clear hidden>انتخاب مشتری دیگر / مشتری جدید</button></div>`;
+}
+function syncSalesDispatchPlace(form){
+ const mode=form.querySelector('[data-delivery-mode]'),field=form.querySelector('[data-sales-dispatch-place]');if(!field)return;
+ const show=!mode||mode.value==='DELIVERY';field.hidden=!show;
+ const input=field.querySelector('[name=dispatchPlace]');if(input){input.disabled=!show;input.required=show&&form.id==='futureOrderFormV25';}
+}
+function bindSalesCustomerPicker(form){
+ if(!form||form.dataset.customerPickerBound)return;form.dataset.customerPickerBound='1';
+ const input=form.querySelector('.sales-customer-picker input[type=search]'),host=form.querySelector('.sales-customer-results'),id=form.querySelector('[name=customerId]'),notice=form.querySelector('[data-sales-customer-selection]'),clear=form.querySelector('[data-sales-customer-clear]');
+ if(!input||!host||!id)return;let seq=0,timer=null,rows=[];
+ function clearResults(){host.replaceChildren();input.setAttribute('aria-expanded','false');}
+ function clearSelection(){id.value='';clear.hidden=true;notice.textContent='برای مشتری جدید، نام و شماره تماس را وارد کنید.';}
+ input.addEventListener('input',()=>{if(id.value){form.querySelector('[name=name]').value='';form.querySelector('[name=phone]').value='';}clearSelection();clearTimeout(timer);const q=input.value.trim(),request=++seq;clearResults();if(!q)return;timer=setTimeout(async()=>{try{const d=await api('/api/customers/search?q='+encodeURIComponent(q));if(request!==seq||!input.isConnected)return;rows=d.customers||[];host.innerHTML=rows.length?rows.map((c,i)=>`<button type="button" data-sales-customer-index="${i}"><b>${esc(c.name||'—')}</b><span>${esc(fa(c.phone||'—'))} · کد ${esc(fa(c.code||'—'))}</span></button>`).join(''):'<p>مشتری یافت نشد؛ می‌توانید مشتری جدید ثبت کنید.</p>';input.setAttribute('aria-expanded',String(rows.length>0));}catch(e){if(request===seq)host.textContent='جستجوی مشتری ناموفق بود؛ دوباره تلاش کنید.';}},200);});
+ host.addEventListener('click',e=>{const button=e.target.closest('[data-sales-customer-index]');if(!button)return;const c=rows[Number(button.dataset.salesCustomerIndex)];if(!c)return;++seq;id.value=c.id;form.querySelector('[name=name]').value=c.name||'';form.querySelector('[name=phone]').value=c.phone||'';input.value=c.name||'';notice.textContent='مشتری انتخاب شد: '+(c.name||'')+' · کد '+(c.code||'—')+'؛ تغییر نام یا تماس، پرونده همین مشتری را به‌روزرسانی می‌کند.';clear.hidden=false;clearResults();});
+ clear.addEventListener('click',()=>{++seq;clearTimeout(timer);clearSelection();clearResults();input.value='';form.querySelector('[name=name]').value='';form.querySelector('[name=phone]').value='';input.focus();});
+ input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){const first=host.querySelector('button');if(first){e.preventDefault();first.focus();}}else if(e.key==='Enter'){e.preventDefault();host.querySelector('button')?.click();}else if(e.key==='Escape'){++seq;clearResults();}});
+ form.addEventListener('reset',()=>{++seq;clearTimeout(timer);setTimeout(()=>{clearSelection();clearResults();syncSalesDispatchPlace(form);},0);});
+ const mode=form.querySelector('[data-delivery-mode]');mode?.addEventListener('change',()=>syncSalesDispatchPlace(form));syncSalesDispatchPlace(form);
+}
+
 // بیعانه صرفاً هنگام ثبت سفارش دریافت می‌شود؛ اطلاعات آن پس از ثبت قابل حذف پنهانی نیست.
 // A delivery choice is mandatory in the default workflow. The explicitly
 // disabled compatibility mode keeps the old forms available for emergencies.
@@ -2546,7 +2570,7 @@ async function submitPhoneOrderV25(form){
   const f=Object.fromEntries(new FormData(form));
   try{
     const deposit=readOrderDeposit(form);
-    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',...(app.features?.pickupStaging?{deliveryDate:f.deliveryDate}:{}),deposit,items,...(app.features?.experimentalTransport?readDeliveryMode(form,deposit):{})})});
+    const d=await api('/api/orders/remote',{method:'POST',body:JSON.stringify({name:f.name,phone:f.phone,customerId:f.customerId||undefined,notes:f.notes||'',dispatchPlace:f.dispatchPlace||'',scheduledDate:today(),scheduledTime:'00:00',...(app.features?.pickupStaging?{deliveryDate:f.deliveryDate}:{}),deposit,items,...(app.features?.experimentalTransport?readDeliveryMode(form,deposit):{})})});
     toast(d.order?.status==='WAREHOUSE_PENDING'?(d.order.deliveryMode==='DELIVERY'?'سفارش تلفنی به انبار و ترابری ارسال شد.':'سفارش تلفنی به انبار ارسال شد.'):'سفارش تلفنی ثبت شد.');
     form.reset(); app.phoneDraft=[defaultOrderLine()]; renderOrderLineArea('phone','phoneDraft'); await renderSales('remote');
   }catch(e){toast(e.message)}
@@ -2558,7 +2582,7 @@ async function submitFutureOrderV25(form){
   const tm=normalizeTime24(f.scheduledTime||'');
   if(!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر را انتخاب کنید.');
   if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');
-  if(!String(f.dispatchPlace||'').trim())return toast('محل ارسال را وارد کنید.');
+  if((!app.features?.experimentalTransport||f.deliveryMode==='DELIVERY')&&!String(f.dispatchPlace||'').trim())return toast('محل ارسال را وارد کنید.');
   const items=(app.futureDraft||[]).filter(x=>x.productId&&n(x.requestedQty)>0).map(x=>({productId:x.productId,requestedQty:n(x.requestedQty),requestedUnit:x.requestedUnit,description:String(x.description||'').trim()}));
   if(!items.length)return toast('حداقل یک محصول معتبر برای سفارش آینده وارد کنید.');
   try{
@@ -2587,7 +2611,7 @@ async function editFutureV25(id){
   try{
     const d=await api('/api/orders/'+id); const o=d.order;
     if(!o||o.orderType!=='REMOTE'||o.status!=='SCHEDULED_REMOTE')return toast('این سفارش دیگر در وضعیت قابل ویرایش نیست.');
-    openModal('ویرایش برنامه سفارش آینده',`<form id="futureEditFormV25" class="schedule-approval-form"><div class="schedule-approval-hero"><div><span class="eyebrow">UPCOMING ORDER</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(fa(o.orderNo||'—'))} • ${esc(storeAwareOrderPhone(o))}</p></div>${badge(o.status)}</div><div class="store-approval-fields-v25">${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',o.scheduledDate||nextDayIso(),time24(o.scheduledAt)||'08:00',true)}${jalaliInput('تاریخ تحویل','deliveryDate',o.deliveryDate||'',false)}<div class="field"><label>محل ارسال</label><div class="input-shell op-input"><span>${icon('truck',17)}</span><input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" required></div></div><div class="field"><label>یادداشت</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary" type="submit">${icon('check',17)} ذخیره برنامه</button></div></form>`);
+    openModal('ویرایش برنامه سفارش آینده',`<form id="futureEditFormV25" class="schedule-approval-form"><div class="schedule-approval-hero"><div><span class="eyebrow">UPCOMING ORDER</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(fa(o.orderNo||'—'))} • ${esc(storeAwareOrderPhone(o))}</p></div>${badge(o.status)}</div><div class="store-approval-fields-v25">${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',o.scheduledDate||nextDayIso(),time24(o.scheduledAt)||'08:00',true)}${jalaliInput('تاریخ تحویل','deliveryDate',o.deliveryDate||'',false)}${o.deliveryMode==='PICKUP'?'':`<div class="field"><label>محل ارسال</label><div class="input-shell op-input"><span>${icon('truck',17)}</span><input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" required></div></div>`}<div class="field"><label>یادداشت</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary" type="submit">${icon('check',17)} ذخیره برنامه</button></div></form>`);
     bindJalaliDates($('#futureEditFormV25')); bindTime24($('#futureEditFormV25'));
     $('#futureEditFormV25')?.addEventListener('submit',async e=>{e.preventDefault();if(!e.target.reportValidity())return;const f=Object.fromEntries(new FormData(e.target));const tm=normalizeTime24(f.scheduledTime);if(!f.scheduledDate || f.scheduledDate<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');if(e.target.querySelector('[data-target=deliveryDate]')?.value.trim()&&!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر نیست.');if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');try{await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${f.scheduledDate}T${tm}`})});closeModal();toast('برنامه سفارش آینده به‌روزرسانی شد.');await renderSales('future')}catch(err){toast(err.message)}});
   }catch(e){toast(e.message)}
@@ -3283,6 +3307,7 @@ function bindSalesPaneV29(tab){
     const form=pane.querySelector('#phoneOrderFormV25');
     if(form && !form.dataset.boundV32){
       if(app.features?.pickupStaging)bindJalaliDates(form);
+      bindSalesCustomerPicker(form);
       form.dataset.boundV32='1';
     }
   }
@@ -3290,7 +3315,7 @@ function bindSalesPaneV29(tab){
     app.futureDraft=app.futureDraft||[defaultOrderLine()];
     renderOrderLineArea('future','futureDraft');
     const form=pane.querySelector('#futureOrderFormV25');
-    if(form){bindJalaliDates(form);bindTime24(form);}
+    if(form){bindJalaliDates(form);bindTime24(form);bindSalesCustomerPicker(form);}
     void refreshDepositRefunds();
   }
 }

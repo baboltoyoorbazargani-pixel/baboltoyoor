@@ -1263,3 +1263,12 @@
 #modal .price-pick-item span{flex:1;min-width:0;overflow-wrap:anywhere}
 #modal .price-pick-item small{white-space:nowrap;color:#667085}
 #modal .price-pick [data-price-error]:empty{display:none}
+
+/* جستجوی مشتری در سفارش غیرحضوری و برنامه‌ریزی‌شده */
+#appView #content .sales-customer-picker{position:relative;display:grid;gap:5px;margin:0 0 12px;min-width:0}
+#appView #content .sales-customer-picker input[type=search]{width:100%;min-width:0;box-sizing:border-box}
+#appView #content .sales-customer-results:empty{display:none}
+#appView #content .sales-customer-results:not(:empty){position:absolute;z-index:40;inset-inline:0;top:100%;max-height:240px;overflow:auto;padding:6px;background:#fff;border:1px solid var(--bt-line,#dce4eb);border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.15)}
+#appView #content .sales-customer-results button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:start;padding:9px;border:0;border-radius:7px;background:#fff;cursor:pointer}
+#appView #content .sales-customer-results button:hover,#appView #content .sales-customer-results button:focus-visible{background:#f2f4f7}
+#appView #content [data-sales-dispatch-place][hidden]{display:none!important}
