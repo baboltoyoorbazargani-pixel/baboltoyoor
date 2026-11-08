@@ -1,5 +1,5 @@
 18423e2da142ae4a05f3dad4d0903ba89a14abcd6a5fc7c9f69c0809d13798e1  ./.gitignore
-6ede3723fda2e8be6d9423dc3bf2fdaff4cbe2a977edd06f4e4f16ed0af8d43b  ./CHANGELOG.md
+b6bd1349c9322359dc16211c23c9c2f2840f241e96314c47b656fdd5743cb7af  ./CHANGELOG.md
 cf5db6b7c699488e4f4fbb243af67205f640173bce553f01a8d9d20414eff31b  ./NOTICE.txt
 b93201eeb6e5a9253d1f1746a948acf55f967d0f4e99cdec43e591612dbb25aa  ./README.md
 3e1ee924f1c80a1a1ebcd4f7ad4bebd26a86f8834cf65d953690b7a115d8513e  ./RELEASE-1.0.0-fa.md
@@ -70,6 +70,7 @@ ad443897d85dd9385de2192a85b8651cc7238693242879e33caf8e296255019c  ./RELEASE-1.0.
 e184cd6f61b7b36cbf7688732dff945df2ecac334dc3a7c361fe3649764c67f3  ./RELEASE-1.0.68-fa.md
 d1b2af3738456073d47ba4531e64bab622476d9bba9dc580c838bc930a1859bf  ./RELEASE-1.0.69-fa.md
 ae63a80ff1a55cfa568ae3beddf0027ac2114852445c9db136ed3715dab7267e  ./RELEASE-1.0.7-fa.md
+3768666aedfa7c7f6f182d46797440c53fe67fa621e1fd6964710c581bfd28e8  ./RELEASE-1.0.70-fa.md
 3439a7f74ef984a83347ce7f8eef26e192261bee3164e007f49640be331cb529  ./RELEASE-1.0.8-fa.md
 7d92c542352afb88250583587b94e6a17e4e4c6faa5f1b49d6e9de246878c6c3  ./RELEASE-1.0.9-fa.md
 320c7fa99424c56b9d5e2a1bde9f1610b5678b302497e3dac620fb825091f20a  ./RELEASE-37.37.0-fa.md
@@ -79,7 +80,7 @@ bf6a1b4ae7b0451778c8817376b1d886ba47f882b827b3ccfe6908443504d805  ./RELEASE-37.4
 e1a7535cfce4dd681e262af8ba6d7e4b572ecf2b4c34b3e3f6b1f89d70fb1833  ./RELEASE-37.41.0-fa.md
 c9fbfc2417b4f91a648473156f59f3a138e4dc8a275b74ab13b684ae18e18b38  ./RELEASE-37.42.0-fa.md
 802d5dae281431a49948203c149bf51205c428b5f0b8ebe9d31b0079a5018e0e  ./RELEASE-37.43.0-fa.md
-cd46578002a5f8619adbaf98df39a8c7fd62f28a1d97f5330d2cc0bf8148ba29  ./RELEASE_VERSION.txt
+3fbc229b9aa5975895532ad559af4dda65398988304661029d706f1e1a9026e0  ./RELEASE_VERSION.txt
 6e5a006e078f48892f1622c0fb8370e143c6cb6ce7f17aef2d1941a6a90b2829  ./VERSION.txt
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.png
 7209708807e9d8c4606ab5e51329e856276942962891b7eedc289140151d625f  ./docs/PROJECT-PROMPT-fa.md
@@ -108,7 +109,7 @@ f9490dee0351634d411a4a73e8641966eea3570eee3d18220bcdcdadf4890615  ./lib/customer
 8a904dec5e615cb26cc2abcc3d04334bdc05f0de32cb4767b96bcb9bb7c9f942  ./lib/order-numbers.js
 5aeeb84293c9e77c34728f1f415aebd11c5342310798d1305652e6cb96895b63  ./lib/pickup-feature.js
 6792820077ebe9143478c28fc84712ef9fb3e725deca00c491c6ee62c5699162  ./lib/pickup-legacy-guard.js
-3955d00b725325f987dd746cb5522ac4da36271473e09ef60f040fb36f3ac672  ./lib/pickup-transaction-service.js
+35b034b56b90fc0fc6ba995eec9312a2a2270350e04118571f146754192698d7  ./lib/pickup-transaction-service.js
 f87b7f06ab428eb030d81aa95525fe55b9d019ec5d991d9853fc47806ccfc9a5  ./lib/pickup-workflow.js
 d773d969645b67df439b2a83231df76073028607d0f401dcfad5cfcdd84018e2  ./lib/reports.js
 4dde3adcd1d12d5e4f51c2211ea5fcdeb5f17be88d9ead6cc58971faa2fab74c  ./lib/routes/admin-ext.js
@@ -121,7 +122,7 @@ de3a65f240b78647e9f6037ab4cbaddc4be8f3172fc7216948feae71450a0940  ./lib/routes/a
 5c3bcaaa169ed2243c1a7c430485da9fd3d30856225cd61bed5ccb3afc2d735b  ./lib/routes/dispatch.js
 30fc3518527c9e4dc0491799dbcf726441b668e9f7f860617fd14117e246bb16  ./lib/routes/fingerprint.js
 14b083ed4ee47561c3a5d322395e1833ec7ef99424ef69dec8d8304cab43618a  ./lib/routes/index.js
-0692cbae8aae99f197a1bfbdc670d26ef37b63453c332b4bb38e2e885c52a8d4  ./lib/routes/orders.js
+11777c161f0713c79e61b478a2a9f0a74c91e253630ace978cf815acf8a3212a  ./lib/routes/orders.js
 3817c5598c36eb06ab7dd53baad0d78245bac23d5824676d1616434744a206d0  ./lib/routes/pickup.js
 fa14cc0bae517e17e8d9d556b7462bd69390ec86a9c46b4c42da2acd37f6e77f  ./lib/routes/resources.js
 030689cc1d7b83b782c3b14ba967420bc014412019bd9fadcb026f9b11f95fb6  ./lib/routes/sales-history.js
@@ -152,6 +153,7 @@ e1cc7eb3b35b8d8908640122c0ec8d7b0164b2f5e27d3dfd8a89d9863c07b1df  ./lib/store-ru
 82f08a6ac463f2669576a405db3f42b8a78ca3acecbae9ead92d81e40932b8dc  ./lib/validate.js
 75f619a9678dbe403eb06aea12506103728dd994e6e5e8150d8c4f035c948965  ./lib/warehouse-document-numbers.js
 1df1284cbf4b2e72e9c6f410701fdebf66c51076785eda4b8c33e101f83a2388  ./lib/warehouse-weighing.js
+15024d9a4910bb7cbd342c2fb4071fe8d86a4214782b29f43644510f39f02e28  ./lib/warehouse-weight-draft.js
 eba092ede1e86c0e82145efeee6dcaf439d3430ad89fd80de87145aa8034dbd1  ./lib/weighbridge.js
 06586399e057d1b19cef19ce8a39a67b73d79c5f6f715600d4cf41d840f5588b  ./package.json
 0537aaf6da62203d37e588bb078da54bbf131ae43fd62b6bd124d8844b1bb81a  ./public/admin-ui.js
@@ -171,7 +173,7 @@ e1c483dd31a16796c7aab207a27dc00353a03f2765d303b60ced0a623336ceaa  ./public/dispa
 17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31  ./public/fonts/OFL.txt
 4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92  ./public/fonts/Vazirmatn-Variable.woff2
 a85456faaed8f29d884bfb2dc3148dffbf22d22ecff589176764cfe2679a1e3f  ./public/form-layout.css
-3239f65d6829ba30d9014ded01499f273662acc8509274847080b116b58dcc0e  ./public/index.html
+7f87ad5a807649beb354812c2c960bd7668d6c69e76e2e57787610688821f7b9  ./public/index.html
 3e76d5258764ffc7e08b1a6d5e8aa7d8bdcf073cc3a575ec092a0c30dcb5bb48  ./public/invoice-compact.css
 22b5cb653f7de60bd2284582fc1a1cdabba3950931b206cebe0c9276cd5ec6b4  ./public/invoice-print.html
 538d7d1fe00569ec69cac470798012076eeb5da5ac5b5c5c500022548196ae35  ./public/invoice-print.js
@@ -191,8 +193,8 @@ b110f9152075488b89c0709591a06dc51fea109840e56fbfe6cc24f6701ddcbd  ./public/print
 d585442884977bb175e03421d191668afad1182e1cf1dbfb062ad8942d155130  ./public/transport-resources.css
 1e2a1222f13662fb986e8e67a477dd8492ef86f60775c0a2e7553b8e0ca807fe  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-81c6db4eecc12278cee75756196e1ec01c35ec19149259675ce87015380c257e  ./public/ui2.js
-93a3210618161e75eae8df3d55f357191b6e4028560b6035b18d5dca66c86671  ./public/warehouse-document.css
+cb1da0961f68e21490da73cd41adc6b2a5be9efcba2d03a8b114a14ced22c815  ./public/ui2.js
+d1477ff01de63b4afb685f538223210182d451511ed9127b228d210514f264ed  ./public/warehouse-document.css
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
 d68380d28269be8aaaa429f076099733412d2cbaad6513520b4f03f280bcebb3  ./scripts/sql-query.js
 41507379edbba1fb931cde84f678ffaf9d73507865a679bbfcb72ffd360a457f  ./scripts/start-hidden.ps1
@@ -328,9 +330,9 @@ e648d7a3683aec53225ec25fe91dba43e29554e4e0098811d1904e0941a8ffe9  ./tests/store-
 aaab40c7091ca14c5ef2286fc2cb8f2d9cd7fa3b2f1bb8286bfbfebad9f9721b  ./tests/store-runs.test.js
 e64c27dfccfaa3d577607e0e65b805c2295e0ccf4c30c1d361c97d9dab2f4873  ./tests/store-send-run2-footer.test.js
 ea3a424646b436ee3c47fbcbe10cfcaf458696186a4b2f8a85fb58c055ca6b10  ./tests/store-services-keyboard-browser.test.js
-37483a2ee98e19751ce83a75a7a8ede641f85c0234e723aeb1366b7e7674240d  ./tests/store-sheet-fit-page.test.js
+b93beeb35f714d343eedc664bee5fa0f9ab4cdfbbabffc502e9a8b25333cd6f2  ./tests/store-sheet-fit-page.test.js
 5fcb3484f687d5bffef2d54a19247f481760e265ca6e6b3245d8e6a6c27a910a  ./tests/store-sheet-layout-debug.test.js
-e1388f0c574162e22e2db03a67351c6f51e2ed05c31f6205f0e122b4435ac201  ./tests/store-weight-placement.test.js
+793c15f809ec99804de5e250b6bbe5bfa4d86cc2038588783457cb9b32d6cded  ./tests/store-weight-placement.test.js
 f97311106e0b60855f70294fabc7f87a4128cce41210b82c88664234adf13742  ./tests/ticket-settings.test.js
 3988c844195ab5867437a2e74832909d0b4a11d9b22900226f09f82783c6e7eb  ./tests/transport-desk-browser.test.js
 bdf1e2dfda23a69492c3cad194bd093906f79335949d4e26e6b1f897e5414ed2  ./tests/transport-entry-ui.test.js
@@ -349,7 +351,7 @@ c167b3998a03e245dbc0c03117ae0070769c625cf7c63b73b3cb22c3f9a3dd38  ./tests/ui-rev
 27302aad62d8b18b29aa684a771deb0e45a71cf04cffadea2f2a90667aae6255  ./tests/unit-reports-backups.test.js
 4ae525a73ce2df4da40c916d0dfd3bb8bbe81184dca1921f4dd2054dd9a35c3f  ./tests/warehouse-delivered-browser.test.js
 8b21d09b3571c8dabb89bf9c66bb6934c461d180e37834039fb77a58d6afaf02  ./tests/warehouse-delivered.test.js
-1fc41c73db32587a37c50e0a8466eafa551d55cfd8f7e5cadf4586a61d29a7a8  ./tests/warehouse-document-layout.test.js
+4358dff3d15f7b69f9fc45a40ac8a4621e1d14b57dbeb23fe9b82ae71a6728c6  ./tests/warehouse-document-layout.test.js
 52da83cdef44dba46af4658995b95e870788364aa9a3abae7aede5d0efa20f56  ./tests/warehouse-document-numbers.test.js
 e764fcdb7cbe76b9d1f652bd88482f17fedba17a1e7d9ab2d6d874653fede883  ./tests/warehouse-incoming-header.test.js
 df43e25b24990fb3012cb584d94aba5a311f941b5c3155052845de9d5cb68d38  ./tests/warehouse-preparation-layout.test.js
@@ -363,8 +365,9 @@ cbda3303712697e297bd6f89521521d1c659a3f0c57ada843bdb4adbf5f137b4  ./tests/wareho
 f78911ecb45ad686502aaa3c871163703eec898aa6faa75472f7fb11868fd26b  ./tests/warehouse-store-tabs.test.js
 2d8d4731fff1343a37976677452cf408a94a9717d1f05d73deb35737051ebe8f  ./tests/warehouse-today-stats.test.js
 6dee26eeb15e43334202fcb9c28e1151e4cda20f7612402f56a4640a038003cf  ./tests/warehouse-weighing-api.test.js
-d6d52c9258a9c66e84671d197bba4ac7cf365e51fe9747cfff12523455e29bff  ./tests/warehouse-weighing-browser.test.js
+2feb5e003a03a203c1fa7026466321e06c1b489db45d2d0c2ec3f9b440bcddcb  ./tests/warehouse-weighing-browser.test.js
 711ec65cdded9353b6aef7ba4dac7b9a2284ce9b37eaf182f2224967b20172a2  ./tests/warehouse-weighing.test.js
+3f7945643fc13147ae6616538359104ac4ae46807036e2743634ade682840998  ./tests/warehouse-weight-draft-api.test.js
 74c7b28ceb939080861628bc955e399373cceb69c1e54ee9db34497fcf4d369d  ./tests/weighbridge.test.js
 42ee0f8b459e84984a4175246a8d2f2303af09cc8a5913e5109f5348ef9eeb8b  ./tests/windows-installer.test.js
 ec1b3ec8e454a2d3a6b4ac373736691cf274e310a5cc56c548913f7b3dec0526  ./tests/workflow-navigation.test.js
@@ -373,9 +376,9 @@ cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
 3545f8a45c37aca7222861006dc75175ae532944e88c087b49fbbb218ed47947  ./vendor/acme/package-lock.json
 93c58e2aa525b4850e390f62eb149aa0c49b385aaaf291b0c26d488f5dbb56f5  ./vendor/acme/package.json
-a65f5a801d11fa18709088d61ade4145fb236f4ec26c85537dfee974ee7c8ab2  ./windows-installer/BabolToyor-Setup.cmd
+4d74693b667b63e8b9d46cff786517b3c599dbc5427b9d4760f47cf0eb5c964c  ./windows-installer/BabolToyor-Setup.cmd
 a432ed85116daafdfee79565773abd1af828e7f5dcf0ff2569b773d11ae79243  ./windows-installer/INSTALL-STEPS-fa.html
 82db4e445ff27133950c796775612aefc065bde8aa4f232fe605d1f0a6b51547  ./windows-installer/INSTALL-STEPS-fa.md
-4c947a7414607da04bb67f883f57bb99ca5117b046ab98184c189cef90bc12be  ./windows-installer/Install-BabolToyor.ps1
+94504fa309c796c473bfd7585777b5c079d9853c445d1c7d766710fb1b77dddc  ./windows-installer/Install-BabolToyor.ps1
 229e2a6ece745a938e06301cd6150630671187a4f434e99e34b96be3d8feb3e8  ./windows-installer/README-fa.md
 9c0d585124af98638054faf64833a96b3506e1f3b593a90c330e53b8cea622db  ./windows-installer/build-single-file.js
