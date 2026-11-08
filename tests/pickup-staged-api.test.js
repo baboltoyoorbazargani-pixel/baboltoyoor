@@ -52,7 +52,12 @@ test('staged pickup API: roles, recipient, physical delivery, cancellation and l
   assert.equal((await call('POST',`/api/pickup/${order.id}/goods-exit`,{checkedItems:[]},gate)).status,400);
   await ok('POST',`/api/pickup/${order.id}/goods-exit`,{checkedItems:[order.items[0].id]},gate);
   assert.equal((await ok('GET',`/api/orders/${order.id}`,null,sales)).order.status,'EXITED');
-  const secondEntry=await ok('POST',`/api/pickup/${other.id}/entry`,person,gate);assert(!JSON.stringify(secondEntry).includes('deposit'));
+  const owner={recipientIsBuyer:true,name:'مالک سفارش',phone:'09121112234',noVehicle:true};
+  assert.equal((await call('POST',`/api/pickup/${other.id}/entry`,{...owner,name:'نام نادرست'},gate)).status,409);
+  await ok('PUT',`/api/customers/${other.customerId}`,{name:'مالک تازه'},sales);
+  assert.equal((await call('POST',`/api/pickup/${other.id}/entry`,owner,gate)).status,409,'stale buyer data must be refreshed');owner.name='مالک تازه';
+  const secondEntry=await ok('POST',`/api/pickup/${other.id}/entry`,owner,gate);assert(!JSON.stringify(secondEntry).includes('deposit'));assert.equal(secondEntry.visit.recipient.name,owner.name);assert.equal(secondEntry.visit.recipient.phone,owner.phone);
+  assert.equal((await ok('GET',`/api/orders/${other.id}`,null,sales)).order.customerId,other.customerId);
   assert.equal((await call('POST',`/api/pickup/${other.id}/cancellation-approval`,{},sales)).status,409);
   const cancellation=await ok('POST',`/api/pickup/${other.id}/cancellation`,{reason:'انصراف',confirmedNoGoods:true},wh);assert(!JSON.stringify(cancellation).includes('deposit'));
   assert.equal((await call('POST',`/api/orders/${other.id}/warehouse/accept`,{},wh)).status,409);

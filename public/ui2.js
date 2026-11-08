@@ -750,8 +750,50 @@ function bindPickupGateEntry(){
  input.addEventListener('input',()=>{clearTimeout(timer);const search=input.value.trim(),id=++seq;if(search.length<2){results.innerHTML='';return;}
   timer=setTimeout(async()=>{try{const data=await api('/api/pickup/orders?q='+encodeURIComponent(search));if(seq!==id||!input.isConnected)return;rows=data.orders||[];results.innerHTML=rows.map((o,i)=>`<div class="order-compact-row"><span>سفارش ${esc(fa(o.orderNo||'—'))}</span><b>${esc(o.customerName||'—')}</b><span>${esc(fa(o.customerPhone||''))}</span><span>تاریخ تحویل: ${esc(o.deliveryDate?dateLabel(o.deliveryDate):'تعیین نشده')}</span><button type="button" class="btn btn-secondary btn-sm" data-pickup-choose="${i}" ${o.hasOpenVisit?'disabled':''}>${o.hasOpenVisit?'مراجعه باز دارد':'انتخاب سفارش'}</button></div>`).join('')||'<p>سفارشی یافت نشد.</p>';}catch(e){if(seq===id)results.textContent='خطا در جست‌وجو: '+e.message;}},250);
  });
- results.addEventListener('click',e=>{const button=e.target.closest('[data-pickup-choose]');if(!button)return;const o=rows[Number(button.dataset.pickupChoose)];if(!o)return;app.pickupSelected=o;selected.textContent=`سفارش ${fa(o.orderNo)} • صاحب سفارش: ${o.customerName} • مشخصات زیر متعلق به تحویل‌گیرنده است.`;results.innerHTML='';input.disabled=true;clear.hidden=false;$('#gateCustomerName').value='';$('#gateCustomerPhone').value='';document.querySelector('label[for=gateCustomerName]').textContent='نام تحویل‌گیرنده';document.querySelector('label[for=gateCustomerPhone]').textContent='شماره تماس تحویل‌گیرنده';$('#gateCustCode').disabled=true;document.querySelector('.cust-code-entry').style.display='none';document.querySelector('[data-gate-entry-title]').textContent='ثبت ورود تحویل‌گیرنده سفارش';document.querySelector('[data-gate-entry-help]').textContent='صاحب سفارش تغییر نمی‌کند؛ مشخصات شخص واقعی تحویل‌گیرنده را وارد کنید.';document.querySelector('[data-gate-entry-badge]').textContent='مراجعه برای تحویل در انبار';document.querySelector('[data-gate-person-title]').textContent='مشخصات تحویل‌گیرنده';document.querySelector('[data-gate-entry-submit-help]').textContent='پس از ثبت، به انبار اطلاع داده می‌شود؛ سفارش تازه‌ای ساخته نمی‌شود.';$('#gateCustId').value='';$('#gateCustomerResults').innerHTML='';$('#gateCustChip').innerHTML='';$('#gateForm button[type=submit]').textContent='ثبت ورود تحویل‌گیرنده';});
- clear.addEventListener('click',()=>{app.pickupSelected=null;selected.textContent='';input.disabled=false;clear.hidden=true;document.querySelector('label[for=gateCustomerName]').textContent='نام و نام خانوادگی';document.querySelector('label[for=gateCustomerPhone]').textContent='شماره تماس';$('#gateCustCode').disabled=false;document.querySelector('.cust-code-entry').style.display='';document.querySelector('[data-gate-entry-title]').textContent='ثبت ورود مشتری';document.querySelector('[data-gate-entry-help]').textContent='اطلاعات مشتری و وسیله یک‌بار ثبت می‌شود؛ دفعه‌ی بعد سوابق پلاک قابل انتخاب است.';document.querySelector('[data-gate-entry-badge]').textContent='ورود مستقیم به صف فروش';document.querySelector('[data-gate-person-title]').textContent='مشخصات مشتری';document.querySelector('[data-gate-entry-submit-help]').textContent='پس از ثبت، اعلان فوری برای کارتابل فروش ارسال می‌شود.';$('#gateForm button[type=submit]').textContent='ثبت ورود و ارسال به فروش';});
+ const name=$('#gateCustomerName'),phone=$('#gateCustomerPhone');
+ let otherDraft={name:'',phone:''};
+ function resetPickupVehicle(){
+  const form=$('#gateForm');form.elements.vehicleType.value='خودرو';form.elements.carType.value='';form.elements.purpose.value='';$('#noVehicle').checked=false;$('#plateBox').hidden=false;
+  app.plate={a:'',letter:'ب',c:'',province:''};$('#plateBox').innerHTML=plateEditorHtml('','خودرو');$('#plateSuggest').innerHTML='';app.customerMatches=[];bindPlate();syncGateVehicleFields();
+ }
+ function setRecipientMode(other){
+  if(!app.pickupSelected)return;
+  name.readOnly=!other;phone.readOnly=!other;
+  name.value=other?otherDraft.name:app.pickupSelected.customerName||'';
+  phone.value=other?otherDraft.phone:app.pickupSelected.customerPhone||'';
+  document.querySelector('label[for=gateCustomerName]').textContent=other?'نام تحویل‌گیرنده':'نام صاحب سفارش';
+  document.querySelector('label[for=gateCustomerPhone]').textContent=other?'شماره تماس تحویل‌گیرنده':'شماره تماس صاحب سفارش';
+  document.querySelector('[data-gate-person-title]').textContent=other?'مشخصات تحویل‌گیرنده':'مشخصات صاحب سفارش';
+  document.querySelector('[data-pickup-mode-help]').textContent=other?'مشخصات شخصی که واقعاً برای تحویل مراجعه کرده است را وارد کنید.':'خود صاحب سفارش برای تحویل مراجعه کرده است.';
+ }
+ selected.addEventListener('change',e=>{
+  if(!e.target.matches('[data-pickup-other]'))return;
+  if(!e.target.checked)otherDraft={name:name.value,phone:phone.value};
+  setRecipientMode(e.target.checked);if(e.target.checked)name.focus();
+ });
+ results.addEventListener('click',e=>{
+  const button=e.target.closest('[data-pickup-choose]');if(!button)return;
+  const o=rows[Number(button.dataset.pickupChoose)];if(!o)return;
+  ++seq;clearTimeout(timer);app.pickupSelected=o;otherDraft={name:'',phone:''};resetPickupVehicle();
+  selected.innerHTML=`<p>سفارش ${esc(fa(o.orderNo||'—'))} • صاحب سفارش: ${esc(o.customerName||'—')} • ${esc(fa(o.customerPhone||''))}</p><label class="gt-switch"><input type="checkbox" data-pickup-other> ثبت تحویل‌گیرنده</label> <span data-pickup-mode-help></span>`;
+  results.innerHTML='';input.disabled=true;clear.hidden=false;
+  $('#gateCustCode').value='';$('#gateCustCode').disabled=true;document.querySelector('.cust-code-entry').style.display='none';
+  $('#gateCustId').value='';$('#gateCustomerCodeValue').value='';$('#gateCustomerResults').innerHTML='';$('#gateCustChip').innerHTML='';$('#plateSuggest').innerHTML='';app.customerMatches=[];
+  document.querySelector('[data-gate-entry-title]').textContent='ثبت ورود برای تحویل سفارش';
+  document.querySelector('[data-gate-entry-help]').textContent='اگر شخص دیگری برای تحویل مراجعه کرده، گزینه ثبت تحویل‌گیرنده را فعال کنید.';
+  document.querySelector('[data-gate-entry-badge]').textContent='مراجعه برای تحویل در انبار';
+  document.querySelector('[data-gate-entry-submit-help]').textContent='پس از ثبت، به انبار اطلاع داده می‌شود؛ سفارش تازه‌ای ساخته نمی‌شود.';
+  $('#gateForm button[type=submit]').textContent='ثبت ورود برای تحویل';setRecipientMode(false);
+ });
+ clear.addEventListener('click',()=>{
+  ++seq;clearTimeout(timer);app.pickupSelected=null;otherDraft={name:'',phone:''};selected.innerHTML='';results.innerHTML='';input.disabled=false;input.value='';clear.hidden=true;
+  name.readOnly=false;phone.readOnly=false;name.value='';phone.value='';resetPickupVehicle();
+  document.querySelector('label[for=gateCustomerName]').textContent='نام و نام خانوادگی';document.querySelector('label[for=gateCustomerPhone]').textContent='شماره تماس';
+  $('#gateCustCode').disabled=false;document.querySelector('.cust-code-entry').style.display='';
+  document.querySelector('[data-gate-entry-title]').textContent='ثبت ورود مشتری';document.querySelector('[data-gate-entry-help]').textContent='اطلاعات مشتری و وسیله یک‌بار ثبت می‌شود؛ دفعه‌ی بعد سوابق پلاک قابل انتخاب است.';
+  document.querySelector('[data-gate-entry-badge]').textContent='ورود مستقیم به صف فروش';document.querySelector('[data-gate-person-title]').textContent='مشخصات مشتری';
+  document.querySelector('[data-gate-entry-submit-help]').textContent='پس از ثبت، اعلان فوری برای کارتابل فروش ارسال می‌شود.';$('#gateForm button[type=submit]').textContent='ثبت ورود و ارسال به فروش';
+ });
 }
 
 function syncGateVehicleFields(){
