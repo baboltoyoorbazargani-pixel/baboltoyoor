@@ -117,7 +117,7 @@ f87b7f06ab428eb030d81aa95525fe55b9d019ec5d991d9853fc47806ccfc9a5  ./lib/pickup-w
 d773d969645b67df439b2a83231df76073028607d0f401dcfad5cfcdd84018e2  ./lib/reports.js
 4dde3adcd1d12d5e4f51c2211ea5fcdeb5f17be88d9ead6cc58971faa2fab74c  ./lib/routes/admin-ext.js
 e6d040b112951d7ab61f07d919e65fa65986c0c5bfa2f04d519728861f20f095  ./lib/routes/admin.js
-de3a65f240b78647e9f6037ab4cbaddc4be8f3172fc7216948feae71450a0940  ./lib/routes/auth.js
+01f81cce0953c1abe8b211ff0d6ee314a1b38785145059867ccd7909cfd1593e  ./lib/routes/auth.js
 5f797bdef2dd64e0946f0546d97c61cf6a88db866fd6615cec588f0dcd03fd05  ./lib/routes/backups.js
 6551d3895342e531b9c86fcaecf733108f348dc4f94e785c4bdd6ff633ad4add  ./lib/routes/core.js
 56fd7a2b63310a357129befd4d97b72102e72e64cd8572260ee83428d7e89d9c  ./lib/routes/customer-debts.js
@@ -125,15 +125,15 @@ de3a65f240b78647e9f6037ab4cbaddc4be8f3172fc7216948feae71450a0940  ./lib/routes/a
 5c3bcaaa169ed2243c1a7c430485da9fd3d30856225cd61bed5ccb3afc2d735b  ./lib/routes/dispatch.js
 30fc3518527c9e4dc0491799dbcf726441b668e9f7f860617fd14117e246bb16  ./lib/routes/fingerprint.js
 14b083ed4ee47561c3a5d322395e1833ec7ef99424ef69dec8d8304cab43618a  ./lib/routes/index.js
-11777c161f0713c79e61b478a2a9f0a74c91e253630ace978cf815acf8a3212a  ./lib/routes/orders.js
+df0bdc0794853aa84a23bf4105af5304ada1c98c2949f84fc1c7cc221435232e  ./lib/routes/orders.js
 3817c5598c36eb06ab7dd53baad0d78245bac23d5824676d1616434744a206d0  ./lib/routes/pickup.js
 fa14cc0bae517e17e8d9d556b7462bd69390ec86a9c46b4c42da2acd37f6e77f  ./lib/routes/resources.js
 030689cc1d7b83b782c3b14ba967420bc014412019bd9fadcb026f9b11f95fb6  ./lib/routes/sales-history.js
-aea40c17ebaa0fd9ea93f7160c9ff761e024e6a894bbf473c9ab8bb9cb85a82a  ./lib/routes/store-runs.js
+19a58dd63edae5ae6d135912c609112f2784c059c2df78d2b3b74d149280c999  ./lib/routes/store-runs.js
 702e4fe02225ce55199975b190e7c54326b0fc76e0a1bc6a68416babbef66b79  ./lib/routes/tls.js
-dbc6dfdd94015097ff54ee0b0f0a8b6d15df3f58b0d1d61470c2cf4d0146efdd  ./lib/routes/transport-plans.js
+49d3cfd83aecb258dc76ca5313933e2dd22bd394b969ca295f3f9c2e824f7a31  ./lib/routes/transport-plans.js
 21aff419d75398717f678b9ea4b4094d1fb56e4b81ebe5bb8b55cbde29770acb  ./lib/routes/transport-resources.js
-705201baca398286eab75d8624d08e67a926b41db8aed3ecee101a8c955fcfe3  ./lib/routes/transport-shipments.js
+861e625dd4a987c7a3262b9bd6c249b26cf627b58b4bdf55e6c9e5574ed87794  ./lib/routes/transport-shipments.js
 bca738d8668c9cb6b2cc8a50bb83ce1c7a2ed1af017f1d448483b706783d061e  ./lib/routes/unit-reports.js
 247c1c344008b52176673c3bd36f58577ee85ce41018bcc878190b76a91906a5  ./lib/routes/weighbridge.js
 5fbec5e641aa74e39bd87c2a39db8759a615c2f960b5208d8e65853a05ad01dc  ./lib/sales-daily-stats.js
@@ -142,6 +142,7 @@ fbc1bb6557c40912c008d265015dac62256fec9a0eaf326a3f8d14677b3eb45e  ./lib/security
 79322915a33edc37a4bf6f599e1a4fadc8888e11cd0744dd4e84a681ef96246d  ./lib/sql-repos.js
 1d63d2492b412f371bedd32e46473d443ab59f5ab1b71ffd60e36c4bdc5af9f1  ./lib/sqlite-store.js
 f8e012aac4483c753c33bcc8bd98cfb9a37f4a831bc7c39fb1da60cc59b7a07f  ./lib/store-name.js
+82144b23ac67b5c06a6266d67d137a0c084dc357863042fbddb7f34cb5cda192  ./lib/store-order-kind.js
 f918e9cc1bb947f2a2771c05548c00ec9ea61b4c708996e6510675920d69bde1  ./lib/store-run-print.js
 e1cc7eb3b35b8d8908640122c0ec8d7b0164b2f5e27d3dfd8a89d9863c07b1df  ./lib/store-run-recovery.js
 06996a0e7a2e5ba122d6b07cd044736c5871089d4289b7545b52442924905dc6  ./lib/store-runs.js
@@ -149,7 +150,7 @@ e1cc7eb3b35b8d8908640122c0ec8d7b0164b2f5e27d3dfd8a89d9863c07b1df  ./lib/store-ru
 63c421088e748a99eca171dbda04b51ec5dc70ebadebc73c97c80a6ad189668e  ./lib/store.js
 6854ae9ae2a6e40429d3912006469f3581ccbcaa87ead4ec762b26120070cd1f  ./lib/ticket-settings.js
 5c69cd5539153837e82314011dadc293f13ca927d3839535259d84460c2a8c7a  ./lib/tls-manager.js
-17911fbecedb6a9b7043fc6ebee3ed50ecb106c27adfd69c61f046e1e5a7a310  ./lib/transport-planning.js
+a576c37024b7f6ba3dd1a41e94f7b70110d03f0e04a1c1a35f06f42861266996  ./lib/transport-planning.js
 3b742f2ee54a9a68c516e34835fd41e26647808b0173419d50d24b704cd9797b  ./lib/transport-sales-views.js
 1397f72f6221879511f7601952251a0c200feffb91bb50d773ad5a30c2841a55  ./lib/transport-transaction.js
 0264fd98f3c80ecbcb7e5a3b6ce6f4a49a8d14ee2677f06d1ea98f86bdc08ac8  ./lib/unit-reports.js
@@ -162,7 +163,7 @@ eba092ede1e86c0e82145efeee6dcaf439d3430ad89fd80de87145aa8034dbd1  ./lib/weighbri
 abbeaa0d65a75937507f31ce46f21cc1c045499c0425a13e2263e046e69222c4  ./public/admin-ui.js
 2064099995191f01a76ac032a1f70bf14fa4f33ead4b74b44c9a0786f14f4a7e  ./public/android-chrome-192x192.png
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./public/android-chrome-512x512.png
-ae413411287462bef3a6204d74b6737f3db849504c4f7bfde9db64ca9f9d3e87  ./public/app.js
+a617af6edbd03149b8bf1c412c40e501005a359f482d78884f0b3f5c1c72587d  ./public/app.js
 cea98dba58c31f5d95773c711c10b626d0253a7281d7bfa0d9928b9c99650110  ./public/apple-touch-icon.png
 cdb01488343d8acf53b3f2537e17f68e490866263f5517fd0cbaa5f45b1942db  ./public/compatibility.css
 d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/connection-status.js
@@ -197,7 +198,7 @@ b110f9152075488b89c0709591a06dc51fea109840e56fbfe6cc24f6701ddcbd  ./public/print
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-7f4ef6f62b7b1cdfc7b624a6c5712d685ca0f2c57db7876b2330bc8e7ee6032d  ./public/ui2.js
+7ef32d1afb9836ccbede932c89bc7d56cebcfaa4bb6aa2e1a156f7eafe313d25  ./public/ui2.js
 ae362ebe7d0b56903ccdcf381891b78c58e231227677a83d80c8a3aaf1d77e80  ./public/warehouse-document.css
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
 d68380d28269be8aaaa429f076099733412d2cbaad6513520b4f03f280bcebb3  ./scripts/sql-query.js
@@ -323,6 +324,10 @@ df7560cc63fbdcff30d8558fa1ab976b3c2af80da4db6404a7b7399b488a05d0  ./tests/store-
 3b6b1975016a4d4f2c52b9576f8a0f6624347e030c1648494a77cfc6c850c15b  ./tests/store-flow-separation-376.test.js
 405806ee856c1d621b234d389a0850ced9333babfe9b4fde67f42c92fbeba4af  ./tests/store-form-and-warehouse-completion.test.js
 4fa3b4ece8ab1838f2dcb78830578c616ab5839085fe855bba3cccc78acb30f6  ./tests/store-order-auto-close.test.js
+e6ebad88f64aada148a2b30d6d419ffb9a9d0a788fd192e885669baa43a46123  ./tests/store-order-kind.test.js
+efaf6b677b63fe68adf71a4819aac0de58041d9f949e3c8036a7ba5f57ded386  ./tests/store-partial-api.test.js
+594fa42339a51c1823be18ec9b30494f5752935c8ba5a77fbf9b690d600d3697  ./tests/store-partial-browser.test.js
+997b8ae38e9839ee4283657c52332c360e903ba9f2c50ed28b0e9d7544886ce6  ./tests/store-partial-disabled.test.js
 9a38ca25481efe8e1efd6ac79c0eea8a3ab70d2da65cc7d8badac7f96dc35b7c  ./tests/store-receipt.test.js
 fe07624ad91e65907569e6cc5dd0abae6720a58c74c87b5a7652eed9511b216a  ./tests/store-registered-browser.test.js
 e8242b34dc33760cb66f87c7f762b53e31e5ce42b6d2946466de0dd839d96627  ./tests/store-run-auto-finalize.test.js
