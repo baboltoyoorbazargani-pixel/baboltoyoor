@@ -48,7 +48,8 @@
 .whd-total strong{font-size:13px;color:#173b50;white-space:nowrap}
 
 /* Interactive detail is grouped by weighing; paper has only product and net weight. */
-.whd-tare-batch{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:10px;margin:3px 0}
-.whd-tare-batch .whd-tare-list{flex:1 0 100%}
+.whd-tare-scroll{max-width:100%;overflow-x:auto}
+.whd-tare-batch{display:flex;flex-wrap:nowrap;white-space:nowrap;width:max-content;gap:4px 8px;align-items:center;font-size:10px;margin:3px 0}
+.whd-tare-batch .whd-tare-list{display:flex;flex:0 0 auto;flex-wrap:nowrap}
 .whd-print-products .whd-col-product{width:auto}
 .whd-print-products .whd-col-weight{width:30%}

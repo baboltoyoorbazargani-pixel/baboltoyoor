@@ -339,6 +339,7 @@ async function renderProductsPage() {
   host.innerHTML = admHead('receipt', isAdmin ? 'محصولات و قیمت‌ها' : 'کارتابل محصولات و قیمت‌ها', desc, adm.products.length,
     `${admSearchBox('admProdSearch', 'جستجوی نام یا کد سریع', adm.q)}
      <span class="adm-count">${fa(priced)} از ${fa(active.length)} محصول فعال قیمت امروز دارند</span>
+     <button class="btn btn-secondary" type="button" data-adm="prod-print">${icon('receipt',16)} چاپ لیست قیمت</button>
      ${isAdmin ? `<button class="btn btn-primary" type="button" data-adm="prod-new">${icon('plus', 16)} محصول جدید</button>` : ''}`)
     + `<div id="admList" class="adm-list"></div></section>`;
   $('#admProdSearch').addEventListener('input', (e) => { adm.q = e.target.value; paintProducts(); });
@@ -363,6 +364,42 @@ function paintProducts() {
   $$('[data-price-for]', $('#admList')).forEach((inp) => inp.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); saveProductPrice(inp.dataset.priceFor); }
   }));
+}
+// Printing is based on freshly saved prices, never on unsaved input values.
+function openPriceListSelection(){
+ const products=adm.products.filter(p=>p.isActive);
+ if(!products.length)return toast('محصول فعالی برای چاپ وجود ندارد.');
+ openModal('انتخاب اقلام لیست قیمت',`<div class="price-pick"><p>اقلام مورد نظر را انتخاب کنید. فقط قیمت ثبت‌شدهٔ امروز چاپ می‌شود؛ با اقلام زیاد اندازهٔ نوشته کوچک‌تر خواهد شد.</p><div class="price-pick-controls"><input type="search" data-price-search placeholder="جستجوی نام یا کد" aria-label="جستجوی محصول"><button type="button" class="btn btn-secondary btn-sm" data-price-all>انتخاب همه</button><button type="button" class="btn btn-secondary btn-sm" data-price-none>حذف انتخاب‌ها</button><span data-price-count aria-live="polite"></span></div><div class="price-pick-list">${products.map(p=>`<label class="price-pick-item" data-price-row data-search="${admE(admNorm(p.name+' '+p.quickCode))}"><input type="checkbox" data-price-id="${admE(p.id)}" checked><span>${admE(fa(p.quickCode))} — ${admE(p.name)}</span><small>${admE(adm.todayPrices[p.id]==null?'قیمت ثبت نشده':admFormatPrice(adm.todayPrices[p.id])+' ریال')}</small></label>`).join('')}</div><p data-price-error role="alert" class="form-error"></p><div class="modal-actions"><button type="button" class="btn btn-secondary" data-price-close>انصراف</button><button type="button" class="btn btn-primary" data-price-print>چاپ اقلام انتخاب‌شده</button></div></div>`);
+ const box=$('#modal .price-pick'),checks=()=>[...box.querySelectorAll('[data-price-id]')];
+ const update=()=>{box.querySelector('[data-price-count]').textContent=fa(checks().filter(x=>x.checked).length)+' قلم انتخاب شده';};
+ box.querySelector('[data-price-search]').addEventListener('input',e=>{const q=admNorm(e.target.value);box.querySelectorAll('[data-price-row]').forEach(row=>row.hidden=!!q&&!row.dataset.search.includes(q));});
+ box.querySelector('[data-price-all]').onclick=()=>{checks().forEach(c=>c.checked=true);update();};
+ box.querySelector('[data-price-none]').onclick=()=>{checks().forEach(c=>c.checked=false);update();};
+ box.addEventListener('change',update);box.querySelector('[data-price-close]').onclick=()=>closeModal();
+ box.querySelector('[data-price-print]').onclick=async e=>{
+  const ids=checks().filter(c=>c.checked).map(c=>c.dataset.priceId),error=box.querySelector('[data-price-error]');
+  if(!ids.length){error.textContent='حداقل یک محصول را انتخاب کنید.';return;}
+  e.currentTarget.disabled=true;error.textContent='';
+  try{
+   const day=admToday();const [p,pr]=await Promise.all([api('/api/admin/products'),api('/api/prices?date='+encodeURIComponent(day))]);
+   if(!box.isConnected)return;if(admToday()!==day)throw Error('تاریخ تغییر کرده است؛ دوباره چاپ کنید.');
+   const byId=new Map((p.products||[]).filter(x=>x.isActive).map(x=>[x.id,x]));
+   if(ids.some(id=>!byId.has(id)))throw Error('فهرست محصولات تغییر کرده است؛ پنجره را ببندید و دوباره انتخاب کنید.');
+   const prices=Object.fromEntries((pr.prices||[]).map(x=>[x.productId,x.price]));
+   const rows=ids.map(id=>({...byId.get(id),price:prices[id]}));
+   if(BTPrintFrame.html(BTPrintDigits.documentHtml(priceListHtml(rows,day))))closeModal();
+  }catch(err){if(box.isConnected)error.textContent=err.message||'آماده‌سازی لیست ناموفق بود.';}
+  finally{if(box.isConnected)e.currentTarget.disabled=false;}
+ };
+ update();
+}
+function priceListHtml(rows,day){
+ const mid=Math.ceil(rows.length/2),groups=rows.length>20?[rows.slice(0,mid),rows.slice(mid)]:[rows];
+ let index=0;
+ const tables=groups.map(group=>`<table><colgroup><col class="pl-number"><col class="pl-name"><col class="pl-unit"><col class="pl-price"></colgroup><thead><tr><th>ردیف</th><th>محصول</th><th>واحد</th><th>قیمت (ریال)</th></tr></thead><tbody>${group.map(p=>`<tr><td>${fa(++index)}</td><td>${admE(p.name)}</td><td>${admE(p.defaultUnit||'—')}</td><td>${p.price==null?'ثبت نشده':admE(admFormatPrice(p.price))}</td></tr>`).join('')}</tbody></table>`).join('');
+ return `<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>لیست قیمت محصولات</title><style>
+ @page{size:A4 portrait;margin:10mm}html,body{margin:0;padding:0;font-family:Vazirmatn,Tahoma,sans-serif;color:#111}*{box-sizing:border-box}.pl-sheet{position:relative;width:190mm}.pl-content{position:absolute;top:0;right:0;width:190mm;transform-origin:top right}.pl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:2px solid #333;padding:0 0 7px;margin:0 0 7px}.pl-head h1{font-size:16px;line-height:1.4;margin:0}.pl-date{white-space:nowrap;font-size:12px;font-weight:700}.pl-columns{display:flex;align-items:flex-start;gap:6px}.pl-columns table{flex:1 1 0;min-width:0;width:0;border-collapse:collapse;table-layout:fixed;font-size:10px;line-height:1.35}.pl-columns table:only-child{width:100%}th,td{border:1px solid #aaa;padding:3px 4px;text-align:right;overflow-wrap:anywhere}th{background:#eee}th:first-child,td:first-child{text-align:center}.pl-number{width:8%}.pl-name{width:47%}.pl-unit{width:18%}.pl-price{width:27%}tr{break-inside:avoid}
+ </style></head><body><div class="pl-sheet"><div class="pl-content"><header class="pl-head"><h1>لیست قیمت محصولات کشتارگاه صنعتی بابل طیور</h1><span class="pl-date">تاریخ: ${admE(dateLabel(day))}</span></header><div class="pl-columns">${tables}</div></div></div><script src="/price-list-print-ready.js"><\/script></body></html>`;
 }
 function openProductForm(p) {
   openModal(p ? `ویرایش محصول ${p.name}` : 'محصول جدید', admModalForm('admProductForm', `<div class="cust-form-grid">
@@ -608,6 +645,7 @@ function bindAdm(page, root = $('#content')) {
     if (a === 'drv-records') { adm.recDriver = id; adm.recFrom = ''; adm.recTo = ''; adm.tab = 'records'; return renderDriversPage(); }
     if (a === 'rec-today') { adm.recFrom = drvTodayKey(); adm.recTo = adm.recFrom; return renderDriverRecords(); }
     if (a === 'drv-sign') return showDriverSignature(id);
+    if (a === 'prod-print') return openPriceListSelection();
     if (a === 'prod-new') return openProductForm(null);
     if (a === 'prod-edit') return openProductForm(find(adm.products));
     if (a === 'prod-delete') return deleteProduct(id);
