@@ -25,7 +25,7 @@ test('مرورگر: گروه‌بندی پشتیبان، وضعیت گزارش �
    await go('gate','entry');await page.locator('#gateForm').waitFor();await page.locator('label[for=gateCustomerName]').click();assert.equal(await page.evaluate(()=>document.activeElement.id),'gateCustomerName');
    await go('sales','remote');await page.locator('#phoneOrderFormV25').waitFor();assert.equal(await page.getByLabel('نام مشتری',{exact:true}).count(),1);assert.equal(await page.getByLabel('محصول ردیف ۱').count(),1);
    await go('sales','future');await page.locator('#futureOrderFormV25').waitFor();assert.equal(await page.getByLabel('نام مشتری',{exact:true}).count(),1);assert.equal(await page.getByLabel('تاریخ تحویل').count(),1);assert.equal(await page.getByLabel('مقدار ردیف ۱').count(),1);
-   await go('store','create');await page.locator('#storeOrderForm').waitFor();assert.equal(await page.getByLabel('نام مشتری',{exact:true}).count(),1);
+   await go('store','create');await page.locator('#storeOrderForm').waitFor();assert.equal(await page.getByLabel('نام مشتری',{exact:true}).count(),0);await go('store','partial');await page.locator('#storeOrderForm').waitFor();assert.equal(await page.getByLabel('نام مشتری',{exact:true}).count(),1);
    await go('products');await page.locator('[data-price-for]').first().waitFor();assert.ok(await page.locator('[data-price-for]').first().getAttribute('aria-label'));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`overflow ${width}`);
   }
