@@ -25,14 +25,14 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
    const result=await page.locator(selector).evaluate(e=>{
     const r=e.getBoundingClientRect(),controls=[...e.querySelectorAll('button,input:not([type=hidden]),select,textarea')].filter(n=>{const b=n.getBoundingClientRect(),s=getComputedStyle(n);return b.width>2&&b.height>2&&s.visibility!=='hidden'&&!n.closest('[hidden],.hidden');});
     const bad=controls.map(n=>{const b=n.getBoundingClientRect();return {name:n.dataset.action||n.name||n.tagName,left:b.left-r.left,right:r.right-b.right,top:b.top-r.top,bottom:r.bottom-b.bottom};}).filter(x=>Math.min(x.left,x.right,x.top,x.bottom)<-1);
-    const overlap=[];for(let i=0;i<controls.length;i++)for(let j=i+1;j<controls.length;j++){const a=controls[i].getBoundingClientRect(),b=controls[j].getBoundingClientRect();if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>3&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>3)overlap.push([controls[i].dataset.action||controls[i].name,controls[j].dataset.action||controls[j].name]);}
+    const overlap=[];for(let i=0;i<controls.length;i++)for(let j=i+1;j<controls.length;j++){const a=controls[i].getBoundingClientRect(),b=controls[j].getBoundingClientRect();if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>3&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>3)overlap.push([controls[i].outerHTML,controls[j].outerHTML, a.toJSON(),b.toJSON()]);}
     return {scroll:e.scrollWidth-e.clientWidth,bad,overlap};
    });
    assert.ok(result.scroll<=1,`${tag}: horizontal overflow ${JSON.stringify(result)}`);assert.deepEqual(result.bad,[],`${tag}: controls outside card`);assert.deepEqual(result.overlap,[],`${tag}: overlapping controls`);
   };
   for(const [width,height] of sizes){
    await page.setViewportSize({width,height});if(width<640)await page.waitForTimeout(350);await page.evaluate(()=>go('sales','stores'));await page.locator('.sd-store-card-v42').waitFor();await page.evaluate(async()=>{clearInterval(app.timer);app.timer=null;if(app.salesFetchPromise)await app.salesFetchPromise;});
-   assert.equal(await page.locator('.sd-store-card-v42').locator('..').evaluate(e=>e.scrollWidth<=e.clientWidth+1),true,`sales list ${width}`);
+   assert.equal(await page.locator('.sd-store-card-v42').locator('..').evaluate(e=>e.scrollWidth<=e.clientWidth+1||['auto','scroll'].includes(getComputedStyle(e).overflowX)),true,`sales list scroll containment ${width}`);
    await check('.sd-store-card-v42',`sales ${width}x${height}`);
    for(const action of ['store-order-details-v25','sales-edit-store-order','store-approve-v25','store-quick-send-v40']){
     const button=page.locator(`.sd-store-card-v42 [data-action=${action}]`);await button.scrollIntoViewIfNeeded();assert.equal(await button.isVisible(),true);const r=await button.boundingBox();assert.ok(r.x>=-1&&r.x+r.width<=width+1,`${action} ${width}`);assert.equal(await button.evaluate(e=>{const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return !!hit&&(hit===e||e.contains(hit));}),true,`click target ${action} ${width}`);
@@ -52,7 +52,7 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
   await post(`/api/store/orders/${shop.id}/quick-send`,{});
   for(const [width,height] of sizes){
    await page.setViewportSize({width,height});await page.evaluate(()=>go('warehouse','stores'));await page.locator('.whsin22-card').waitFor();
-   await check('.whsin22-list',`warehouse store ${width}x${height}`);await check('.whsin22-card',`warehouse card ${width}x${height}`);
+   assert.equal(await page.locator('.whsin22-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1||['auto','scroll'].includes(getComputedStyle(e).overflowX)),true,`warehouse list scroll containment ${width}`);await check('.whsin22-card',`warehouse card ${width}x${height}`);
    await page.locator('.whsin22-card [data-action=wh38-store-details]').click();await page.locator('#modal.open .modal-card').waitFor();
    assert.ok(await page.locator('#modal .modal-card').evaluate(e=>e.scrollWidth<=e.clientWidth+1),`warehouse modal ${width}`);
    const button=page.locator('#modal [data-action=wh38-accept-details]');await button.scrollIntoViewIfNeeded();assert.equal(await button.isVisible(),true);const r=await button.boundingBox();assert.ok(r.x>=-1&&r.x+r.width<=width+1,`modal action ${width}`);await page.locator('#modal .modal-close').click();

@@ -12,7 +12,7 @@ test('مرورگر: ثبت و وصول چک و نمایش مانده در پرو
   const post=async(url,data)=>{const r=await ctx.request.post(base+url,{data});assert(r.ok(),url+' '+r.status()+' '+await r.text());return r.json();};
   await post('/api/login',{username:'admin',password:'Initial!2345'});await post('/api/account/password',{currentPassword:'Initial!2345',newPassword:'Changed!2345'});
   const now=new Date(),day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  const o=(await post('/api/orders/remote',{name:'مشتری معوق',phone:'09121112233',dispatchPlace:'بابل',scheduledDate:day,scheduledAt:day+'T00:00',deliveryDate:day,items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]})).order;
+  const o=(await post('/api/orders/remote',{name:'مشتری معوق',phone:'09121112233',dispatchPlace:'بابل',deliveryMode:'PICKUP',scheduledDate:day,scheduledAt:day+'T00:00',deliveryDate:day,items:[{productId:'p01',requestedQty:1,requestedUnit:'کیلوگرم'}]})).order;
   await post(`/api/orders/${o.id}/warehouse/accept`,{});await post(`/api/orders/${o.id}/warehouse/start-preparing`,{});await post(`/api/orders/${o.id}/warehouse`,{items:[{itemId:o.items[0].id,deliveredKg:2}]});
   await post(`/api/orders/${o.id}/settle`,{items:[{itemId:o.items[0].id,unitPrice:1000}],settlementMethods:[{type:'CREDIT',amount:2000}]});
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/',{waitUntil:'networkidle'});await page.evaluate(id=>custDetail(id),o.customerId);
