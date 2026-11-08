@@ -15,6 +15,8 @@ test('staged pickup API: roles, recipient, physical delivery, cancellation and l
   const {gate,warehouse:wh,sales}=cookies;const d=new Date(),day=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
   const create=async(phone,deposit)=> (await ok('POST','/api/orders/remote',{name:'مالک سفارش',phone,deliveryMode:'PICKUP',scheduledTime:'00:00',deliveryDate:day,items:[{productId:'p01',requestedQty:5,requestedUnit:'کیلوگرم'}],...(deposit?{deposit:{type:'CASH',amount:100}}:{})},sales)).order;
   const order=await create('09121112233',false),other=await create('09121112234',true),race=await create('09121112235',false);
+  await ok('POST',`/api/orders/${order.id}/warehouse/accept`,{},wh);
+  assert.equal((await call('POST',`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:5}]},wh)).status,409,'new managed order cannot be finalized before entry');
   const person={name:'راننده مشتری',phone:'09121112244',vehicleType:'خودرو',carType:'تریلی یخچال',plate:'12ب34567'};
   // A separate process uses the new entry service while HTTP uses the old
   // cancellation endpoint. Only one may commit, regardless of lock order.
@@ -37,10 +39,13 @@ test('staged pickup API: roles, recipient, physical delivery, cancellation and l
   const entryResponse=await ok('POST',`/api/pickup/${order.id}/entry`,person,gate);assert(!JSON.stringify(entryResponse).includes('deposit'));const entered=entryResponse.visit;assert.equal(entered.recipient.name,person.name);assert.notEqual(entered.status,'WAITING_SALES');
   assert.equal((await call('POST',`/api/pickup/${order.id}/entry`,person,gate)).status,409);
   assert.equal((await call('PUT',`/api/pickup/${order.id}/delivery-date`,{deliveryDate:day},sales)).status,409);
-  await ok('POST',`/api/orders/${order.id}/warehouse/accept`,{},wh);
   assert.equal((await call('POST',`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:5}]},wh)).status,409);
   const result=await ok('POST',`/api/pickup/${order.id}/handover`,{physicalHandoverConfirmed:true,items:[{itemId:order.items[0].id,deliveredKg:5}]},wh);
   assert.equal(result.handover.document.customerName,'مالک سفارش');assert.equal(result.handover.document.recipient.name,person.name);
+  const active=(await ok('GET','/api/pickup/active',null,gate)).orders;assert(active.some(x=>x.id===order.id));assert(!JSON.stringify(active).includes('deposit'));
+  const doc=(await ok('GET',`/api/warehouse/delivered/${order.id}`,null,wh)).order;assert.equal(doc.recipient.name,person.name);assert.equal(doc.customerName,'مالک سفارش');
+  await ok('PUT',`/api/customers/${order.customerId}`,{name:'نام ویرایش‌شده'},sales);
+  const archived=(await ok('GET',`/api/warehouse/delivered/${order.id}`,null,wh)).order;assert.equal(archived.customerName,'مالک سفارش');assert.equal(archived.recipient.name,person.name);assert.equal(archived.warehouseDocumentNo,doc.warehouseDocumentNo);
   assert.equal((await call('POST',`/api/pickup/${order.id}/cancellation`,{reason:'انصراف',confirmedNoGoods:true},wh)).status,409);
   await ok('POST',`/api/orders/${order.id}/settle`,{items:[{itemId:order.items[0].id,unitPrice:100}]},sales);
   assert.equal((await call('POST',`/api/orders/${order.id}/exit`,{checkedItems:[order.items[0].id]},gate)).status,409);

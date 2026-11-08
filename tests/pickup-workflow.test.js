@@ -21,6 +21,8 @@ test('gate registers actual recipient without changing buyer or auto-activating 
  assert.throws(()=>w.createEntry(old,person,sales,today,now,'v2'),/دسترسی/);
  assert.throws(()=>w.createEntry({...old,deliveryDate:'2026-11-06'},person,gate,today,now,'v2'),/تاریخ تحویل/);
  assert.throws(()=>w.createEntry({...old,deliveryDate:null},person,gate,today,now,'v2'),/ابتدا/);
+ assert.throws(()=>w.createEntry({...old,status:'SETTLEMENT_PENDING'},person,gate,today,now,'v2'),/وزن نهایی/);
+ assert.throws(()=>w.createEntry({...old,status:'WAREHOUSE_PREPARING',warehouseCompletedAt:now},person,gate,today,now,'v2'),/وزن نهایی/);
  assert.throws(()=>w.createEntry(old,person,gate,today,now,'v2',out.visit),/ورود باز/);
  assert.throws(()=>w.createEntry({...old,deliveryMode:'DELIVERY'},person,gate,today,now,'v2'),/تحویل در انبار/);
 });

@@ -22,7 +22,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('POST','/api/orders/remote',{...body,transportWorkflow:false,deliveryMode:'DELIVERY'},sales)).status,409);
   const tomorrow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1),futureDate=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
   assert.equal((await call('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY',deposit:{amount:100,type:'CASH'}},sales)).status,409);
-  const pickupDeposit=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP',deposit:{amount:100,type:'CASH'},phone:'09121112239'},sales)).order;assert.equal(pickupDeposit.deliveryMode,'PICKUP');assert.equal(pickupDeposit.deposit.amount,100);
+  const pickupDeposit=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP',deliveryDate:date,deposit:{amount:100,type:'CASH'},phone:'09121112239'},sales)).order;assert.equal(pickupDeposit.deliveryMode,'PICKUP');assert.equal(pickupDeposit.deposit.amount,100);
   const onsiteVisit=(await ok('POST','/api/visits',{name:'مراجعه پخش',phone:'09121112241',noVehicle:true},admin)).visit;
   const onsitePickupVisit=(await ok('POST','/api/visits',{name:'مراجعه انبار',phone:'09121112242',noVehicle:true},admin)).visit;
   const onsite=(await ok('POST','/api/orders',{visitId:onsiteVisit.id,items:body.items,transportWorkflow:true,deliveryMode:'DELIVERY'},sales)).order;
@@ -31,7 +31,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert((await ok('GET','/api/notifications',null,wh)).notifications.some(n=>n.entityId===onsite.id));
   const onsiteNotices=(await ok('GET','/api/notifications',null,transport)).notifications;assert(onsiteNotices.some(n=>n.entityId===onsite.id));assert(!onsiteNotices.some(n=>n.entityId===onsitePickup.id));
   const future=(await ok('POST','/api/orders/remote',{...body,scheduledDate:futureDate,deliveryMode:'DELIVERY'},sales)).order;
-  const one=(await ok('POST','/api/orders/remote',{...body,transportWorkflow:undefined,deliveryMode:'DELIVERY'},sales)).order,two=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP'},sales)).order;
+  const one=(await ok('POST','/api/orders/remote',{...body,transportWorkflow:undefined,deliveryMode:'DELIVERY'},sales)).order,two=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'PICKUP',deliveryDate:date},sales)).order;
   let cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);
   assert(cart.assigned.some(x=>x.id===one.id&&x.transportService.label.includes('تخصیص')));
   assert(![...cart.assigned,...cart.inTransit,...cart.pending,...cart.finalized].some(x=>x.id===two.id||x.id===future.id||x.id===onsitePickup.id));

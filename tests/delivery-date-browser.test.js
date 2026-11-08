@@ -15,7 +15,7 @@ test('مرورگر: انتخاب تاریخ شمسی، ثبت و ویرایش م
   const date=form.locator('[data-target=deliveryDate]');assert.equal(await date.getAttribute('required'),'');assert.equal(await date.inputValue(),'');
   assert.equal(await form.locator('[name=deliveryDate]').inputValue(),'');const scheduled=await form.locator('[name=scheduledDate]').inputValue();const time=await form.locator('[name=scheduledTime]').inputValue();
   await date.click();await page.locator('#jalaliCalendarPopover .jalali-cal-day[data-iso]').first().waitFor();
-  const choice=page.locator(`#jalaliCalendarPopover .jalali-cal-day[data-iso]:not([data-iso="${scheduled}"])`).first();const chosen=await choice.getAttribute('data-iso');await choice.click();
+  await page.locator('#jalaliCalendarPopover [data-cal=next]').click();const choice=page.locator(`#jalaliCalendarPopover .jalali-cal-day[data-iso]:not([data-iso="${scheduled}"])`).first();const chosen=await choice.getAttribute('data-iso');await choice.click();
   assert.equal(await form.locator('[name=deliveryDate]').inputValue(),chosen);assert.equal(await form.locator('[name=scheduledDate]').inputValue(),scheduled);assert.equal(await form.locator('[name=scheduledTime]').inputValue(),time);
   await form.locator('[name=name]').fill('مشتری تحویل');await form.locator('[name=phone]').fill('09121112233');await form.locator('[name=dispatchPlace]').fill('بابل');await form.locator('[data-delivery-mode]').selectOption('PICKUP');
   const search=page.locator('[data-op-product-search="future-0"]');await search.fill('01');await page.locator('[data-op-suggest="future-0"] button').first().waitFor();await search.press('ArrowDown');await search.press('Enter');await page.locator('[data-op-qty="future-0"]').fill('2');

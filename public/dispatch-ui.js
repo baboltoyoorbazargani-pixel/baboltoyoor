@@ -491,10 +491,11 @@ function startGateDispatchLive() {
         }else if(tab==='exit'){
           const temp=document.createElement('div');temp.innerHTML=renderGateExit(rows.orders||[]);
           const list=$('#gateExitRows');if(list)list.innerHTML=temp.querySelector('#gateExitRows').innerHTML;
-          const count=$('#content .sd-count strong');if(count)count.textContent=qty((rows.orders||[]).length);
+          const count=$('#content .sd-count strong'),fresh=temp.querySelector('.sd-count strong');if(count&&fresh)count.textContent=fresh.textContent;
         }
         lastRows=rowSig;
       }
+      if(tab==='exit'&&app.features?.pickupStaging)await refreshPickupExit();
       const state=$('#gateSyncState');if(state)state.textContent='آخرین به‌روزرسانی: '+(typeof serverNow==='function'?serverNow():new Date()).toLocaleTimeString('fa-IR');
     }catch(_){const state=$('#gateSyncState');if(state&&app.gateRenderSeq===seq)state.textContent='به‌روزرسانی ناموفق؛ اطلاعات نمایش‌داده‌شده ممکن است قدیمی باشد.';}
     finally{busy=false;}

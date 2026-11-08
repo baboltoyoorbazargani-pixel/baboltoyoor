@@ -5,7 +5,7 @@ const {DatabaseSync}=require('node:sqlite');
 test('legacy pickup endpoints respect active visit and cancellation; locked writes roll back',{timeout:45000},async()=>{
  const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-pickup-legacy-')),base=`http://127.0.0.1:${port}`;
- const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});
+ const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345',BT_PICKUP_STAGING:'false'},stdio:['ignore','pipe','pipe']});
  try{
   await new Promise((resolve,reject)=>{const t=setTimeout(()=>reject(Error('startup timeout')),15000);proc.stdout.on('data',d=>{if(String(d).includes('"listening"')){clearTimeout(t);resolve();}});proc.once('exit',c=>reject(Error('exit '+c)));});
   let cookie='';const call=async(method,url,body)=>{const res=await fetch(base+url,{method,headers:{...(cookie?{cookie}:{}),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const data=await res.json();cookie=(res.headers.get('set-cookie')||cookie).split(';')[0];return {status:res.status,data};};
