@@ -30,11 +30,11 @@ test('مرورگر: پیمایش و افزودن ردیف با Enter در فرم
    await page.evaluate(async sub=>{await go('sales',sub);if(app.salesFetchPromise)await app.salesFetchPromise;clearInterval(app.timer);app.timer=null;},sub);await checkOp(prefix,key,root);
   }
   await page.evaluate(()=>go('store','create'));await checkOp('store','storeDraft','#storeOrderForm');
-  await page.route('**/api/visits',route=>route.fulfill({json:{visits:[{id:'visit-test',customer:{name:'مشتری',phone:'09120000000'},status:'WAITING_SALES',createdAt:'2026-10-01T12:00:00Z'}]}}));
+  await page.route(/\/api\/visits(?:\?.*)?$/,route=>route.fulfill({json:{visits:[{id:'visit-test',customer:{name:'مشتری',phone:'09120000000'},status:'WAITING_SALES',createdAt:'2026-10-01T12:00:00Z'}]}}));
   await page.evaluate(async()=>{await go('sales','onsite');if(app.salesFetchPromise)await app.salesFetchPromise;clearInterval(app.timer);app.timer=null;await openOrder('visit-test');});
   const onsite=page.locator('#orderLines'),onsiteProduct=onsite.locator('[data-product-search="0"]');await onsiteProduct.waitFor();await onsiteProduct.fill('مرغ');await onsite.locator('[data-suggest-for="0"] button').first().waitFor();await onsiteProduct.press('ArrowDown');await onsiteProduct.press('ArrowDown');await onsiteProduct.press('Enter');assert.equal(await page.evaluate(()=>app.orderDraft[0].productId),'p02');await waitFocus('data-qty','0');
   await onsite.locator('[data-qty="0"]').fill('5');await onsite.locator('[data-qty="0"]').press('Enter');await waitFocus('data-unit','0');await onsite.locator('[data-unit="0"]').press('Enter');await waitFocus('data-description','0');await onsite.locator('[data-description="0"]').fill('حضوری');await onsite.locator('[data-description="0"]').press('Enter');await waitFocus('data-product-search','1');assert.equal(await onsite.locator('[data-product-search]').count(),2);await onsite.locator('[data-description="0"]').press('Enter');await waitFocus('data-product-search','1');assert.equal(await onsite.locator('[data-product-search]').count(),2);
-  await page.unroute('**/api/visits');
+  await page.unroute(/\/api\/visits(?:\?.*)?$/);
 
   // Forms used to edit shop and returned orders use their actual renderers and add handlers.
   await page.route('**/api/store/orders/edit-test',route=>route.fulfill({json:{order:{id:'edit-test',status:'STORE_PENDING_SALES',customer:{name:'مشتری',phone:'09120000000'},items:[{id:'i',productId:'p01',product:{name:'مرغ اول',quickCode:'01'},requestedQty:1,requestedUnit:'کیلوگرم'}]}}}));

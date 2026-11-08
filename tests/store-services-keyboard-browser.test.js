@@ -47,6 +47,6 @@ test('مرورگر: انتخاب کیبورد در ردیف‌ها، تفکیک 
   for(const run of [1,2])await checkPrint(`#whsHistBody [data-action="print-store-service"][data-run="${run}"]`,run);
   await page.evaluate(()=>{document.querySelector('#content').innerHTML=renderSalesRemoteV32([])});
   const boxes=await page.locator('.sales-remote-customer-grid-v40 .field').evaluateAll(els=>els.map(e=>({top:e.getBoundingClientRect().top,width:e.getBoundingClientRect().width})));assert.equal(new Set(boxes.map(x=>x.top)).size,1);assert.ok(boxes.every(x=>x.width>150));
-  await page.setViewportSize({width:390,height:850});const mobile=await page.locator('.sales-remote-customer-grid-v40 .field').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().top));assert.equal(new Set(mobile).size,3);assert.deepEqual(errors,[]);
+  await page.setViewportSize({width:390,height:850});const mobile=await page.locator('.sales-remote-customer-grid-v40 .field').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().top));assert.equal(new Set(mobile).size,4);assert.equal(await page.locator('.sales-remote-customer-grid-v40 [data-delivery-mode]').count(),1);assert.deepEqual(errors,[]);
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const stopped=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await stopped;}fs.rmSync(dir,{recursive:true,force:true});}
 });

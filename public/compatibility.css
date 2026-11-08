@@ -1238,3 +1238,8 @@
 /* یک دکمهٔ مشترک برای افزودن ناخالصی به نوبت انتخاب‌شده، خارج از ردیف‌ها. */
 #modal .wh-weight-line.is-active{background:#f8fafc}
 #modal .wh-wt-select[aria-pressed=true]{border-color:var(--brand,#b3132a);color:var(--brand,#b3132a)}
+/* Reset the earlier narrow-screen named areas as well as the template: otherwise
+   the weight and stock controls can occupy the same implicit grid cell. */
+#appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-num,
+#appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(n),
+#appView #content .wh38-prep-item:not(.sr318-row)>.wh38-stock-cell{grid-area:auto!important}
