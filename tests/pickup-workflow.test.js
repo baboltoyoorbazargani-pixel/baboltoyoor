@@ -51,6 +51,7 @@ test('weight or partial delivery prevents cancellation; missing item list fails 
  const {order:a,visit}=w.createEntry(order(),person,gate,today,now,'v');
  assert.throws(()=>w.requestCancellation(a,visit,warehouse,now,'انصراف',true),/اقلام/);
  assert.throws(()=>w.requestCancellation(a,visit,warehouse,now,'انصراف',true,[{...items[0],deliveredKg:1}]),/تحویل/);
+ assert.throws(()=>w.requestCancellation(a,visit,warehouse,now,'انصراف',true,[{...items[0],deliveredKg:-1}]),/اقلام/);
  const pending=w.requestCancellation(a,visit,warehouse,now,'انصراف',true,items);
  assert.throws(()=>w.approveCancellation(pending,visit,sales,now,[{...items[0],itemStatus:'DELIVERED'}]),/تحویل/);
 });
