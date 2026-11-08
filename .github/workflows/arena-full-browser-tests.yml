@@ -1,0 +1,44 @@
+name: Temporary full Chromium test suite
+on: [push, workflow_dispatch]
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright-core
+      - name: Run all browser tests in this shard
+        shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          export BT_CHROMIUM_PATH=$(which google-chrome || which chromium || which chromium-browser)
+          echo "Chromium: $BT_CHROMIUM_PATH"
+          mapfile -t all < <(find tests -name '*browser*.test.js' | sort)
+          selected=()
+          for i in "${!all[@]}"; do if (( i % 4 == SHARD )); then selected+=("${all[$i]}"); fi; done
+          printf '%s\n' "${selected[@]}"
+          set +e
+          node --test --test-concurrency=1 "${selected[@]}" > /tmp/browser-result-$SHARD.txt 2>&1
+          result=$?
+          cat /tmp/browser-result-$SHARD.txt
+          if [ "$result" -ne 0 ]; then
+            python - "$SHARD" <<'PY'
+          import base64,sys
+          s=sys.argv[1]; data=open('/tmp/browser-result-'+s+'.txt','rb').read()
+          print('::error title=BrowserTestLog'+s+'::'+base64.b64encode(data[-40000:]).decode())
+          PY
+          fi
+          exit "$result"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results-${{ matrix.shard }}
+          path: /tmp/browser-result-${{ matrix.shard }}.txt
