@@ -60,6 +60,14 @@ test('goods handover requires real recipient and physical confirmation; goods ex
  assert.throws(()=>w.recordHandover(a,visit,gate,now,true),/دسترسی/);
  const b=w.recordHandover(a,visit,warehouse,now,true);assert.equal(b.pickupHandover.recipient.name,'راننده یخچال');assert.equal(b.pickupHandover.physicalHandoverConfirmed,true);assert.equal(a.pickupHandover,undefined);
  assert.throws(()=>w.goodsExit(b,visit,gate,now),/تسویه/);
- assert.throws(()=>w.goodsExit({...b,status:'SETTLED'},{...visit,id:'different'},gate,now),/تسویه/);
+ assert.throws(()=>w.goodsExit({...b,status:'SETTLED'},{...visit,id:'different'},gate,now),/مراجعه/);
  const out=w.goodsExit({...b,status:'SETTLED'},visit,gate,now);assert.equal(out.order.status,'EXITED');assert.equal(out.visit.exitReason,'GOODS');
+});
+
+test('a stale or forged visit for the same order cannot authorize cancellation or handover',()=>{
+ const {order:a,visit}=w.createEntry(order(),person,gate,today,now,'current');
+ const stale={...visit,id:'stale'};
+ assert.throws(()=>w.requestCancellation(a,stale,warehouse,now,'انصراف',true,items),/مراجعه/);
+ assert.throws(()=>w.recordHandover({...a,status:'WAREHOUSE_PREPARING'},stale,warehouse,now,true),/مراجعه/);
+ assert.throws(()=>w.createEntry({...a,pickupHandover:{physicalHandoverConfirmed:true}},person,gate,today,now,'new'),/وضعیت|مجاز/);
 });
