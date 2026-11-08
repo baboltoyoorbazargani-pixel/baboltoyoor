@@ -259,6 +259,7 @@ function gateCodeLookup() {
 }
 
 function gateFillCustomer(c) {
+  if(app.pickupSelected)return;
   const f = $('#gateForm');
   if (!f) return;
   f.elements.name.value = c.name || '';
