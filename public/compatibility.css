@@ -1243,3 +1243,11 @@
 #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-num,
 #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-prep-cell:nth-child(n),
 #appView #content .wh38-prep-item:not(.sr318-row)>.wh38-stock-cell{grid-area:auto!important}
+
+/* With no vehicle, leave only one horizontal purpose field and reclaim the plate area. */
+#appView #content .gt-entry-vehicle [hidden]{display:none!important}
+#appView #content .gt-entry-vehicle.is-no-vehicle{grid-template-columns:minmax(0,1fr)!important}
+#appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields{grid-template-columns:minmax(0,1fr)!important}
+#appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields .field{display:flex;flex-direction:row!important;align-items:center!important;gap:10px;min-width:0;width:100%}
+#appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields label{white-space:nowrap;flex:0 0 auto;margin:0}
+#appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields .input-shell{flex:1;min-width:0}
