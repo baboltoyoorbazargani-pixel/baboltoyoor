@@ -10,8 +10,9 @@
     if(!id || ![1,2].includes(run)) throw Error('شناسهٔ سفارش یا شمارهٔ سرویس معتبر نیست.');
     const response=await fetch('/api/orders/'+encodeURIComponent(id)+'/store-run/print/'+run,{credentials:'same-origin'});
     const data=await response.json();if(!response.ok)throw Error(data.error||'دریافت اطلاعات سرویس ناموفق بود.');
-    const d=data.document,label=run===2?'دوم':'اول';document.title='برگه سرویس '+label;
-    set('service-heading','برگه وزنی سرویس '+label);set('service-order',fa(d.orderNo||'—'));set('service-store',d.storeName);set('service-sent',date(d.sentAt));set('service-destination',d.dispatchPlace);set('service-run',label);
+    const d=data.document,partial=d.storeOrderKind==='PARTIAL',label=partial?'سفارش جزئی':run===2?'دوم':'اول';document.title=partial?'برگه وزنی سفارش جزئی':'برگه سرویس '+label;
+    if(partial)document.querySelector('#service-run').previousElementSibling.textContent='نوع سفارش';
+    set('service-heading',partial?'برگه وزنی سفارش جزئی':'برگه وزنی سرویس '+label);set('service-order',fa(d.orderNo||'—'));set('service-store',d.storeName);set('service-sent',date(d.sentAt));set('service-destination',d.dispatchPlace);set('service-run',label);
     const tbody=document.querySelector('.service-table tbody');
     for(const [i,x] of d.lines.entries()){
       const tr=document.createElement('tr');
