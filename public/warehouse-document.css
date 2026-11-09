@@ -53,3 +53,19 @@
 .whd-tare-batch .whd-tare-list{display:flex;flex:0 0 auto;flex-wrap:nowrap}
 .whd-print-products .whd-col-product{width:auto}
 .whd-print-products .whd-col-weight{width:30%}
+
+/* Only the printed store handover is compact; ordinary customer documents and
+   the interactive tare details retain their existing layout. */
+@media print{
+ .whd-store-print .whd-head{gap:3px;margin-bottom:3px}
+ .whd-store-print .whd-document-number{padding:2px 3px}
+ .whd-store-print .whd-meta{gap:3px}
+ .whd-store-print .whd-meta>span{padding:2px 3px}
+ .whd-store-print .whd-products th{padding:2px 4px;line-height:1.2}
+ .whd-store-print .whd-products td{padding:2px 4px;line-height:1.2}
+ .whd-store-print .whd-total{margin-top:4px;padding:3px 8px;font-size:10px}
+ .whd-store-print .whd-total strong{font-size:11px}
+ .whd-store-print .whd-acknowledgement{margin-top:5px}
+ .whd-store-print .whd-declaration{font-size:10px;line-height:1.3}
+ .whd-store-print .whd-signature{margin-top:4px;padding-top:12px;gap:0;font-size:10px;line-height:1.25}
+}
