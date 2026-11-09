@@ -2193,9 +2193,17 @@ async function cancelRemoteOrder(id){if(!confirm('این سفارش غیرحضو
 
 
 // چاپ فقط وزن همان محمولهٔ ارسال‌شده؛ سند تسویه یا تأیید دریافت نیست.
-function storeServicePrintButtons(id,runs,kind){
+function storeServicePrintButtons(id,runs,kind,reportLabel=false){
   const available=new Set(runs||[]);
-  return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}</button>`).join('')}</div>`;
+  return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}${reportLabel?' (برگه وزن و مرجوعی)':''}</button>`).join('')}</div>`;
+}
+// Separate sales copy of the warehouse handover document; it does not record handover.
+function storeSalesDocumentButtons(o){
+ const sent=new Set(storeAvailableRuns(o));
+ return `<div class="store-service-print">${(o.storeOrderKind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش</button>`).join('')}</div>`;
+}
+async function printSalesStoreDocument(id,run){
+ try{const {document:doc}=await api('/api/sales/store-documents/'+encodeURIComponent(id)+'/'+run);whPrintDocument(doc,run);}catch(e){toast(e.message);}
 }
 function storeAvailableRuns(o){return [1,2].filter(run=>{const sh=run===1?o?.storeRunOps?.r1Shipment:o?.storeRunOps?.r2Shipment;return sh?.itemIds?.length||Object.keys(sh?.weights||{}).length||[...(o?.dispatchRuns||[]),...(o?.dispatches||[]),o?.dispatch].some(d=>Number(d?.run)===run&&(d?.shipmentItemIds?.length||Object.keys(d?.shipmentWeights||{}).length))||(o?.payments||[]).some(p=>Number(p.deliveryRun)===run&&p.priceLines?.length);});}
 function printStoreService(id,run){
@@ -3225,6 +3233,7 @@ async function salesV29ClickHandler(e){
     if(a==='invoice')return previewInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-store-service')return printStoreService(el.dataset.id,Number(el.dataset.run));
+    if(a==='sales-store-document-print')return printSalesStoreDocument(el.dataset.id,Number(el.dataset.run));
     if(a==='sales-delivery-history-page')return salesDeliveryHistoryPage(el);
     if(a==='sales-delivery-details')return openSalesDeliveryDetails(el.dataset.id,Number(el.dataset.run)||0);
     if(a==='sales-finalize-driver-delivery')return salesFinalizeDeliveryV38(el.dataset.id,el);
