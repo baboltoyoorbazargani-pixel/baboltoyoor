@@ -1044,9 +1044,9 @@
 #modal .tp-items-table{width:100%;border-collapse:collapse;table-layout:fixed}
 #modal .tp-items-table th,#modal .tp-items-table td{padding:8px;border:1px solid var(--line,#dce4eb);text-align:right;vertical-align:top;overflow-wrap:anywhere;white-space:normal}
 #modal .tp-items-table th:first-child{width:55px}#modal .tp-items-table th:last-child{width:30%}
-#modal .tp-assign{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) auto;gap:10px;align-items:end;min-width:0}
+#modal .tp-assign{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;min-width:0}
 #modal .tp-assign label{display:grid;gap:4px;min-width:0}#modal .tp-assign select{width:100%;min-width:0;max-width:100%}
-#modal .tp-assign [role=alert]{grid-column:1/-1;margin:0;overflow-wrap:anywhere}
+#modal .tp-assign p{grid-column:1/-1;margin:0;overflow-wrap:anywhere}
 #modal .tp-detail .modal-actions{display:flex;flex-wrap:wrap;gap:8px}
 @media(max-width:700px){#modal .tp-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#modal .tp-assign{grid-template-columns:minmax(0,1fr)}}
 

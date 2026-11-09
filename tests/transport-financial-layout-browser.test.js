@@ -16,6 +16,7 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
   await post(wh,'/api/login',{username:'wh1',password:'Changed!2345'});await post(sales,'/api/login',{username:'sale1',password:'Changed!2345'});await post(transport,'/api/login',{username:'dispatch1',password:'Changed!2345'});
   const driver=(await post(transport,'/api/transport/drivers',{fullName:'راننده آزمایش',phone:'09121112233'})).driver;
   const vehicle=(await post(transport,'/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'})).vehicle;
+  assert((await transport.request.put(base+`/api/transport/drivers/${driver.id}/resources`,{data:{vehicleId:vehicle.id,paymentDeviceId:''}})).ok());
   const day=new Date(),date=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
   const order=(await post(sales,'/api/orders/remote',{name:'مشتری آزمایش',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledAt:date+'T00:00',transportWorkflow:true,deliveryMode:'DELIVERY',items:[{productId:'p01',requestedQty:4,requestedUnit:'کیلوگرم'}]})).order;
   await post(wh,`/api/orders/${order.id}/warehouse/accept`,{});await post(wh,`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:2}]});

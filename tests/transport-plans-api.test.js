@@ -15,6 +15,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const sales=(await call('POST','/api/login',{username:'plan-sales',password:pass})).cookie,transport=(await call('POST','/api/login',{username:'plan-transport',password:pass})).cookie,wh=(await call('POST','/api/login',{username:'plan-wh',password:pass})).cookie,shop=(await call('POST','/api/login',{username:'plan-store',password:pass})).cookie;
   assert.equal((await ok('GET','/api/me',null,sales)).features.experimentalTransport,true);
   const driver=(await ok('POST','/api/transport/drivers',{fullName:'راننده',phone:'09121112233'},transport)).driver,vehicle=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'},transport)).vehicle;
+  await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle.id,paymentDeviceId:''},transport);
   const now=new Date(),date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const body={name:'مشتری تست',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledTime:'00:00',items:[{productId:'p01',requestedQty:3,requestedUnit:'کیلوگرم'}],transportWorkflow:true};
   assert.equal((await call('POST','/api/orders/remote',body,sales)).status,400);
@@ -73,6 +74,11 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
 
   const driver2=(await ok('POST','/api/transport/drivers',{fullName:'راننده دوم',phone:'09121112237'},transport)).driver;
   const vehicle2=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'22ب34567'},transport)).vehicle;
+  await ok('PUT',`/api/transport/drivers/${driver2.id}/resources`,{vehicleId:vehicle2.id,paymentDeviceId:''},transport);
+  const unpaired=(await ok('POST','/api/transport/drivers',{fullName:'راننده بدون خودرو',phone:'09121117777'},transport)).driver;assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:unpaired.id},transport)).status,409);assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id,vehicleId:vehicle2.id},transport)).status,409);
+  const vehicle3=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'33ب34567'},transport)).vehicle;await ok('PUT',`/api/transport/drivers/${unpaired.id}/resources`,{vehicleId:vehicle3.id,paymentDeviceId:''},transport);await ok('PUT',`/api/transport/vehicles/${vehicle3.id}`,{isActive:false},transport);assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:unpaired.id},transport)).status,409);await ok('PUT',`/api/transport/drivers/${unpaired.id}`,{isActive:false},transport);assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:unpaired.id},transport)).status,400);
+  const withImplicitVehicle=(await ok('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id},transport)).assignment;assert.equal(withImplicitVehicle.vehicleId,vehicle.id);
+  await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle2.id,paymentDeviceId:''},transport);assert.equal((await call('POST',`/api/transport/plans/${one.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport)).status,409);assert.equal((await ok('GET',`/api/orders/${one.id}`,null,sales)).order.transportAssignments['0'].vehicleId,vehicle.id);await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle.id,paymentDeviceId:''},transport);
   // Ordinary shipment must have a finalized warehouse document and a transport assignment.
   const third=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY',phone:'09121112236'},sales)).order;
   await ok('POST',`/api/orders/${third.id}/warehouse/accept`,{},wh);

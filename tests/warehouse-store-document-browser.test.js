@@ -15,6 +15,7 @@ test('اسناد انبار فروشگاه: انتظار راننده، سند �
   for(const [username,roleCode,extra] of [['wh2','warehouse',{}],['sale2','sales',{}],['shop2','store',{storeName:'فروشگاه شعبه 1 حمزه کلا'}]])await post(admin,'/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:'Changed!2345',mustChangePassword:false,...extra});
   await post(wh,'/api/login',{username:'wh2',password:'Changed!2345'});await post(sales,'/api/login',{username:'sale2',password:'Changed!2345'});await post(shop,'/api/login',{username:'shop2',password:'Changed!2345'});
   const driver=(await post(admin,'/api/transport/drivers',{fullName:'راننده سند فروشگاه',phone:'09121112233'})).driver;const vehicle=(await post(admin,'/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'})).vehicle;
+  assert((await admin.request.put(base+`/api/transport/drivers/${driver.id}/resources`,{data:{vehicleId:vehicle.id,paymentDeviceId:''}})).ok());
   const o=(await post(shop,'/api/store/orders',{name:'مشتری فروشگاه',phone:'09121112234',items:[{productId:'p01',requestedQty:10,requestedUnit:'کیلوگرم'},{productId:'p02',requestedQty:5,requestedUnit:'کیلوگرم'}]})).order;
   await post(sales,`/api/store/orders/${o.id}/quick-send`,{});await post(wh,`/api/orders/${o.id}/warehouse/accept`,{});await post(wh,`/api/orders/${o.id}/warehouse/start-preparing`,{});
   await post(wh,`/api/orders/${o.id}/store-run/weights`,{run:1,items:[{itemId:o.items[0].id,deliveredKg:10}]});await post(wh,`/api/orders/${o.id}/store-run/send-run`,{run:1});
