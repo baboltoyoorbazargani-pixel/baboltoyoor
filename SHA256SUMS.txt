@@ -171,7 +171,7 @@ eba092ede1e86c0e82145efeee6dcaf439d3430ad89fd80de87145aa8034dbd1  ./lib/weighbri
 abbeaa0d65a75937507f31ce46f21cc1c045499c0425a13e2263e046e69222c4  ./public/admin-ui.js
 2064099995191f01a76ac032a1f70bf14fa4f33ead4b74b44c9a0786f14f4a7e  ./public/android-chrome-192x192.png
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./public/android-chrome-512x512.png
-aaf7762d6dee23851f830fd0a37ffc3274ff553ad2a12aea4d96211b36b0e48e  ./public/app.js
+4a631ec108849b7d7a6048d35c5c359502ea51b00ddb47caa4fdd3c52ffa079b  ./public/app.js
 cea98dba58c31f5d95773c711c10b626d0253a7281d7bfa0d9928b9c99650110  ./public/apple-touch-icon.png
 8504a281a128312bb43f64cf304e12120157d78c6a29a9554c73585636ce3bfb  ./public/compatibility.css
 d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/connection-status.js
@@ -352,7 +352,7 @@ f5e0944300417762a8dd24609522de7e3f842a341d4b6337e8e9f6398805cb91  ./tests/store-
 e648d7a3683aec53225ec25fe91dba43e29554e4e0098811d1904e0941a8ffe9  ./tests/store-runs-dispatch.test.js
 a7e6ab3940775eac92d2be258cb8a36c0252ef6ace649632d884e11990297436  ./tests/store-runs.test.js
 67d71e50e2e30a548a4d5e71bcf2e1e1982f4ca5c24e0a4df829fa7354c05c13  ./tests/store-send-run2-footer.test.js
-980f04bc683680cfb444e6348dfb469e3896d2deb2c320f9cf1da52c58aeb1fd  ./tests/store-service-handover-print-browser.test.js
+e64a7b881e0a598ecaf1ffa06d11bbb52f88cd1ce3c1560d0a001aa345fe055f  ./tests/store-service-handover-print-browser.test.js
 ea3a424646b436ee3c47fbcbe10cfcaf458696186a4b2f8a85fb58c055ca6b10  ./tests/store-services-keyboard-browser.test.js
 b93beeb35f714d343eedc664bee5fa0f9ab4cdfbbabffc502e9a8b25333cd6f2  ./tests/store-sheet-fit-page.test.js
 5fcb3484f687d5bffef2d54a19247f481760e265ca6e6b3245d8e6a6c27a910a  ./tests/store-sheet-layout-debug.test.js

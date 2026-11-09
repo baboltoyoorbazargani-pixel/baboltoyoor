@@ -3207,7 +3207,12 @@ async function salesV29ClickHandler(e){
     return;
   }
   const storeSubtab=e.target.closest('[data-store-subtab]');
-  if(storeSubtab){ e.preventDefault(); e.stopPropagation(); app.salesStoreTab=storeSubtab.dataset.storeSubtab; const storePane=storeSubtab.closest('.sales-store-pane-v43'); if(storePane){ storePane.querySelectorAll('[data-store-subtab]').forEach(b=>{const active=b===storeSubtab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));}); storePane.querySelectorAll('[data-store-section]').forEach(p=>{p.hidden=p.dataset.storeSection!==app.salesStoreTab;}); } return; }
+  if(storeSubtab){ e.preventDefault(); e.stopPropagation(); app.salesStoreTab=storeSubtab.dataset.storeSubtab; const storePane=storeSubtab.closest('.sales-store-pane-v43'); if(storePane){ storePane.querySelectorAll('[data-store-subtab]').forEach(b=>{const active=b===storeSubtab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));}); storePane.querySelectorAll('[data-store-section]').forEach(p=>{p.hidden=p.dataset.storeSection!==app.salesStoreTab;}); }
+    // Shipments and assignments may have changed at another workstation while
+    // this tab was cached. Refresh on entry without changing the selected tab.
+    const selected=app.salesStoreTab;
+    if(selected==='processing'||selected==='history')void fetchSalesCache(true).then(data=>{if(app.page==='sales'&&app.sub.sales==='stores'&&app.salesStoreTab===selected)paintSalesPaneV29('stores',data);}).catch(()=>{});
+    return; }
   const tab=e.target.closest('[data-sales-tab]');
   if(tab){ e.preventDefault(); e.stopPropagation(); return renderSales(tab.dataset.salesTab); }
   const legacySub=e.target.closest('[data-sub^="sales:"]');
