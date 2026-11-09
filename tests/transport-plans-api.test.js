@@ -11,8 +11,8 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   async function call(method,url,body,cookie){const r=await fetch(base+url,{method,headers:{...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});let data=await r.json();return{status:r.status,data,cookie:(r.headers.get('set-cookie')||'').split(';')[0]};}
   async function ok(method,url,body,cookie){const r=await call(method,url,body,cookie);assert(r.status>=200&&r.status<300,url+' '+r.status+' '+JSON.stringify(r.data));return r.data;}
   const admin=(await call('POST','/api/login',{username:'admin',password:'Initial!2345'})).cookie;await ok('POST','/api/account/password',{currentPassword:'Initial!2345',newPassword:pass},admin);
-  for(const [username,roleCode,extra] of [['plan-sales','sales',{}],['plan-transport','dispatch',{}],['plan-wh','warehouse',{}],['plan-store','store',{storeName:'شعبه ۱ حمزه کلا'}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:pass,mustChangePassword:false,...extra},admin);
-  const sales=(await call('POST','/api/login',{username:'plan-sales',password:pass})).cookie,transport=(await call('POST','/api/login',{username:'plan-transport',password:pass})).cookie,wh=(await call('POST','/api/login',{username:'plan-wh',password:pass})).cookie,shop=(await call('POST','/api/login',{username:'plan-store',password:pass})).cookie;
+  for(const [username,roleCode,extra] of [['plan-gate','gate',{}],['plan-sales','sales',{}],['plan-transport','dispatch',{}],['plan-wh','warehouse',{}],['plan-store','store',{storeName:'شعبه ۱ حمزه کلا'}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:pass,mustChangePassword:false,...extra},admin);
+  const gate=(await call('POST','/api/login',{username:'plan-gate',password:pass})).cookie,sales=(await call('POST','/api/login',{username:'plan-sales',password:pass})).cookie,transport=(await call('POST','/api/login',{username:'plan-transport',password:pass})).cookie,wh=(await call('POST','/api/login',{username:'plan-wh',password:pass})).cookie,shop=(await call('POST','/api/login',{username:'plan-store',password:pass})).cookie;
   assert.equal((await ok('GET','/api/me',null,sales)).features.experimentalTransport,true);
   const driver=(await ok('POST','/api/transport/drivers',{fullName:'راننده',phone:'09121112233'},transport)).driver,vehicle=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'},transport)).vehicle;
   await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle.id,paymentDeviceId:''},transport);
@@ -210,7 +210,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.transportHandovers,undefined);
   hand=(await ok('POST',`/api/warehouse/transport-handovers/${o.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc1.handoverToken},wh)).handover;assert.equal(hand.signedPaperConfirmed,false);
   assert.equal(hand.driverName,'راننده');assert.equal(hand.document.warehouseDocumentNo,doc1.warehouseDocumentNo);
-  const serviceViews=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===o.id).services;assert.equal(serviceViews[0].canDepart,true);assert.equal(serviceViews[1].canDepart,false);assert.equal(serviceViews[0].warehouseDocumentNo,doc1.warehouseDocumentNo);
+  const serviceViews=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===o.id).services;assert.equal(serviceViews[0].canDepart,false);assert.equal(serviceViews[1].canDepart,false);assert.equal(serviceViews[0].warehouseDocumentNo,doc1.warehouseDocumentNo);
   assert.equal((await call('POST',`/api/transport/plans/${o.id}/assign`,{run:1,driverId:driver2.id,vehicleId:vehicle2.id},transport)).status,409);
   assert.equal((await call('POST',`/api/orders/${o.id}/store-run/weights`,{run:1,items:[{itemId:o.items[0].id,deliveredKg:1}]},wh)).status,409);
   assert.equal((await call('POST',`/api/orders/${o.id}/store-run/send-run`,{run:1},wh)).status,409);
@@ -226,11 +226,21 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET',`/api/warehouse/delivered/${third.id}`,null,wh)).order.driverName,'راننده');
   assert.equal((await ok('GET',`/api/warehouse/store-documents/${o.id}/2`,null,wh)).document.driverName,'راننده دوم');
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.payments.length,0);
-  const storeDepart=run=>`/api/transport/store-shipments/${o.id}/${run}/depart`,storeReturn=run=>`/api/sales/store-transport/${o.id}/${run}/return`;
+  const storeDepart=run=>`/api/gate/store-shipments/${o.id}/${run}/depart`,storeReview=run=>`/api/sales/store-transport/${o.id}/${run}/review`,storeReturn=run=>`/api/sales/store-transport/${o.id}/${run}/return`;
+  assert.equal((await call('POST',`/api/transport/store-shipments/${o.id}/1/depart`,{departureConfirmed:true},transport)).status,403);
   assert.equal((await call('POST',storeDepart(1),{departureConfirmed:true},sales)).status,403);
-  assert.equal((await call('POST',storeDepart(1),{},transport)).status,400);
-  assert.equal((await call('POST',storeDepart(2),{departureConfirmed:true},transport)).status,409);
-  const out1=(await ok('POST',storeDepart(1),{departureConfirmed:true},transport)).service;assert.equal(out1.driverName,'راننده');assert.equal(out1.status,'IN_TRANSIT');
+  assert.equal((await call('POST',storeDepart(1),{departureConfirmed:true},gate)).status,409);
+  assert.equal((await call('POST',storeReview(1),{reviewConfirmed:true},wh)).status,403);
+  assert.equal((await call('POST',storeReview(2),{reviewConfirmed:true},sales)).status,409);
+  assert.equal((await call('POST',storeReview(1),{},sales)).status,400);
+  const reviewed=(await ok('POST',storeReview(1),{reviewConfirmed:true},sales)).review;assert.equal(reviewed.warehouseDocumentNo,doc1.warehouseDocumentNo);
+  const duplicateReview=(await ok('POST',storeReview(1),{reviewConfirmed:true},sales)).review;assert.deepEqual(duplicateReview,reviewed);
+  const gateReady=(await ok('GET','/api/gate/dispatch',null,gate)).leaving.filter(x=>x.id===o.id);assert.equal(gateReady.length,1);assert.equal(gateReady[0].dispatch.run,1);assert.equal(gateReady[0].dispatch.driverName,'راننده');assert.equal(gateReady[0].dispatch.lines[0].deliveredKg,doc1.lines[0].deliveredKg);assert(!JSON.stringify(gateReady).includes('handoverToken'));
+  const notice=(await ok('GET','/api/notifications',null,gate)).notifications.find(x=>x.entityId===o.id&&x.type==='STORE_TRANSPORT_EXIT_READY');assert.equal(notice.navSection,'dispatch');assert.equal(notice.run,1);
+  assert.equal((await call('POST',storeDepart(1),{},gate)).status,400);
+  assert.equal((await call('POST',storeDepart(2),{departureConfirmed:true},gate)).status,409);
+  const out1=(await ok('POST',storeDepart(1),{departureConfirmed:true},gate)).service;assert.equal(out1.driverName,'راننده');assert.equal(out1.status,'IN_TRANSIT');assert.equal(out1.departedBy, (await ok('GET','/api/me',null,gate)).user.id);assert.deepEqual((await ok('POST',storeDepart(1),{departureConfirmed:true},gate)).service,out1);
+  assert(!(await ok('GET','/api/gate/dispatch',null,gate)).leaving.some(x=>x.id===o.id&&x.dispatch.run===1));
   cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.inTransit.some(x=>x.id===o.id&&x.transportService.run===1&&x.transportService.driverName==='راننده'));assert(cart.assigned.some(x=>x.id===o.id&&x.transportService.run===2&&x.transportService.driverName==='راننده دوم'));
   assert.equal((await call('POST',storeReturn(1),{documentsReturned:true},sales)).status,409);
   await ok('POST',`/api/store/orders/${o.id}/confirm-receipt`,{run:1},shop);
@@ -242,7 +252,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.finalized.some(x=>x.id===o.id&&x.transportService.run===1));assert(cart.assigned.some(x=>x.id===o.id&&x.transportService.run===2));
   assert.equal((await ok('GET',`/api/orders/${o.id}`,null,sales)).order.status,'WAREHOUSE_PREPARING');
   await ok('POST',`/api/warehouse/transport-handovers/${o.id}`,{run:2,signedPaperConfirmed:true,handoverToken:doc2.handoverToken},wh);
-  const out2=(await ok('POST',storeDepart(2),{departureConfirmed:true},transport)).service;assert.equal(out2.driverName,'راننده دوم');
+  await ok('POST',storeReview(2),{reviewConfirmed:true},sales);const out2=(await ok('POST',storeDepart(2),{departureConfirmed:true},gate)).service;assert.equal(out2.driverName,'راننده دوم');
   await ok('POST',`/api/store/orders/${o.id}/confirm-receipt`,{run:2},shop);
   const back2=await ok('POST',storeReturn(2),{documentsReturned:true},sales);assert.equal(back2.service.status,'CLOSED');assert.equal(back2.orderClosed,true);
   cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.deepEqual(cart.finalized.filter(x=>x.id===o.id).map(x=>x.transportService.run).sort(),[1,2]);

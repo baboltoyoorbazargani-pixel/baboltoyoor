@@ -25,6 +25,6 @@ test('شمارنده ترابری فقط اقدامات موجود را می‌�
  const {pendingWork}=require('../lib/transport-planning');const o={id:'s',orderType:'STORE',transportWorkflow:1,deliveryMode:'DELIVERY',status:'WAREHOUSE_PENDING'};const db={orders:[o],orderItems:[]};
  assert.equal(pendingWork(db),1);o.transportAssignments={'1':{driverId:'d'}};assert.equal(pendingWork(db),0);
  db.orderItems.push({orderId:'s',movedToR2:true});assert.equal(pendingWork(db),1);o.transportAssignments['2']={driverId:'d2'};assert.equal(pendingWork(db),0);
- o.status='WAREHOUSE_PREPARING';o.transportHandovers={'1':{signedPaperConfirmed:true,document:{lines:[{}]}}};assert.equal(pendingWork(db),1);
+ o.status='WAREHOUSE_PREPARING';o.transportHandovers={'1':{signedPaperConfirmed:true,document:{lines:[{}]}}};assert.equal(pendingWork(db),0);
  o.transportStoreTrips={'1':{status:'IN_TRANSIT'}};assert.equal(pendingWork(db),0);
 });

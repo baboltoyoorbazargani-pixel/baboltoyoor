@@ -27,6 +27,10 @@ test('مرورگر: ردیف افقی انبار، جزئیات تفکیکی م�
   await page.locator('[data-action="sr38-history"]').first().click();assert.match(await page.locator('#modal').innerText(),/آزمایش/);await page.evaluate(()=>closeModal());
   // Real store portal click handler opens only the selected service, even when both are in transit.
   await page.evaluate(async()=>{app.sub.store='delivery';app.storeDeliveryTab='inProgress';app.page='store';document.querySelector('#appView').dataset.cartablePage='store';await renderStorePortal()});
+  await page.evaluate(()=>document.fonts.ready);
+  const typography=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(el=>el.getClientRects().length&&[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&/[\u0600-\u06ff]/.test(n.textContent||''))).map(el=>({text:el.innerText,letterSpacing:parseFloat(getComputedStyle(el).letterSpacing)||0})).filter(x=>x.letterSpacing<0));
+  assert.deepEqual(typography,[],'متن فارسی نباید فاصله حروف منفی داشته باشد');
+  for(const sel of ['.st38-delivery-heading h2','.st38-delivery-heading p','.cartable-nav-title'])assert.ok(await page.locator(sel).first().evaluate(el=>(parseFloat(getComputedStyle(el).letterSpacing)||0)>=0));
   for(const [run,yes,no] of [[1,'کالای اول','کالای دوم'],[2,'کالای دوم','کالای اول']]){
    await page.locator(`#storeDeliveryRows [data-run="${run}"]`).click();await page.locator('#modal .store-shipment-table').waitFor();const txt=await page.locator('#modal').innerText();assert.ok(txt.includes(yes));assert.ok(!txt.includes(no));await page.evaluate(()=>closeModal());
   }
