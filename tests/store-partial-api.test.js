@@ -22,7 +22,9 @@ test('سفارش جزئی فروشگاه مستقل، تک‌محموله و ب�
  assert.equal((await call('PUT',`/api/store/orders/${stock.id}`,{storeOrderKind:'BULK',items},shop)).status,409);
  const edited=(await ok('PUT',`/api/store/orders/${stock.id}`,{items,notes:'تأمین تکمیلی'},shop)).order;
  await ok('POST',`/api/store/orders/${stock.id}/quick-send`,{},sales);let planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===stock.id);assert.deepEqual(planned.services.map(x=>x.run),[1]);
- assert.equal((await call('POST',`/api/transport/plans/${stock.id}/assign`,{run:2,driverId:driver.id,vehicleId:vehicle.id},transport)).status,400);await ok('POST',`/api/transport/plans/${stock.id}/assign`,{run:1,driverId:driver.id,vehicleId:vehicle.id},transport);
+ await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle.id,paymentDeviceId:''},transport);
+ assert.equal((await call('POST',`/api/transport/plans/${stock.id}/assign`,{run:2,driverId:driver.id,vehicleId:vehicle.id},transport)).status,400);
+ await ok('POST',`/api/transport/plans/${stock.id}/assign`,{run:1,driverId:driver.id,vehicleId:vehicle.id},transport);
  await ok('POST',`/api/orders/${stock.id}/warehouse/accept`,{},wh);await ok('POST',`/api/orders/${stock.id}/warehouse/start-preparing`,{},wh);const active=edited.items.filter(i=>i.itemStatus!=='CANCELLED'),id=active[0].id,id2=active[1].id;
  assert.equal((await call('POST',`/api/orders/${stock.id}/store-run/move`,{itemId:id},wh)).status,409);assert.equal((await call('POST',`/api/orders/${stock.id}/store-run/weights`,{run:2,items:[{itemId:id,deliveredKg:2}]},wh)).status,400);
  await ok('POST',`/api/orders/${stock.id}/store-run/weights`,{run:1,items:[{itemId:id,deliveredKg:2.5}]},wh);

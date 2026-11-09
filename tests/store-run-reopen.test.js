@@ -26,6 +26,7 @@ test('بازگشت تکمیل اشتباهی پیش و پس از پایان خو
  const actual=await order({items:[items[0]]}),ai=actual.items[0].id,au=`/api/orders/${actual.id}/store-run/`;
  await ok('POST',au+'weights',{run:1,items:[{itemId:ai,deliveredKg:2}]},wh);await ok('POST',au+'complete',{itemId:ai},wh);await ok('POST',au+'send-run',{run:1},wh);
  const driver=(await ok('POST','/api/transport/drivers',{fullName:'راننده تست بازگشت',phone:'09121113344'},admin)).driver,vehicle=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'23ب45678'},admin)).vehicle;
+ await ok('PUT',`/api/transport/drivers/${driver.id}/resources`,{vehicleId:vehicle.id,paymentDeviceId:''},admin);
  await ok('POST',`/api/transport/plans/${actual.id}/assign`,{run:1,driverId:driver.id,vehicleId:vehicle.id},admin);
  const doc=(await ok('GET',`/api/warehouse/store-documents/${actual.id}/1`,null,wh)).document;await ok('POST',`/api/warehouse/transport-handovers/${actual.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc.handoverToken},wh);
  assert.equal((await call('POST',au+'reopen-item',{itemId:ai},wh)).status,409);const docAfter=(await ok('GET',`/api/warehouse/store-documents/${actual.id}/1`,null,wh)).document;assert.deepEqual(docAfter.lines,doc.lines);assert.equal(docAfter.warehouseDocumentNo,doc.warehouseDocumentNo);
