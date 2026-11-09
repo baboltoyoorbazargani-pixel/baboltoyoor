@@ -68,7 +68,7 @@ test('اتصالات ایستا: سربرگ سوم، فیلتر نوع سفار�
   assert.match(route, /ctx\.query\.get\('orderType'\)/);
   assert.match(route, /if \(onlyType && String\(o\.orderType \|\| ''\) !== onlyType\) continue;/);
   assert.match(route, /r1Kg: o\.orderType === 'STORE' \? SRH\.r1Kg\(i\) : null/, 'وزن سرویس اول اقلام فروشگاهی در API هست');
-  assert.match(app, /function whhItemsHtml\(items,isStore\)/);
+  assert.match(app, /function whhItemsHtml\(items,isStore,orderId,allowReopen\)/);
   assert.match(app, /وزن سرویس اول/);
   assert.match(app, /وزن سرویس دوم/);
 });

@@ -14,7 +14,7 @@ test('پایان فرم برگه هر دو ارسال (سرویس اول و دو
   const foot = sheet.slice(sheet.indexOf('sr318-foot'));
   assert.match(foot, /\$\{sr38SendBtn\(o,1,sr\.items\)\}/, 'ارسال سرویس اول در پایان فرم نیست');
   assert.match(foot, /\$\{sr38SendBtn\(o,2,sr\.items\)\}/, 'ارسال سرویس دوم در پایان فرم نیست');
-  assert.ok(foot.indexOf('sr38SendBtn(o,2,sr.items)') < foot.indexOf('data-action="sr38-finalize"'), 'ارسال‌ها باید پیش از پایان عملیات باشند');
+  assert.doesNotMatch(foot, /data-action="sr38-finalize"/);
   // بالای برگه هم هر دو می‌مانند
   assert.match(sheet, /sr318-sendline\">[\s\S]*?sr38SendBtn\(o,1,sr\.items\)[\s\S]*?sr38SendBtn\(o,2,sr\.items\)/);
 });
