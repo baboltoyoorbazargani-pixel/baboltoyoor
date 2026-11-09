@@ -37,7 +37,7 @@ test('برگهٔ انبار پس از ارسال، برای قلم‌های تا
 });
 
 test('هنگام خطا برگه از سرور بازرندر می‌شود تا عدد ردشده روی صفحه نماند', () => {
-  const post = ui.slice(ui.indexOf('async function sr38Post'), ui.indexOf('async function sr38Finalize'));
+  const post = ui.slice(ui.indexOf('async function sr38Post'), ui.indexOf('window.renderWarehouse'));
   assert.match(post, /catch\(e\)\{ toast\(e\.message\); try\{ const fresh=await api\('\/api\/orders\/'\+id\);/);
 });
 

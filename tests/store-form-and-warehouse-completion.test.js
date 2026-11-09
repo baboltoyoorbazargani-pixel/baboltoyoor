@@ -16,11 +16,10 @@ test('فرم ثبت سفارش فروشگاه: محصول/مقدار/واحد ک
   assert.doesNotMatch(compat, /\.sd-line-compact \.cell-desc\{flex:1 1 auto/);
 });
 
-test('پایان عملیات: وقتی همهٔ اقلام از قبل تعیین‌تکلیف شده‌اند، دکمه بی‌صدا برنمی‌گردد', () => {
-  const fin = ui.slice(ui.indexOf('async function sr38Finalize'), ui.indexOf('window.renderWarehouse', ui.indexOf('async function sr38Finalize')));
-  assert.doesNotMatch(fin, /if\(!sels\.length\)\{ return; \}/, 'برگشت بی‌صدای قبلی علت ماندن سفارش در انبار بود');
-  assert.match(fin, /همهٔ اقلام این سفارش بسته شده‌اند/); // v37.33.0 — بدون «تصمیم پایان روز»؛ بستن با تکمیل محصول
-  assert.match(fin, /store-run\/finalize-day/);
+test('پایان کار انبار خودکار است و دکمه دستی نمایش داده نمی‌شود', () => {
+  const sheet=ui.slice(ui.indexOf('function sr38Sheet(o)'),ui.indexOf('async function sr38Post'));
+  assert.doesNotMatch(sheet,/data-action="sr38-finalize"/);
+  assert.match(sheet,/data-action="sr38-reopen"/);
 });
 
 test('سفارش پایان‌یافتهٔ انبار در فهرست و شمارندهٔ آماده‌سازی فروشگاه نمی‌ماند', () => {

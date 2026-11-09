@@ -239,10 +239,11 @@ test('عدم موجودی بدون هیچ ارسالی: شفاف و وضعیت �
   assert.equal(rv.runStatus, 'CLOSED_SHORT');
   assert.equal(rv.totalKg, 0);
   assert.equal(rv.shortageKg, 25);
-  // فاینالیز بدون تصمیم دوباره — قلم تعیین‌تکلیف‌شده است
-  o = await ok(await call('POST', `/api/orders/${id}/store-run/finalize-day`, { ...IDEM(), cookie: wh, body: { decisions: [] } }), 'finalize-after-zero-oos');
+  // بدون محصول یا محموله، پایان خودکار انجام می‌شود و تسویه‌ای ایجاد نمی‌شود.
   assert.equal(itemOf(o, item.id).itemStatus, 'OUT_OF_STOCK');
-  assert.equal(o.status, 'SETTLEMENT_PENDING');
+  assert.equal(o.status, 'OUT_OF_STOCK');
+  assert(o.warehouseCompletedAt);
+  assert(!o.storeRunOps.r1Shipment);
 });
 
 // ---------- قفل‌های سند ----------

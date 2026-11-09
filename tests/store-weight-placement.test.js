@@ -32,7 +32,7 @@ test('در پایان فرم دکمهٔ ارسال سرویس اول به فرو
   const sheet = ui.slice(ui.indexOf('function sr38Sheet(o)'), ui.indexOf('async function sr38Post'));
   const foot = sheet.slice(sheet.indexOf('sr318-foot'));
   assert.match(foot, /\$\{sr38SendBtn\(o,1,sr\.items\)\}/, 'دکمهٔ ارسال سرویس اول در پایان فرم نیست');
-  assert.ok(foot.indexOf('sr38SendBtn(o,1,sr.items)') < foot.indexOf('data-action="sr38-finalize"'), 'ارسال سرویس اول باید پیش از پایان عملیات باشد');
+  assert.doesNotMatch(foot, /data-action="sr38-finalize"/);
   assert.match(ui, /function sr38SendBtn\(o,run,view\)/, 'سازندهٔ دکمهٔ ارسال سرویس نیست');
   assert.match(sheet, /با ثبت وزن: قلم کامل یا ناقص، به مقدار ثبت‌شده وارد فاکتور همان سرویس می‌شود؛ وزن صفر/, 'راهنمای قواعد روی فرم نیست');
 });

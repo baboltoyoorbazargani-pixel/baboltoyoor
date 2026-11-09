@@ -49,10 +49,8 @@ test('برگهٔ سرویس: تصمیم پایان روز حذف شده، تکم
   assert.doesNotMatch(sheet, /data-sr38-decision|تصمیم پایان روز/, 'تصمیم پایان روز نباید در ردیف باشد');
   assert.match(sheet, /data-action="sr38-complete"[^>]*>[\s\S]*?تکمیل محصول/, 'دکمهٔ تکمیل محصول باید بماند');
   assert.match(sheet, /data-action="sr38-weight"/);
-  const fin = ui.slice(ui.indexOf('async function sr38Finalize'), ui.indexOf('window.renderWarehouse'));
-  assert.match(fin, /\[data-sr318-row\]/, 'پایان عملیات باید اقلام باز را بشمارد');
-  assert.match(fin, /تکمیل محصول/, 'راهنمای بستن قلم با تکمیل محصول نیست');
-  assert.match(fin, /finalize-day',\{method:'POST',body:JSON\.stringify\(\{decisions:\[\]\}\)\}/, 'پایان عملیات بدون تصمیم ارسال می‌شود');
+  assert.doesNotMatch(sheet, /data-action="sr38-finalize"|پایان عملیات ارسال امروز/);
+  assert.match(sheet, /data-action="sr38-reopen"/);
   // اندازه‌های استاندارد: ردیف حداکثر ۹۶۰px، کنترل‌های هم‌ارتفاع ۳۲px
   assert.match(compat, /\.sr318-row\{min-width:0;width:100%/, 'ردیف باید در عرض صفحه جا شود و طول اجباری نداشته باشد');
   assert.match(compat, /\.sr318-ops \.btn\{height:30px;min-height:30px!important/, 'دکمه‌های ردیف باید هم‌اندازه و جمع‌وجور باشند');
