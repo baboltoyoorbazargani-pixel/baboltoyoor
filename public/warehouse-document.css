@@ -69,3 +69,17 @@
  .whd-store-print .whd-declaration{font-size:10px;line-height:1.3}
  .whd-store-print .whd-signature{margin-top:4px;padding-top:12px;gap:0;font-size:10px;line-height:1.25}
 }
+
+/* Store handover: keep each label and its value together, and use the full
+   header width rather than narrow fixed columns. Unusually long values can
+   wrap without being clipped; on small screens the boxes flow to another row. */
+.whd-store-doc .whd-head{flex-wrap:wrap;align-items:stretch;gap:3px}
+.whd-store-doc .whd-document-number{flex:1 0 auto;max-width:100%;padding:2px 4px}
+.whd-store-doc .whd-store-meta{display:contents}
+.whd-store-doc .whd-store-meta>span{flex:1 0 max-content;max-width:100%;flex-wrap:nowrap;justify-content:center;gap:3px;padding:2px 4px}
+.whd-store-doc .whd-store-meta>span b{white-space:normal;overflow-wrap:anywhere}
+.whd-store-doc .whd-total{margin-left:0;margin-right:auto}
+@media print{
+ .whd-store-print .whd-head{margin-bottom:3px}
+ .whd-store-print .whd-document-number,.whd-store-print .whd-store-meta>span{padding:1px 3px}
+}
