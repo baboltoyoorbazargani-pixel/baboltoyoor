@@ -48,7 +48,7 @@ test('فروشگاه: سفارش‌های ثبت‌شده با وضعیت زند
   await post(`/api/transport/plans/${order.id}/assign`,{driverId:driver.json.driver.id,vehicleId:vehicle.json.vehicle.id,run:1});
   const doc=await call('GET',`/api/warehouse/store-documents/${order.id}/1`,null,admin);assert.equal(doc.status,200,JSON.stringify(doc.json));
   await post(`/api/warehouse/transport-handovers/${order.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc.json.document.handoverToken});
-  await post(`/api/transport/store-shipments/${order.id}/1/depart`,{departureConfirmed:true});
+  await post(`/api/sales/store-transport/${order.id}/1/review`,{reviewConfirmed:true});await post(`/api/gate/store-shipments/${order.id}/1/depart`,{departureConfirmed:true});
   const receipt=await ctx.request.post(base+`/api/store/orders/${order.id}/confirm-receipt`,{data:{run:1}});assert.equal(receipt.status(),200,await receipt.text());
   await post(`/api/sales/store-transport/${order.id}/1/return`,{documentsReturned:true});await post(`/api/orders/${order.id}/store-run/move`,{itemId:item});await post(`/api/orders/${order.id}/store-run/weights`,{run:2,items:[{itemId:item,deliveredKg:40}]});
   await page.waitForFunction(id=>{const c=document.querySelector(`[data-store-order-id="${id}"]`);return c&&c.textContent.includes('نهایی‌شده نزد فروش')&&c.textContent.includes('وزن‌کشی ثبت شده');},order.id,{timeout:12000});assert.equal(await card.count(),1);await card.locator('[data-action=store-order-details]').click();await page.locator('#modal .store-detail-modal').waitFor();assert.match(await page.locator('#modal .store-detail-modal').innerText(),/۴۰ کیلوگرم/);await page.locator('#modal .modal-close').click();
