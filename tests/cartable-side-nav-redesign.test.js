@@ -12,7 +12,7 @@ test('right rail is the single role-specific navigation renderer and its cache i
  assert.equal((app.match(/function renderNav\(/g)||[]).length,1);
  assert.doesNotMatch(ui,/function renderNav\(/);
  assert.match(app,/gate:\[\['entry','ثبت ورود'/);assert.match(app,/\['exit','کنترل خروج'/);assert.match(app,/\['dispatch','پخش'/);assert.match(app,/\['history','سوابق مراجعه'/);
- assert.match(html,/ui2\.js\?v=37\.43\.0/);assert.match(html,/theme\.css\?v=37\.43\.0/);
+ assert.match(html,/ui2\.js\?v=37\.44\.0/);assert.match(html,/theme\.css\?v=37\.44\.0/);
 });
 test('admin enters role-specific cartables and store delivery never retains order registration',()=>{
  assert.match(app,/data-admin-cartable/);assert.match(app,/data-admin-home/);assert.match(app,/app.adminActiveRole=role/);
@@ -28,4 +28,13 @@ test('store creation and delivery are separate views; delivery has exactly two s
 test('warehouse phase follows the rail selection and no duplicate section tabs remain',()=>{
  assert.match(app,/app\.wh38\.phase=key/);assert.match(app,/setAttribute\('data-cartable-page',page\)/);assert.match(css,/#appView\[data-cartable-page="warehouse"\]/);
  assert.match(css,/#appView\[data-cartable-page="sales"\]/);assert.match(css,/#appView\[data-cartable-page="gate"\]/);
+});
+test('warehouse menu removes transport resources and exposes the existing controlled edit queue',()=>{
+ const navStart=app.indexOf('function renderNav()'),warehouseStart=app.indexOf('warehouse:[',navStart),dispatchStart=app.indexOf('dispatch:[',warehouseStart),storeStart=app.indexOf('store:[',dispatchStart);
+ const warehouseNav=app.slice(warehouseStart,dispatchStart),dispatchNav=app.slice(dispatchStart,storeStart);
+ assert.match(warehouseNav,/document-edits/);assert.doesNotMatch(warehouseNav,/transport-resources/);
+ assert.match(dispatchNav,/transport-resources/,'منوی کارتابل ترابری حفظ شود');
+ assert.match(app,/\['incoming','preparing','delivered','document-edits','stores'\]\.includes\(app\.sub\.warehouse\)/);
+ assert.match(ui,/async function whDocumentEditsPaint\(host\)/);assert.match(ui,/api\('\/api\/warehouse\/document-edits'\)/);
+ assert.match(ui,/data-action="warehouse-document-edit"/);assert.match(fs.readFileSync(path.join(root,'lib/routes/document-edits.js'),'utf8'),/roles: \['warehouse', 'admin'\]/);
 });

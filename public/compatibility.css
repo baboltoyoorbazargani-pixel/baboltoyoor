@@ -1252,6 +1252,14 @@
 #appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields label{white-space:nowrap;flex:0 0 auto;margin:0}
 #appView #content .gt-entry-vehicle.is-no-vehicle .gt-entry-vehicle-fields .input-shell{flex:1;min-width:0}
 
+/* Store delivery details show warehouse impurity weighings without exposing return/shortage fields. */
+#modal .st38-weighing-details{display:grid;gap:6px;min-width:220px}
+#modal .st38-weighing-record{display:grid;gap:4px;padding:7px;border:1px solid #e4e9ef;border-radius:8px;background:#f8fafc}
+#modal .st38-weighing-record> b{font-size:10.5px;color:#475467}
+#modal .st38-weighing-round{display:grid;gap:2px;padding:6px;border-radius:6px;background:#fff;font-size:10.5px;line-height:1.6;white-space:normal}
+#modal .st38-weighing-round>b{color:#344054}
+#modal .st38-weighing-legacy,#modal .st38-weighing-missing{color:#667085;font-size:10.5px;white-space:normal}
+
 /* Product price selection for a single-sheet printout. */
 #modal .price-pick{display:grid;gap:10px;min-width:0}
 #modal .price-pick p{margin:0}
