@@ -40,10 +40,47 @@ jobs:
         run: |
           set -euo pipefail
           cd release-assets
-          sha256sum --check SHA256SUMS-1.0.86.txt
-          unzip -t BabolToyor-App-1.0.86.zip >/dev/null
-          unzip -t BabolToyor-Windows-Setup-1.0.86.zip >/dev/null
-          echo "All seven v1.0.86 assets downloaded and verified."
+          {
+            echo '## v1.0.86 asset verification diagnostics'
+            echo
+            echo '### Downloaded file sizes and types'
+            ls -lh
+            file BabolToyor-App-1.0.86.zip BabolToyor-Windows-Setup-1.0.86.zip BabolToyor-Setup-1.0.86.cmd RELEASE-1.0.86-fa.md domain-https-fa.md reports-backup-update-fa.md SHA256SUMS-1.0.86.txt
+            echo
+            echo '### SHA-256 values actually downloaded'
+            sha256sum BabolToyor-App-1.0.86.zip BabolToyor-Windows-Setup-1.0.86.zip BabolToyor-Setup-1.0.86.cmd RELEASE-1.0.86-fa.md domain-https-fa.md reports-backup-update-fa.md
+            echo
+            echo '### Expected SHA-256 manifest'
+            cat SHA256SUMS-1.0.86.txt
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if sha256sum --check SHA256SUMS-1.0.86.txt > /tmp/sha256-check.txt 2>&1; then
+            cat /tmp/sha256-check.txt >> "$GITHUB_STEP_SUMMARY"
+          else
+            result=$?
+            {
+              echo '### Checksum verification failed'
+              cat /tmp/sha256-check.txt
+            } >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/sha256-check.txt
+            exit "$result"
+          fi
+
+          for archive in BabolToyor-App-1.0.86.zip BabolToyor-Windows-Setup-1.0.86.zip; do
+            if unzip -t "$archive" > /tmp/unzip-check.txt 2>&1; then
+              echo "ZIP integrity OK: $archive" >> "$GITHUB_STEP_SUMMARY"
+            else
+              result=$?
+              {
+                echo "### ZIP integrity failed: $archive"
+                cat /tmp/unzip-check.txt
+              } >> "$GITHUB_STEP_SUMMARY"
+              cat /tmp/unzip-check.txt
+              exit "$result"
+            fi
+          done
+          echo 'All seven v1.0.86 assets downloaded and verified.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload assets to the v1.0.86 draft release
         env:
