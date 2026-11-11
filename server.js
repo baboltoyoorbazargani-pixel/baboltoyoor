@@ -55,6 +55,6 @@ server.on('error', fatal);
 
 tlsManager.init(appHandler).then(() => {
   server.listen(config.PORT, config.HOST, () => {
-    log.info('server', 'listening', { host: config.HOST, port: config.PORT, env: config.APP_ENV });
+    log.info('server', 'listening', { host: config.HOST, port: server.address().port, env: config.APP_ENV });
   });
 }).catch(fatal);

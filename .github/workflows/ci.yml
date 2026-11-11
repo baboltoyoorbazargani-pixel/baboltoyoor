@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '22.22.3'
       - run: python3 scripts/update-checksums.py --check
+      - run: npm run check:ui
       - run: npm test
   browser:
     runs-on: ubuntu-latest
