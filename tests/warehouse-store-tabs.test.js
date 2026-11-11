@@ -17,6 +17,9 @@ test('انبار > فروشگاه‌ها: سه سربرگ افقی (با «سو�
   const tabs=ui.slice(ui.indexOf('function wh38StoreTabs'),ui.indexOf('function wh38StoreHeader'));
   assert.deepEqual([...tabs.matchAll(/\['(incoming|preparing|history)','([^']+)'\]/g)].map(x=>x[2]),['ورودی','آماده‌سازی و سرویس‌ها','سوابق و گزارشات']);
   assert.match(tabs,/data-wh38-store-tab="\$\{id\}"/);
+  assert.doesNotMatch(tabs,/wh-store-doc-shortcut|data-wh-store-docs-link/,'دکمهٔ اسناد انبار نباید زیر هیچ‌یک از سه سربرگ تکرار شود');
+  assert.doesNotMatch(ui,/data-wh-store-docs-link/,'مسیر دکمهٔ قدیمی حذف شده باشد');
+  assert.match(ui,/renderWhStoreDocuments\(\);/,'فهرست اسناد در سربرگ سوابق باقی می‌ماند');
   assert.match(ui,/e\.target\.closest\('\[data-wh38-store-tab\]'\)/);
   assert.match(ui,/app\.wh38\.storeTab=\['incoming','preparing','history'\]\.includes\(st\.dataset\.wh38StoreTab\)\?st\.dataset\.wh38StoreTab:'incoming'; wh38Paint\('stores'\)/);
   assert.match(css,/\.wh38-store-tabs\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);

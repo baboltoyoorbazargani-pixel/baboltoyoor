@@ -884,7 +884,7 @@ function wh38IncomingHeader(o){
 function wh38StoreTabs(active,counts){
   // v37.36.0 — سربرگ سوم «سوابق و گزارشات»: سفارش‌های فروشگاهی که کار انبارشان پایان یافته
   const tabs=[['incoming','ورودی'],['preparing','آماده‌سازی و سرویس‌ها'],['history','سوابق و گزارشات']];
-  return `<nav class="wh38-store-tabs" role="tablist" aria-label="بخش‌های فروشگاه در انبار">${tabs.map(([id,label])=>`<button type="button" role="tab" class="wh38-store-tab ${active===id?'active':''}" data-wh38-store-tab="${id}" aria-selected="${active===id}"><span>${label}</span><b>${qty(counts[id]||0)}</b></button>`).join('')}</nav><div class="wh-store-doc-shortcut"><button type="button" class="btn btn-secondary btn-sm" data-wh-store-docs-link>${icon('receipt',14)} اسناد انبار سرویس‌های فروشگاه</button></div>`;
+  return `<nav class="wh38-store-tabs" role="tablist" aria-label="بخش‌های فروشگاه در انبار">${tabs.map(([id,label])=>`<button type="button" role="tab" class="wh38-store-tab ${active===id?'active':''}" data-wh38-store-tab="${id}" aria-selected="${active===id}"><span>${label}</span><b>${qty(counts[id]||0)}</b></button>`).join('')}</nav>`;
 }
 function wh38StoreHeader(o){
   const name=storeAwareOrderName(o);
@@ -1120,8 +1120,10 @@ async function loadWhStoreDocuments(){
   }catch(e){const host=document.querySelector('[data-wh-store-doc-rows]');if(host&&seq===st.seq)host.innerHTML=`<div class="empty">خطا در دریافت اسناد: ${esc(e.message)}</div>`;}
 }
 function whStoreDocument(o,print=false){
-  const shop=esc(o.storeName||'—'),driver=esc(o.driverName||'—'),run=o.run===2?'دوم':'اول';
-  return `<div class="whd-doc whd-store-doc${print?' whd-store-print':''}"><div class="whd-head"><div class="whd-document-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></div><div class="whd-meta whd-store-meta"><span><span class="whd-label">فروشگاه:</span><b>${shop}</b></span><span><span class="whd-label">تحویل‌گیرنده:</span><b>${driver}</b></span><span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo))}</b></span><span><span class="whd-label">تاریخ ثبت سفارش:</span><b>${esc(formatDateTime24(o.createdAt))}</b></span><span><span class="whd-label">${o.storeOrderKind==='PARTIAL'?'نوع سفارش:':'سرویس:'}</span><b>${o.storeOrderKind==='PARTIAL'?'جزئی':run}</b></span></div></div>${whDocumentProducts(o.lines,print)}<section class="whd-acknowledgement"><p class="whd-declaration">اینجانب (${driver}) اقلام فوق را صحیح و سالم از انبار جهت حمل و تحویل به ${shop} دریافت نمودم.</p><div class="whd-signature"><span>امضاء تحویل‌گیرنده</span><b>${driver}</b></div></section></div>`;
+  const fullShopName=String(o.storeName||'—').trim()||'—';
+  const compactShopName=fullShopName.replace(/^فروشگاه(?:\s+|$)/,'').trim()||fullShopName;
+  const shop=esc(fullShopName),shopHeader=esc(compactShopName),driver=esc(o.driverName||'—'),run=o.run===2?'دوم':'اول';
+  return `<div class="whd-doc whd-store-doc${print?' whd-store-print':''}"><div class="whd-head"><div class="whd-document-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></div><div class="whd-meta whd-store-meta"><span><span class="whd-label">نام فروشگاه:</span><b>${shopHeader}</b></span><span><span class="whd-label">تحویل‌گیرنده:</span><b>${driver}</b></span><span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo))}</b></span><span><span class="whd-label">تاریخ ثبت سفارش:</span><b>${esc(formatDateTime24(o.createdAt))}</b></span><span><span class="whd-label">${o.storeOrderKind==='PARTIAL'?'نوع سفارش:':'سرویس:'}</span><b>${o.storeOrderKind==='PARTIAL'?'جزئی':run}</b></span></div></div>${whDocumentProducts(o.lines,print)}<section class="whd-acknowledgement"><p class="whd-declaration">اینجانب (${driver}) اقلام فوق را صحیح و سالم از انبار جهت حمل و تحویل به ${shop} دریافت نمودم.</p><div class="whd-signature"><span>امضاء تحویل‌گیرنده</span><b>${driver}</b></div></section></div>`;
 }
 async function whStoreDocumentDetails(id,run){
   try{const {document:doc}=await api('/api/warehouse/store-documents/'+encodeURIComponent(id)+'/'+run);openModal(doc.storeOrderKind==='PARTIAL'?'سند انبار سفارش جزئی':'سند انبار سرویس '+(run===2?'دوم':'اول'),whStoreDocument(doc)+`<div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button><button type="button" class="btn btn-primary" data-wh-store-print>${icon('receipt',16)} چاپ سند انبار</button>${doc.handoverToken&&whCanRegisterHandover()?'<button type="button" class="btn btn-primary" data-wh-handover>ثبت تحویل و چاپ سند</button>':''}</div>`);$('#modal [data-wh-store-print]').addEventListener('click',()=>whStoreDocumentPrint(id,run));$('#modal [data-wh-handover]')?.addEventListener('click',e=>whTransportHandover(e.currentTarget,id,run,doc.handoverToken));}catch(e){toast(e.message);}
@@ -1167,7 +1169,6 @@ function wh38Shell(phase){
   // Warehouse phases are selected from the role rail; do not render the legacy in-page tab strip too.
   c.innerHTML=`<section class="wh38-shell"><div id="wh38Body"></div></section>`;
   c.onclick=async e=>{
-    if(e.target.closest('[data-wh-store-docs-link]')){app.wh38.storeTab='history';await wh38Paint('stores');document.querySelector('[data-wh-store-documents]')?.scrollIntoView({block:'start'});return;}
     const st=e.target.closest('[data-wh38-store-tab]');
     if(st){ app.wh38.storeTab=['incoming','preparing','history'].includes(st.dataset.wh38StoreTab)?st.dataset.wh38StoreTab:'incoming'; wh38Paint('stores'); return; }
     const t=e.target.closest('[data-wh38-tab]');
