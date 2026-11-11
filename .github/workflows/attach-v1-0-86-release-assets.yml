@@ -6,13 +6,13 @@ on:
       - arena/601bfa76-baboltoyoor
     paths:
       - .github/workflows/attach-v1-0-86-release-assets.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   attach-release-assets:
-    if: github.event.head_commit.message == 'chore: attach v1.0.86 release assets'
     runs-on: ubuntu-latest
     steps:
       - name: Download the verified Google Drive release files
