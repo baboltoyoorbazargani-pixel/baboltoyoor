@@ -2204,8 +2204,19 @@ function storeServicePrintButtons(id,runs,kind,reportLabel=false){
 }
 // Separate sales copy of the warehouse handover document; it does not record handover.
 function storeSalesDocumentButtons(o){
- const sent=new Set(storeAvailableRuns(o));
- return `<div class="store-service-print">${(o.storeOrderKind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش</button>`).join('')}</div>`;
+ const sent=new Set(storeAvailableRuns(o)),payments=Array.isArray(o.payments)?o.payments:[],role=normalizeRole(app.user?.roleCode),runs=o.storeOrderKind==='PARTIAL'?[1]:[1,2];
+ const editState=run=>{const payment=payments.find(row=>Number(row.deliveryRun)===run);return payment?{payment,edit:(o.documentEdits||[]).slice().reverse().find(row=>row.paymentId===payment.id)}:null;};
+ const editActions=runs.map(run=>{
+  const state=editState(run);if(!state||!sent.has(run))return '';
+  if(state.edit?.status==='PENDING_WAREHOUSE')return `<span class="badge orange">اصلاح سرویس ${run===2?'دوم':'اول'} در صف انبار</span>`;
+  const {payment}=state,shipment=run===1?o.storeRunOps?.r1Shipment:o.storeRunOps?.r2Shipment,base=shipment?.sentAt||payment.verifiedAt||payment.createdAt||'',stamp=Date.parse(base),expires=Number.isFinite(stamp)?stamp+72*60*60*1000:NaN,locked=role!=='admin'&&(!Number.isFinite(expires)||serverEpoch()>expires);
+  return `<button type="button" class="btn btn-ghost btn-sm" data-action="sales-warehouse-edit-request" data-id="${esc(o.id)}" data-payment-id="${esc(payment.id)}" ${locked?'disabled title="مهلت ۷۲ ساعته گذشته یا زمان سند ثبت نشده است؛ فقط مدیر مجاز است"':''}>${icon('scale',14)} ${locked?'فقط مدیر: اصلاح وزن':'ارجاع اصلاح وزن/محصول'} · سرویس ${run===2?'دوم':'اول'}</button>`;
+ }).join('');
+ const printActions=runs.map(run=>{
+  const state=editState(run);if(state?.edit?.status==='PENDING_WAREHOUSE')return '';
+  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش</button>`;
+ }).join('');
+ return `<div class="store-service-print">${printActions}${editActions}</div>`;
 }
 function storeSalesReviewButtons(o){
  if(o.transportWorkflow!==1)return '';
@@ -3258,6 +3269,8 @@ async function salesV29ClickHandler(e){
     if(a==='clear-signature'){clearSignature();return;}
     if(a==='invoice')return previewInvoice(el.dataset.id,Number(el.dataset.run)||null);
     if(a==='print-invoice')return printInvoice(el.dataset.id,Number(el.dataset.run)||null);
+    if(a==='sales-invoice-edit')return salesInvoiceEditOpen(el.dataset.id,el.dataset.paymentId);
+    if(a==='sales-warehouse-edit-request')return salesWarehouseEditRequestOpen(el.dataset.id,el.dataset.paymentId);
     if(a==='print-store-service')return printStoreService(el.dataset.id,Number(el.dataset.run));
     if(a==='sales-store-document-print')return printSalesStoreDocument(el.dataset.id,Number(el.dataset.run));
     if(a==='sales-store-review')return salesStoreReview(el.dataset.id,Number(el.dataset.run));
