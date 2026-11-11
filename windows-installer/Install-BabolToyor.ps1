@@ -16,6 +16,8 @@ param(
   [string]$AppZipUrl = 'https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.87/BabolToyor-App-1.0.87.zip',
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
+  [ValidateSet('SYSTEM','LOCAL SERVICE')]
+  [string]$ServiceAccount = 'SYSTEM',
   [switch]$NoAutoStopIis,
   [switch]$AllowStopIis,
   [switch]$SkipNodeInstall,
@@ -112,6 +114,23 @@ function Grant-System([string]$Path) {
     $acl.AddAccessRule($rule)
     Set-Acl -LiteralPath $Path -AclObject $acl
   } catch { Warn ("Could not grant SYSTEM access: " + $_.Exception.Message) }
+}
+
+# Explicit opt-in preserves the identity of existing deployments by default.
+function Grant-ServiceAccess {
+  if ($ServiceAccount -ne 'LOCAL SERVICE') { return }
+  $sid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-19')
+  foreach ($entry in @(@($InstallDir,'ReadAndExecute'), @($DataDir,'Modify'), @($LogDir,'Modify'))) {
+    $acl = Get-Acl -LiteralPath $entry[0]
+    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList @($sid, $entry[1], 'ContainerInherit,ObjectInherit', 'None', 'Allow')
+    $acl.AddAccessRule($rule)
+    Set-Acl -LiteralPath $entry[0] -AclObject $acl
+  }
+  # .env is protected from inheritance, so grant this file explicitly, read only.
+  $acl = Get-Acl -LiteralPath $EnvPath
+  $rule = New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList @($sid, 'Read', 'Allow')
+  $acl.AddAccessRule($rule)
+  Set-Acl -LiteralPath $EnvPath -AclObject $acl
 }
 
 function Refresh-Path {
@@ -469,10 +488,14 @@ function Register-AutoStart {
   try { $settings.ExecutionTimeLimit = 'PT0S' } catch {}
   try { $settings.DisallowStartIfOnBatteries = $false } catch {}
   try { $settings.StopIfGoingOnBatteries = $false } catch {}
-  $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+  if ($ServiceAccount -eq 'LOCAL SERVICE') {
+    $principal = New-ScheduledTaskPrincipal -UserId 'S-1-5-19' -LogonType ServiceAccount -RunLevel Limited
+  } else {
+    $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+  }
   Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description 'Babol Toyor application server (auto-start + auto-restart)' -Force | Out-Null
   Start-ScheduledTask -TaskName $TaskName | Out-Null
-  Ok 'Auto-start task registered and started (runs as SYSTEM at boot).'
+  Ok ('Auto-start task registered and started (account: ' + $ServiceAccount + ').')
 }
 
 function Enable-Firewall {
@@ -611,6 +634,9 @@ function Invoke-Install {
 
   Step 'Creating supervisor ...'
   New-Supervisor $nodeExe
+
+  Step 'Granting service account permissions ...'
+  Grant-ServiceAccess
 
   Step 'Registering automatic startup ...'
   Register-AutoStart
