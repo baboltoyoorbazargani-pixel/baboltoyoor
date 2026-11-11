@@ -1,0 +1,63 @@
+name: Attach BabolToyor 1.0.86 release assets
+
+on:
+  push:
+    branches:
+      - arena/601bfa76-baboltoyoor
+    paths:
+      - .github/workflows/attach-v1-0-86-release-assets.yml
+
+permissions:
+  contents: write
+
+jobs:
+  attach-release-assets:
+    if: github.event.head_commit.message == 'chore: attach v1.0.86 release assets'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the verified Google Drive release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          download() {
+            local name="$1" id="$2"
+            curl --fail --silent --show-error --location \
+              --retry 3 --retry-all-errors --retry-delay 2 \
+              "https://drive.google.com/uc?export=download&id=${id}" \
+              --output "release-assets/${name}"
+          }
+          download BabolToyor-App-1.0.86.zip 176rvP8igqwtYWn0lIGzljwLzt5NEBQGF
+          download BabolToyor-Windows-Setup-1.0.86.zip 1Dx271xGkvvztMVdCNQw1_nAWCs89gt2X
+          download BabolToyor-Setup-1.0.86.cmd 1ojRa8Cev8BUoiqJJSLhavjhc1aJHRari
+          download RELEASE-1.0.86-fa.md 1lMWlvuBRWaRu051acwvTv3vFXQnw1W3W
+          download domain-https-fa.md 1X16psMBYCg4rj1LbEXn9XXDZzvQ2Eb4y
+          download reports-backup-update-fa.md 13gMqZtmADIWgESCXRS85o1eqzrjHboqy
+          download SHA256SUMS-1.0.86.txt 1uKEFAXJbinvtDjuJ2XjNYBHKes-dyi55
+
+      - name: Verify the downloaded package and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum --check SHA256SUMS-1.0.86.txt
+          unzip -t BabolToyor-App-1.0.86.zip >/dev/null
+          unzip -t BabolToyor-Windows-Setup-1.0.86.zip >/dev/null
+          echo "All seven v1.0.86 assets downloaded and verified."
+
+      - name: Upload assets to the v1.0.86 draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload v1.0.86 \
+            release-assets/BabolToyor-App-1.0.86.zip \
+            release-assets/BabolToyor-Windows-Setup-1.0.86.zip \
+            release-assets/BabolToyor-Setup-1.0.86.cmd \
+            release-assets/RELEASE-1.0.86-fa.md \
+            release-assets/domain-https-fa.md \
+            release-assets/reports-backup-update-fa.md \
+            release-assets/SHA256SUMS-1.0.86.txt \
+            --clobber --repo "$GITHUB_REPOSITORY"
+          gh release view v1.0.86 --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'
