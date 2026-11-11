@@ -679,7 +679,9 @@ async function renderBackupsPage() {
         <label class="auto-backup-toggle"><input type="checkbox" name="enabled" ${schedule.enabled?'checked':''}> فعال‌سازی پشتیبان خودکار</label>
         <label class="cust-field"><span>مسیر پوشه روی سرور</span><input name="directory" dir="ltr" maxlength="1024" value="${admE(schedule.directory||'')}" placeholder="D:&#92;BabolToyor-Backups" autocomplete="off"></label>
         <p>مسیر مربوط به سرور است، نه رایانهٔ شما. حساب سرویس برنامه باید مجوز نوشتن در آن را داشته باشد و پوشه از پیوند امن فایل پشتیبانی کند (مانند NTFS). با فعال‌سازی، یک پشتیبان فوراً و سپس هر ساعت هنگام روشن‌بودن سرور ساخته می‌شود.</p>
-        <p>پشتیبان‌ها خودکار حذف نمی‌شوند؛ فضای دیسک را کنترل کنید. این فایل شامل کلید گواهی HTTPS نیست. مسیر امن با دسترسی محدود انتخاب کنید و نسخه‌ای جدا از سرور نگه دارید.</p>
+        <label class="cust-field"><span>نگهداری بر حسب روز (۰ = بدون حذف زمانی)</span><input type="number" name="retentionDays" min="0" max="3650" value="${Number(schedule.retentionDays)||0}"></label>
+        <label class="cust-field"><span>حداکثر تعداد نسخهٔ خودکار (۰ = نامحدود)</span><input type="number" name="maxSnapshots" min="0" max="100000" value="${Number(schedule.maxSnapshots)||0}"></label>
+        <p>حذف خودکار فقط با تنظیم محدودیت فعال می‌شود؛ آخرین نسخهٔ موفق و بکاپ‌های دستی حذف نمی‌شوند. فضای دیسک را کنترل کنید. این فایل شامل کلید گواهی HTTPS نیست. مسیر امن با دسترسی محدود انتخاب کنید و نسخه‌ای جدا از سرور نگه دارید.</p>
         <button class="btn btn-primary" type="submit">ذخیره تنظیمات</button>
         <div class="auto-backup-status" role="status"><strong>وضعیت: ${schedule.enabled?'فعال':'غیرفعال'}</strong><span>آخرین پشتیبان موفق: ${schedule.lastSuccessAt?admE(dt(schedule.lastSuccessAt)):'هنوز ساخته نشده'}</span>${schedule.lastBackup?`<span>فایل: <b dir="ltr">${admE(schedule.lastBackup)}</b></span>`:''}${schedule.enabled&&schedule.nextRunAt?`<span>نوبت بعدی${schedule.lastError?' (تلاش مجدد)':''}: ${admE(dt(schedule.nextRunAt))}</span>`:''}${schedule.lastError?`<span class="auto-backup-error">${admE(schedule.lastError)}</span>`:''}</div>
         <div id="auto-backup-message" role="alert"></div>
@@ -700,7 +702,7 @@ async function renderBackupsPage() {
     e.preventDefault(); const form=e.currentTarget, button=form.querySelector('button[type=submit]'), message=$('#auto-backup-message');
     button.disabled=true; message.textContent='در حال ذخیره و بررسی مسیر…';
     try {
-      const result=await api('/api/admin/backups/schedule',{method:'PUT',body:JSON.stringify({enabled:form.elements.enabled.checked,directory:form.elements.directory.value})});
+      const result=await api('/api/admin/backups/schedule',{method:'PUT',body:JSON.stringify({enabled:form.elements.enabled.checked,directory:form.elements.directory.value,retentionDays:Number(form.elements.retentionDays.value),maxSnapshots:Number(form.elements.maxSnapshots.value)})});
       await renderBackupsPage();
       if(result.schedule.lastError) $('#auto-backup-message').textContent=result.schedule.lastError;
       else toast('تنظیمات پشتیبان خودکار ذخیره شد.');

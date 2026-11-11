@@ -17,6 +17,7 @@ param(
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
   [switch]$NoAutoStopIis,
+  [switch]$AllowStopIis,
   [switch]$SkipNodeInstall,
   [switch]$PurgeData
 )
@@ -141,7 +142,7 @@ function Resolve-Port {
   Warn ("Port $Port is already in use by PID(s): " + ($owners -join ', '))
   if ($owners -contains 4) {
     Warn 'PID 4 = HTTP.sys / IIS.'
-    if ($NoAutoStopIis) { Fail "Port $Port is held by IIS. Stop it manually or re-run with -Port <other>." }
+    if ($NoAutoStopIis -or -not $AllowStopIis) { Fail "Port $Port is held by IIS. Use another port, stop IIS manually, or explicitly allow changes with -AllowStopIis." }
     $handled = $false
     try {
       Import-Module WebAdministration -ErrorAction Stop
@@ -495,13 +496,15 @@ function New-Shortcuts {
 }
 
 function Wait-Health {
-  $url = (Get-AppUrl).Replace('localhost','127.0.0.1') + 'api/server-time'
+  $url = (Get-AppUrl).Replace('localhost','127.0.0.1') + 'api/health'
   for ($i = 0; $i -lt 30; $i++) {
     try {
       $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3
-      if ($r.StatusCode -eq 200) { return $true }
+      if ($r.StatusCode -eq 200) {
+        $health = $r.Content | ConvertFrom-Json
+        if ($health.service -eq 'baboltoyoor' -and $health.status -eq 'ok') { return $true }
+      }
     } catch {}
-    if (Test-Tcp '127.0.0.1' $Port) { return $true }
     Start-Sleep -Seconds 2
   }
   return $false
@@ -686,7 +689,7 @@ function Invoke-Status {
   Write-Host ("Install dir : " + $InstallDir)
   if (Test-Path -LiteralPath $InfoPath) { Write-Host ("Info file   : " + $InfoPath) }
   try {
-    $url = (Get-AppUrl).Replace('localhost','127.0.0.1') + 'api/server-time'
+    $url = (Get-AppUrl).Replace('localhost','127.0.0.1') + 'api/health'
     $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 4
     Write-Host ("Health      : HTTP " + $r.StatusCode + ' OK') -ForegroundColor Green
   } catch { Write-Host 'Health      : NOT RESPONDING' -ForegroundColor Red }

@@ -32,19 +32,29 @@ const timers = [
 ];
 timers.forEach((t) => t.unref());
 
-function shutdown(signal) {
+let stopping = false;
+function shutdown(signal, exitCode = 0) {
+  if (stopping) return;
+  stopping = true;
   log.info('server', 'shutting down', { signal });
   timers.forEach(clearInterval);
   tlsManager.close();
-  server.close(() => { release(); process.exit(0); });
-  setTimeout(() => process.exit(0), 5000).unref();
+  server.close(() => { store.sql.close(); release(); process.exit(exitCode); });
+  server.closeIdleConnections();
+  setTimeout(() => { release(); process.exit(exitCode); }, 5000).unref();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('uncaughtException', (e) => { log.error('process', 'uncaught exception', { error: e.message, stack: e.stack }); });
+function fatal(e) {
+  log.error('process', 'fatal error', { error: e?.message || String(e), stack: e?.stack });
+  shutdown('fatal', 1);
+}
+process.on('uncaughtException', fatal);
+process.on('unhandledRejection', fatal);
+server.on('error', fatal);
 
 tlsManager.init(appHandler).then(() => {
   server.listen(config.PORT, config.HOST, () => {
     log.info('server', 'listening', { host: config.HOST, port: config.PORT, env: config.APP_ENV });
   });
-});
+}).catch(fatal);

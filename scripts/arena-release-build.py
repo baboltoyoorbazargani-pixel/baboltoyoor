@@ -57,7 +57,13 @@ def main() -> None:
             raise SystemExit(f"Tracked release source is missing: {name}")
 
     app = output / f"BabolToyor-App-{version}.zip"
-    make_zip(app, [(name, source / name) for name in files])
+    # The ZIP deliberately excludes CI tooling. Its manifest must describe the ZIP,
+    # not the larger Git checkout, otherwise sha256sum fails after extraction.
+    archive_manifest = "".join(
+        f"{hashlib.sha256((source / name).read_bytes()).hexdigest()}  ./{name}\n"
+        for name in files if name != "SHA256SUMS.txt"
+    ).encode("ascii")
+    make_zip(app, [(name, archive_manifest if name == "SHA256SUMS.txt" else source / name) for name in files])
 
     setup_cmd = output / f"BabolToyor-Setup-{version}.cmd"
     shutil.copyfile(source / "windows-installer" / "BabolToyor-Setup.cmd", setup_cmd)
