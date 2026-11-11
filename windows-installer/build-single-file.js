@@ -13,6 +13,7 @@ const path = require('node:path');
 const DIR = __dirname;
 const SOURCE = path.join(DIR, 'Install-BabolToyor.ps1');
 const TARGET = path.join(DIR, 'BabolToyor-Setup.cmd');
+const RELEASE_VERSION = fs.readFileSync(path.join(DIR, '..', 'RELEASE_VERSION.txt'), 'utf8').trim();
 
 const sourceBytes = fs.readFileSync(SOURCE);
 if (!sourceBytes.slice(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
@@ -26,7 +27,7 @@ const payload = chunks.map((c) => `echo(${c}`).join('\n');
 
 const template = `@echo off
 setlocal EnableExtensions DisableDelayedExpansion
-title Babol Toyor Setup - Windows Server 2025
+title Babol Toyor ${RELEASE_VERSION} Setup - Windows Server 2025
 chcp 65001 >nul 2>&1
 
 rem ===== 1. Require administrator (port 80, firewall and scheduled task) =====
