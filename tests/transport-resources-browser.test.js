@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 const executablePath=process.env.BT_CHROMIUM_PATH;
-test('مدیریت منابع در ترابری؛ منوی فروش حذف و مشاهده انبار حفظ می‌شود',{skip:!executablePath,timeout:90000},async()=>{
+test('مدیریت منابع در ترابری؛ منوی ترابری حفظ و از فروش و انبار حذف است',{skip:!executablePath,timeout:90000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(r=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-transport-res-')),base=`http://127.0.0.1:${port}`;
  const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});let browser;
@@ -24,7 +24,7 @@ test('مدیریت منابع در ترابری؛ منوی فروش حذف و م
   await page.reload({waitUntil:'networkidle'});await page.locator('#railNav [data-cartable=transport-fleet]').click();await page.getByText(/پوز پخش/).waitFor();
   const users=await (await admin.request.get(base+'/api/admin/users')).json();assert(!users.users.some(u=>u.roleCode==='driver'));
   const sp=await sales.newPage({viewport:{width:320,height:900}});await sp.goto(base+'/',{waitUntil:'networkidle'});assert.equal(await sp.locator('#railNav [data-cartable=transport-resources]').count(),0);assert.equal((await sp.locator('#railNav [data-cartable=delivery] .nav-label').innerText()).trim(),'پخش');await sp.close();
-  const p=await wh.newPage({viewport:{width:320,height:900}});await p.goto(base+'/',{waitUntil:'networkidle'});await p.locator('#railNav [data-cartable=transport-resources]').click();await p.getByText('راننده مستقل').waitFor();assert.match(await p.locator('.trc-page').innerText(),/وانت/);assert.equal(await p.locator('[data-trc]').count(),0);const size=await p.locator('.trc-page').evaluate(e=>({scroll:e.scrollWidth,client:e.clientWidth}));assert(size.scroll<=size.client+1,JSON.stringify(size));await p.close();
+  const p=await wh.newPage({viewport:{width:320,height:900}});await p.goto(base+'/',{waitUntil:'networkidle'});assert.equal(await p.locator('#railNav [data-cartable=transport-resources]').count(),0,'گزینهٔ رانندگان و خودروها نباید در منوی انبار باشد');await p.close();
   const listing=await (await transport.request.get(base+'/api/transport/resources')).json();assert.equal(listing.drivers.length,1);assert.equal(listing.vehicles[0].id,vehicle.id);assert.equal((await transport.request.put(base+'/api/transport/drivers/'+listing.drivers[0].id,{data:{isActive:'false'}})).status(),400);
   assert.deepEqual(errors,[]);
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
