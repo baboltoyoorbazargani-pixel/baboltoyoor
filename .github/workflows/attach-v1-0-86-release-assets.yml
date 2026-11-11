@@ -21,11 +21,29 @@ jobs:
           set -euo pipefail
           mkdir -p release-assets
           download() {
-            local name="$1" id="$2"
-            curl --fail --silent --show-error --location \
-              --retry 3 --retry-all-errors --retry-delay 2 \
-              "https://drive.google.com/uc?export=download&id=${id}" \
-              --output "release-assets/${name}"
+            local name="$1" id="$2" target tmp mime url
+            target="release-assets/${name}"
+            tmp="${target}.part"
+            for url in \
+              "https://drive.usercontent.google.com/download?id=${id}&export=download&authuser=0&confirm=t" \
+              "https://drive.google.com/uc?id=${id}&export=download"; do
+              if curl --fail --silent --show-error --location \
+                --connect-timeout 15 --max-time 120 \
+                --retry 2 --retry-all-errors --retry-delay 2 \
+                --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36' \
+                "$url" --output "$tmp"; then
+                mime="$(file --brief --mime-type "$tmp")"
+                if [[ "$mime" != text/html ]]; then
+                  mv "$tmp" "$target"
+                  echo "Downloaded ${name}: ${mime}, $(wc -c < "$target") bytes"
+                  return 0
+                fi
+                echo "::warning title=Google Drive returned HTML::${name} was not served as a file by ${url}"
+              fi
+              rm -f "$tmp"
+            done
+            echo "::error title=Google Drive download failed::${name} could not be fetched as a file from either Drive download URL"
+            return 1
           }
           download BabolToyor-App-1.0.86.zip 176rvP8igqwtYWn0lIGzljwLzt5NEBQGF
           download BabolToyor-Windows-Setup-1.0.86.zip 1Dx271xGkvvztMVdCNQw1_nAWCs89gt2X
@@ -64,6 +82,8 @@ jobs:
               cat /tmp/sha256-check.txt
             } >> "$GITHUB_STEP_SUMMARY"
             cat /tmp/sha256-check.txt
+            diagnostic="$(tr '\n' ';' < /tmp/sha256-check.txt | cut -c1-400)"
+            echo "::error title=Checksum verification failed::${diagnostic}"
             exit "$result"
           fi
 
@@ -77,6 +97,8 @@ jobs:
                 cat /tmp/unzip-check.txt
               } >> "$GITHUB_STEP_SUMMARY"
               cat /tmp/unzip-check.txt
+              diagnostic="$(tr '\n' ';' < /tmp/unzip-check.txt | cut -c1-400)"
+              echo "::error title=ZIP integrity failed::${archive}: ${diagnostic}"
               exit "$result"
             fi
           done
