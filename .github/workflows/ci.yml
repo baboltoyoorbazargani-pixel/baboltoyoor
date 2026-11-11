@@ -1,0 +1,50 @@
+name: Quality checks
+on:
+  pull_request:
+  push:
+    branches: [main, 'arena/**']
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+      - run: python3 scripts/update-checksums.py --check
+      - run: npm test
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+      - run: npm install --no-save --package-lock=false playwright-core@1.56.1
+      - name: Require browser and run browser regressions
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome)"
+          test -x "$CHROME"
+          BT_CHROMIUM_PATH="$CHROME" node --test --test-concurrency=2 tests/*browser*.test.js
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+      - run: node --test tests/windows-installer.test.js tests/release-version.test.js
+      - name: Parse installer with Windows PowerShell
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'windows-installer/Install-BabolToyor.ps1'), [ref]$tokens, [ref]$errors)
+          if ($errors.Count) { $errors | Format-List; exit 1 }

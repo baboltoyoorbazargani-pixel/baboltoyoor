@@ -218,11 +218,11 @@ test('VACUUM INTO produces a standalone readable backup file', () => {
   assert.equal(JSON.parse(check.stdout.split('RESULT:')[1]).n, 1);
 });
 
-test('zero external dependencies: built-in node:sqlite, engines >= 22.5', () => {
+test('zero external dependencies: built-in node:sqlite, engines >= 22.13', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.equal(pkg.dependencies, undefined);
   assert.equal(pkg.devDependencies, undefined);
-  assert.match(pkg.engines.node, /^>=22\.5/);
+  assert.match(pkg.engines.node, /^>=22\.13/);
   const src = fs.readFileSync(path.join(root, 'lib', 'sqlite-store.js'), 'utf8');
   assert.match(src, /require\('node:sqlite'\)/);
   assert.doesNotMatch(src, /require\(['"](sqlite3|better-sqlite3|mysql|pg|mssql)['"]\)/);
