@@ -31,7 +31,7 @@
 
 | ✔ | کار | کجا / چه چیزی |
 |---|---|---|
-| ☐ | ۱. دانلود بستهٔ نصب | [`BabolToyor-Windows-Setup-1.0.85.zip`](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.85/BabolToyor-Windows-Setup-1.0.85.zip) |
+| ☐ | ۱. دانلود بستهٔ نصب | [`BabolToyor-Windows-Setup-1.0.86.zip`](https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na) |
 | ☐ | ۲. (فقط سرور بدون اینترنت) دانلود Node پورتابل | `node-v22.x.x-win-x64.zip` از [nodejs.org/dist](https://nodejs.org/dist/) |
 | ☐ | ۳. کپی فایلها در پوشهای مثل `C:\BabolToyor-Install` | همان ۳ فایل کنار هم |
 | ☐ | ۴. راستکلیک روی ZIP → **Extract All** | پوشهٔ استخراجشده |
@@ -62,17 +62,17 @@
 
 کافی است **همین یک فایل** را دانلود کنید:
 
-| فایل | لینک مستقیم | اندازه |
+| فایل | پوشهٔ دانلود | اندازه |
 |---|---|---|
-| **`BabolToyor-Windows-Setup-1.0.85.zip`** | [دانلود از صفحهٔ ریلیز](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.85/BabolToyor-Windows-Setup-1.0.85.zip) | حدود ۳٫۸ مگابایت |
+| **`BabolToyor-Windows-Setup-1.0.86.zip`** | [بازکردن پوشهٔ انتشار در Google Drive](https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na) | حدود ۳٫۳ مگابایت |
 
-صفحهٔ کامل ریلیز (اگر خواستید لیست فایلها را ببینید):
-<https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/tag/v1.0.85>
+پوشهٔ انتشار Google Drive (فهرست فایل‌های نسخه):
+<https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na>
 
 > در این حالت، نصبکننده خودش Node.js را از `winget` یا سایت رسمی `nodejs.org` میگیرد و **چکسام SHA-256 اش را بررسی میکند**. شما هیچ کاری نمیکنید.
 
-**اگر فقط همان یک فایل `.cmd` را میخواهید** (بدون بستهٔ آفلاین)، این را بگیرید؛ ولی حتماً اینترنت لازم دارد چون باید برنامه و Node را دانلود کند:
-<https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.85/BabolToyor-Setup-1.0.85.cmd>
+**اگر فقط همان یک فایل `BabolToyor-Setup-1.0.86.cmd` را میخواهید** (بدون بستهٔ آفلاین)، آن را از پوشهٔ Google Drive بگیرید؛ ولی حتماً اینترنت لازم دارد چون باید برنامه و Node را دانلود کند:
+<https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na>
 
 ### حالت ب — سرور کاملاً آفلاین است (هیچ اینترنتی ندارد)
 
@@ -94,7 +94,7 @@
 
 1. روی ویندوز سرور، یک پوشهٔ ساده بسازید:
    `C:\BabolToyor-Install`
-2. فایل `BabolToyor-Windows-Setup-1.0.85.zip` را از کامپیوتر خودتان (فلش، شبکه، RDP، Share، ...) به این پوشه کپی کنید.
+2. فایل `BabolToyor-Windows-Setup-1.0.86.zip` را از کامپیوتر خودتان (فلش، شبکه، RDP، Share، ...) به این پوشه کپی کنید.
 3. **(فقط حالت ب)** فایل `node-v22.x.x-win-x64.zip` را هم به همان پوشه کپی کنید.
 
 > اگر فایل از اینترنت دانلود شده و ویندوز هشدار داد: روی فایل راستکلیک → **Properties** → تیک **Unblock** پایین پنجره → **OK**.
@@ -103,7 +103,7 @@
 
 ## گام ۳ — استخراج ZIP
 
-1. روی `BabolToyor-Windows-Setup-1.0.85.zip` **راستکلیک** کنید.
+1. روی `BabolToyor-Windows-Setup-1.0.86.zip` **راستکلیک** کنید.
 2. **Extract All...** را بزنید.
 3. محل استخراج را همان `C:\BabolToyor-Install` نگه دارید (یا پوشهای که ساختید) → **Extract**.
 
@@ -347,9 +347,9 @@ node scripts\backup-db.js D:\Backup\baboltoyoor.db
 
 | مورد | لینک |
 |---|---|
-| صفحهٔ ریلیز (همهٔ فایلها) | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/tag/v1.0.85> |
-| بستهٔ آفلاین نصب (پیشنهادی) | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.85/BabolToyor-Windows-Setup-1.0.85.zip> |
-| فقط نصبکنندهٔ تکفایل | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.85/BabolToyor-Setup-1.0.85.cmd> |
+| پوشهٔ انتشار Google Drive | <https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na> |
+| بستهٔ آفلاین نصب (پیشنهادی) | <https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na> |
+| فقط نصبکنندهٔ تکفایل | <https://drive.google.com/drive/folders/1CPBXD_q7BbJNaR8uWk21VpP66MYgh8na> |
 | Node.js (فقط اگر خواستید دستی نصب کنید) | <https://nodejs.org/en/download> — LTS، Windows x64 |
 | فایل پورتابل Node برای سرور آفلاین | <https://nodejs.org/dist/> → `v22.x.x/` → `node-v22.x.x-win-x64.zip` |
 | ابزار اختیاری SQLite (نیازی نیست) | <https://www.sqlite.org/download.html> |
