@@ -1,3 +1,4 @@
+963afa36650ff6495bb02721710773ea5c5abdd2fe69571615e227a0d6853fd8  ./.github/workflows/release-v1-0-87.yml
 18423e2da142ae4a05f3dad4d0903ba89a14abcd6a5fc7c9f69c0809d13798e1  ./.gitignore
 7e12831f79f168c87a1c885fd3b23f00ba86361bfdef1e9ef306d9ca8417d090  ./CHANGELOG.md
 cf5db6b7c699488e4f4fbb243af67205f640173bce553f01a8d9d20414eff31b  ./NOTICE.txt
@@ -215,6 +216,7 @@ e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/trans
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
 ee4872be68f7c9f81870ff64c2350bdd99ab23050443b46bf6288ba938f6c25c  ./public/ui2.js
 a59e5ff6210ec059673b9e4efe6b509b5b5d57a163fca4b8d2b0fb719ecad6ff  ./public/warehouse-document.css
+9c6ba0ee4fcff27b6c7bce7ba4b4d71deafa705c404b280c45301378e4c5e897  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
 d68380d28269be8aaaa429f076099733412d2cbaad6513520b4f03f280bcebb3  ./scripts/sql-query.js
 41507379edbba1fb931cde84f678ffaf9d73507865a679bbfcb72ffd360a457f  ./scripts/start-hidden.ps1
