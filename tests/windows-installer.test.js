@@ -209,7 +209,8 @@ test('step-by-step guide exists, answers the SQLite question and gives exact dow
     assert.match(doc, /Run as administrator/);
     assert.match(doc, /INSTALL-INFO\.txt/);
     assert.match(doc, /http:\/\/localhost/);
-    assert.match(doc, /BabolToyor-Windows-Setup\.zip/);
+    const releaseVersion = fs.readFileSync(path.join(root, 'RELEASE_VERSION.txt'), 'utf8').trim();
+    assert.ok(doc.includes(`BabolToyor-Windows-Setup-${releaseVersion}.zip`));
   }
   assert.match(html, /dir="rtl"/);
   assert.match(html, /lang="fa"/);
