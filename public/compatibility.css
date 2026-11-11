@@ -972,6 +972,22 @@
 #modal .dsp-detail-head .dsp-head-cell{display:flex;flex-direction:row;align-items:center;gap:6px;min-width:max-content;min-height:0;padding:6px 9px}
 #modal .dsp-detail-head .dsp-head-cell>*{white-space:nowrap}
 #modal .store-shipment-meta{display:flex;align-items:center;gap:12px;overflow-x:auto;white-space:nowrap;padding:6px 0 10px}
+/* The delivered detail is rendered inside #modal, outside #appView #content.
+   Mirror its card layout here so adjacent summary spans never collapse together. */
+#modal .st38-delivered-details{box-sizing:border-box;width:100%;min-width:0;padding:15px;border:1px solid var(--bt-line-2,#dce4eb);border-radius:14px;background:#fff;box-shadow:0 5px 18px rgba(22,38,52,.04)}
+#modal .st38-delivered-details>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0;padding-bottom:11px;border-bottom:1px solid var(--bt-line-2,#e4ebf0)}
+#modal .st38-delivered-details>header>div{min-width:0}
+#modal .st38-delivered-details>header .st-run-chip{margin-inline-start:8px}
+#modal .st38-delivered-details>header .badge{flex:0 1 auto;max-width:100%;white-space:normal;text-align:center}
+#modal .st38-delivered-details h3{margin:4px 0 1px;font-size:15px}
+#modal .st38-delivered-details>header p{margin:3px 0 0;color:var(--bt-muted,#718393);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+#modal .st38-delivered-details .st38-delivered-summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:9px 20px;min-width:0;padding:11px 12px;border-radius:9px;background:#f2f7f9;font-size:12px}
+#modal .st38-delivered-details .st38-delivered-summary>span{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px;min-width:0;max-width:100%;overflow-wrap:anywhere}
+#modal .st38-delivered-details .st38-delivered-summary>span b{color:var(--bt-ink,#263746);overflow-wrap:anywhere}
+#modal .st38-delivered-details>footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--bt-line-2,#dce4eb)}
+#modal .st38-delivered-details>footer>.subtle{flex:1 1 260px;min-width:0;line-height:1.7}
+#modal .st38-delivered-details>footer>.btn{flex:0 1 auto;max-width:100%;white-space:normal}
+@media(max-width:700px){#modal .st38-delivered-details>header{flex-direction:column}#modal .st38-delivered-details>footer{align-items:stretch}#modal .st38-delivered-details>footer>.btn{width:100%;justify-content:center}}
 #modal .st38-delivered-items.table-wrap{display:block;overflow-x:auto;max-width:100%;margin:12px 0}
 #modal .store-shipment-table{min-width:620px;width:100%;border-collapse:collapse}
 #modal .store-shipment-table th,#modal .store-shipment-table td{padding:8px;border:1px solid #dce4eb;text-align:right;vertical-align:middle}

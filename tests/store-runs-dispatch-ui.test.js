@@ -55,7 +55,11 @@ test('کارت تحویل فروشگاه: هر محموله چیپ سرویس و
  const row2=c.st38DeliveredRow(views[1]);assert(row2.includes('data-action="store-delivery-details"'));assert(row2.includes('data-run="2"'));
  const html2=c.st38DeliveredDetails(views[1]);
  assert(html2.includes('محمولهٔ سرویس دوم'));
+ assert(html2.includes('class="st38-delivered-card st38-delivered-details"'),'کارت جزئیات کلاس ویژهٔ مودال دارد');
  assert(html2.includes('data-run="2"'),'بدنهٔ تأیید با run ارسال می‌شود');
+ assert.match(css,/#modal \.st38-delivered-details>header \.st-run-chip\{margin-inline-start:8px\}/,'شماره سفارش و چیپ سرویس در سربرگ مودال باید از هم فاصله داشته باشند');
+ assert.match(css,/#modal \.st38-delivered-details \.st38-delivered-summary\{[^}]*display:flex[^}]*gap:9px 20px/,'جمع وزن و شماره سند داخل مودال باید فاصلهٔ مستقل داشته باشند');
+ assert.match(css,/#modal \.st38-delivered-details>footer\{[^}]*display:flex[^}]*gap:12px/,'یادداشت و دکمهٔ پایین جزئیات داخل مودال باید فاصلهٔ مستقل داشته باشند');
  const html1=c.st38DeliveredDetails(views[0]);
  assert(html1.includes('تأیید شما:'),'محمولهٔ تأییدشده مهر می‌خورد');
  assert(!html1.includes('data-action="store-confirm-delivery"'),'دوباره دکمهٔ تأیید ندارد');
