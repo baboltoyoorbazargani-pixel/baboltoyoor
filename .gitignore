@@ -15,3 +15,7 @@ data-preview/
 *.db-wal
 *.db-shm
 *.db-journal
+
+# Encrypted backup exports and interrupted private publications
+*.bte
+.bt-encrypted-*.partial
