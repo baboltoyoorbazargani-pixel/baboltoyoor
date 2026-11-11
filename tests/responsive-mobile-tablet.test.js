@@ -39,9 +39,9 @@ test('modals, submit bars and cards fit small viewports safely',()=>{
   assert.match(css,/-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain/);
 });
 
-test('assets are cache-busted for 37.43.0',()=>{
-  assert.match(html,/theme\.css\?v=37\.43\.0/);
-  assert.match(html,/compatibility\.css\?v=37\.43\.0/);
-  assert.match(html,/app\.js\?v=37\.43\.0/);
-  assert.match(html,/dispatch-ui\.js\?v=37\.43\.0/);
+test('assets are cache-busted for 37.44.0',()=>{
+  assert.match(html,/theme\.css\?v=37\.44\.0/);
+  assert.match(html,/compatibility\.css\?v=37\.44\.0/);
+  assert.match(html,/app\.js\?v=37\.44\.0/);
+  assert.match(html,/dispatch-ui\.js\?v=37\.44\.0/);
 });

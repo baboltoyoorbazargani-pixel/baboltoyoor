@@ -61,6 +61,16 @@ test('کارت تحویل فروشگاه: هر محموله چیپ سرویس و
  assert(!html1.includes('data-action="store-confirm-delivery"'),'دوباره دکمهٔ تأیید ندارد');
 });
 
+test('جزئیات تحویل فروشگاه ناخالصی‌های توزین همان سرویس را جایگزین مرجوعی، کسری و علت می‌کند',()=>{
+ const c=ctx('st38WeighingDetailsHtml','st38DeliveredDetails');
+ const html=c.st38DeliveredDetails({orderType:'STORE',storeOrderKind:'BULK',orderNo:'0007',storeName:'فروشگاه تست',items:[{id:'i1',runR1:[{kg:2.9,at:'2026-10-27T09:00:00Z',weighings:[{grossKg:5,basket18:1,basket25:0,box300:1,box600:0,rackKg:0,cartKg:0,tareKg:2.1,netKg:2.9}]}]}],dispatch:{run:1,status:'DELIVERED',deliveredAt:'2026-10-27T09:00:00Z',driverName:'راننده',lines:[{itemId:'i1',productName:'مرغ',deliveredKg:2.9,returnKg:1,shortageKg:0.5,netKg:1.4,reason:'ثبت قدیمی'}]}});
+ assert(html.includes('ناخالصی‌های ثبت‌شده در توزین انبار'));
+ assert(html.includes('سبد ۱٫۸ کیلوگرمی'));assert(html.includes('کارتن ۳۰۰ گرمی'));assert(html.includes('کسر کل'));assert(html.includes('ثبت وزن'));
+ assert(!html.includes('مرجوعی'));assert(!html.includes('کسری'));assert(!html.includes('علت'));
+ const corrected=c.st38WeighingDetailsHtml({runR1:[{weighings:[{grossKg:5,basket18:1,tareKg:1.8,netKg:3.2}]}]},1,{weighings:null,missingWeighings:true});
+ assert.match(corrected,/وزن سند اصلاح شده است/);assert.doesNotMatch(corrected,/سبد ۱٫۸/,'توزین قدیمی نباید بعد از اصلاح وزن به‌عنوان توزین جدید نمایش داده شود');
+});
+
 test('جمع‌بندی محموله‌ها در جزئیات سفارش هر دو سرویس را نشان می‌دهد',()=>{
  const c=ctx('st38RunSummaryHtml');
  assert.strictEqual(c.st38RunSummaryHtml({}),'');

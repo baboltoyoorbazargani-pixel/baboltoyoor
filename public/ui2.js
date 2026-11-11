@@ -521,7 +521,8 @@ async function warehouseDocumentEditOpen(orderId,paymentId){
     closeModal();toast(data.orderType==='STORE'?'اصلاح سند فروشگاه ثبت شد و سابقهٔ تغییر حفظ شد.':'اصلاح ثبت شد؛ فاکتور برای بازبینی فروش برگشت. دریافت‌های واقعی، تحویل و خروج حفظ شدند؛ هیچ وجهی جابه‌جا نشد.');
     await refreshIndicators();
     if(app.page==='warehouse'){
-     if(data.orderType==='STORE')loadWhStoreDocuments();
+     if(app.wh38.phase==='document-edits')void whDocumentEditsPaint($('#wh38Body'));
+     else if(data.orderType==='STORE')loadWhStoreDocuments();
      else if(app.wh38.phase==='delivered')whDeliveredLoad();
      else if(app.wh38.phase==='history')loadWhStoreHistory();
     }
@@ -1152,6 +1153,7 @@ async function wh38Paint(phase){
   const host=$('#wh38Body'); if(!host||host.dataset.sheet==='1')return;
   try{
     if(phase==='delivered'){ await whDeliveredPaint(host); return; }
+    if(phase==='document-edits'){ await whDocumentEditsPaint(host); return; }
     if(phase==='stores'){ // v37.9.0 — فروشگاه‌های انبار: سربرگ افقی، فرم/فهرست عمودی زیر آن
       const active=['incoming','preparing','history'].includes(app.wh38.storeTab)?app.wh38.storeTab:'incoming'; app.wh38.storeTab=active;
       if(active==='history'&&host.querySelector('[data-wh38-store-history]')) return; // v37.36.0 — فیلترهای سوابق با تازه‌سازی خودکار ۷ ثانیه‌ای به‌هم نمی‌ریزد
@@ -1204,6 +1206,22 @@ function whDocumentEditQueueRow(request){
  const managerOnly=whDocumentEditExpired(request)&&normalizeRole(app.user?.roleCode)!=='admin';
  const number=request.warehouseDocumentNo||request.invoiceNumber||'—',run=request.run?` · سرویس ${request.run===2?'دوم':'اول'}`:'';
  return `<article class="wh-document-edit-row"><div><strong>${esc(request.customerName||'—')} · ${esc(fa(request.orderNo||'—'))}</strong><small>سند ${esc(fa(number))}${run} · ارجاع ${esc(formatDateTime24(request.requestedAt))}${request.expiresAt?` · مهلت ${esc(formatDateTime24(request.expiresAt))}`:''}</small><span>${esc(request.reason||'اصلاح وزن یا محصول')}</span>${managerOnly?'<em>مهلت گذشته؛ فقط مدیر مجاز به اصلاح است</em>':''}</div><button type="button" class="btn btn-primary btn-sm" data-action="warehouse-document-edit" data-id="${esc(request.orderId)}" data-payment-id="${esc(request.paymentId)}" ${managerOnly?'disabled title="پس از ۷۲ ساعت فقط مدیر سیستم می‌تواند اصلاح کند"':''}>${icon('scale',14)} ${managerOnly?'فقط مدیر':'اصلاح سند'}</button></article>`;
+}
+app.whDocumentEdits=app.whDocumentEdits||{seq:0};
+async function whDocumentEditsPaint(host){
+ if(!host)return;
+ if(!host.querySelector('[data-wh-document-edits]'))host.innerHTML=`<section class="wh-delivered" data-wh-document-edits><div class="wh-delivered-heading"><div><h2>درخواست‌های اصلاح سند</h2><p>فقط اسنادی که از مسیر فروش ارجاع شده‌اند در اینجا اصلاح می‌شوند؛ پس از ثبت، سابقهٔ ممیزی حفظ و سند برای بازبینی فروش بازمی‌گردد.</p></div><button type="button" class="btn btn-secondary btn-sm" data-wh-document-edits-refresh>به‌روزرسانی</button></div><section class="wh-document-edit-queue" aria-label="صف کنترل‌شدهٔ اصلاح اسناد"><div class="wh-document-edit-queue-head"><div><b>صف ارجاع فروش به انبار</b><small>مهلت ۷۲ ساعته؛ پس از آن فقط مدیر سیستم مجاز است.</small></div><span data-wh-edit-count>۰</span></div><div data-wh-document-edit-rows aria-live="polite">در حال دریافت درخواست‌ها…</div></section></section>`;
+ const seq=++app.whDocumentEdits.seq;
+ try{
+  const {requests=[]}=await api('/api/warehouse/document-edits');
+  if(seq!==app.whDocumentEdits.seq||app.page!=='warehouse'||app.wh38.phase!=='document-edits')return;
+  const count=host.querySelector('[data-wh-edit-count]'),rows=host.querySelector('[data-wh-document-edit-rows]');
+  if(count)count.textContent=qty(requests.length);
+  if(rows)rows.innerHTML=requests.map(whDocumentEditQueueRow).join('')||'<div class="empty">درخواست اصلاحی از فروش در صف نیست.</div>';
+ }catch(error){
+  if(seq!==app.whDocumentEdits.seq)return;
+  const rows=host.querySelector('[data-wh-document-edit-rows]');if(rows)rows.innerHTML=`<div class="empty">خطا در دریافت صف اصلاح سند: ${esc(error.message)}</div>`;
+ }
 }
 async function whDeliveredLoad(){
   const st=app.whDelivered,seq=++st.seq;
@@ -1401,10 +1419,13 @@ function wh38Shell(phase){
     if(st){ app.wh38.storeTab=['incoming','preparing','history'].includes(st.dataset.wh38StoreTab)?st.dataset.wh38StoreTab:'incoming'; wh38Paint('stores'); return; }
     const t=e.target.closest('[data-wh38-tab]');
     if(t){ app.wh38.phase=t.dataset.wh38Tab; wh38Shell(app.wh38.phase); return; }
+    if(e.target.closest('[data-wh-document-edits-refresh]')){void whDocumentEditsPaint($('#wh38Body'));return;}
     const el=e.target.closest('[data-action]'); if(!el)return;
     const a=el.dataset.action, id=el.dataset.id;
     try{
       if(a==='pickup-cancel'){ const reason=prompt('دلیل انصراف را وارد کنید:');if(!reason?.trim())return;if(!confirm('آیا انبار تأیید می‌کند هیچ کالایی به این مراجعه تحویل نشده است؟'))return;el.disabled=true;await api('/api/pickup/'+encodeURIComponent(id)+'/cancellation',{method:'POST',body:JSON.stringify({reason,confirmedNoGoods:true})});toast('عدم تحویل ثبت شد و در انتظار تأیید فروش است.');await refreshIndicators();wh38Shell(app.wh38.phase);return;}
+      if(a==='wh-history-document')return whDeliveredDetails(id);
+      if(a==='wh-history-store-document')return whStoreDocumentDetails(id,Number(el.dataset.run)||1);
       if(a==='wh-delivered-details'){ return whDeliveredDetails(id); }
       if(a==='warehouse-document-edit'){ return warehouseDocumentEditOpen(id,el.dataset.paymentId); }
       if(a==='wh-delivered-prev'){ app.whDelivered.offset=Math.max(0,app.whDelivered.offset-50); return whDeliveredLoad(); }
@@ -1554,6 +1575,10 @@ async function wh38Finalize(id){
     app.sub.warehouse='delivered';renderNav();wh38Shell('delivered');
     if(order.transportAssignments?.['0']?.driverId){toast('وزن نهایی ثبت شد؛ پس از تحویل کالا، تحویل به راننده را ثبت کنید.');await whDeliveredDetails(id);}
     else toast('وزن نهایی ثبت شد؛ پس از تعیین راننده در ترابری، از بخش تحویل‌شده سند را باز کنید.');
+  }else if(order?.orderType==='ONSITE'){
+    app.sub.warehouse='delivered';renderNav();wh38Shell('delivered');
+    toast('وزن نهایی ثبت و برای فروش ارسال شد؛ جزئیات سند انبار برای چاپ باز است.');
+    await whDeliveredDetails(id);
   }else{toast('وزن نهایی ثبت شد و سفارش برای تسویه فروش ارسال شد.');wh38Shell('preparing');}
 
 }
@@ -1664,6 +1689,22 @@ function st38RunSummaryHtml(o){ // v37.5.0 — جمع‌بندی هر محمول
   const lines=ds.map((d,i)=>`<div class="st-run-run-line"><span class="st-run-chip st-run-r${d.run===2?2:1}">${o.storeOrderKind==='PARTIAL'?'محموله سفارش جزئی':d.run===2?'محمولهٔ سرویس دوم':d.run===1?'محمولهٔ سرویس اول':'محموله'}</span><span>${esc(labels[d.status]||d.status)}</span><span>راننده: <b>${esc(d.driverName||'—')}</b></span><span>تحویل: <b>${esc(formatDateTime24(d.deliveredAt||''))}</b></span><span>تأیید دریافت: <b>${d.storeReceiptConfirmedAt?`تأیید شد • ${esc(formatDateTime24(d.storeReceiptConfirmedAt))}`:'نیامده'}</b></span></div>`).join('');
   return `<div class="st-run-runs-summary">${lines}</div>`;
 }
+function st38WeighingDetailsHtml(item,run,correction){
+ const key=Number(run)===2?'runR2':'runR1';
+ if(correction?.missingWeighings)return '<span class="st38-weighing-missing">وزن سند اصلاح شده است؛ جزئیات توزین به‌روزشده در سابقه ثبت نشده است.</span>';
+ const records=correction?Array.isArray(correction.weighings)?[{kg:correction.deliveredKg,weighings:correction.weighings}]:[]:(Array.isArray(item?.[key])?item[key]:[]);
+ if(!records.length)return '<span class="st38-weighing-missing">جزئیات توزین انبار برای این سرویس در سابقه ثبت نشده است.</span>';
+ const types=[['basket18','سبد ۱٫۸ کیلوگرمی',true],['basket25','سبد ۲٫۵ کیلوگرمی',true],['box300','کارتن ۳۰۰ گرمی',true],['box600','کارتن ۶۰۰ گرمی',true],['rackKg','راک',false],['cartKg','گاری',false]];
+ return `<div class="st38-weighing-details">${records.map((record,recordIndex)=>{
+  const rows=Array.isArray(record.weighings)?record.weighings:[];
+  const rounds=rows.map((row,index)=>{
+   const impurities=types.map(([field,label,isCount])=>{const value=Number(row[field]||0);return Number.isFinite(value)&&value>0?`${label}: ${qty(value)} ${isCount?'عدد':'کیلوگرم'}`:'';}).filter(Boolean).join('، ')||'بدون ناخالصی';
+   const weight=field=>row[field]==null||!Number.isFinite(Number(row[field]))?'نامشخص':qty(row[field]);
+   return `<div class="st38-weighing-round"><b>نوبت ${fa(String(index+1))}</b><span>ناخالص ${weight('grossKg')} کیلوگرم</span><span>جزئیات ناخالصی: ${esc(impurities)}</span><span>کسر کل ${weight('tareKg')} کیلوگرم</span><span>خالص ${weight('netKg')} کیلوگرم</span></div>`;
+  }).join('')||`<div class="st38-weighing-round st38-weighing-legacy">جزئیات ناخالصی برای این ثبت در سابقه موجود نیست${record.kg==null?'':` · وزن ثبت‌شده ${qty(record.kg)} کیلوگرم`}</div>`;
+  return `<section class="st38-weighing-record"><b>ثبت وزن ${fa(String(recordIndex+1))}${record.at?` · ${esc(formatDateTime24(record.at))}`:''}</b>${rounds}</section>`;
+ }).join('')}</div>`;
+}
 function st38DeliveredDetails(o){
  const d=o.dispatch||{},lines=Array.isArray(d.lines)?d.lines:[];
  const payable=Number(d.amountDue??o.payment?.totalAmount??d.approvedTotalAmount??0);
@@ -1674,13 +1715,13 @@ function st38DeliveredDetails(o){
  const confirmed = !!d.storeReceiptConfirmedAt;
  const confirmedAt = d.storeReceiptConfirmedAt || '';
  const freeFlow=o.orderType==='STORE'; // v37.6.0 — فلوی فروشگاه بدون هیچ مبالغی؛ سند این عرضه وزنی است
- const rows=freeFlow?lines.map((line,i)=>`<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.returnKg||0)}</td><td>${qty(line.shortageKg||0)}</td><td>${qty(line.netKg??Math.max(0,Number(line.deliveredKg||0)-Number(line.returnKg||0)-Number(line.shortageKg||0)))}</td><td>${esc(line.reason||'—')}</td></tr>`).join('')
+ const rows=freeFlow?lines.map((line,i)=>{const item=(o.items||[]).find(row=>row.id===line.itemId),correction=(o.storeDocumentCorrections?.[String(d.run)]||[]).find(row=>row.itemId===line.itemId);return `<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.netKg??Math.max(0,Number(line.deliveredKg||0)-Number(line.returnKg||0)-Number(line.shortageKg||0)))}</td><td>${st38WeighingDetailsHtml(item,d.run,correction)}</td></tr>`;}).join('')
  :lines.map((line,i)=>`<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.returnKg||0)}</td><td>${qty(line.shortageKg||0)}</td><td>${qty(line.netKg||0)}</td><td>${esc(line.reason||'—')}</td><td>${money(line.unitPrice||0)}</td><td>${money(line.amountDue??line.grossAmount??0)}</td></tr>`).join('');
  const paid=freeFlow?'':methods.map(m=>`${esc(labels[m.type]||m.type)} ${money(m.amount)}${m.deviceSnapshot?` • ${esc(m.deviceSnapshot.title)} / پایانه ${esc(m.deviceSnapshot.terminalNumber)}`:''}${m.reference?` • پیگیری ${esc(m.reference)}`:''}`).join('، ');
  const summaryCell=freeFlow
    ?`<span>جمع وزن سند <b>${qty((lines||[]).reduce((sm,l)=>sm+Number(l.deliveredKg||0),0))} کیلوگرم</b></span><span>سند تحویل <b>${esc(fa(o.transportWorkflow===1?(d.warehouseDocumentNo||'—'):(o.payment?.invoiceNumber||'پس از تأیید نهایی فروش')))}</b></span>`
    :`<span>مبلغ قابل تسویه <b>${money(payable)}</b></span><span>فاکتور <b>${esc(fa(o.payment?.invoiceNumber||'پس از تأیید نهایی فروش'))}</b></span>${paid?`<span>روش‌های دریافت <b>${paid}</b></span>`:''}`;
- return `<article class="st38-delivered-card"><header><div><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${runChip}<h3>${esc(o.storeName||'فروشگاه')} </h3><p>${o.transportWorkflow===1?'تأیید فروشگاه':'ثبت تحویل راننده'}: ${formatDateTime24(d.deliveredAt)} • راننده: ${esc(d.driverName||'—')}</p></div><span class="badge ${confirmed?'green':'orange'}">${confirmed?'دریافت تأیید شد':'منتظر تأیید فروشگاه'}</span></header><div class="st38-delivered-items table-wrap"><table class="table store-shipment-table"><thead><tr><th>ردیف</th><th>محصول</th><th>تحویلی (کیلو)</th><th>مرجوعی</th><th>کسری</th><th>خالص</th><th>علت</th>${freeFlow?'':'<th>فی</th><th>مبلغ</th>'}</tr></thead><tbody>${rows||`<tr><td colspan="${freeFlow?7:9}">ریز اقلام تحویل در دسترس نیست.</td></tr>`}</tbody></table></div><div class="st38-delivered-summary">${summaryCell}</div>${d.note?`<p class="st38-delivered-note"><b>یادداشت راننده:</b> ${esc(d.note)}</p>`:''}<footer>${confirmed?`<span class="st38-confirmed-stamp">تأیید شما: ${formatDateTime24(confirmedAt)}</span>`:`<span class="subtle">${o.storeOrderKind==='PARTIAL'?'اقلام همین سفارش جزئی را کنترل و دریافت را تأیید کنید.':isRun?'اقلام همین محموله را کنترل و دریافت را تأیید کنید؛ محمولهٔ دیگر جداگانه تأیید می‌شود.':'لطفاً اقلام تحویلی را کنترل و دریافت را تأیید کنید.'}</span><button type="button" class="btn btn-primary" data-action="store-confirm-delivery" data-partial="${o.storeOrderKind==='PARTIAL'?'1':'0'}" data-id="${esc(o.id)}"${isRun?` data-run="${d.run}"`:''}>${icon('check',16)} تأیید دریافت ${o.storeOrderKind==='PARTIAL'?'سفارش جزئی':isRun?'محمولهٔ سرویس '+(d.run===2?'دوم':'اول'):'تحویل'}</button>`}</footer></article>`;
+ return `<article class="st38-delivered-card"><header><div><span class="order-code">${esc(fa(o.orderNo||'—'))}</span>${runChip}<h3>${esc(o.storeName||'فروشگاه')} </h3><p>${o.transportWorkflow===1?'تأیید فروشگاه':'ثبت تحویل راننده'}: ${formatDateTime24(d.deliveredAt)} • راننده: ${esc(d.driverName||'—')}</p></div><span class="badge ${confirmed?'green':'orange'}">${confirmed?'دریافت تأیید شد':'منتظر تأیید فروشگاه'}</span></header><div class="st38-delivered-items table-wrap"><table class="table store-shipment-table"><thead><tr><th>ردیف</th><th>محصول</th>${freeFlow?'<th>وزن تحویلی (کیلوگرم)</th><th>خالص (کیلوگرم)</th><th>ناخالصی‌های ثبت‌شده در توزین انبار</th>':'<th>تحویلی (کیلو)</th><th>مرجوعی</th><th>کسری</th><th>خالص</th><th>علت</th><th>فی</th><th>مبلغ</th>'}</tr></thead><tbody>${rows||`<tr><td colspan="${freeFlow?5:9}">ریز اقلام تحویل در دسترس نیست.</td></tr>`}</tbody></table></div><div class="st38-delivered-summary">${summaryCell}</div>${d.note?`<p class="st38-delivered-note"><b>یادداشت راننده:</b> ${esc(d.note)}</p>`:''}<footer>${confirmed?`<span class="st38-confirmed-stamp">تأیید شما: ${formatDateTime24(confirmedAt)}</span>`:`<span class="subtle">${o.storeOrderKind==='PARTIAL'?'اقلام همین سفارش جزئی را کنترل و دریافت را تأیید کنید.':isRun?'اقلام همین محموله را کنترل و دریافت را تأیید کنید؛ محمولهٔ دیگر جداگانه تأیید می‌شود.':'لطفاً اقلام تحویلی را کنترل و دریافت را تأیید کنید.'}</span><button type="button" class="btn btn-primary" data-action="store-confirm-delivery" data-partial="${o.storeOrderKind==='PARTIAL'?'1':'0'}" data-id="${esc(o.id)}"${isRun?` data-run="${d.run}"`:''}>${icon('check',16)} تأیید دریافت ${o.storeOrderKind==='PARTIAL'?'سفارش جزئی':isRun?'محمولهٔ سرویس '+(d.run===2?'دوم':'اول'):'تحویل'}</button>`}</footer></article>`;
 }
 function st38DeliveredRow(o){
  const d=o.dispatch||{},run=Number(d.run)||0;

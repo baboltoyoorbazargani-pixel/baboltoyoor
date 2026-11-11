@@ -71,8 +71,8 @@ test('buttons, item rows and sticky action bars are modernized',()=>{
   assert.match(css,/@media print\{\s*#appView \.table th/);
 });
 
-test('assets are cache-busted for 37.43.0',()=>{
-  assert.match(html,/theme\.css\?v=37\.43\.0/);
-  assert.match(html,/compatibility\.css\?v=37\.43\.0/);
-  assert.match(html,/app\.js\?v=37\.43\.0/);
+test('assets are cache-busted for 37.44.0',()=>{
+  assert.match(html,/theme\.css\?v=37\.44\.0/);
+  assert.match(html,/compatibility\.css\?v=37\.44\.0/);
+  assert.match(html,/app\.js\?v=37\.44\.0/);
 });

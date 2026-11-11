@@ -44,7 +44,7 @@ test('ردیف پخش برای سفارش عادی و هر سرویس فروشگ
  assert.match(c.salesDeliverySummaryRow(inputs[1]),/سرویس اول/);assert.match(c.salesDeliverySummaryRow(inputs[2]),/سرویس دوم/);assert.match(c.salesDeliverySummaryRow(inputs[1]),/مشتری: نام مشتری/);
  const css=read('public/compatibility.css');assert.match(css,/sales-distribution-cell\+\.sales-distribution-cell\{border-inline-start:1px solid/);assert.match(css,/sales-delivery-panel \.sales-delivery-column-list\{[^}]*overflow-x:auto/);
 });
-test('در ناوبری فروش پخش جای نام قبلی را گرفته و منوی منابع تنها برای فروش حذف است',()=>{
+test('در ناوبری فروش پخش جای نام قبلی را گرفته؛ منابع از انبار حذف و منوی ترابری حفظ است',()=>{
  const nav=app.slice(app.indexOf('function renderNav(){'));const sales=nav.match(/    sales:\[.*?\],\n    warehouse:/s)?.[0]||'';assert.match(sales,/\['delivery','پخش','truck',null\]/);assert.doesNotMatch(sales,/transport-resources|تحویل راننده/);
- const warehouse=nav.match(/    warehouse:\[.*?\],\n    dispatch:/s)?.[0]||'';const dispatch=nav.match(/    dispatch:\[.*?\],\n    store:/s)?.[0]||'';assert.match(warehouse,/transport-resources/);assert.match(dispatch,/transport-resources/);assert.match(app,/delivery:\['پخش'/);
+ const warehouse=nav.match(/    warehouse:\[.*?\],\n    dispatch:/s)?.[0]||'';const dispatch=nav.match(/    dispatch:\[.*?\],\n    store:/s)?.[0]||'';assert.doesNotMatch(warehouse,/transport-resources/);assert.match(warehouse,/document-edits/);assert.match(dispatch,/transport-resources/);assert.match(app,/delivery:\['پخش'/);
 });
