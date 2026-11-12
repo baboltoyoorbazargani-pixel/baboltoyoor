@@ -112,6 +112,7 @@ f089836e1878ed22217a25f8cc826d63abe8cc197c80ffcfad9f9bef08b40d53  ./docs/remaini
 469fe2fd46f9227f3c9f947b0c7b4413700607f3f8d25b87c3d2c6ab8ed3d7f1  ./docs/remote-pickup-workflow-plan-fa.md
 5141aeead09a8502fad0d4fabb815bf22605d0471f6b9a63433312798c9a2103  ./docs/reports-backup-update-fa.md
 d0328cfcb5b933aac8dca266de9db35ceadfaed62c1f0afed60f03c1bafe6c78  ./docs/sqlite-database-fa.md
+b0e223096f7b00b24c57bc04132a9139dd6176f64c7cab1bb22d8e04cd929a1f  ./docs/ui-audit-fa.md
 b331c4f3b873d5a7f09ce1ed6bbb8e745d6295537cb336313fdf2efed155ec26  ./docs/weighbridge-pu850.md
 0eeaef027235513a81abad1ce5903c9869ce9455609c7146286df1924e8528f7  ./lib/auto-backup.js
 f44c3b892eb502c337bc9bcf60ece04d767ea7e5405ab69db912fde2f8e32b78  ./lib/catalog.js
@@ -205,7 +206,7 @@ d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/conne
 17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31  ./public/fonts/OFL.txt
 4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92  ./public/fonts/Vazirmatn-Variable.woff2
 a85456faaed8f29d884bfb2dc3148dffbf22d22ecff589176764cfe2679a1e3f  ./public/form-layout.css
-6d33c4f8e61d40d112852124392407325978e9801dd3bd7746b9e06db107c715  ./public/index.html
+d07ad4a4021010d7cadcd247176f71e943abee45de04f01fed41f9fae96a58b0  ./public/index.html
 3e76d5258764ffc7e08b1a6d5e8aa7d8bdcf073cc3a575ec092a0c30dcb5bb48  ./public/invoice-compact.css
 22b5cb653f7de60bd2284582fc1a1cdabba3950931b206cebe0c9276cd5ec6b4  ./public/invoice-print.html
 538d7d1fe00569ec69cac470798012076eeb5da5ac5b5c5c500022548196ae35  ./public/invoice-print.js
@@ -416,6 +417,7 @@ aac8f7ae4e3cee841d5070b6aab06cc90ee1678278a807ca0bb0871b80ec128f  ./tests/transp
 0c7e1c3cfe3b071e05eec17753a3b674f513f22fe9cfa9b18f548d123a663a09  ./tests/ui-alignment-browser.test.js
 3499c77964474e526b529ea73c4f801e060c7bc880c78172c423f60ca2a1289b  ./tests/ui-review-browser.test.js
 f8326e81872b63c91075dc283a7cba96c6d13f4906b23af0559972167dd63f57  ./tests/ui-source-build.test.js
+7bb44e8ee26dea8991987d5e4d6855170944b6ed07bb1ed8567c3c0fba85d451  ./tests/ui-text-sweep-browser.test.js
 27302aad62d8b18b29aa684a771deb0e45a71cf04cffadea2f2a90667aae6255  ./tests/unit-reports-backups.test.js
 ab3179caa0fbb124c33e03e0d54e800f0688ba120ce6c383699672a47ffb3f66  ./tests/warehouse-cartable-followup.test.js
 b23192c68c11a940c1adb0f7cbb7e4dc5f1d23b25fc85e5b0be60f8a0d1dc3ac  ./tests/warehouse-delivered-browser.test.js
