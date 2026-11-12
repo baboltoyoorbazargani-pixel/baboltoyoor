@@ -107,7 +107,7 @@ a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.
 3964699250009ce45c4adbe2893e868d5824283073a99c9bee0d46159b96eecc  ./docs/deployment-windows-server-2025.md
 84ef2fcaff7e118259ca6e5572972e1d42ab0850f069959dbb8f3bf08df386e0  ./docs/domain-https-fa.md
 6791cb09b6006a317ee05d3ef8461ca1ae9749f44e2c250418d88e7fb5401e96  ./docs/hardening-rollout-fa.md
-6ca9bbe2b84890920ddccb7a65202b216437299cfd095a1faa469f406605e02d  ./docs/remaining-work-fa.md
+f089836e1878ed22217a25f8cc826d63abe8cc197c80ffcfad9f9bef08b40d53  ./docs/remaining-work-fa.md
 469fe2fd46f9227f3c9f947b0c7b4413700607f3f8d25b87c3d2c6ab8ed3d7f1  ./docs/remote-pickup-workflow-plan-fa.md
 5141aeead09a8502fad0d4fabb815bf22605d0471f6b9a63433312798c9a2103  ./docs/reports-backup-update-fa.md
 d0328cfcb5b933aac8dca266de9db35ceadfaed62c1f0afed60f03c1bafe6c78  ./docs/sqlite-database-fa.md
@@ -137,7 +137,7 @@ ef9eba820ebab9169f46e929c19e5311ad6d7e24aacd9631ab1b29e039901d58  ./lib/offsite-
 6792820077ebe9143478c28fc84712ef9fb3e725deca00c491c6ee62c5699162  ./lib/pickup-legacy-guard.js
 35b034b56b90fc0fc6ba995eec9312a2a2270350e04118571f146754192698d7  ./lib/pickup-transaction-service.js
 f87b7f06ab428eb030d81aa95525fe55b9d019ec5d991d9853fc47806ccfc9a5  ./lib/pickup-workflow.js
-d773d969645b67df439b2a83231df76073028607d0f401dcfad5cfcdd84018e2  ./lib/reports.js
+e3beaea3c8de6e99b9b8df5ca2201033f67e2a12487542640c3c3071d04ae3b8  ./lib/reports.js
 3eae70cf43b0bfc962e8c23210f0702c26e31e090499add614b61af7cf7d3003  ./lib/routes/admin-ext.js
 28f734f9fe6f141e5c7cdcdcebfc24d7cf2b312f357e782abc30195df911b2fb  ./lib/routes/admin.js
 70fa815e0a2acfc28d70d553f68b0d911268642f7b1c6e3d525f74b702976f14  ./lib/routes/auth.js
@@ -164,6 +164,7 @@ b6675db11a0d49e04d651298d56e3e9e4ea1cd4ae7d3621eb3d0b8f693f87165  ./lib/routes/w
 32e377c1f27264de5366ef28e6437172c3a2686603cf37c741f47a0cef16d8fe  ./lib/security.js
 c206a5e194fe346fd967a032561f2e96845fdbf3e7849245d23688f4b8332452  ./lib/service-monitor.js
 124f98b7d5041dd86453e9b3100138fbbf86e6f1f296854297b602845d2feddf  ./lib/settlement-methods.js
+3e22c21dcdda9fa9668052e1511442bb9546cb0b3c6d43180f78b758fe7a5cda  ./lib/sql-report-rows.js
 79322915a33edc37a4bf6f599e1a4fadc8888e11cd0744dd4e84a681ef96246d  ./lib/sql-repos.js
 b176418ca7c4b781a86063d14f7cfa015c2a682d92a2a0dc265ac609e256417d  ./lib/sqlite-store.js
 f8e012aac4483c753c33bcc8bd98cfb9a37f4a831bc7c39fb1da60cc59b7a07f  ./lib/store-name.js
@@ -366,6 +367,7 @@ c5512ac881a73fb2a61d285234420f507bea42e2642c82d8d0ff7b826d4100d9  ./tests/settle
 dd1b910c1e1c9213086bf9b8d5786748467f0fe1f7bab18ab1f38d3ad577f48d  ./tests/settlement-queue-card.test.js
 c133321be13a2bf52cd9dfcc5d501662c77ee1a16b91bd623e305412ceae3303  ./tests/sql-phase2.test.js
 cb7bdc6c4905bec01d1fc3a5d578720d55526298821dcccbb89783e608fd67f3  ./tests/sql-phase3.test.js
+8ed0fee744454df211dcc0e0012fc6bb6225d1c0be52c5cac6f3b6680d9e9267  ./tests/sql-report-rows.test.js
 6421b34ee21ce357f36e965a5be576d5f3def0b3d486e4485a030b8706ba9b65  ./tests/sqlite-store.test.js
 4649ee370b1ed02ab9710b7a7809c74bcfb9d8353ade5890b3494457cf595d87  ./tests/store-branch-numbers.test.js
 1a494e7b89493dd51ffec1b8271f3165c0a64fb5efbe39f4afb1b91a9efa9cb4  ./tests/store-display-layout-browser.test.js
