@@ -22,6 +22,21 @@ test('default pickup: gate entry, warehouse handover and paper print, sales sett
   const gp=await gate.newPage(),wp=await wh.newPage(),sp=await sales.newPage();for(const p of [gp,wp,sp])p.on('pageerror',e=>errors.push(e.message));
   for(const p of [gp,wp,sp])await p.goto(base+'/',{waitUntil:'networkidle'});
   await sp.evaluate(()=>go('sales','remote'));const form=sp.locator('#phoneOrderFormV25');await form.locator('[name=name]').fill('سفارش رابط فروش');await form.locator('[name=phone]').fill('09121112239');await form.locator('[data-delivery-mode]').selectOption('PICKUP');const search=form.locator('[data-op-product-search="phone-0"]');await search.fill('01');await form.locator('[data-op-suggest="phone-0"] button').first().waitFor();await search.press('ArrowDown');await search.press('Enter');await form.locator('[data-op-qty="phone-0"]').fill('2');const createdResponse=sp.waitForResponse(r=>r.url().endsWith('/api/orders/remote')&&r.request().method()==='POST');await form.locator('[type=submit]').click();const created=await createdResponse;assert.equal(created.status(),201,await created.text());const uiOrder=(await created.json()).order;assert.equal(uiOrder.deliveryDate,day);assert.equal(uiOrder.pickupWorkflow,1);
+  await gp.evaluate(()=>go('gate','entry'));
+  for(const width of [1440,1024,768,390,320]){
+   await gp.setViewportSize({width,height:900});
+   const layout=await gp.evaluate(()=>{
+    const panel=document.querySelector('.gt-search-panel'),order=panel.querySelector('[data-pickup-search]'),customer=panel.querySelector('.cust-code-entry');
+    const a=order.getBoundingClientRect(),b=customer.getBoundingClientRect(),r=panel.getBoundingClientRect();
+    return {a:a.toJSON(),b:b.toJSON(),r:r.toJSON(),overflow:document.documentElement.scrollWidth-innerWidth,inForm:!!panel.closest('#gateForm'),separate:!panel.closest('.gt-fieldset')};
+   });
+   assert(layout.inForm&&layout.separate,'searches share a standalone panel within the entry form');
+   assert(layout.overflow<=1,`search overflow ${width}`);
+   for(const box of [layout.a,layout.b])assert(box.left>=layout.r.left&&box.right<=layout.r.right,`search contained ${width}`);
+   if(width>700){assert(Math.abs(layout.a.top-layout.b.top)<2,`searches alongside ${width}`);assert(layout.a.right<=layout.b.left+1||layout.b.right<=layout.a.left+1,'columns do not overlap');}
+   else assert(layout.b.top>=layout.a.bottom,'mobile searches stack without overlap');
+  }
+  await gp.setViewportSize({width:1280,height:900});
   async function enter(order,name){
    await gp.evaluate(()=>go('gate','entry'));await gp.locator('#pickupOrderSearch').fill(order.orderNo);await gp.locator('[data-pickup-choose]').first().click();
    const toggle=gp.locator('[data-pickup-other]');await gp.setViewportSize({width:320,height:900});const width=await gp.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}));assert(width.scroll<=width.viewport+1,JSON.stringify(width));await gp.setViewportSize({width:1280,height:900});assert.equal(await toggle.isChecked(),false);assert.equal(await gp.locator('#gateCustomerName').inputValue(),order.customer.name);assert.equal(await gp.locator('#gateCustomerPhone').inputValue(),order.customer.phone);assert.equal(await gp.locator('#gateCustomerName').getAttribute('readonly'),'');
