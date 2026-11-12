@@ -10,10 +10,10 @@ test('only settlement omits transport/customer location fields',()=>{
  for(const label of ['نوع وسیله','پلاک','محله','محل ارسال']){assert(full.includes(`<b>${label}</b>`));assert(!short.includes(`<b>${label}</b>`));}
  for(const label of ['نام مشتری','شماره تماس','شماره سفارش'])assert(short.includes(`<b>${label}</b>`));
 });
-test('invoice numbers are Persian with leading zeroes, without changing stored data',()=>{
+test('invoice numbers are Persian without display padding, without changing stored data',()=>{
  const c={esc:String,fa:v=>String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),n:Number,money:String,qty:String,dt:String,todayText:()=>''};vm.createContext(c);vm.runInContext(fn(ui,'invoiceHtml'),c);
  const o={orderNo:'000456',items:[],payment:{invoiceNumber:'000123',totalAmount:0}};
- const html=c.invoiceHtml(o);assert(html.includes('۰۰۰۱۲۳'));assert(html.includes('۰۰۰۴۵۶'));assert.equal(o.orderNo,'000456');assert.equal(o.payment.invoiceNumber,'000123');
+ const html=c.invoiceHtml(o);assert(html.includes('<b>۱۲۳</b>'));assert(html.includes('<b>۴۵۶</b>'));assert(!html.includes('۰۰۰۱۲۳'));assert.equal(o.orderNo,'000456');assert.equal(o.payment.invoiceNumber,'000123');
 });
 test('transport navigation replaces standalone dispatch and retains driver and records tabs',()=>{
  const c={};vm.createContext(c);vm.runInContext(fn(admin,'adminNavItems'),c);
