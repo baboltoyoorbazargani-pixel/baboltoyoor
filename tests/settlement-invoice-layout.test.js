@@ -42,7 +42,7 @@ for(const [name,text,end] of [['app',app,'function printCss()'],['ui',ui,'async 
  for(const o of [base,{...base,orderType:'STORE',storeName:'فروشگاه'}]){
   const html=c.invoiceHtml(o);assert.match(html,/<div class="inv38-verify">[\s\S]*?<span>امضاء<\/span><strong>&lt;مشتری&gt; – 0912<\/strong>/);
   assert(!html.includes('signature'));assert(!html.includes('ref-123'));assert(!html.includes('اثر انگشت'));assert(!html.includes('تأیید مشتری'));
-  assert(html.includes('000456'));assert(!html.includes('uuid-internal'));assert(!html.includes('inv38-foot'));assert(!html.includes('تاریخ صدور'));
+  assert(html.includes(name==='ui'&&o.orderType!=='STORE'?'<b>456</b>':'000456'));assert(!html.includes('uuid-internal'));assert(!html.includes('inv38-foot'));assert(!html.includes('تاریخ صدور'));
  }
  const legacy=c.invoiceHtml({...base,payment:{totalAmount:240}});assert(legacy.includes('جدید – 0999'));
  const missing=c.invoiceHtml({...base,customer:null,payment:{totalAmount:240,customerName:'',customerPhone:''}});assert(missing.includes('— – —'));

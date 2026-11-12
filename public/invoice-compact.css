@@ -118,3 +118,11 @@ body.invoice-print{margin:0;padding:8px;background:#fff}
  .inv38-compact .inv38-sales-title + .inv38-meta{grid-template-columns:minmax(0,1fr)}
  .inv38-compact .inv38-sales-title + .inv38-meta > div{justify-content:space-between}
 }
+
+/* Settlement identity is a single compact header, shared by preview and print. */
+.inv38-settlement .inv38-settlement-meta{width:100%;display:grid;grid-template-columns:minmax(100px,1.3fr) minmax(100px,1fr) minmax(55px,.5fr) minmax(55px,.5fr) minmax(145px,1.4fr);gap:5px}
+.inv38-settlement .inv38-settlement-meta>div{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;padding:4px}
+.inv38-settlement .inv38-settlement-meta span{white-space:nowrap;flex-shrink:0}
+.inv38-settlement .inv38-settlement-meta b{margin:0;min-width:0;overflow-wrap:anywhere}
+@media screen and (max-width:640px){.inv38-settlement .inv38-settlement-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.inv38-settlement .inv38-settlement-meta>div:last-child{grid-column:1/-1}}
+@media print{.inv38-settlement .inv38-settlement-meta{grid-template-columns:minmax(100px,1.3fr) minmax(100px,1fr) minmax(55px,.5fr) minmax(55px,.5fr) minmax(145px,1.4fr)}}

@@ -3642,7 +3642,7 @@ function stlBindPayments(){
  const host=document.getElementById('stlPayments');if(!host)return;
  const devices=stl.devices||[];
  const makeDetail=(row)=>{const type=row.querySelector('[data-paytype]').value,box=row.querySelector('[data-paydetail]');let h='';
-  if(type==='POS')h=`<label>دستگاه فعال<select class="adm-select" data-device><option value="">انتخاب دستگاه</option>${devices.map(d=>`<option value="${esc(d.id)}">${esc(d.title)} • ${esc(d.bank)} • پایانه ${esc(d.terminalNumber)}</option>`).join('')}</select></label><label>شماره پیگیری<input class="adm-input" data-reference placeholder="اختیاری"></label>`;
+  if(type==='POS')h=`<label>دستگاه فعال<select class="adm-select" data-device><option value="">انتخاب دستگاه</option>${devices.map(d=>`<option value="${esc(d.id)}">${esc(d.bank)} ${esc(d.terminalNumber)}</option>`).join('')}</select></label><label>شماره پیگیری<input class="adm-input" data-reference placeholder="اختیاری"></label>`;
   if(type==='CARD_TRANSFER')h='<label>بانک / حساب مقصد<input class="adm-input" data-bank placeholder="بانک یا حساب مقصد"></label><label>شناسه پیگیری<input class="adm-input" data-reference placeholder="شناسه تراکنش"></label>';
   if(type==='CHECK')h='<label>بانک<input class="adm-input" data-bank placeholder="نام بانک"></label><label>شماره چک<input class="adm-input" data-check placeholder="شماره چک"></label><label>سررسید<input class="adm-input" data-due type="date"></label>';
   box.innerHTML=h;box.hidden=!h;};

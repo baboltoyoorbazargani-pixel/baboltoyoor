@@ -82,3 +82,8 @@
  .whd-store-print .whd-head{margin-bottom:3px}
  .whd-store-print .whd-document-number,.whd-store-print .whd-store-meta>span{padding:1px 3px}
 }
+
+/* Net total is the physical-left weight cell of the RTL product table. */
+.whd-products tfoot td{border-top:1px solid #a9bbc9;background:#f3f7f9;padding:6px;text-align:center;break-inside:avoid}
+.whd-products tfoot .whd-total-label{text-align:left;font-weight:700}
+.whd-products tfoot .whd-total{margin:0!important;width:auto;max-width:none;padding:0!important;border:0;background:none;justify-content:center}
