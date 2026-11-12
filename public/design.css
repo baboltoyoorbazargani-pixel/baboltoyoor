@@ -2088,3 +2088,20 @@ select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3
  .document-edit-warehouse-line{grid-template-columns:26px minmax(0,1fr)}.document-edit-warehouse-line>.document-edit-line-name{grid-column:2}.document-edit-warehouse-line>label{grid-column:2}
  .wh-document-edit-row{grid-template-columns:minmax(0,1fr);align-items:start}.wh-document-edit-row>button{justify-self:start}
 }
+
+/* Gate entry: independent search panel, separate from customer details. */
+#appView #content .gt-search-panel{margin:16px 22px 0;padding:16px;border:1px solid var(--border,#dbe1e8);border-radius:12px;background:#f8fafc}
+#appView #content .gt-search-panel h3{margin:0 0 12px;font-size:14px}
+#appView #content .gt-search-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+#appView #content .gt-search-grid>div{min-width:0;margin:0}
+#appView #content .gt-search-grid>.cust-code-entry:only-child{grid-column:1/-1}
+#appView #content .gt-order-search>label{display:block;margin-bottom:8px;font-size:12px;font-weight:700;line-height:1.8}
+#appView #content .gt-search-grid .cust-code-row{display:flex;gap:8px;align-items:center;min-width:0}
+#appView #content .gt-search-grid .cust-code-row>input,#appView #content .gt-search-grid .input-shell{flex:1;min-width:0;width:100%}
+#appView #content .gt-search-grid .cust-code-row>button{flex-shrink:0;white-space:normal}
+#appView #content .gt-entry-cust{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){
+ #appView #content .gt-search-panel{margin:12px 12px 0;padding:12px}
+ #appView #content .gt-search-grid,#appView #content .gt-entry-cust{grid-template-columns:minmax(0,1fr)}
+ #appView #content .gt-search-grid .cust-code-row{flex-wrap:wrap}
+}

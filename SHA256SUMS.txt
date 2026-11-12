@@ -197,7 +197,7 @@ cea98dba58c31f5d95773c711c10b626d0253a7281d7bfa0d9928b9c99650110  ./public/apple
 6ba8a01881ca25d98c96b34253ae32ba18ff0cec40b0b5347dc51e0231b8bc04  ./public/compatibility.css
 d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/connection-status.js
 9e31ed22cbfd8a1a3c0d3b5eb3d6afe5e6d99bb53b11258882b28fa4f4111565  ./public/customers-ui.js
-58a4af74c9bb0e4a8642d8989af55178117bcccf1ea1c784b981fa094679a781  ./public/design.css
+c04c41aacfd10278e8bfe3ceff8758bd0aef92b751f99bcdc3aae608ab54cb78  ./public/design.css
 032f0ff247aff987423cf6d028263de6516a29ca203ae8e58cf3c72546fdaf5e  ./public/dispatch-ui.js
 382120850e5d4927ae0e175f9f46613bf8668fc72c4a3dadfc8d05bef81198a1  ./public/favicon-16x16.png
 38c245b897831f510c54eb9e4553f6da6f8645b2393449346dd5aaf05e25e788  ./public/favicon-32x32.png
@@ -227,7 +227,7 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-ee4872be68f7c9f81870ff64c2350bdd99ab23050443b46bf6288ba938f6c25c  ./public/ui2.js
+e6fdff09c6a4221092ba21ffefa37e137e78db95139084dc85c1ce87d2592e90  ./public/ui2.js
 a59e5ff6210ec059673b9e4efe6b509b5b5d57a163fca4b8d2b0fb719ecad6ff  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
@@ -333,7 +333,7 @@ b52228f4588e56191114df5aa760d02be63e44ca157f476cbb573d9862f0d6b1  ./tests/pickup
 2302757ee48b862b783e1aeaa92da52c7de2ef6512e04b35035002f04b3ff257  ./tests/pickup-pagination-roles.test.js
 5c0fd0b0575bb1ab7f60da4dc8727b179f23a6f9d73f896052c470c141f02f9b  ./tests/pickup-staged-api.test.js
 765c15d6474bedb5230a60847eedc7ac2c9ff5840b77b45ea40c1029e714627e  ./tests/pickup-transaction-service.test.js
-e4915640934c98047962400d9f5ad35a9c484a2a45b5a77d3520e066b846bbc6  ./tests/pickup-workflow-browser.test.js
+a37aefc989b9c0a1c8a75bd03b3549ea0c59c496f8d8bc139b9dec0b116962b5  ./tests/pickup-workflow-browser.test.js
 f9395398afd123b0d1a28c7ae1bcd3e0c0789e002aff8a6fdb04b1c9ff976d04  ./tests/pickup-workflow.test.js
 0c4cd7a4ed32a32554d226bf3c7d7b4907f83c1226433bad8db33b6f353dc9ca  ./tests/plate-editor.test.js
 da9e4ef4ea03537f8e4a455e8f515cff5b17adb793eb07a153f917db8fddd90a  ./tests/print-no-popup-browser.test.js
@@ -458,7 +458,7 @@ b9afcc489a500be9b963ec217cac475bf09a2a2b86c3b766cad40a426d387dfe  ./ui-src/manif
 dc6425aa0ebc3ea2b54b10d3ef3594c9b58bdb48f6ea9bf47f16a37841221a28  ./ui-src/ui2/01-sales-orders.js
 bcaba13ae341d7a31354869ad3e15ff63342ff6e7d67a67fd727a9eb60b3c306  ./ui-src/ui2/02-invoice-edits.js
 28cd805dfb2ee466c82deb18a9727dd6a8147ffab2a55bb0be1032a518904b41  ./ui-src/ui2/03-delivery.js
-6608f59bca0f2c58be3c8385868ed20a53252910e56260648b24bbaae99ca6c5  ./ui-src/ui2/04-gate.js
+f14964326a70efdde72de5a4d62bc1a3ff92d45530277ee07ce5423966354304  ./ui-src/ui2/04-gate.js
 9d4863fef45f1817524710718d0008068c859f18f183ddbaf6f8a96217da8d83  ./ui-src/ui2/05-warehouse.js
 2673870aa62ed5b971d95927b4cc29b8683c3485014a491aff739c76ff4a989d  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
