@@ -7,6 +7,17 @@ for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async funct
  const c={esc,n:Number,fa:String,qty:String,money:String,dt:String,todayText:()=>'',storeRunInvoiceLines:()=>[{productName:'محصول',deliveredKg:1}]};vm.createContext(c);vm.runInContext(text.slice(start,text.indexOf(end,start)),c);
  const order={orderNo:'123',customer:{name:'مشتری'},items:[{product:{name:'محصول'},deliveredKg:1,unitPrice:100,finalAmount:100}]};
  const html=p=>c.invoiceHtml({...order,payment:p});
+ if(file==='ui2.js'){
+  test('active invoice: totals contain paid/balance and methods show only type and amount',()=>{
+   const s=html({totalAmount:100,amountDue:80,depositAmount:20,deposit:{type:'CASH',amount:20},settlementMethods:[{type:'CASH',amount:10},{type:'CHECK',amount:40,checkStatus:'PENDING',bank:'secret bank',reference:'secret reference'},{type:'CREDIT',amount:30}]});
+   assert.match(s,/مبلغ نهایی<\/span><b>100[\s\S]*مبلغ پرداختی<\/span><b>30[\s\S]*مانده حساب<\/span><b>70/);
+   const box=s.match(/<section class="inv38-payment-box"[\s\S]*?<\/section>/)[0];
+   assert.match(box,/چک<\/span><b>40/);assert.doesNotMatch(box,/secret|قابل تسویه|نوع تسویه|مانده حساب|مبلغ پرداختی/);
+   assert.match(html({totalAmount:100,settlementType:'CREDIT'}),/مبلغ پرداختی<\/span><b>نامشخص/);
+   assert.match(html({totalAmount:100,settlementMethods:[{type:'CREDIT',amount:100}],debtAccount:{initial:100,receipts:[{status:'CLEARED',amount:30},{status:'PENDING',amount:20}]}}),/مبلغ پرداختی<\/span><b>30[\s\S]*مانده حساب<\/span><b>70/);
+   assert.match(html({totalAmount:100,depositAmount:100,amountDue:0,settlementMethods:[]}),/مبلغ پرداختی<\/span><b>100/);
+  });continue;
+ }
  test(`${file}: mixed methods, credit snapshot and pending check are escaped and identified`,()=>{
   const s=html({totalAmount:100,amountDue:100,settlementMethods:[{type:'CASH',amount:10},{type:'POS',amount:20,deviceSnapshot:{title:'<pos>',bank:'بانک'}},{type:'CARD_TRANSFER',amount:10,reference:'<ref>'},{type:'CHECK',amount:30,bank:'<bank>',checkNumber:'12',dueDate:'1405',checkStatus:'PENDING'},{type:'CREDIT',amount:30,reason:'<script>alert(1)</script>'}]});
   assert(!s.includes('/logo.png'));assert(!s.includes('بابل طیور'));assert.equal(s.includes('فاکتور فروش و تحویل'),file==='app.js');
