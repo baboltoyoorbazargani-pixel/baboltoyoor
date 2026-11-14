@@ -203,7 +203,7 @@ aebc418b4d559390680c227a7845f1d4991b171244be6011d4d121ebad02f0df  ./package.json
 3309bb8c1d146c5054a363cead80d096d8d015d855d7d5cd6259506f4c86712b  ./public/admin-ui.js
 2064099995191f01a76ac032a1f70bf14fa4f33ead4b74b44c9a0786f14f4a7e  ./public/android-chrome-192x192.png
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./public/android-chrome-512x512.png
-53237e70889ea3ab1ff32635fc0c848f3102f9dff040b26820dcbb0b8ec84821  ./public/app.js
+338d6c3c955500a3912502f9be04d19e61a71eaaf14b5161178cb8e8cacb502f  ./public/app.js
 cea98dba58c31f5d95773c711c10b626d0253a7281d7bfa0d9928b9c99650110  ./public/apple-touch-icon.png
 7c40d1a3c9b653da1c764e9410ae58a7ee37600b03ff389400ba89774f34128e  ./public/compatibility.css
 d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/connection-status.js
@@ -218,7 +218,7 @@ c04c41aacfd10278e8bfe3ceff8758bd0aef92b751f99bcdc3aae608ab54cb78  ./public/desig
 4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92  ./public/fonts/Vazirmatn-Variable.woff2
 a85456faaed8f29d884bfb2dc3148dffbf22d22ecff589176764cfe2679a1e3f  ./public/form-layout.css
 c8f21522b86aca0e3f9e0c9004b0f5cd55cdb83f9aabfc8a8fe0953561b4a862  ./public/index.html
-d97faf57b78a69b17e19932b67603099b663e116a4403fa27882b59c5a0e2d55  ./public/invoice-compact.css
+83a9f28cab3177b37e7a1900cadb13bfaaed8dcbfbd9940a8e45ec9131e39cbf  ./public/invoice-compact.css
 22b5cb653f7de60bd2284582fc1a1cdabba3950931b206cebe0c9276cd5ec6b4  ./public/invoice-print.html
 538d7d1fe00569ec69cac470798012076eeb5da5ac5b5c5c500022548196ae35  ./public/invoice-print.js
 ce7499a71c2bbb2f0029fa4a723527fe37b537c43dce85b8b2b1db4662888290  ./public/logo-with-text.png
@@ -238,7 +238,7 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-da2e25a9e0bc0e3a7778a6276de7b5e72dac971c7080f705c4ccd1013928d41a  ./public/ui2.js
+5d532914a995c429ae97db5ee075445eb6a062bc3106a94682a73d91addfedd2  ./public/ui2.js
 9c18a79682ccd24626fd5beee2d1381c9b9c34937b7a62727f6cb46c663cef2f  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
@@ -317,7 +317,7 @@ ab766e7dde8c921e2bdde3bd8138c89b6f66144f7e639392f347105f70acc3e6  ./tests/https-
 b98d176d794113fbc45c1ba1a84bb5e5cdcb6d7fd663219518893d95b3de9934  ./tests/https-browser.test.js
 207c5429efbb282339e19a16d720bcbcc9c172849f2b03e5a1447b6b135f5ca0  ./tests/https-manager.test.js
 ee7cfc9e7d3e3e86211567ee5a142892bea34acde237cf7397ac6c6c766b5a7f  ./tests/invoice-fixes.test.js
-dbc3edd9aa9771b2ebaba8183210910ba87a663db8f443cb91aeea3ca3916795  ./tests/invoice-payment-details.test.js
+4794abfc824d908dc2ef4891cea8303faba6736673e82ecd556c2c678de1bb2c  ./tests/invoice-payment-details.test.js
 7a746ed239d2a6873184ba21e13711925d9306bf44fa1d5ad3186b9952bced69  ./tests/invoice-signature-layout-browser.test.js
 0be7030f2a21828afbbb6912fa0bdb7e8fe1b0f5866690c7f8d8d00d2eb0af33  ./tests/legacy-driver-retirement.test.js
 2eaf80551c3da668fb2192b9df3e7b70ca775fa93595b248e8d50b876ba96945  ./tests/live-sales-cache.test.js
@@ -342,7 +342,7 @@ aff5fb96252f9b5b49ebd67fd1ef3a910042ee0f2cae53f2d11c0c4dafbd5044  ./tests/pickup
 687c270f636fe8c850d571f59e5f9e146255c927a1c4c7ba8f138df91f78ba1b  ./tests/pickup-concurrency-service.test.js
 28696c47e3fceeac6102600d27d64630f8bcfeb839cc482f10bf9fc249c6cff3  ./tests/pickup-feature.test.js
 4565bda39fb3faeec2d2a38083b5b4b292a8d92a0c4b5ef09c54b607bfc8f5e0  ./tests/pickup-handover-service.test.js
-dca1a690cc34c8d3a1e4a3ea5148a84e1f91d38cb738b8cf4b6faa6ae38dbe20  ./tests/pickup-invoice-contacts-browser.test.js
+e5b8bcd183968f7080597afef4293d1f8ff8aacbf82887a94b152ea1bd443227  ./tests/pickup-invoice-contacts-browser.test.js
 ff846ecda92e99cfffaca62e3553a9b436e2b9e97f2f36f29d861e6b5f86ce9b  ./tests/pickup-legacy-compatibility.test.js
 b52228f4588e56191114df5aa760d02be63e44ca157f476cbb573d9862f0d6b1  ./tests/pickup-legacy-guard-api.test.js
 2302757ee48b862b783e1aeaa92da52c7de2ef6512e04b35035002f04b3ff257  ./tests/pickup-pagination-roles.test.js
@@ -462,7 +462,7 @@ ec1b3ec8e454a2d3a6b4ac373736691cf274e310a5cc56c548913f7b3dec0526  ./tests/workfl
 7b462b4835cf97af917251681c922762c1ce8f959c777aff8676a4e84e36ec9f  ./ui-src/README.md
 8a87f2f331da4a7065ec67bd633ca393777b858657c34082be07608a847fec71  ./ui-src/app/01-core-calendars.js
 382069d4c5d69fb499986c6c0b18f0d67eaa29fed647eca0bb953c579e680827  ./ui-src/app/02-shell-gate.js
-c2763ce064e2434835fcc06fb8f4b9f2d19a3e099f9190ea04a6d56877bf2d0c  ./ui-src/app/03-legacy-sales-admin.js
+3e7b325f7d5be49ea6369f9c07aad302100cd0dfbf28178792d09f875e1c77c6  ./ui-src/app/03-legacy-sales-admin.js
 b40375df54a537c880c1cbdbf44e465d3074fc77503fee0e662458242a78cadd  ./ui-src/app/04-session-notifications.js
 650f7ffc62149452fbc6ef1c7907ad5800fc2df1bb3b732187c45a89049e1ef8  ./ui-src/app/05-sales-store.js
 71d507ea62973c8d91522c113b1ee4d53a8e854c035863fd56d293ea1746b900  ./ui-src/app/06-warehouse-documents.js
@@ -478,7 +478,7 @@ b9afcc489a500be9b963ec217cac475bf09a2a2b86c3b766cad40a426d387dfe  ./ui-src/manif
 fd036bd14af74fbfea958895b59336cc0cc77460631c66fa057a240a30548d23  ./ui-src/ui2/05-warehouse.js
 abc8c46c9bb3bed4eae426db7aab8662f5f176b8a07b3767bd52a86141f725d6  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
-6bbe7f924b72934b8e436a4caa95ab4947bb6ddec2fcbe839e644b17971e446a  ./ui-src/ui2/08-transport-invoices.js
+1c365f33912eb658aac4ef065b86cbc1ed5cb6f3737b4deb0993c412e3cef90c  ./ui-src/ui2/08-transport-invoices.js
 cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/README.md
 39d3a3a7217c520f52370a6421bfeb06902ad08a3b6f19f5331963595e6fd45b  ./vendor/acme/THIRD-PARTY-LICENSES.txt
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
