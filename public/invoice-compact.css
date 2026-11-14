@@ -126,3 +126,14 @@ body.invoice-print{margin:0;padding:8px;background:#fff}
 .inv38-settlement .inv38-settlement-meta b{margin:0;min-width:0;overflow-wrap:anywhere}
 @media screen and (max-width:640px){.inv38-settlement .inv38-settlement-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.inv38-settlement .inv38-settlement-meta>div:last-child{grid-column:1/-1}}
 @media print{.inv38-settlement .inv38-settlement-meta{grid-template-columns:minmax(100px,1.3fr) minmax(100px,1fr) minmax(55px,.5fr) minmax(55px,.5fr) minmax(145px,1.4fr)}}
+
+/* Distribution copy: five compact fields on a single RTL horizontal line. */
+.inv38-compact.inv38-distribution .inv38-head{display:block;width:100%}
+.inv38-compact.inv38-distribution .inv38-distribution-meta{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,.85fr) minmax(0,.85fr) minmax(0,1.3fr);width:100%;gap:3px}
+.inv38-compact.inv38-distribution .inv38-distribution-meta>div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:3px;gap:2px;text-align:center}
+.inv38-compact.inv38-distribution .inv38-distribution-meta span{font-size:10px;white-space:nowrap}
+.inv38-compact.inv38-distribution .inv38-distribution-meta b{font-size:12px;line-height:1.5;margin:0;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.inv38-compact .inv38-delivery-signature{display:flex;flex-direction:column;min-height:155px;padding:10px;break-inside:avoid}
+.inv38-compact .inv38-delivery-declaration{margin:0;text-align:right;line-height:2;font-size:12px;color:#111}
+.inv38-compact .inv38-delivery-signer{margin-top:auto;padding-top:24px;align-self:flex-end;text-align:left;display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:100%;overflow-wrap:anywhere}
+.inv38-compact .inv38-delivery-signer :is(span,strong,b){font-size:11px;color:#111;margin:0}

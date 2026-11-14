@@ -27,7 +27,7 @@ test('فاکتور پیش از خروج تسویه یا تحویل را تأیی
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ'});
  vm.runInContext(fragment('function transportDraftInvoiceHtml(order,invoice){','async function transportDraftPreview(id){'),ctx);
  const html=ctx.transportDraftInvoiceHtml({orderNo:'123'},{invoiceNumber:'456',customerName:'<مشتری>',customerPhone:'09',priceLines:[{productName:'<کالا>',deliveredKg:2,unitPrice:1000,amount:2000}],subtotalAmount:2000,discountAmount:300,additionsAmount:50,totalAmount:1750});
- assert.match(html,/پیش از تحویل و تعیین تسویه/);assert.match(html,/پیش از امضای دستی مشتری، تأیید تحویل یا تسویه نیست/);assert.match(html,/امضای دستی مشتری/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);assert.doesNotMatch(html,/تسویه نهایی و آماده خروج/);
+ assert.doesNotMatch(html,/فاکتور فروش و تحویل|پیش از تحویل و تعیین تسویه|این سند پیش از|امضای دستی مشتری|________________/);assert.match(html,/inv38-delivery-signature/);assert.match(html,/<span>امضا<\/span>/);assert.match(html,/اینجانب <strong[^>]*>&lt;مشتری&gt;<\/strong>، اقلام فوق/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);assert.doesNotMatch(html,/تسویه نهایی و آماده خروج/);
 });
 test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر واقعی و چک وصول‌نشده را درست نشان می‌دهد',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ',n:x=>Number(x||0)});
@@ -37,6 +37,7 @@ test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر
  const html=ctx.invoiceHtml(base,{totalAmount:0,discountAmount:300,additionsAmount:50,returnDeduction:1750,settlementMethods:[]});
  assert.match(html,/جمع اقلام<\/span><b>2000/);assert.match(html,/کسر مرجوعی<\/span><b>1750/);assert.doesNotMatch(html,/<span>وضعیت<\/span>/);assert.match(html,/مبلغ پرداختی<\/span><b>0/);assert.doesNotMatch(html,/جزئیات روش پرداخت ثبت نشده/);
  const pending=ctx.invoiceHtml({...base,transportReturn:{outcome:'DELIVERED'}},{totalAmount:1750,discountAmount:300,additionsAmount:50,settlementMethods:[{type:'CHECK',amount:1750,checkStatus:'PENDING'}],debtAccount:{initial:1750,receipts:[{amount:1750,status:'PENDING'}]}});
+ const delivery=ctx.invoiceHtml({...base,deliveryMode:'DELIVERY',customer:{name:'مشتری واقعی',phone:'0912'},transportHandovers:{'0':{driverName:'روح الله گلی'}}},{totalAmount:0,settlementMethods:[]});assert.match(delivery,/inv38-delivery-signature/);assert.match(delivery,/اینجانب <strong[^>]*>مشتری واقعی<\/strong>، اقلام فوق/);assert.match(delivery,/روح الله گلی/);assert.doesNotMatch(delivery,/________________|نام و امضای مشتری پس از/);
  assert.match(pending,/مبلغ پرداختی<\/span><b>0/);assert.match(pending,/مانده حساب<\/span><b>1750/);
 });
 test('محاسبه فرم فروش با مرجوعی جزئی و کامل مطابق فاکتور است و وزن نامعتبر رد می‌شود',()=>{
