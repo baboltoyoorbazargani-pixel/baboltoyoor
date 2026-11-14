@@ -28,7 +28,7 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
     if(kind==='warehouse')html=wh38List([o],'incoming');
     if(kind==='warehouse-store-incoming')html=`<div class="wh38-store-pane">${wh38StoreList([store],'incoming')}</div>`;
     if(kind==='warehouse-store-preparing')html=`<div class="wh38-store-pane">${wh38StoreList([{...store,status:'WAREHOUSE_PREPARING'}],'preparing')}</div>`;
-    if(kind==='delivery')html=wrap(salesDeliverySummaryRow({...o,transportService:{label:'در مسیر',run:0,driverName:'راننده نمونه',lines:[]}}));
+    if(kind==='delivery')html='<div class="table-wrap"><table class="table sales-distribution-table"><tbody>'+salesDeliverySummaryRow({...o,transportService:{label:'در مسیر',run:0,driverName:'راننده نمونه',lines:[]}})+'</tbody></table></div>';
     if(kind==='transport')html=wrap(transportPlanRows([{...o,customerName:o.customer.name,services:[{run:0,assignment:{driverName:'راننده نمونه',vehicleType:'وانت',vehiclePlate:'12ب34567'},departed:true}]}]));
     if(kind==='store-registered')html=wrap(stRegisteredRow(store));
     if(kind==='store-delivery')html=wrap(st38Row({...store,dispatch:{run:1,status:'IN_TRANSIT',lines:[]}}));
@@ -43,6 +43,7 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
     if(kind==='invoice')html=`<div class="sd-invoice-list">${invoiceRowsV27([{...o,status:'SETTLED'}])}</div>`;
     el.innerHTML=html;
    },kind);
+   if(kind==='delivery'){for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const row=page.locator('.sales-distribution-table tr');await row.waitFor();assert.equal(await row.locator('td').count(),8);assert.equal(await row.evaluate(e=>getComputedStyle(e).display),'table-row');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}continue;}
    if(kind==='invoice'){for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const table=page.locator('.settlement-invoice-table');await table.waitFor();assert.equal(await table.locator('th').count(),7);assert(await table.evaluate(e=>e.scrollWidth<=e.clientWidth+1));}continue;}
    for(const width of [1280,768,390,320]){
     await page.setViewportSize({width,height:900});

@@ -193,7 +193,7 @@ function sdStoreCard(o){
 }
 function remotePhoneQueueRowsV40(orders){
   const queue=(Array.isArray(orders)?orders:[]).filter(o=>o&&o.orderType==='REMOTE'&&['WAREHOUSE_PENDING','WAREHOUSE_PREPARING','RETURNED_TO_SALES','SETTLEMENT_PENDING'].includes(o.status));
-  const rows=queue.map(o=>orderSummaryRow(o,{className:'phone-queue-card-v40',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:[{html:`شماره تماس: ${esc(storeAwareOrderPhone(o)||'—')}`}],actionsHtml:`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>`})).join('');
+  const rows=queue.map(o=>orderSummaryRow(o,{className:'phone-queue-card-v40',statusHtml:badge(o.status),itemCount:activeItemsOf(o).length,extras:[{html:`شماره تماس: ${esc(storeAwareOrderPhone(o)||'—')}`}],actionsHtml:`<button class="btn btn-secondary btn-sm" data-action="order-details" data-id="${esc(o.id)}">${icon('eye',14)} جزئیات سفارش</button>${canSalesEditRemote(o)?`<button type="button" class="btn btn-secondary btn-sm" data-action="future-edit" data-id="${esc(o.id)}">ویرایش سفارش</button>`:''}`})).join('');
   return {queue,html:rows||salesEmptyV25('phone','سفارش تلفنی فعالی در روند نیست','پس از ثبت سفارش غیرحضوری، اینجا قابل پیگیری است.')};
 }
 function renderSalesRemoteV32(orders){

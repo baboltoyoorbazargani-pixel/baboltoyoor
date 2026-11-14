@@ -3,6 +3,11 @@ const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
 function storeAwareOrderName(o){return o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—')}
 function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':(o?.customer?.phone||'—')}
+function settlementMethodLabel(method){
+ const m=method||{},type=String(m.type||'').toUpperCase(),labels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'معوق'};
+ return type==='POS'?['پوز',m.deviceSnapshot?.bank,m.deviceSnapshot?.terminalNumber].filter(Boolean).join(' '):(labels[type]||type||'نامشخص');
+}
+function canSalesEditRemote(o){return o?.orderType==='REMOTE'&&['SCHEDULED_REMOTE','WAREHOUSE_PENDING'].includes(o.status)&&!o.warehouseAcceptedAt&&!o.pickupHandover&&!Object.keys(o.transportHandovers||{}).length;}
 // Shared compact order row. Callers supply only trusted markup for status and actions;
 // customer data and labels are escaped here. A store service remains a separate row.
 function orderSummaryRow(o,opts={}){
@@ -1340,7 +1345,7 @@ function invoiceHtml(o,paySel){
   const paymentRows=methods.map(m=>{
     m=m||{};const type=String(m.type||'').toUpperCase();
     const details=[m.deviceSnapshot?.title?`دستگاه ${m.deviceSnapshot.title}`:'',m.deviceSnapshot?.bank?`بانک ${m.deviceSnapshot.bank}`:'',m.bank?`بانک ${m.bank}`:'',m.reference?`پیگیری ${m.reference}`:'',m.checkNumber?`شماره چک ${m.checkNumber}`:'',m.dueDate?`سررسید ${m.dueDate}`:'',type==='CHECK'&&m.checkStatus==='PENDING'?'در انتظار وصول':'',type!=='CREDIT'&&m.reason?`علت ${m.reason}`:''].filter(Boolean).join(' • ');
-    return `<div class="inv38-payment-row"><div><span>${esc(settleLabels[type]||type||'نامشخص')}</span>${details?`<small>${esc(details)}</small>`:''}</div><b>${amountKnown(m.amount)?money(m.amount):'نامشخص'}</b></div>`;
+    return `<div class="inv38-payment-row"><div><span>${esc(settlementMethodLabel(m))}</span>${details?`<small>${esc(details)}</small>`:''}</div><b>${amountKnown(m.amount)?money(m.amount):'نامشخص'}</b></div>`;
   }).join('');
   const paymentBox=`<section class="inv38-payment-box" aria-label="روش‌های تسویه"><h3>روش‌های تسویه</h3><div class="inv38-payment-row"><span>نوع تسویه</span><b>${esc(settlementKind)}</b></div>${due!==null?`<div class="inv38-payment-row"><span>قابل تسویه</span><b>${money(due)}</b></div>`:''}${paymentRows||`<div class="inv38-payment-empty">${depositOnly?'تمام مبلغ از بیعانه لحاظ‌شده تأمین شده است.':'جزئیات روش پرداخت ثبت نشده است.'}</div>`}<div class="inv38-payment-row inv38-payment-balance"><span>${account?'مانده معوق':'معوق'}</span><b>${account?(current===null?'نامشخص':money(current)):(credit===null?'نامشخص':money(credit))}</b></div>${recordedSum!==null&&due!==null&&recordedSum!==due?'<small class="inv38-payment-note">جمع روش‌های ثبت‌شده با مبلغ قابل تسویه یکسان نیست؛ بررسی لازم است.</small>':''}</section>`;
   return `<div class="inv38-sheet inv38-compact">
@@ -2189,13 +2194,7 @@ async function refreshSalesV21(tab){
 /* independent order entry */
 
 /* remote order handlers */
-async function editRemoteOrder(id){
-  try{const d=await api('/api/orders/'+id);const o=d.order;if(o.orderType!=='REMOTE'||o.status!=='SCHEDULED_REMOTE')return toast('این سفارش دیگر قابل ویرایش نیست.');
-    openModal('ویرایش سفارش غیرحضوری',`<form id="remoteEditForm" class="remote-edit-form"><div class="form-grid">${jalaliInput('تاریخ ارسال','scheduledDate',o.scheduledDate||today(),true)}${time24Input('scheduledTime',time24(o.scheduledAt)||'08:00',true)}<div class="field"><label>یادداشت سفارش</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="order-details-mini"><strong>مشتری: ${esc(storeAwareOrderName(o))}</strong><span>${esc(storeAwareOrderPhone(o))}</span></div><div class="modal-actions"><button class="btn btn-secondary" type="button" data-action="close-modal">انصراف</button><button class="btn btn-primary">ذخیره تغییرات</button></div></form>`);
-    bindJalaliDates($('#remoteEditForm'));
-    $('#remoteEditForm')?.addEventListener('submit',async e=>{e.preventDefault();try{const f=Object.fromEntries(new FormData(e.target));if(!f.scheduledDate)return toast('تاریخ شمسی معتبر وارد کنید.');f.scheduledAt=`${f.scheduledDate}T${f.scheduledTime}`;await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify(f)});closeModal();toast('سفارش غیرحضوری ویرایش شد.');await renderSales('remote')}catch(err){toast(err.message)}});
-  }catch(e){toast(e.message)}
-}
+async function editRemoteOrder(id){return editFutureV25(id);}
 async function cancelRemoteOrder(id){if(!confirm('این سفارش غیرحضوری لغو شود؟'))return;try{await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast('سفارش غیرحضوری لغو شد.');await renderSales('remote')}catch(e){toast(e.message)}}
 
 
@@ -2651,13 +2650,23 @@ async function openStoreApprovalV25(id){
   }catch(e){toast(e.message)}
 }
 async function editFutureV25(id){
-  try{
-    const d=await api('/api/orders/'+id); const o=d.order;
-    if(!o||o.orderType!=='REMOTE'||o.status!=='SCHEDULED_REMOTE')return toast('این سفارش دیگر در وضعیت قابل ویرایش نیست.');
-    openModal('ویرایش برنامه سفارش آینده',`<form id="futureEditFormV25" class="schedule-approval-form"><div class="schedule-approval-hero"><div><span class="eyebrow">UPCOMING ORDER</span><h2>${esc(storeAwareOrderName(o))}</h2><p>${esc(fa(o.orderNo||'—'))} • ${esc(storeAwareOrderPhone(o))}</p></div>${badge(o.status)}</div><div class="store-approval-fields-v25">${jalaliDateTimeInput('تاریخ و ساعت ورود به کارتابل انبار','scheduledDate','scheduledTime',o.scheduledDate||nextDayIso(),time24(o.scheduledAt)||'08:00',true)}${jalaliInput('تاریخ تحویل','deliveryDate',o.deliveryDate||'',false)}${o.deliveryMode==='PICKUP'?'':`<div class="field"><label>محل ارسال</label><div class="input-shell op-input"><span>${icon('truck',17)}</span><input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" required></div></div>`}<div class="field"><label>یادداشت</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button class="btn btn-primary" type="submit">${icon('check',17)} ذخیره برنامه</button></div></form>`);
-    bindJalaliDates($('#futureEditFormV25')); bindTime24($('#futureEditFormV25'));
-    $('#futureEditFormV25')?.addEventListener('submit',async e=>{e.preventDefault();if(!e.target.reportValidity())return;const f=Object.fromEntries(new FormData(e.target));const tm=normalizeTime24(f.scheduledTime);if(!f.scheduledDate || f.scheduledDate<today())return toast('تاریخ ارسال نمی‌تواند قبل از امروز باشد.');if(e.target.querySelector('[data-target=deliveryDate]')?.value.trim()&&!f.deliveryDate)return toast('تاریخ تحویل شمسی معتبر نیست.');if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت ارسال باید با فرمت 24 ساعته مانند 08:30 باشد.');try{await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify({...f,scheduledTime:tm,scheduledAt:`${f.scheduledDate}T${tm}`})});closeModal();toast('برنامه سفارش آینده به‌روزرسانی شد.');await renderSales('future')}catch(err){toast(err.message)}});
-  }catch(e){toast(e.message)}
+ try{
+  const o=(await api('/api/orders/'+encodeURIComponent(id))).order;
+  if(!canSalesEditRemote(o))return toast('ویرایش مستقیم فقط پیش از تأیید انبار مجاز است.');
+  const products=(await api('/api/products')).products.filter(p=>p.isActive!==false);
+  const line=x=>`<tr data-remote-edit-line><td><select data-re-product required aria-label="محصول">${products.map(p=>`<option value="${esc(p.id)}" ${p.id===x.productId?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td><input data-re-qty aria-label="مقدار" required inputmode="decimal" value="${esc(x.requestedQty??'')}"></td><td><select data-re-unit aria-label="واحد">${['کیلوگرم','بسته','عدد','کارتن'].map(u=>`<option ${u===x.requestedUnit?'selected':''}>${u}</option>`).join('')}</select></td><td><input data-re-desc aria-label="توضیح" maxlength="300" value="${esc(x.description||'')}"></td><td><button type="button" data-re-remove class="btn btn-secondary">حذف</button></td></tr>`;
+  openModal('ویرایش سفارش پیش از تأیید انبار',`<form id="remoteFullEdit"><p>${esc(storeAwareOrderName(o))} — ${esc(fa(o.orderNo))}</p><div class="form-grid">${o.status==='SCHEDULED_REMOTE'?jalaliDateTimeInput('ورود به انبار','scheduledDate','scheduledTime',o.scheduledDate,time24(o.scheduledAt)||'08:00',true):''}${jalaliInput('تاریخ تحویل','deliveryDate',o.deliveryDate||'',o.deliveryMode==='PICKUP')}<label>محل ارسال<input name="dispatchPlace" value="${esc(o.dispatchPlace||'')}" ${o.deliveryMode==='PICKUP'?'readonly':''}></label><label>یادداشت<input name="notes" maxlength="1000" value="${esc(o.notes||'')}"></label></div><div class="table-wrap"><table class="table remote-edit-table"><thead><tr><th>محصول</th><th>مقدار</th><th>واحد</th><th>توضیح</th><th>عملیات</th></tr></thead><tbody>${(o.items||[]).filter(x=>x.itemStatus!=='CANCELLED').map(line).join('')}</tbody></table></div><button type="button" class="btn btn-secondary" data-re-add>افزودن قلم</button><p data-re-error role="alert"></p><div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">انصراف</button><button type="submit" class="btn btn-primary">ذخیره سفارش</button></div></form>`);
+  const form=$('#remoteFullEdit');bindJalaliDates(form);bindTime24(form);
+  form.querySelector('[data-re-add]').onclick=()=>form.querySelector('tbody').insertAdjacentHTML('beforeend',line({requestedUnit:'کیلوگرم'}));
+  form.addEventListener('click',e=>{if(e.target.closest('[data-re-remove]'))e.target.closest('tr').remove();});
+  form.onsubmit=async e=>{e.preventDefault();const error=form.querySelector('[data-re-error]'),button=form.querySelector('[type=submit]');error.textContent='';try{
+   const body=Object.fromEntries(new FormData(form));
+   body.items=[...form.querySelectorAll('[data-remote-edit-line]')].map(r=>({productId:r.querySelector('[data-re-product]').value,requestedQty:toAsciiDigits(r.querySelector('[data-re-qty]').value).replace('٫','.'),requestedUnit:r.querySelector('[data-re-unit]').value,description:r.querySelector('[data-re-desc]').value}));
+   if(!body.items.length)throw Error('حداقل یک قلم لازم است.');
+   if(body.scheduledTime){body.scheduledTime=normalizeTime24(body.scheduledTime);body.scheduledAt=body.scheduledDate+'T'+body.scheduledTime;}
+   button.disabled=true;await api('/api/orders/'+encodeURIComponent(id)+'/remote',{method:'PUT',body:JSON.stringify(body)});closeModal();await fetchSalesCache(true);await renderSales(app.sub.sales);toast('سفارش بدون ارجاع به انبار ویرایش شد.');
+  }catch(err){error.textContent=err.message;button.disabled=false;}};
+ }catch(e){toast(e.message);}
 }
 async function cancelFutureV25(id){const order=(app.salesCache?.orders||[]).find(o=>o.id===id);if(!confirm(order?.deposit?'سفارش لغو شود؟ بیعانه به‌صورت خودکار بازگردانده نمی‌شود و باید دستی استرداد و ثبت شود.':'این سفارش آینده لغو شود؟'))return;try{const result=await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast(result.order?.deposit?'سفارش لغو شد؛ استرداد دستی بیعانه را پیگیری کنید.':'سفارش آینده لغو شد.');await renderSales('future');await refreshDepositRefunds();}catch(e){toast(e.message)}}
 

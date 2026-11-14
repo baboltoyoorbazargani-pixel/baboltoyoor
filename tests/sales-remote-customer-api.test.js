@@ -16,6 +16,12 @@ test('سفارش غیرحضوری به پرونده موجود متصل می‌�
   assert.equal((await call('POST','/api/orders/remote',{...body,customerId:'unknown'})).status,400);
   assert.equal((await call('POST','/api/orders/remote',{...body,customerCode:'99999'})).status,400);
   assert.equal((await call('POST','/api/orders/remote',{...body,customerId:a.id,customerCode:b.code})).status,409);
+  const editUrl='/api/orders/'+byPhone.data.order.id+'/remote';
+  const edited=await call('PUT',editUrl,{items:[{productId:'p01',requestedQty:7,requestedUnit:'بسته',description:'اصلاح فروش'}],notes:'بدون دخالت انبار'});assert.equal(edited.status,200,JSON.stringify(edited.data));assert.equal(edited.data.order.items[0].requestedQty,7);assert.equal(edited.data.order.items[0].requestedUnit,'بسته');
+  assert.equal((await call('PUT',editUrl,{items:[]})).status,400);assert.equal((await call('GET','/api/orders/'+byPhone.data.order.id)).data.order.items[0].requestedQty,7);
+  const now=await call('POST','/api/orders/remote',{...body,scheduledDate:new Date().toISOString().slice(0,10),scheduledTime:'00:00'});assert.equal(now.status,201);const currentUrl='/api/orders/'+now.data.order.id;assert.equal((await call('PUT',currentUrl+'/remote',{items:[{productId:'p01',requestedQty:3,requestedUnit:'عدد'}]})).status,200);
+  assert.equal((await call('POST',currentUrl+'/warehouse/accept',{})).status,200);
+  assert.equal((await call('PUT',currentUrl+'/remote',{items:[{productId:'p01',requestedQty:9,requestedUnit:'عدد'}]})).status,409);
   const all=await call('GET','/api/customers?q='+encodeURIComponent(a.phone));assert.equal(all.data.customers.length,1);assert.equal(all.data.customers[0].id,a.id);
  }finally{if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
 });

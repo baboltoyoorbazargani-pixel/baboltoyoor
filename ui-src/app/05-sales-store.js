@@ -87,13 +87,7 @@ async function refreshSalesV21(tab){
 /* independent order entry */
 
 /* remote order handlers */
-async function editRemoteOrder(id){
-  try{const d=await api('/api/orders/'+id);const o=d.order;if(o.orderType!=='REMOTE'||o.status!=='SCHEDULED_REMOTE')return toast('این سفارش دیگر قابل ویرایش نیست.');
-    openModal('ویرایش سفارش غیرحضوری',`<form id="remoteEditForm" class="remote-edit-form"><div class="form-grid">${jalaliInput('تاریخ ارسال','scheduledDate',o.scheduledDate||today(),true)}${time24Input('scheduledTime',time24(o.scheduledAt)||'08:00',true)}<div class="field"><label>یادداشت سفارش</label><div class="input-shell op-input"><input name="notes" value="${esc(o.notes||'')}" placeholder="یادداشت"></div></div></div><div class="order-details-mini"><strong>مشتری: ${esc(storeAwareOrderName(o))}</strong><span>${esc(storeAwareOrderPhone(o))}</span></div><div class="modal-actions"><button class="btn btn-secondary" type="button" data-action="close-modal">انصراف</button><button class="btn btn-primary">ذخیره تغییرات</button></div></form>`);
-    bindJalaliDates($('#remoteEditForm'));
-    $('#remoteEditForm')?.addEventListener('submit',async e=>{e.preventDefault();try{const f=Object.fromEntries(new FormData(e.target));if(!f.scheduledDate)return toast('تاریخ شمسی معتبر وارد کنید.');f.scheduledAt=`${f.scheduledDate}T${f.scheduledTime}`;await api('/api/orders/'+id+'/remote',{method:'PUT',body:JSON.stringify(f)});closeModal();toast('سفارش غیرحضوری ویرایش شد.');await renderSales('remote')}catch(err){toast(err.message)}});
-  }catch(e){toast(e.message)}
-}
+async function editRemoteOrder(id){return editFutureV25(id);}
 async function cancelRemoteOrder(id){if(!confirm('این سفارش غیرحضوری لغو شود؟'))return;try{await api('/api/orders/'+id+'/cancel-remote',{method:'POST',body:JSON.stringify({reason:'لغو توسط فروش'})});toast('سفارش غیرحضوری لغو شد.');await renderSales('remote')}catch(e){toast(e.message)}}
 
 

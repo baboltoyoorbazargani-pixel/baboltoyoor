@@ -31,6 +31,7 @@ test('فاکتور پیش از خروج تسویه یا تحویل را تأیی
 });
 test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر واقعی و چک وصول‌نشده را درست نشان می‌دهد',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ',n:x=>Number(x||0)});
+ const core=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');vm.runInContext(core.slice(core.indexOf('function settlementMethodLabel('),core.indexOf('// Shared compact')),ctx);
  vm.runInContext(fragment('function invoiceHtml(o,paySel){','async function printInvoice(id,run){'),ctx);
  const base={transportWorkflow:1,transportInvoice:{priceLines:[{productName:'کالا',deliveredKg:2,unitPrice:1000,amount:2000}]},transportReturn:{outcome:'NOT_DELIVERED'},items:[]};
  const html=ctx.invoiceHtml(base,{totalAmount:0,discountAmount:300,additionsAmount:50,returnDeduction:1750,settlementMethods:[]});
@@ -72,4 +73,11 @@ test('ورود مبلغ پخش ارقام فارسی، انگلیسی و عرب�
  for(const s of ['1234567','۱٬۲۳۴٬۵۶۷','١,٢٣٤,٥٦٧','1 234 567'])assert.equal(ctx.transportMoneyNumber(s),1234567,s);
  for(const s of ['123x','-3','۱٫۲','9007199254740992',','])assert.equal(ctx.transportMoneyNumber(s),null,s);
  const field={value:'1234567',selectionStart:4,setSelectionRange(a,b){this.caret=[a,b]},setCustomValidity(message){this.validity=message}};ctx.transportFormatMoneyInput(field);assert.equal(field.value,'۱٬۲۳۴٬۵۶۷');assert.deepEqual(field.caret,[5,5]);assert.equal(field.validity,'');field.value='12x3';field.selectionStart=3;ctx.transportFormatMoneyInput(field);assert.equal(field.value,'12x3');assert.match(field.validity,/عدد معتبر/);
+});
+
+test('نام صاحب سفارش در اقرار تحویل تکرار نمی‌شود و نام‌ها بدون پرانتز بولد و زیرخط‌دار هستند',()=>{
+ const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,formatDateTime24:()=>''});vm.runInContext(fragment('function whDocumentTares(line){','async function whDeliveredDetails(id){'),ctx);
+ const base={deliveryMode:'PICKUP',customerName:'مالک',customerPhone:'0912',recipient:{name:'مالک',phone:'0912'},items:[]};
+ const declaration=ctx.whDeliveredDocument(base,true).match(/class="whd-declaration">(.*?)<\/p>/)[1];assert.equal((declaration.match(/مالک/g)||[]).length,1);assert.match(declaration,/<strong style="text-decoration:underline/);assert.doesNotMatch(declaration,/[()]/);
+ const other=ctx.whDeliveredDocument({...base,recipient:{name:'نماینده',phone:'0913'}},true).match(/class="whd-declaration">(.*?)<\/p>/)[1];assert.match(other,/نماینده/);assert.match(other,/سفارش مشتری/);assert.match(other,/مالک/);
 });

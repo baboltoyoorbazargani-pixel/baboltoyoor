@@ -1340,3 +1340,26 @@
 #appView #content .settlement-invoice-table td .toolbar{display:flex!important;flex-wrap:nowrap!important;justify-content:center;align-items:center;gap:4px}
 #appView #content .settlement-invoice-table .btn{font-size:13px;font-weight:700;flex:0 1 auto;line-height:1.5}
 @media(max-width:900px){#appView #content .settlement-invoice-table td .toolbar{overflow-x:auto;justify-content:flex-start;padding-bottom:4px}#appView #content .settlement-invoice-table td .toolbar .btn{flex:0 0 auto;white-space:nowrap!important}}
+
+/* Consistent cartable tables: identity, state and operations remain separate. */
+#appView #content .sales-distribution-table{width:100%;min-width:1000px;table-layout:fixed;border-collapse:collapse}
+#appView #content .sales-distribution-table :is(th,td){text-align:center;vertical-align:middle;font-size:14px;font-weight:700;padding:10px 7px;border:1px solid var(--line,#dce4eb);overflow-wrap:anywhere}
+#appView #content .sales-distribution-table th{background:var(--surface-alt,#f1f5f9)}
+#appView #content .sales-distribution-table tr.sales-delivery-summary-row{display:table-row!important;height:auto!important;min-height:0!important;max-height:none!important;width:auto!important;margin:0!important;padding:0!important;white-space:normal!important}
+#appView #content .sales-distribution-table tr.sales-delivery-summary-row>td{display:table-cell!important;height:auto!important;white-space:normal!important;border:1px solid var(--line,#dce4eb)!important}
+#appView #content .sales-distribution-table :is(th,td):first-child{width:19%}
+#appView #content .sales-distribution-table :is(th,td):nth-child(5){width:18%}
+#appView #content .sales-distribution-table td small{display:block}
+#appView #content .sales-delivery-column-list{overflow-x:auto;min-width:0}
+#remoteFullEdit .remote-edit-table{min-width:650px;width:100%}
+#remoteFullEdit .remote-edit-table :is(input,select){width:100%;min-width:70px;box-sizing:border-box}
+#remoteFullEdit .table-wrap{overflow-x:auto}
+#remoteFullEdit [data-re-error]{color:var(--danger,#b91c1c)}
+/* Shared order queues use equal column boundaries and a single horizontal action line. */
+#appView #content .order-summary-row{border-radius:0!important;margin-block:0!important;border-bottom:1px solid var(--line,#dce4eb)!important}
+#appView #content .order-summary-row>.order-summary-cell{justify-content:center!important;text-align:center!important;font-size:14px!important;font-weight:700!important}
+#appView #content .order-summary-row>.order-summary-identity{flex-basis:200px!important;min-width:200px!important}
+#appView #content .order-summary-row>.order-code{flex-basis:140px!important;min-width:140px!important}
+#appView #content .order-summary-row>.order-summary-date{flex-basis:190px!important;min-width:190px!important}
+#appView #content .order-summary-row>.order-summary-status{flex-basis:170px!important;min-width:170px!important}
+#appView #content .order-summary-row>.order-summary-actions{flex-wrap:nowrap!important;white-space:nowrap!important}

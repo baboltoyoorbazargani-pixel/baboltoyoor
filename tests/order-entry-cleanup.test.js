@@ -45,18 +45,11 @@ test('future entry still rejects previous dates and malformed times',async()=>{
   assert.equal(h.calls.length,0);assert.equal(h.messages.length,1);
  }
 });
-test('editing a future order also allows the selected time today',async()=>{
- const fields={scheduledDate:'2026-10-14',scheduledTime:'16:45',dispatchPlace:'بابل'};
- const calls=[],messages=[];let submit;
- const form={fields,querySelector:()=>null,addEventListener:(name,fn)=>{submit=fn},reportValidity:()=>true};
- const source=app.slice(app.indexOf('async function editFutureV25(id)'),app.indexOf('async function cancelFutureV25(id)'));
- const c={FormData:class{constructor(f){this.fields=f.fields}*[Symbol.iterator](){yield*Object.entries(this.fields)}},
- api:async(url,opts)=>{if(opts){calls.push({url,...opts});return{}}return{order:{id:'test-order',orderType:'REMOTE',status:'SCHEDULED_REMOTE',customer:{name:'مشتری'},scheduledDate:'2026-10-15',scheduledAt:'2026-10-15T08:00'}}},
- toast:m=>messages.push(m),storeAwareOrderName:o=>o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—'),storeAwareOrderPhone:o=>o?.orderType==='STORE'?'':(o?.customer?.phone||'—'),today:()=> '2026-10-14',normalizeTime24:s=>s,openModal(){},closeModal(){},bindJalaliDates(){},bindTime24(){},
- $:()=>form,fa:v=>String(v).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),esc:s=>s||'',badge:()=>'',jalaliDateTimeInput:()=>'',jalaliInput:()=>'',time24:s=>s.slice(11,16),icon:()=>'',nextDayIso:()=> '2026-10-15',renderSales:async()=>{}};
- vm.createContext(c);vm.runInContext(source,c);await c.editFutureV25('test-order');
- assert.equal(typeof submit,'function');await submit({preventDefault(){},target:form});
- assert.equal(calls.length,1,JSON.stringify(messages));assert.equal(JSON.parse(calls[0].body).scheduledAt,'2026-10-14T16:45');
+test('remote edit eligibility is limited to before warehouse acceptance',()=>{
+ const c={};vm.createContext(c);vm.runInContext(app.slice(app.indexOf('function canSalesEditRemote('),app.indexOf('// Shared compact')),c);
+ for(const status of ['SCHEDULED_REMOTE','WAREHOUSE_PENDING'])assert(c.canSalesEditRemote({orderType:'REMOTE',status}));
+ for(const status of ['WAREHOUSE_PREPARING','SETTLEMENT_PENDING','CLOSED'])assert(!c.canSalesEditRemote({orderType:'REMOTE',status}));
+ assert(!c.canSalesEditRemote({orderType:'REMOTE',status:'WAREHOUSE_PENDING',warehouseAcceptedAt:'now'}));
 });
 
 test('future entry requires a valid selected delivery date',async()=>{
