@@ -194,10 +194,11 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   // Two store services use independently assigned drivers and separate documents.
   await ok('POST',`/api/orders/${o.id}/warehouse/accept`,{},wh);
   await ok('POST',`/api/orders/${o.id}/store-run/weights`,{run:1,items:[{itemId:o.items[0].id,deliveredKg:1}]},wh);
-  await ok('POST',`/api/orders/${o.id}/store-run/send-run`,{run:1},wh);
-  assert.equal((await call('GET',`/api/warehouse/store-documents/${o.id}/1`,null,wh)).status,409);
-  assert.equal((await call('POST',`/api/orders/${o.id}/send-dispatch`,{driverId:driver.id,run:1},sales)).status,409);
+  const deniedSend=await call('POST',`/api/orders/${o.id}/store-run/send-run`,{run:1},wh);assert.equal(deniedSend.status,409);
+  assert(!(await ok('GET',`/api/orders/${o.id}`,null,wh)).order.storeRunOps?.r1Shipment,'denial must not mark items as sent');
   await ok('POST',`/api/transport/plans/${o.id}/assign`,{run:1,driverId:driver.id,vehicleId:vehicle.id},transport);
+  await ok('POST',`/api/orders/${o.id}/store-run/send-run`,{run:1},wh);
+  assert.equal((await call('POST',`/api/orders/${o.id}/send-dispatch`,{driverId:driver.id,run:1},sales)).status,409);
   await ok('POST',`/api/transport/plans/${o.id}/assign`,{run:2,driverId:driver2.id,vehicleId:vehicle2.id},transport);
   await ok('POST',`/api/orders/${o.id}/store-run/move`,{itemId:o.items[0].id},wh);
   await ok('POST',`/api/orders/${o.id}/store-run/weights`,{run:2,items:[{itemId:o.items[0].id,deliveredKg:2}]},wh);
