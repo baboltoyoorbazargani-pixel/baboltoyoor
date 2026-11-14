@@ -28,7 +28,7 @@ test('sales delivery cards show store receipt confirmation and notification rout
 test('store receipt endpoint is ownership-scoped and only valid after driver delivery',()=>{
  const routes=read('lib/routes/orders.js');
  const body=routes.slice(routes.indexOf("route('POST', '/api/store/orders/:id/confirm-receipt'"),routes.indexOf("route('GET', '/api/store/orders/:id'"));
- assert.match(body,/order\.storeId!==ctx\.user\.id/);
+ assert.match(body,/store-access.*owns\(ctx\.user,order\)/);
  assert.match(body,/\['DELIVERED','SALES_FINALIZED','CLOSED'\]/);
  assert.match(body,/STORE_RECEIPT_CONFIRMED/);
 });

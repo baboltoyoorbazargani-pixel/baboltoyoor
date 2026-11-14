@@ -15,10 +15,22 @@ test('سفارش جزئی فروشگاه مستقل، تک‌محموله و ب�
  const changed=(await ok('PUT',`/api/store/orders/${customer.id}`,{name:'مشتری ویرایش‌شده',phone:'09121112236',items},shop)).order;assert.equal(changed.customer.name,'مشتری ویرایش‌شده');assert.equal((await call('PUT',`/api/store/orders/${customer.id}`,{name:'',phone:'09121112236',items},shop)).status,400);
  const future=new Date(Date.now()+3*86400000).toISOString().slice(0,10)+'T12:00';await ok('POST',`/api/store/orders/${customer.id}/approve`,{scheduledAt:future},sales);const scheduled=(await ok('GET',`/api/orders/${customer.id}`,null,sales)).order;assert.equal(scheduled.status,'SCHEDULED_REMOTE');assert.equal((await call('POST',`/api/store/orders/${customer.id}/quick-send`,{},sales)).status,409);assert.equal((await call('POST',`/api/orders/${customer.id}/warehouse/accept`,{},wh)).status,409);
  const stock=(await ok('POST','/api/store/orders',{storeOrderKind:'PARTIAL',storePurpose:'STOCK',items},shop)).order;assert.equal(stock.customerId,null);assert.equal(stock.debtTrackingEnabled,false);assert.equal(stock.storeOrderKind,'PARTIAL');
- const bulk=(await ok('POST','/api/store/orders',{items},shop)).order;assert.equal(bulk.storeOrderKind,'BULK');assert.equal(bulk.customerId,null);
+ const bulk=(await ok('POST','/api/store/orders',{items},shop)).order;
+ const scope=await ok('GET','/api/store/scope',null,admin);assert(scope.stores.length>=2);assert.equal((await call('GET','/api/store/scope',null,shop)).status,403);
+ assert((await ok('GET','/api/store/orders',null,admin)).orders.some(o=>o.id===stock.id));assert.equal((await ok('GET',`/api/store/orders/${stock.id}`,null,admin)).order.id,stock.id);
+ assert.equal((await call('POST','/api/store/orders',{items},admin)).status,400);
+ const owner=scope.stores.find(u=>u.storeName.includes('حمزه'));
+ const adminMade=(await ok('POST','/api/store/orders',{items,storeId:owner.id},admin)).order;assert.equal(adminMade.storeId,owner.id);assert.notEqual(adminMade.createdBy,owner.id);
+ const branchList=await ok('GET','/api/store/orders?branchNo='+adminMade.branchNo,null,admin);assert(branchList.orders.every(o=>o.branchNo===adminMade.branchNo));
+ await ok('PUT',`/api/store/orders/${adminMade.id}`,{items,notes:'ویرایش مدیر'},admin);
+ await ok('POST',`/api/store/orders/${adminMade.id}/cancel`,{reason:'آزمون مدیر'},admin);
+ assert((await ok('GET','/api/store/orders?branchNo=9999',null,shop)).orders.some(o=>o.id===stock.id),'shop cannot change ownership scope via branch filter');
+ assert.equal((await call('GET',`/api/store/orders/${stock.id}`,null,other)).status,404);
+ await ok('GET','/api/driver/orders',null,admin);
+assert.equal(bulk.storeOrderKind,'BULK');assert.equal(bulk.customerId,null);
  const bulkEdited=(await ok('PUT',`/api/store/orders/${bulk.id}`,{items,notes:'روزانه'},shop)).order;assert.equal(bulkEdited.customerId,null);
  const legacy=(await ok('POST','/api/store/orders',{name:'خریدار قدیمی',phone:'09121112235',items},shop)).order;assert(legacy.customerId);const legacyEdited=(await ok('PUT',`/api/store/orders/${legacy.id}`,{items,notes:'بدون تغییر مشتری'},shop)).order;assert.equal(legacyEdited.customerId,legacy.customerId);assert.equal(legacyEdited.customer.name,'خریدار قدیمی');
- assert.equal((await ok('GET','/api/store/orders?kind=PARTIAL',null,shop)).total,2);assert.equal((await ok('GET','/api/store/orders?kind=BULK',null,shop)).total,2);assert.equal((await call('GET',`/api/store/orders/${stock.id}`,null,other)).status,404);
+ assert.equal((await ok('GET','/api/store/orders?kind=PARTIAL',null,shop)).total,2);assert.equal((await ok('GET','/api/store/orders?kind=BULK',null,shop)).total,3);assert.equal((await call('GET',`/api/store/orders/${stock.id}`,null,other)).status,404);
  assert.equal((await call('PUT',`/api/store/orders/${stock.id}`,{storeOrderKind:'BULK',items},shop)).status,409);
  const edited=(await ok('PUT',`/api/store/orders/${stock.id}`,{items,notes:'تأمین تکمیلی'},shop)).order;
  await ok('POST',`/api/store/orders/${stock.id}/quick-send`,{},sales);let planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===stock.id);assert.deepEqual(planned.services.map(x=>x.run),[1]);
@@ -32,7 +44,7 @@ test('سفارش جزئی فروشگاه مستقل، تک‌محموله و ب�
  await ok('POST',`/api/orders/${stock.id}/store-run/send-run`,{run:1},wh);let order=(await ok('GET',`/api/orders/${stock.id}`,null,sales)).order;assert(order.warehouseCompletedAt);assert.equal(order.payments.length,0);assert.equal((await call('POST',`/api/orders/${stock.id}/settle`,{},sales)).status,409);
  const salesDoc=(await ok('GET',`/api/sales/store-documents/${stock.id}/1`,null,sales)).document;assert.equal(salesDoc.driverName,'راننده');assert.equal(salesDoc.lines[0].deliveredKg,2.5);assert.equal(salesDoc.storeOrderKind,'PARTIAL');assert(!('handoverToken' in salesDoc));assert.equal((await call('GET',`/api/sales/store-documents/${stock.id}/2`,null,sales)).status,404);
  const doc=(await ok('GET',`/api/warehouse/store-documents/${stock.id}/1`,null,wh)).document;assert.equal(doc.lines[0].deliveredKg,2.5);assert.equal(doc.driverName,'راننده');await ok('POST',`/api/warehouse/transport-handovers/${stock.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc.handoverToken},wh);
- await ok('POST',`/api/sales/store-transport/${stock.id}/1/review`,{reviewConfirmed:true},sales);await ok('POST',`/api/gate/store-shipments/${stock.id}/1/depart`,{departureConfirmed:true},admin);assert.equal((await call('POST',`/api/store/orders/${stock.id}/confirm-receipt`,{run:1},other)).status,404);await ok('POST',`/api/store/orders/${stock.id}/confirm-receipt`,{run:1},shop);await ok('POST',`/api/sales/store-transport/${stock.id}/1/return`,{documentsReturned:true},sales);
+ await ok('POST',`/api/sales/store-transport/${stock.id}/1/review`,{reviewConfirmed:true},sales);await ok('POST',`/api/gate/store-shipments/${stock.id}/1/depart`,{departureConfirmed:true},admin);assert.equal((await call('POST',`/api/store/orders/${stock.id}/confirm-receipt`,{run:1},other)).status,404);await ok('POST',`/api/store/orders/${stock.id}/confirm-receipt`,{run:1},admin);await ok('POST',`/api/sales/store-transport/${stock.id}/1/return`,{documentsReturned:true},sales);
  order=(await ok('GET',`/api/orders/${stock.id}`,null,sales)).order;assert.equal(order.status,'CLOSED');assert.equal(order.payments.length,0);assert.equal(order.transportStoreTrips['1'].status,'CLOSED');
  // All items unavailable: close without driver, shipment, invoice or payment.
  const empty=(await ok('POST','/api/store/orders',{storeOrderKind:'PARTIAL',storePurpose:'STOCK',items},shop)).order;
