@@ -229,7 +229,7 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-ed740572a0db0030f049c717dd7ddbb150b674d7c56f495136bba4d47b87f61f  ./public/ui2.js
+1c32239492f636c3b16ac88a932b4ef4b579a35d7b9323062745a6ef3821d81b  ./public/ui2.js
 c5e573e4da983529891175e551bc35009e50fc4dc83ad5d3f2a607071a279851  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
@@ -384,7 +384,7 @@ f118e3d93906a9d4132e9b2a6c3b5846b86040e1127f3e0244662fd4f3194bcc  ./tests/store-
 3214f10d080e7283123d095f8d3dcf3412bc0e6e82d3daf6d1e22c8afe5432ef  ./tests/store-partial-browser.test.js
 d8595af8ddcc12609e99b7422c182ec3ea563a0c4a6c2355e198eaf5ed8e889e  ./tests/store-partial-disabled.test.js
 9a38ca25481efe8e1efd6ac79c0eea8a3ab70d2da65cc7d8badac7f96dc35b7c  ./tests/store-receipt.test.js
-c59a13611793d0736f6c1fbada56f2ed5f11845ef7f543078a620ab98ca9f8b5  ./tests/store-registered-browser.test.js
+e5efbd6ee34d6c6e30e3c69b4e00a1d8f3255296b434f2c247c110845658dcd2  ./tests/store-registered-browser.test.js
 e8242b34dc33760cb66f87c7f762b53e31e5ce42b6d2946466de0dd839d96627  ./tests/store-run-auto-finalize.test.js
 84a847f0192c8489557beb3606c440ea841619225e38439a66ef11adfd8bb21b  ./tests/store-run-print.test.js
 19a928588684f37ea8b32fdba137eb2f2133b2204d6c02bc0e87a995e5c2b80b  ./tests/store-run-recovery.test.js
@@ -393,11 +393,11 @@ ba44dca04a7e9734a5e2065f1443ece5d620cbf89b86e96ebb33931e5f9c2dd7  ./tests/store-
 623abb2b898362ba03c114b7cc0acb36c8c443027249f4636d577d64b50757e1  ./tests/store-run-restart-policy.test.js
 61a201927e8cf12b553afb3cb63d043d4b6e64980777d1fd34456ccc8dc4f82e  ./tests/store-run-send-append.test.js
 f5e0944300417762a8dd24609522de7e3f842a341d4b6337e8e9f6398805cb91  ./tests/store-run-separate-invoices.test.js
-c8f65dc24d3154d34e074e658422ce9e1b45db01cbf14a202fc63a981e1c94f8  ./tests/store-runs-dispatch-ui.test.js
+c25f47f803d33288f1bd44b058f3110ca3f161e3c90b7ad9dae86497caa649fc  ./tests/store-runs-dispatch-ui.test.js
 e648d7a3683aec53225ec25fe91dba43e29554e4e0098811d1904e0941a8ffe9  ./tests/store-runs-dispatch.test.js
 a7e6ab3940775eac92d2be258cb8a36c0252ef6ace649632d884e11990297436  ./tests/store-runs.test.js
 67d71e50e2e30a548a4d5e71bcf2e1e1982f4ca5c24e0a4df829fa7354c05c13  ./tests/store-send-run2-footer.test.js
-fae24462a77d68976f38c9bf55c321f614e010693790161eb8985ae1ae0d86d1  ./tests/store-service-handover-print-browser.test.js
+abdc3fedab9f6a940375f5eb95a224affa9791515d83972c1dd437ce3a362220  ./tests/store-service-handover-print-browser.test.js
 ea3a424646b436ee3c47fbcbe10cfcaf458696186a4b2f8a85fb58c055ca6b10  ./tests/store-services-keyboard-browser.test.js
 b93beeb35f714d343eedc664bee5fa0f9ab4cdfbbabffc502e9a8b25333cd6f2  ./tests/store-sheet-fit-page.test.js
 5fcb3484f687d5bffef2d54a19247f481760e265ca6e6b3245d8e6a6c27a910a  ./tests/store-sheet-layout-debug.test.js
@@ -463,7 +463,7 @@ dc6425aa0ebc3ea2b54b10d3ef3594c9b58bdb48f6ea9bf47f16a37841221a28  ./ui-src/ui2/0
 28cd805dfb2ee466c82deb18a9727dd6a8147ffab2a55bb0be1032a518904b41  ./ui-src/ui2/03-delivery.js
 f14964326a70efdde72de5a4d62bc1a3ff92d45530277ee07ce5423966354304  ./ui-src/ui2/04-gate.js
 727705b2ddf7212c94730d74be19a56349718eba64a7946747f95385c4fb2405  ./ui-src/ui2/05-warehouse.js
-f496fe64e6073135218fa718405250c05729824dd08c9dcc168c4a7064ec8a17  ./ui-src/ui2/06-store-services.js
+c16b30bd672eca5d8d1afd58cca31a20a51e9231f29866f4d88dba357025c7c1  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
 81c331f90f9773dc0bc3eb5ba1a735fa4a1b3b7d0aea7445a6500b22d71618d2  ./ui-src/ui2/08-transport-invoices.js
 cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/README.md
