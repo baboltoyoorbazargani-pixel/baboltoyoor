@@ -38,6 +38,7 @@ async function api(path,opts={}){
     err.status=res.status; err.code=data.code;
     throw err;
   }
+  if(mutating){app.dataRevision=(app.dataRevision||0)+1;if(app.salesCache)app.salesCache.fetchedAt=0;}
   return data;
 }
 function openModal(title,body){const m=$('#modal');m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>${esc(title)}</strong><button class="modal-close" data-action="close-modal">${icon('close',18)}</button></div><div class="modal-body">${body}</div></div>`;m.classList.add('open')}

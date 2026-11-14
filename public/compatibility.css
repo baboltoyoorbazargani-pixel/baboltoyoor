@@ -1296,3 +1296,22 @@
 #appView #content .sales-customer-results button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:start;padding:9px;border:0;border-radius:7px;background:#fff;cursor:pointer}
 #appView #content .sales-customer-results button:hover,#appView #content .sales-customer-results button:focus-visible{background:#f2f4f7}
 #appView #content [data-sales-dispatch-place][hidden]{display:none!important}
+
+/* Full product names and readable card content; never ellipsize a weighing label. */
+#appView #content .sr318-row>.sr318-name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;line-height:1.8;max-height:none!important;height:auto!important;padding:6px 8px!important}
+.transport-plan-detail-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:12px 14px;margin:8px 0;border:1px solid var(--line,#dce4eb);border-radius:10px;line-height:1.9;max-width:100%;box-sizing:border-box}
+.transport-plan-detail-row>*{min-width:0;max-width:100%;overflow-wrap:anywhere}
+#modal .field,#appView #content .field{min-width:0}
+#modal :is(input,textarea,select),#appView #content :is(input,textarea,select){box-sizing:border-box;max-width:100%}
+#modal :is(input:not([type=checkbox]):not([type=radio]),textarea,select),#appView #content :is(textarea,select){padding-inline:12px;line-height:1.7}
+#modal :is(p,h2,h3,td),#appView #content :is(.sd-panel p,.card p){overflow-wrap:anywhere}
+#appView #content .store-partial-customer-row{display:grid;grid-template-columns:minmax(160px,1fr) minmax(0,2fr);gap:14px;align-items:start}
+#appView #content .store-partial-customer-row>[data-store-customer]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0}
+#appView #content .store-partial-customer-row>[data-store-customer][hidden]{display:none!important}
+@media(max-width:600px){#appView #content .store-partial-customer-row{grid-template-columns:1fr}#appView #content .store-partial-customer-row>[data-store-customer]{grid-template-columns:1fr}}
+/* History actions wrap within their card rather than forcing horizontal scrolling. */
+#appView #content [data-store-section=history] .sd-store-list{width:100%!important;min-width:0!important;overflow:visible!important}
+#appView #content [data-store-section=history] .order-summary-row{display:flex!important;flex-wrap:wrap!important;width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important;max-height:none!important;padding:12px 14px!important;gap:8px 12px!important;white-space:normal!important}
+#appView #content [data-store-section=history] .order-summary-row>*{height:auto!important;max-height:none!important;white-space:normal!important;min-width:0!important;max-width:100%!important;padding:4px 8px!important;overflow-wrap:anywhere}
+#appView #content [data-store-section=history] .order-summary-row :is(.ssin21-history-buttons,.store-receipt-summary,.order-summary-actions){display:flex!important;flex-wrap:wrap!important;white-space:normal!important;max-width:100%!important;gap:8px!important}
+#appView #content [data-store-section=history] .order-summary-row .btn{white-space:normal!important;height:auto!important;min-height:36px;padding:7px 10px!important}

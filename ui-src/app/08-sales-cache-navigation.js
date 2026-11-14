@@ -13,7 +13,8 @@ async function fetchPagedList(url,key){
 async function fetchSalesCache(force=false){
   const fresh=!force && app.salesCache && app.salesCache.fetchedAt && (Date.now()-app.salesCache.fetchedAt<5000);
   if(fresh) return app.salesCache;
-  if(app.salesFetchPromise) return app.salesFetchPromise;
+  if(app.salesFetchPromise){const pending=app.salesFetchPromise;await pending;if(force)return fetchSalesCache(true);return app.salesCache;}
+  const revision=app.dataRevision||0;
   const historyOffset=Math.max(0,Number(app.salesDeliveryHistoryOffset)||0);
   app.salesFetchPromise=Promise.all([
     fetchPagedList('/api/orders','orders'),
@@ -23,6 +24,7 @@ async function fetchSalesCache(force=false){
   ]).then(([ordersResp,visitsResp,deliveryResp,shipResp])=>{
     const ships=shipResp?shipResp.shipments||[]:(app.salesCache?.dispatchDeliveries?.storeRunShipments||[]);
     app.salesCache={orders:ordersResp.orders||[],visits:visitsResp.visits||[],dispatchDeliveries:deliveryResp?{active:deliveryResp.active||[],assigned:deliveryResp.assigned||[],inTransit:deliveryResp.inTransit||[],pending:deliveryResp.pending||[],finalized:deliveryResp.finalized||[],finalizedTotal:deliveryResp.finalizedTotal??(deliveryResp.finalized||[]).length,finalizedOffset:deliveryResp.finalizedOffset??0,finalizedLimit:deliveryResp.finalizedLimit??30,storeRunShipments:ships,error:false}:{...(app.salesCache?.dispatchDeliveries||{}),storeRunShipments:ships,error:true},fetchedAt:Date.now()};
+    if(revision!==(app.dataRevision||0))app.salesCache.fetchedAt=0;
     return app.salesCache;
   }).finally(()=>{app.salesFetchPromise=null;});
   return app.salesFetchPromise;
@@ -346,7 +348,7 @@ async function salesV29ClickHandler(e){
     if(a==='store-quick-send-v40'){
       if(!confirm(app.features?.experimentalTransport?'سفارش فروشگاهی اکنون به انبار و ترابری ارسال شود؟ سفارش زمان‌دار تا موعد مقرر ارسال نمی‌شود.':'این سفارش فروشگاهی بدون انتظار برای زمان‌بندی، همین حالا به صف انبار ارسال شود؟'))return;
       el.disabled=true;
-      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify(app.features?.experimentalTransport?{transportWorkflow:true}:{})});toast(result.order?.status==='WAREHOUSE_PENDING'?(result.order.transportWorkflow===1?'سفارش به انبار و ترابری ارسال شد.':'سفارش با موفقیت به صف انبار ارسال شد.'):'ارسال سریع ثبت شد.');await renderSales('stores');await refreshIndicators();}
+      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify(app.features?.experimentalTransport?{transportWorkflow:true}:{})});toast(result.order?.status==='WAREHOUSE_PENDING'?(result.order.transportWorkflow===1?'سفارش به انبار و ترابری ارسال شد.':'سفارش با موفقیت به صف انبار ارسال شد.'):'ارسال سریع ثبت شد.');await fetchSalesCache(true);await renderSales('stores');await refreshIndicators();}
       catch(err){el.disabled=false;toast(err.message||'ارسال سریع انجام نشد.');}
       return;
     }

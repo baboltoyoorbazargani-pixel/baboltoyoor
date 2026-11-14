@@ -41,12 +41,12 @@ test('اسناد انبار فروشگاه: انتظار راننده، سند �
     return {head:rect(head),cells:[...e.querySelectorAll('.whd-store-meta>span')].map(c=>({box:rect(c),parts:[...c.children].map(rect),text:c.innerText})),table:rect(e.querySelector('.whd-products')),total:rect(e.querySelector('.whd-total'))};
   });
   assert.equal(compactHeader.cells.length,6);const h=compactHeader.cells;
-  assert.equal(normalizeText(h[0].text),'نام فروشگاه: فروشگاه شعبه 1 حمزه کلا');assert.equal(normalizeText(h[5].text),'نوع سفارش: روزانه — سرویس: دوم');
-  assert.deepEqual(h.map(c=>normalizeText(c.text).split(':')[0]).filter((v,i)=>i!==4),['نام فروشگاه','تحویل‌گیرنده','تاریخ ثبت سفارش','شماره سفارش','نوع سفارش']);assert.match(h[4].text,/شماره سند انبار/);
+  assert.equal(normalizeText(h[0].text),'فروشگاه شعبه 1 حمزه کلا');assert.equal(normalizeText(h[5].text),'نوع سفارش: روزانه — سرویس: دوم');
+  assert.deepEqual(h.map(c=>normalizeText(c.text).split(':')[0]).filter((v,i)=>i!==4&&i!==0),['تحویل‌گیرنده','تاریخ ثبت سفارش','شماره سفارش','نوع سفارش']);assert.match(h[4].text,/شماره سند انبار/);
   for(let i=1;i<h.length;i++)assert(h[i-1].box.left>h[i].box.left,'header follows requested physical RTL order');
   assert(Math.max(...h.map(c=>c.box.top))-Math.min(...h.map(c=>c.box.top))<1,JSON.stringify(compactHeader));
-  assert(compactHeader.head.height<=25,JSON.stringify(compactHeader));
-  for(const c of h){assert(c.parts.length===2);assert(Math.abs(c.parts[0].top-c.parts[1].top)<4,JSON.stringify(compactHeader));for(const part of c.parts)assert(part.left>=c.box.left-1&&part.right<=c.box.right+1&&part.bottom<=c.box.bottom+1,JSON.stringify(compactHeader));}
+  assert(compactHeader.head.height<=60,JSON.stringify(compactHeader));
+  for(const [index,c] of h.entries()){assert(c.parts.length===(index===0?1:2));for(const part of c.parts)assert(part.left>=c.box.left-1&&part.right<=c.box.right+1&&part.bottom<=c.box.bottom+1,JSON.stringify(compactHeader));}
   assert(compactHeader.total.left>=compactHeader.table.left&&compactHeader.total.right<compactHeader.table.left+compactHeader.table.width/2,JSON.stringify(compactHeader));
   assert.equal(compactMetrics.rows.length,17);assert(compactMetrics.height<=((148.5-12)*96/25.4),JSON.stringify(compactMetrics));assert(compactMetrics.scroll<=compactMetrics.client+1);assert.match(compactMetrics.signature,/امضاء تحویل‌گیرنده/);assert.match(compactMetrics.total,/۱۵۳/);assert.doesNotMatch(await proof.locator('.whd-store-print').innerText(),/ناخالص|سبد/);const compactPdf=await proof.pdf({format:'A4',printBackground:true});assert.equal((compactPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length,1);
   const long=await page.evaluate(()=>whStoreDocument({run:2,orderNo:'000001',warehouseDocumentNo:'W-000002',storeName:'فروشگاهخیلیطولانی'.repeat(8),driverName:'رانندهخیلیطولانی'.repeat(8),createdAt:new Date().toISOString(),lines:Array.from({length:100},(_,i)=>({productName:'ITEM'+String(i+1).padStart(3,'0'),requestedQty:1,requestedUnit:'عدد',deliveredKg:1}))}));

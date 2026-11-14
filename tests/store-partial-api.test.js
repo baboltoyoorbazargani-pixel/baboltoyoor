@@ -54,5 +54,18 @@ assert.equal(bulk.storeOrderKind,'BULK');assert.equal(bulk.customerId,null);
  await ok('POST',`/api/orders/${empty.id}/store-run/out-of-stock`,{itemId:empty.items[1].id},wh);
  let ended=(await ok('GET',`/api/orders/${empty.id}`,null,sales)).order;assert.equal(ended.status,'OUT_OF_STOCK');assert(ended.warehouseCompletedAt);assert.equal(ended.payments.length,0);assert(!ended.storeRunOps.r1Shipment);assert(!ended.transportStoreTrips);assert((await ok('GET','/api/notifications',null,shop)).notifications.some(n=>n.entityId===empty.id));
 
+ // Combined send + physical handover is atomic, including document numbering and audit.
+ const combined=(await ok('POST','/api/store/orders',{storeOrderKind:'PARTIAL',storePurpose:'STOCK',items:[items[0]]},shop)).order;
+ await ok('POST',`/api/store/orders/${combined.id}/quick-send`,{},sales);await ok('POST',`/api/orders/${combined.id}/warehouse/accept`,{},wh);
+ await ok('POST',`/api/orders/${combined.id}/store-run/weights`,{run:1,items:[{itemId:combined.items[0].id,deliveredKg:2}]},wh);
+ const combinedUrl=`/api/orders/${combined.id}/store-run/send-run`,combinedBody={run:1,physicalHandoverConfirmed:true};
+ assert.equal((await call('POST',combinedUrl,combinedBody,wh)).status,409);let untouched=(await ok('GET',`/api/orders/${combined.id}`,null,wh)).order;assert(!untouched.storeRunOps?.r1Shipment);
+ await ok('POST',`/api/transport/plans/${combined.id}/assign`,{run:1,driverId:driver.id,vehicleId:vehicle.id},transport);
+ const {DatabaseSync}=require('node:sqlite');let sql=new DatabaseSync(path.join(dir,'baboltoyoor.db'));sql.exec("CREATE TRIGGER combined_send_fail BEFORE INSERT ON audit WHEN NEW.action='TRANSPORT_WAREHOUSE_HANDOVER' BEGIN SELECT RAISE(ABORT,'test handover failure'); END");sql.close();
+ assert.equal((await call('POST',combinedUrl,combinedBody,wh)).status,500);untouched=(await ok('GET',`/api/orders/${combined.id}`,null,wh)).order;assert(!untouched.storeRunOps?.r1Shipment);assert(!untouched.transportHandovers?.['1']);assert(!untouched.items[0].sentRun1);assert(!untouched.storeWarehouseDocumentNos?.['1']);
+ sql=new DatabaseSync(path.join(dir,'baboltoyoor.db'));sql.exec('DROP TRIGGER combined_send_fail');sql.close();
+ const sent=(await ok('POST',combinedUrl,combinedBody,wh)).order;assert(sent.transportHandovers['1'].physicalHandoverConfirmed);assert.equal(sent.transportHandovers['1'].document.lines[0].deliveredKg,2);
+ assert.deepEqual((await ok('POST',combinedUrl,combinedBody,wh)).order.transportHandovers,sent.transportHandovers);
+
  }finally{if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
 });

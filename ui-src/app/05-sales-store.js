@@ -103,7 +103,7 @@ function storeServicePrintButtons(id,runs,kind,reportLabel=false){
   return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}${reportLabel?' (برگه وزن و مرجوعی)':''}</button>`).join('')}</div>`;
 }
 // Separate sales copy of the warehouse handover document; it does not record handover.
-function storeSalesDocumentButtons(o){
+function storeSalesDocumentButtons(o,compact=false){
  const sent=new Set(storeAvailableRuns(o)),payments=Array.isArray(o.payments)?o.payments:[],role=normalizeRole(app.user?.roleCode),runs=o.storeOrderKind==='PARTIAL'?[1]:[1,2];
  const editState=run=>{const payment=payments.find(row=>Number(row.deliveryRun)===run);return payment?{payment,edit:(o.documentEdits||[]).slice().reverse().find(row=>row.paymentId===payment.id)}:null;};
  const editActions=runs.map(run=>{
@@ -114,7 +114,7 @@ function storeSalesDocumentButtons(o){
  }).join('');
  const printActions=runs.map(run=>{
   const state=editState(run);if(state?.edit?.status==='PENDING_WAREHOUSE')return '';
-  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش</button>`;
+  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${compact?`سند ${o.storeOrderKind==='PARTIAL'?'جزئی':run===1?'اول':'دوم'}`:`چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش`}</button>`;
  }).join('');
  return `<div class="store-service-print">${printActions}${editActions}</div>`;
 }

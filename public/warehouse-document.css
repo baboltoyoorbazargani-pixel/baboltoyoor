@@ -87,3 +87,7 @@
 .whd-products tfoot td{border-top:1px solid #a9bbc9;background:#f3f7f9;padding:6px;text-align:center;break-inside:avoid}
 .whd-products tfoot .whd-total-label{text-align:left;font-weight:700}
 .whd-products tfoot .whd-total{margin:0!important;width:auto;max-width:none;padding:0!important;border:0;background:none;justify-content:center}
+/* Six ordered header cells share a single print row; long values wrap inside it. */
+.whd-store-print .whd-head{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.3fr);align-items:stretch}
+.whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:3px 5px;overflow-wrap:anywhere}
+.whd-store-print .whd-store-meta>span b{font-size:9px}

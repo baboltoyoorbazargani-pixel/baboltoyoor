@@ -752,6 +752,7 @@ async function api(path,opts={}){
     err.status=res.status; err.code=data.code;
     throw err;
   }
+  if(mutating){app.dataRevision=(app.dataRevision||0)+1;if(app.salesCache)app.salesCache.fetchedAt=0;}
   return data;
 }
 function openModal(title,body){const m=$('#modal');m.innerHTML=`<div class="modal-card"><div class="modal-head"><strong>${esc(title)}</strong><button class="modal-close" data-action="close-modal">${icon('close',18)}</button></div><div class="modal-body">${body}</div></div>`;m.classList.add('open')}
@@ -2203,7 +2204,7 @@ function storeServicePrintButtons(id,runs,kind,reportLabel=false){
   return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}${reportLabel?' (برگه وزن و مرجوعی)':''}</button>`).join('')}</div>`;
 }
 // Separate sales copy of the warehouse handover document; it does not record handover.
-function storeSalesDocumentButtons(o){
+function storeSalesDocumentButtons(o,compact=false){
  const sent=new Set(storeAvailableRuns(o)),payments=Array.isArray(o.payments)?o.payments:[],role=normalizeRole(app.user?.roleCode),runs=o.storeOrderKind==='PARTIAL'?[1]:[1,2];
  const editState=run=>{const payment=payments.find(row=>Number(row.deliveryRun)===run);return payment?{payment,edit:(o.documentEdits||[]).slice().reverse().find(row=>row.paymentId===payment.id)}:null;};
  const editActions=runs.map(run=>{
@@ -2214,7 +2215,7 @@ function storeSalesDocumentButtons(o){
  }).join('');
  const printActions=runs.map(run=>{
   const state=editState(run);if(state?.edit?.status==='PENDING_WAREHOUSE')return '';
-  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش</button>`;
+  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${compact?`سند ${o.storeOrderKind==='PARTIAL'?'جزئی':run===1?'اول':'دوم'}`:`چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش`}</button>`;
  }).join('');
  return `<div class="store-service-print">${printActions}${editActions}</div>`;
 }
@@ -2329,7 +2330,7 @@ document.addEventListener('click',async e=>{
 function transportOrderServiceHtml(o,canReturn){
  if(o.transportWorkflow!==1||o.deliveryMode!=='DELIVERY')return '';
  const runs=o.orderType==='STORE'?(o.storeOrderKind==='PARTIAL'?[1]:[1,2]):[0];
- return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':o.transportStoreReviews?.[key]?'منتظر تأیید خروج نگهبانی':hand?'منتظر بررسی فروش':'در انتظار تحویل انبار';return `<div class="order-compact-row"><b>${o.storeOrderKind==='PARTIAL'?'محموله سفارش جزئی':run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&hand&&!o.transportStoreReviews?.[key]&&!trip&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-review-detail="${run}">بررسی سند و تأیید فروش</button>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
+ return `<section class="section-space"><h3>برنامه ترابری</h3>${runs.map(run=>{const key=String(run),a=o.transportAssignments?.[key],hand=o.transportHandovers?.[key],trip=o.transportStoreTrips?.[key],status=trip?.status==='CLOSED'?'مدارک به فروش بازگشت':trip?.status==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':trip?.status==='IN_TRANSIT'?'در مسیر':o.transportStoreReviews?.[key]?'منتظر تأیید خروج نگهبانی':hand?'منتظر بررسی فروش':'در انتظار تحویل انبار';return `<div class="transport-plan-detail-row"><b>${o.storeOrderKind==='PARTIAL'?'محموله سفارش جزئی':run?`سرویس ${run===1?'اول':'دوم'}`:'سفارش مشتری'}</b><span>راننده: ${esc(a?.driverName||'تعیین نشده')}</span><span>تماس: ${esc(fa(a?.driverPhone||'—'))}</span><span>خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}</span>${run?`<span>${esc(status)}</span>`:''}${run&&hand&&!o.transportStoreReviews?.[key]&&!trip&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-review-detail="${run}">بررسی سند و تأیید فروش</button>`:''}${run&&trip?.status==='RECEIPT_CONFIRMED'&&canReturn&&app.features?.experimentalTransport?`<button type="button" class="btn btn-primary btn-sm" data-store-transport-return="${run}">ثبت بازگشت مدارک همین سرویس</button>`:''}</div>`;}).join('')}</section>`;
 }
 async function openOrderDetails(id){
   const notices=captureEntityNotices('order',id);
@@ -2643,7 +2644,7 @@ async function openStoreApprovalV25(id){
       e.preventDefault(); if(!e.target.reportValidity())return;
       const f=Object.fromEntries(new FormData(e.target)); const tm=normalizeTime24(f.scheduledTime); if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(tm))return toast('ساعت نامعتبر است.');
       if(!f.scheduledDate)return toast('تاریخ شمسی معتبر وارد کنید.');
-      try{const r=await api('/api/store/orders/'+id+'/approve',{method:'POST',body:JSON.stringify({scheduledAt:`${f.scheduledDate}T${tm}`,dispatchPlace:f.dispatchPlace,...(app.features?.experimentalTransport?{transportWorkflow:true}:{})})});closeModal();toast(r.order?.status==='WAREHOUSE_PENDING'?(r.order.transportWorkflow===1?'سفارش تأیید و به انبار و ترابری ارسال شد.':'سفارش تأیید و به صف انبار ارسال شد.'):'سفارش تأیید و برای زمان تعیین‌شده برنامه‌ریزی شد.');await renderSales('stores');await refreshIndicators();}catch(err){toast(err.message)}
+      try{const r=await api('/api/store/orders/'+id+'/approve',{method:'POST',body:JSON.stringify({scheduledAt:`${f.scheduledDate}T${tm}`,dispatchPlace:f.dispatchPlace,...(app.features?.experimentalTransport?{transportWorkflow:true}:{})})});closeModal();toast(r.order?.status==='WAREHOUSE_PENDING'?(r.order.transportWorkflow===1?'سفارش تأیید و به انبار و ترابری ارسال شد.':'سفارش تأیید و به صف انبار ارسال شد.'):'سفارش تأیید و برای زمان تعیین‌شده برنامه‌ریزی شد.');await fetchSalesCache(true);await renderSales('stores');await refreshIndicators();}catch(err){toast(err.message)}
     });
   }catch(e){toast(e.message)}
 }
@@ -2986,7 +2987,8 @@ async function fetchPagedList(url,key){
 async function fetchSalesCache(force=false){
   const fresh=!force && app.salesCache && app.salesCache.fetchedAt && (Date.now()-app.salesCache.fetchedAt<5000);
   if(fresh) return app.salesCache;
-  if(app.salesFetchPromise) return app.salesFetchPromise;
+  if(app.salesFetchPromise){const pending=app.salesFetchPromise;await pending;if(force)return fetchSalesCache(true);return app.salesCache;}
+  const revision=app.dataRevision||0;
   const historyOffset=Math.max(0,Number(app.salesDeliveryHistoryOffset)||0);
   app.salesFetchPromise=Promise.all([
     fetchPagedList('/api/orders','orders'),
@@ -2996,6 +2998,7 @@ async function fetchSalesCache(force=false){
   ]).then(([ordersResp,visitsResp,deliveryResp,shipResp])=>{
     const ships=shipResp?shipResp.shipments||[]:(app.salesCache?.dispatchDeliveries?.storeRunShipments||[]);
     app.salesCache={orders:ordersResp.orders||[],visits:visitsResp.visits||[],dispatchDeliveries:deliveryResp?{active:deliveryResp.active||[],assigned:deliveryResp.assigned||[],inTransit:deliveryResp.inTransit||[],pending:deliveryResp.pending||[],finalized:deliveryResp.finalized||[],finalizedTotal:deliveryResp.finalizedTotal??(deliveryResp.finalized||[]).length,finalizedOffset:deliveryResp.finalizedOffset??0,finalizedLimit:deliveryResp.finalizedLimit??30,storeRunShipments:ships,error:false}:{...(app.salesCache?.dispatchDeliveries||{}),storeRunShipments:ships,error:true},fetchedAt:Date.now()};
+    if(revision!==(app.dataRevision||0))app.salesCache.fetchedAt=0;
     return app.salesCache;
   }).finally(()=>{app.salesFetchPromise=null;});
   return app.salesFetchPromise;
@@ -3319,7 +3322,7 @@ async function salesV29ClickHandler(e){
     if(a==='store-quick-send-v40'){
       if(!confirm(app.features?.experimentalTransport?'سفارش فروشگاهی اکنون به انبار و ترابری ارسال شود؟ سفارش زمان‌دار تا موعد مقرر ارسال نمی‌شود.':'این سفارش فروشگاهی بدون انتظار برای زمان‌بندی، همین حالا به صف انبار ارسال شود؟'))return;
       el.disabled=true;
-      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify(app.features?.experimentalTransport?{transportWorkflow:true}:{})});toast(result.order?.status==='WAREHOUSE_PENDING'?(result.order.transportWorkflow===1?'سفارش به انبار و ترابری ارسال شد.':'سفارش با موفقیت به صف انبار ارسال شد.'):'ارسال سریع ثبت شد.');await renderSales('stores');await refreshIndicators();}
+      try{const result=await api('/api/store/orders/'+encodeURIComponent(el.dataset.id)+'/quick-send',{method:'POST',body:JSON.stringify(app.features?.experimentalTransport?{transportWorkflow:true}:{})});toast(result.order?.status==='WAREHOUSE_PENDING'?(result.order.transportWorkflow===1?'سفارش به انبار و ترابری ارسال شد.':'سفارش با موفقیت به صف انبار ارسال شد.'):'ارسال سریع ثبت شد.');await fetchSalesCache(true);await renderSales('stores');await refreshIndicators();}
       catch(err){el.disabled=false;toast(err.message||'ارسال سریع انجام نشد.');}
       return;
     }
