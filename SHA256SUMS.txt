@@ -471,7 +471,7 @@ cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
 3545f8a45c37aca7222861006dc75175ae532944e88c087b49fbbb218ed47947  ./vendor/acme/package-lock.json
 93c58e2aa525b4850e390f62eb149aa0c49b385aaaf291b0c26d488f5dbb56f5  ./vendor/acme/package.json
-2b2634d2ac59c8269d0a500b4888a555f9271b861bbd7bdbf611d2d18e149682  ./windows-installer/BabolToyor-Setup.cmd
+e2d567b1a1d7f80ec822be139e6871bc26868b6a00374168e78892197e7eccd5  ./windows-installer/BabolToyor-Setup.cmd
 d20077124a57603d110c4fb2359167cfa703d16b7e3e0b3f704027aa77998af9  ./windows-installer/INSTALL-STEPS-fa.html
 2a38beb3eb076243c0b2ae691ae611b23548a05e5266046393d25f5509c2d65f  ./windows-installer/INSTALL-STEPS-fa.md
 4382662039d193b5625a1ddbcb436d179a97f04c3311cdaf0f79af20356429bc  ./windows-installer/Install-BabolToyor.ps1
