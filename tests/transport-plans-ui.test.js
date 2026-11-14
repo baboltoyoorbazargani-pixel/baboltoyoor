@@ -12,10 +12,9 @@ test('پنل آزمایشی در حالت غیرفعال درخواست صف ی�
  const host={innerHTML:''},calls=[];const ctx=vm.createContext({esc,fa:x=>x,$:s=>s==='#transportPlans'?host:null,api:async url=>{calls.push(url);return {experimentalWorkflow:false}}});vm.runInContext(code,ctx);
  await ctx.renderTransportPlanQueue();assert.deepEqual(calls,['/api/transport/capabilities']);assert.equal(host.innerHTML,'');
 });
-test('عملیات خروج تا تأیید صریح انجام نمی‌شود و شماره فاکتور صحیح فرستاده می‌شود',async()=>{
- let html='',button={disabled:false},confirmResult=false;const calls=[];const err={textContent:''};const ctx=vm.createContext({captureEntityNotices:()=>[],finishEntityNotices:()=>{},esc,fa:x=>x,qty:x=>x,encodeURIComponent,JSON,openModal:(title,body)=>{html=body},$:s=>s==='#modal [data-tp-depart]'?button:s==='#modal [data-tp-depart-error]'?err:null,confirm:()=>confirmResult,api:async(...a)=>calls.push(a),closeModal:()=>{},toast:()=>{}});vm.runInContext(code,ctx);ctx.renderTransportPlanQueue=async()=>{};
- ctx.transportPlanDetails({id:'o',orderNo:'1',customerName:'مشتری',items:[]},{run:0,handedOver:true,canDepart:true,invoiceNumber:'000123',assignment:{}},{drivers:[],vehicles:[]});assert.match(html,/000123/);await button.onclick();assert.equal(calls.length,0);
- confirmResult=true;await button.onclick();assert.equal(calls[0][0],'/api/transport/shipments/o/depart');assert.deepEqual(JSON.parse(calls[0][1].body),{invoicePaperGiven:true,invoiceNumber:'000123'});
+test('ترابری فقط انتظار تأیید نگهبانی را نشان می‌دهد و دکمه خروج ندارد',()=>{
+ let html='';const ctx=vm.createContext({captureEntityNotices:()=>[],finishEntityNotices:()=>{},esc,fa:x=>x,qty:x=>x,openModal:(title,body)=>{html=body},$:()=>null});vm.runInContext(code,ctx);
+ ctx.transportPlanDetails({id:'o',orderNo:'1',items:[]},{run:0,handedOver:true,awaitingGate:true,invoiceNumber:'000123',assignment:{}},{drivers:[],vehicles:[]});assert.match(html,/فقط در کارتابل نگهبانی/);assert.doesNotMatch(html,/<button[^>]*data-tp-depart/);
 });
 test('جزئیات فروش و انبار تخصیص مستقل را نشان می‌دهد و فقط فروش می‌تواند بازگشت مدارک تأییدشده را ثبت کند',()=>{
  const appSource=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8'),fragment=appSource.slice(appSource.indexOf('function transportOrderServiceHtml('),appSource.indexOf('async function openOrderDetails('));

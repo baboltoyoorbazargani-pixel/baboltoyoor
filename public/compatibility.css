@@ -1326,3 +1326,17 @@
 #appView #content .settlement-invoice-table :is(.toolbar,.badge){display:flex;flex-wrap:wrap;min-width:0;white-space:normal!important}
 #appView #content .settlement-invoice-table .btn{min-width:0!important;white-space:normal!important;padding:5px!important}
 #appView #content #phoneOrderFormV25 .transport-delivery-choice,#appView #content #phoneOrderFormV25 [data-sales-dispatch-place]{order:0!important;grid-column:auto!important}
+
+/* Readable compact invoice grid: reserve room for one-line operations. */
+#appView #content .settlement-invoice-table{font-size:14px;font-weight:700}
+#appView #content .settlement-invoice-table :is(th,td){text-align:center!important;vertical-align:middle;padding:8px 4px;font-weight:700}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(1){width:15%}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(2){width:10%}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(3),#appView #content .settlement-invoice-table :is(th,td):nth-child(4){width:7%}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(5){width:12%}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(6){width:14%}
+#appView #content .settlement-invoice-table :is(th,td):nth-child(7){width:35%}
+#appView #content .settlement-invoice-table td .badge{justify-content:center;font-size:13px;font-weight:700}
+#appView #content .settlement-invoice-table td .toolbar{display:flex!important;flex-wrap:nowrap!important;justify-content:center;align-items:center;gap:4px}
+#appView #content .settlement-invoice-table .btn{font-size:13px;font-weight:700;flex:0 1 auto;line-height:1.5}
+@media(max-width:900px){#appView #content .settlement-invoice-table td .toolbar{overflow-x:auto;justify-content:flex-start;padding-bottom:4px}#appView #content .settlement-invoice-table td .toolbar .btn{flex:0 0 auto;white-space:nowrap!important}}

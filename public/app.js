@@ -1421,7 +1421,8 @@ async function goTransportSalesWork(id){
   const order=(await api('/api/orders/'+encodeURIComponent(id))).order;
   if(order?.transportInvoice){
     app.salesDeliveryTab=order.transportReturn?'delivered':order.transportDeparture?'inTransit':'assigned';
-    await go('sales','delivery');
+    closeModal();
+    if(app.page!=='sales'||app.sub.sales!=='delivery')await go('sales','delivery');
     if(app.page==='sales'&&app.sub.sales==='delivery')return openTransportDeliveryWork(id);
     return;
   }
@@ -1555,7 +1556,7 @@ const NOTIF_ROUTES={
   STORE_ORDER_QUICK_SENT:{page:'warehouse'},
   STORE_RECEIPT_CONFIRMED:{page:'sales',sub:'delivery'},
   TRANSPORT_ORDER_READY:{page:'drivers',sub:'orders'},
-  TRANSPORT_INVOICE_READY:{page:'drivers',sub:'orders'},
+  TRANSPORT_INVOICE_READY:{page:'gate',sub:'dispatch'},
   TRANSPORT_DEPARTED:{page:'sales',sub:'delivery'},
   STORE_ORDER_DUE:{page:'warehouse'},
   REMOTE_ORDER_DUE:{page:'warehouse'},
@@ -3265,6 +3266,7 @@ async function salesV29ClickHandler(e){
     if(a==='pickup-approve')return pickupApprove(el.dataset.id,el);
     if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
+    if(a==='transport-sales-work')return goTransportSalesWork(el.dataset.id);
     if(a==='select-settlement')return selectSettlement(el.dataset.id);
     if(a==='back-settlement')return renderSales('settlement');
     if(a==='settlement-reopen-prep')return reopenSettlementToWarehouse(el.dataset.id);

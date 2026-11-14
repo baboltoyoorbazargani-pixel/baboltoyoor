@@ -24,9 +24,9 @@ test('انتخاب‌نشدن روش و سفارش بیعانه‌دار پخش 
 });
 test('اعلان ترابری به صف مستقل و خروج به کارتابل تحویل فروش هدایت می‌شود',async()=>{
  const calls=[],clicked=[];const button={click:()=>clicked.push('open')};
- const c={app:{user:{roleCode:'dispatch'}},adm:{},acknowledgeNotifications:async()=>true,normalizeRole:x=>x,go:async(...args)=>calls.push(['go',...args]),document:{querySelector:()=>button},CSS:{escape:x=>x},focusNotificationElement:()=>true,api:async()=>{throw Error('dispatch must not read general order API')},toast:m=>calls.push(['toast',m]),stlOpen:id=>calls.push(['stl',id])};
+ const c={app:{user:{roleCode:'gate'}},adm:{},acknowledgeNotifications:async()=>true,normalizeRole:x=>x,go:async(...args)=>calls.push(['go',...args]),document:{querySelector:()=>button},CSS:{escape:x=>x},focusNotificationElement:()=>true,api:async url=>{assert.equal(url,'/api/gate/dispatch');return {leaving:[{id:'id1'}]};},dspOrderDetails:async id=>calls.push(['gate-details',id]),toast:m=>calls.push(['toast',m]),stlOpen:id=>calls.push(['stl',id])};
  vm.createContext(c);vm.runInContext(fragment(appSource,'const NOTIF_ROUTES={','function faDigits('),c);vm.runInContext(fragment(appSource,'async function openNotificationTarget(', 'function notifyNewArrivals('),c);
- await c.openNotificationTarget('n','TRANSPORT_INVOICE_READY','dispatch','order','id1');assert.deepEqual(calls[0],['go','drivers','orders']);assert.deepEqual(clicked,['open']);assert.equal(c.adm.tab,'dispatch');
+ await c.openNotificationTarget('n','TRANSPORT_INVOICE_READY','gate','order','id1');assert.deepEqual(calls,[['go','gate','dispatch'],['gate-details','id1']]);
  calls.length=0;c.app.user.roleCode='sales';c.api=async()=>({order:{id:'id2',orderType:'REMOTE',transportWorkflow:1,deliveryMode:'DELIVERY',status:'SETTLEMENT_PENDING'}});c.fetchSalesCache=async()=>{c.app.salesCache={dispatchDeliveries:{inTransit:[{id:'id2'}]}}};c.openSalesDeliveryDetails=id=>calls.push(['details',id]);
  await c.openNotificationTarget('n','TRANSPORT_DEPARTED','sales','order','id2');assert.deepEqual(calls,[['go','sales','delivery'],['details','id2']]);assert.equal(c.app.salesDeliveryTab,'inTransit');
 });
@@ -34,4 +34,5 @@ test('اعلان پیش از فاکتور به تسویه و پس از فاکت�
  const events=[],c={app:{page:'sales',sub:{sales:'delivery'}},order:{},api:async()=>({order:c.order}),closeModal:()=>{},go:async(p,s)=>{events.push('go-'+s);c.app.page=p;c.app.sub.sales=s;},fetchSalesCache:async()=>{events.push('fetch');return{orders:[]}},paintSalesPaneV29:(tab)=>events.push('paint-'+tab),stlOpen:id=>events.push('settlement-'+id),openTransportDeliveryWork:id=>events.push('delivery-'+id)};
  vm.createContext(c);vm.runInContext(fragment(appSource,'async function goTransportSalesWork(', 'async function bootstrap('),c);await c.goTransportSalesWork('id');assert.deepEqual(events,['go-settlement','fetch','paint-settlement','settlement-id']);
  events.length=0;c.order={transportInvoice:{status:'PREPARED'},transportDeparture:{}};await c.goTransportSalesWork('id');assert.deepEqual(events,['go-delivery','delivery-id']);assert.equal(c.app.salesDeliveryTab,'inTransit');
+ events.length=0;await c.goTransportSalesWork('id');assert.deepEqual(events,['delivery-id']);
 });
