@@ -72,7 +72,7 @@ test('جزئیات تحویل فروشگاه ناخالصی‌های توزین 
  assert(html.includes('سبد ۱٫۸ کیلوگرمی'));assert(html.includes('کارتن ۳۰۰ گرمی'));assert(html.includes('کسر کل'));assert(html.includes('ثبت وزن'));
  assert(!html.includes('مرجوعی'));assert(!html.includes('کسری'));assert(!html.includes('علت'));
  const corrected=c.st38WeighingDetailsHtml({runR1:[{weighings:[{grossKg:5,basket18:1,tareKg:1.8,netKg:3.2}]}]},1,{weighings:null,missingWeighings:true});
- assert.match(corrected,/وزن سند اصلاح شده است/);assert.doesNotMatch(corrected,/سبد ۱٫۸/,'توزین قدیمی نباید بعد از اصلاح وزن به‌عنوان توزین جدید نمایش داده شود');
+ assert.equal(corrected,'');assert.doesNotMatch(corrected,/سبد ۱٫۸/,'توزین قدیمی نباید بعد از اصلاح وزن به‌عنوان توزین جدید نمایش داده شود');
 });
 
 test('جمع‌بندی محموله‌ها در جزئیات سفارش هر دو سرویس را نشان می‌دهد',()=>{
@@ -107,3 +107,18 @@ test('فهرست فاکتورها سفارش چندپردازه را به ردی
  const html=c.st38DeliveredDetails({orderType:'STORE',items:[],dispatch:{run:2,status:'DELIVERED',lines:[{itemId:'removed',productName:'مرغ',deliveredKg:3.2,weighings:[{grossKg:5,basket18:1,tareKg:1.8,netKg:3.2}]}]}});
  assert.match(html,/سبد ۱٫۸/);assert.match(html,/کسر کل/);assert.doesNotMatch(html,/جزئیات توزین انبار برای این سرویس در سابقه ثبت نشده/);
  });
+
+test('store delivery separates net and gross; no impurity leaves an empty cell',()=>{
+ const c=ctx('st38WeighingDetailsHtml','st38DeliveredDetails');
+ const make=(weighings,extra={})=>({orderType:'STORE',items:[],dispatch:{run:1,lines:[{itemId:'i',deliveredKg:8,netKg:6,productName:'مرغ',weighings,...extra}]}});
+ let html=c.st38DeliveredDetails(make([{grossKg:10,netKg:8,tareKg:2,rackKg:2}]));
+ assert.match(html,/<th>خالص \(کیلوگرم\)<\/th><th>ناخالص \(کیلوگرم\)<\/th>/);
+ assert.match(html,/<td>۸<\/td><td>۱۰<\/td>/,'outgoing net must not subtract later returns');
+ html=c.st38DeliveredDetails(make([{grossKg:8,netKg:8,tareKg:0}]));
+ assert.match(html,/<td>۸<\/td><td>۸<\/td><td><\/td>/);
+ assert.equal(c.st38WeighingDetailsHtml(null,1,{weighings:[{grossKg:8,netKg:8,tareKg:0}]}),'');
+ assert.equal(c.st38WeighingDetailsHtml({runR1:[{kg:8}]},1),'');
+ html=c.st38DeliveredDetails(make(undefined));assert.match(html,/وزن ناخالص در سابقه موجود نیست/);
+ const corrected=make([{grossKg:10,tareKg:2,rackKg:2}]);corrected.storeDocumentCorrections={'1':[{itemId:'i',deliveredKg:7,missingWeighings:true}]};
+ html=c.st38DeliveredDetails(corrected);assert.match(html,/<td>۷<\/td>/);assert.doesNotMatch(html,/راک:/);
+});
