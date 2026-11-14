@@ -4,9 +4,10 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async function printInvoice(id,run)']]){
  const text=fs.readFileSync(path.join(__dirname,'../public',file),'utf8');const start=text.indexOf('function invoiceHtml(o,paySel){');
- const c={esc,n:Number,fa:String,qty:String,money:String,dt:String,todayText:()=>'',storeRunInvoiceLines:()=>[{productName:'محصول',deliveredKg:1}]};vm.createContext(c);vm.runInContext(text.slice(start,text.indexOf(end,start)),c);
+ const c={esc,n:Number,fa:String,qty:String,money:String,dt:String,todayText:()=>'',storeRunInvoiceLines:()=>[{productName:'محصول',deliveredKg:1}]};vm.createContext(c);const core=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');vm.runInContext(core.slice(core.indexOf('function settlementMethodLabel('),core.indexOf('// Shared compact')),c);vm.runInContext(text.slice(start,text.indexOf(end,start)),c);
  const order={orderNo:'123',customer:{name:'مشتری'},items:[{product:{name:'محصول'},deliveredKg:1,unitPrice:100,finalAmount:100}]};
  const html=p=>c.invoiceHtml({...order,payment:p});
+ test(file+': POS label includes historical bank and terminal, safely escaped',()=>{const s=html({totalAmount:100,settlementMethods:[{type:'POS',amount:100,deviceSnapshot:{bank:'صادرات',terminalNumber:'98563214'}}]});assert.match(s,/پوز صادرات 98563214/);const unsafe=html({totalAmount:100,settlementMethods:[{type:'POS',amount:100,deviceSnapshot:{bank:'<script>',terminalNumber:'<img>'}}]});assert.doesNotMatch(unsafe,/<script>|<img>/);});
  if(file==='ui2.js'){
   test('active invoice: totals contain paid/balance and methods show only type and amount',()=>{
    const s=html({totalAmount:100,amountDue:80,depositAmount:20,deposit:{type:'CASH',amount:20},settlementMethods:[{type:'CASH',amount:10},{type:'CHECK',amount:40,checkStatus:'PENDING',bank:'secret bank',reference:'secret reference'},{type:'CREDIT',amount:30}]});
