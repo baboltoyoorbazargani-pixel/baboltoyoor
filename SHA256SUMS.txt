@@ -2,9 +2,9 @@
 9555dd531207fe30ec21f693530a6822b1eb8ce03b3be3b581965df9bf0f5fb2  ./.github/workflows/ci.yml
 1bd57d4d8e439aca6eb9d360b9e3ef036c1494ad8f936fbd5e10b919fedf8778  ./.github/workflows/release.yml
 45a4a240ad89728268c09abcd811ed7e16ef5a4feb3103d89a445ce82e9d5e9b  ./.gitignore
-b1f533b3bc06cee7d1b6d76d45cab03365a30ab97a599764fb272646ec844684  ./CHANGELOG.md
+cba6436e9197feef1ab45269adf6dae87f1923b201abfd9763b5bad31e4cb3c2  ./CHANGELOG.md
 cf5db6b7c699488e4f4fbb243af67205f640173bce553f01a8d9d20414eff31b  ./NOTICE.txt
-972ed3fb508df6e736121fafb2548c5a3e177d2bd9f18b50e00246b1454e2656  ./README.md
+5947e4024a5d6de89bbd7effe5f5416dc80567baee0dac6f188d6583c1870f52  ./README.md
 3e1ee924f1c80a1a1ebcd4f7ad4bebd26a86f8834cf65d953690b7a115d8513e  ./RELEASE-1.0.0-fa.md
 043fe19a948a99d9cbd3b7ef7074cb528a25a7a8cb28fdda2676192d0bd4c148  ./RELEASE-1.0.1-fa.md
 8b1385415f4119942927c0393b66106c62922d216c887f45d9bd2f7b969326a0  ./RELEASE-1.0.10-fa.md
@@ -99,6 +99,7 @@ c85eb4b669d179f6a0a991479e8d210ac8edf40d49d8ff0341e88ea667ae05ed  ./RELEASE-1.0.
 73bbae17e9725825c043b0b89fb2936866be15dcacbf89936f983869c60b9847  ./RELEASE-1.0.91-fa.md
 b47b5b0f69ccd806e1a47a89ecbf8fa2ecaa89c04c6892b7937fabe4b8290149  ./RELEASE-1.0.92-fa.md
 879838124bc61597625bf0b246fa3ebe9ff74fb63f0d0f3a34c228740515819e  ./RELEASE-1.0.93-fa.md
+9d500d6780f9462c6a50355f67b0a143dc0b8f133c3f75e903068fa1486092f3  ./RELEASE-1.0.94-fa.md
 320c7fa99424c56b9d5e2a1bde9f1610b5678b302497e3dac620fb825091f20a  ./RELEASE-37.37.0-fa.md
 47d694d1bc5032fb8543c7f400c9cc14a7ac0f03b751bc6f3bf1b966b5b1d9d9  ./RELEASE-37.38.0-fa.md
 06d5341eb192c86b7cf9499dc195428d082da65ac6bfce75f6fd3ea708a1e576  ./RELEASE-37.39.0-fa.md
@@ -106,7 +107,7 @@ bf6a1b4ae7b0451778c8817376b1d886ba47f882b827b3ccfe6908443504d805  ./RELEASE-37.4
 e1a7535cfce4dd681e262af8ba6d7e4b572ecf2b4c34b3e3f6b1f89d70fb1833  ./RELEASE-37.41.0-fa.md
 c9fbfc2417b4f91a648473156f59f3a138e4dc8a275b74ab13b684ae18e18b38  ./RELEASE-37.42.0-fa.md
 802d5dae281431a49948203c149bf51205c428b5f0b8ebe9d31b0079a5018e0e  ./RELEASE-37.43.0-fa.md
-db3bc05e2ca2a4020151cebcccc716caa5d91b6b3e674df13adf76919c47e33b  ./RELEASE_VERSION.txt
+8a69db9e06e98f42af46feb5a61f04cdff13f818154a6112c3126bbc42c8e0c3  ./RELEASE_VERSION.txt
 6e5a006e078f48892f1622c0fb8370e143c6cb6ce7f17aef2d1941a6a90b2829  ./VERSION.txt
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.png
 7209708807e9d8c4606ab5e51329e856276942962891b7eedc289140151d625f  ./docs/PROJECT-PROMPT-fa.md
@@ -214,7 +215,7 @@ c04c41aacfd10278e8bfe3ceff8758bd0aef92b751f99bcdc3aae608ab54cb78  ./public/desig
 17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31  ./public/fonts/OFL.txt
 4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92  ./public/fonts/Vazirmatn-Variable.woff2
 a85456faaed8f29d884bfb2dc3148dffbf22d22ecff589176764cfe2679a1e3f  ./public/form-layout.css
-4e7d0eb337c324480a25984c2d9c3da90d2ce7ad6352c520f93babbf4d192081  ./public/index.html
+832508fbd5c7d7c2dd03194cdc1e043a33b6884aad515e1565570872a1018cba  ./public/index.html
 a7246da3fd0b6b0c5cfb71e44cdf2b09ccb44b486d148e8808470bab345c8157  ./public/invoice-compact.css
 22b5cb653f7de60bd2284582fc1a1cdabba3950931b206cebe0c9276cd5ec6b4  ./public/invoice-print.html
 538d7d1fe00569ec69cac470798012076eeb5da5ac5b5c5c500022548196ae35  ./public/invoice-print.js
@@ -480,9 +481,9 @@ cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
 3545f8a45c37aca7222861006dc75175ae532944e88c087b49fbbb218ed47947  ./vendor/acme/package-lock.json
 93c58e2aa525b4850e390f62eb149aa0c49b385aaaf291b0c26d488f5dbb56f5  ./vendor/acme/package.json
-79840eab556ef8ba7801c850ce6e1b0ac63902f81a7ccd6ed3fff89ebb84d4b4  ./windows-installer/BabolToyor-Setup.cmd
-88f794c69f13477f0bdbe908c2ebe2079f7a5037debc97031bbfaeaadb373856  ./windows-installer/INSTALL-STEPS-fa.html
-5ad98974cf2738ad847f3b5fecbe2b9864eadf887c9928c65853dd9040f6c26a  ./windows-installer/INSTALL-STEPS-fa.md
-c1979ece017edbf56494f6221bd60ea051eb89e7b1518096bab9f1589a99e70d  ./windows-installer/Install-BabolToyor.ps1
+48b0f9f53bdeba506dcc601a92f20e8f88e546dddc66f2eff452d73cc33f0bd5  ./windows-installer/BabolToyor-Setup.cmd
+83dbe951e45fc22a2ff08e6704fd6c523d1aacf09e689eccb75cbbf8d2f40d46  ./windows-installer/INSTALL-STEPS-fa.html
+cc5802abca42da5aff2573d67088538e10dc73d39966fe9d2ba3da18c484f39c  ./windows-installer/INSTALL-STEPS-fa.md
+9ff890ba036c0039b2715a4a1bd1483c92bf02c9f75eedad056d454b287f7ebe  ./windows-installer/Install-BabolToyor.ps1
 229e2a6ece745a938e06301cd6150630671187a4f434e99e34b96be3d8feb3e8  ./windows-installer/README-fa.md
 097a3fb0f5ca372039cc7e1ec8967affa42e1049fe3f46f6abd00c377ad437aa  ./windows-installer/build-single-file.js
