@@ -101,3 +101,9 @@ test('فاکتور به‌ازای هر سرویس: priceLines برای اقلا
 test('فهرست فاکتورها سفارش چندپردازه را به ردیف‌های جدا می‌شکند',()=>{
  assert(app.includes("orders.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment])"),'فلتینگ فاکتورها');
 });
+
+ test('delivered store details prefer immutable line weighing snapshot without item history',()=>{
+ const c=ctx('st38WeighingDetailsHtml','st38DeliveredDetails');
+ const html=c.st38DeliveredDetails({orderType:'STORE',items:[],dispatch:{run:2,status:'DELIVERED',lines:[{itemId:'removed',productName:'مرغ',deliveredKg:3.2,weighings:[{grossKg:5,basket18:1,tareKg:1.8,netKg:3.2}]}]}});
+ assert.match(html,/سبد ۱٫۸/);assert.match(html,/کسر کل/);assert.doesNotMatch(html,/جزئیات توزین انبار برای این سرویس در سابقه ثبت نشده/);
+ });

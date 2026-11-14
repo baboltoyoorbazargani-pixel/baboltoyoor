@@ -40,12 +40,12 @@ test('فروشگاه: سفارش‌های ثبت‌شده با وضعیت زند
   assert.equal(await page.evaluate(()=>document.activeElement?.dataset?.action),'store-order-details','live refresh keeps keyboard focus');
   const latest=(await call('GET',`/api/orders/${order.id}`,null,admin)).json.order;const item=latest.items.find(i=>i.itemStatus!=='CANCELLED').id;
   await post(`/api/orders/${order.id}/store-run/weights`,{run:1,items:[{itemId:item,deliveredKg:60}]});await page.waitForFunction(id=>document.querySelector(`[data-store-order-id="${id}"]`)?.textContent.includes('وزن‌کشی ثبت شده'),order.id,{timeout:12000});assert.match(await card.innerText(),/سرویس اول/);
-  await post(`/api/orders/${order.id}/store-run/send-run`,{run:1});await page.waitForFunction(id=>document.querySelector(`[data-store-order-id="${id}"]`)?.textContent.includes('منتظر راننده'),order.id,{timeout:12000});
   // A completed first dispatch must not remove the order while a second service is pending.
   const driver=await call('POST','/api/transport/drivers',{fullName:'راننده',phone:'09129998877'},admin);assert.equal(driver.status,201,JSON.stringify(driver.json));
   const vehicle=await call('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'},admin);assert.equal(vehicle.status,201,JSON.stringify(vehicle.json));
   assert.equal((await call('PUT',`/api/transport/drivers/${driver.json.driver.id}/resources`,{vehicleId:vehicle.json.vehicle.id,paymentDeviceId:''},admin)).status,200);
   await post(`/api/transport/plans/${order.id}/assign`,{driverId:driver.json.driver.id,vehicleId:vehicle.json.vehicle.id,run:1});
+  await post(`/api/orders/${order.id}/store-run/send-run`,{run:1});
   const doc=await call('GET',`/api/warehouse/store-documents/${order.id}/1`,null,admin);assert.equal(doc.status,200,JSON.stringify(doc.json));
   await post(`/api/warehouse/transport-handovers/${order.id}`,{run:1,physicalHandoverConfirmed:true,handoverToken:doc.json.document.handoverToken});
   await post(`/api/sales/store-transport/${order.id}/1/review`,{reviewConfirmed:true});await post(`/api/gate/store-shipments/${order.id}/1/depart`,{departureConfirmed:true});

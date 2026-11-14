@@ -9,8 +9,10 @@ test('بازگشت تکمیل اشتباهی پیش و پس از پایان خو
  const admin=(await call('POST','/api/login',{username:'admin',password:'Initial!2345'})).cookie;await ok('POST','/api/account/password',{currentPassword:'Initial!2345',newPassword:pass},admin);
  for(const [username,roleCode,extra] of [['rsales','sales',{}],['rwh','warehouse',{}],['rstore','store',{storeName:'شعبه ۱ حمزه کلا'}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'تست',password:pass,mustChangePassword:false,...extra},admin);
  const login=async username=>(await call('POST','/api/login',{username,password:pass})).cookie,sales=await login('rsales'),wh=await login('rwh'),shop=await login('rstore');
+ const plannedDriver=(await ok('POST','/api/transport/drivers',{fullName:'راننده برنامه',phone:'09121119988'},admin)).driver,plannedVehicle=(await ok('POST','/api/transport/vehicles',{vehicleType:'وانت',plate:'34ب56789'},admin)).vehicle;
+ await ok('PUT',`/api/transport/drivers/${plannedDriver.id}/resources`,{vehicleId:plannedVehicle.id,paymentDeviceId:''},admin);
  const items=[{productId:'p01',requestedQty:10,requestedUnit:'کیلوگرم'},{productId:'p02',requestedQty:10,requestedUnit:'کیلوگرم'}];
- async function order(extra={}){const o=(await ok('POST','/api/store/orders',{items,...extra},shop)).order;await ok('POST',`/api/store/orders/${o.id}/quick-send`,{},sales);await ok('POST',`/api/orders/${o.id}/warehouse/accept`,{},wh);await ok('POST',`/api/orders/${o.id}/warehouse/start-preparing`,{},wh);return o;}
+ async function order(extra={}){const o=(await ok('POST','/api/store/orders',{items,...extra},shop)).order;await ok('POST',`/api/store/orders/${o.id}/quick-send`,{},sales);await ok('POST',`/api/orders/${o.id}/warehouse/accept`,{},wh);await ok('POST',`/api/orders/${o.id}/warehouse/start-preparing`,{},wh);if(o.storeOrderKind!=='PARTIAL')for(const run of [1,2])await ok('POST',`/api/transport/plans/${o.id}/assign`,{run,driverId:plannedDriver.id,vehicleId:plannedVehicle.id},admin);return o;}
  const o=await order(),[a,b]=o.items.map(x=>x.id),url=`/api/orders/${o.id}/store-run/`;
  const post=(action,body)=>ok('POST',url+action,body,wh),weight=(id,run,kg)=>post('weights',{run,items:[{itemId:id,deliveredKg:kg}]});
  // Two prior weighings must be removed from the active total, yet retained as voided history.

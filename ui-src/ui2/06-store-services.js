@@ -4,6 +4,8 @@ function sr38Chips(o){ const sr=o&&o.storeRun; if(!sr||!sr.enabled)return ''; if
 /* ---------- v37.5.0 — ارسال هر سرویس وزن‌شده به فروش (تعیین راننده و تحویل فیزیکی) ---------- */
 function sr38SendBtn(o,run,view){ const ops=o.storeRunOps||{}; const sh=run===2?ops.r2Shipment:ops.r1Shipment;
   const items=view||[]; const label=run===2?'دوم':'اول';
+  const missingDriver=o.transportWorkflow===1&&o.storeOrderKind!=='PARTIAL'&&!o.transportAssignments?.[String(run)]?.driverId;
+  if(missingDriver&&(!sh||sh.status==='PENDING_SALES'))return `<button type="button" class="btn btn-secondary btn-lg" disabled title="ابتدا رانندهٔ همین سرویس را در ترابری تعیین کنید">ارسال سرویس ${label} — منتظر تعیین راننده</button>`;
   if(sh){ // v37.33.0 — اگر پس از ارسال، قلم تازه‌ای برای همین سرویس وزن شده باشد، «ارسال قلم‌های جدید» به همان محموله فعال می‌شود
     const fresh=items.filter(v=>Number(run===2?v.r2Kg||0:v.r1Kg||0)>0&&!(run===2?v.sentInR2:v.sentInR1));
     if(sh.status==='PENDING_SALES'&&fresh.length){ return `<span class="st-run-chip st-run-stage" title="اقلام این سرویس به فروش ارسال شده‌اند">${icon('check',13)} سرویس ${label} به فروش ارسال شد</span><button type="button" class="btn btn-primary btn-lg" data-action="sr38-send-run" data-id="${o.id}" data-run="${run}" title="این قلم‌های تازه به همان محمولهٔ نزد فروش افزوده می‌شوند">${icon('send',16)} ارسال ${qty(fresh.length)} قلم جدید سرویس ${label} به فروش</button>`; }
@@ -129,7 +131,7 @@ function st38DeliveredDetails(o){
  const confirmed = !!d.storeReceiptConfirmedAt;
  const confirmedAt = d.storeReceiptConfirmedAt || '';
  const freeFlow=o.orderType==='STORE'; // v37.6.0 — فلوی فروشگاه بدون هیچ مبالغی؛ سند این عرضه وزنی است
- const rows=freeFlow?lines.map((line,i)=>{const item=(o.items||[]).find(row=>row.id===line.itemId),correction=(o.storeDocumentCorrections?.[String(d.run)]||[]).find(row=>row.itemId===line.itemId);return `<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.netKg??Math.max(0,Number(line.deliveredKg||0)-Number(line.returnKg||0)-Number(line.shortageKg||0)))}</td><td>${st38WeighingDetailsHtml(item,d.run,correction)}</td></tr>`;}).join('')
+ const rows=freeFlow?lines.map((line,i)=>{const item=(o.items||[]).find(row=>row.id===line.itemId),correction=(o.storeDocumentCorrections?.[String(d.run)]||[]).find(row=>row.itemId===line.itemId);return `<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.netKg??Math.max(0,Number(line.deliveredKg||0)-Number(line.returnKg||0)-Number(line.shortageKg||0)))}</td><td>${st38WeighingDetailsHtml(item,d.run,correction||(Array.isArray(line.weighings)?{deliveredKg:line.deliveredKg,weighings:line.weighings,missingWeighings:line.missingWeighings}:null))}</td></tr>`;}).join('')
  :lines.map((line,i)=>`<tr><td>${fa(String(i+1))}</td><td>${esc(line.productName||'قلم')}</td><td>${qty(line.deliveredKg)}</td><td>${qty(line.returnKg||0)}</td><td>${qty(line.shortageKg||0)}</td><td>${qty(line.netKg||0)}</td><td>${esc(line.reason||'—')}</td><td>${money(line.unitPrice||0)}</td><td>${money(line.amountDue??line.grossAmount??0)}</td></tr>`).join('');
  const paid=freeFlow?'':methods.map(m=>`${esc(labels[m.type]||m.type)} ${money(m.amount)}${m.deviceSnapshot?` • ${esc(m.deviceSnapshot.title)} / پایانه ${esc(m.deviceSnapshot.terminalNumber)}`:''}${m.reference?` • پیگیری ${esc(m.reference)}`:''}`).join('، ');
  const summaryCell=freeFlow
