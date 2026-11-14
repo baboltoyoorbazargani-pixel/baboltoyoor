@@ -258,6 +258,19 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const back2=await ok('POST',storeReturn(2),{documentsReturned:true},sales);assert.equal(back2.service.status,'CLOSED');assert.equal(back2.orderClosed,true);
   cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.deepEqual(cart.finalized.filter(x=>x.id===o.id).map(x=>x.transportService.run).sort(),[1,2]);
   const storeFinished=(await ok('GET',`/api/orders/${o.id}`,null,sales)).order;assert.equal(storeFinished.status,'CLOSED');assert.equal(storeFinished.payments.length,0);assert.equal(storeFinished.transportStoreTrips['1'].driverName,'راننده');assert.equal(storeFinished.transportStoreTrips['2'].driverName,'راننده دوم');
+  // Combined final-weight send and handover: missing assignment and audit failures roll back everything.
+  await ok('POST',`/api/orders/${onsite.id}/warehouse/accept`,{},wh);
+  const combined={physicalHandoverConfirmed:true,items:[{itemId:onsite.items[0].id,deliveredKg:2.75}]};
+  assert.equal((await call('POST',`/api/orders/${onsite.id}/warehouse`,combined,wh)).status,409);
+  assert.equal((await ok('GET',`/api/orders/${onsite.id}`,null,sales)).order.status,'WAREHOUSE_PREPARING');
+  await ok('POST',`/api/transport/plans/${onsite.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id},transport);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec("CREATE TRIGGER combined_warehouse_fail BEFORE INSERT ON audit WHEN NEW.action='TRANSPORT_WAREHOUSE_HANDOVER' BEGIN SELECT RAISE(ABORT,'test failure'); END");rawDb.close();
+  assert.equal((await call('POST',`/api/orders/${onsite.id}/warehouse`,combined,wh)).status,500);
+  const rolledBack=(await ok('GET',`/api/orders/${onsite.id}`,null,sales)).order;assert.equal(rolledBack.status,'WAREHOUSE_PREPARING');assert(!rolledBack.transportHandovers);assert(!rolledBack.warehouseDocumentNo);assert(!rolledBack.items[0].deliveredKg);
+  rawDb=new DatabaseSync(path.join(dir,'baboltoyoor.db'));rawDb.exec('DROP TRIGGER combined_warehouse_fail');rawDb.close();
+  const delivered=(await ok('POST',`/api/orders/${onsite.id}/warehouse`,combined,wh));assert.equal(delivered.handover.document.items[0].deliveredKg,2.75);assert.equal(delivered.handover.driverName,'نام جدید راننده');assert.equal(delivered.handover.signedPaperConfirmed,false);assert.equal(delivered.order.status,'SETTLEMENT_PENDING');assert.equal(delivered.order.payments.length,0);
+  await ok('POST',`/api/orders/${onsitePickup.id}/warehouse/accept`,{},wh);const inPerson=await ok('POST',`/api/orders/${onsitePickup.id}/warehouse`,{physicalHandoverConfirmed:true,items:[{itemId:onsitePickup.items[0].id,deliveredKg:1.25}]},wh);assert(inPerson.handover.physicalHandoverConfirmed);assert.equal(inPerson.handover.document.customerName,'مراجعه انبار');assert.equal(inPerson.order.status,'SETTLEMENT_PENDING');
+
   const stopped=new Promise(resolve=>proc.once('exit',resolve));proc.kill('SIGTERM');await stopped;proc=start();await ready();
   const whAgain=(await call('POST','/api/login',{username:'plan-wh',password:pass})).cookie;
   const persisted=(await ok('GET',`/api/warehouse/store-documents/${o.id}/1`,null,whAgain)).document;

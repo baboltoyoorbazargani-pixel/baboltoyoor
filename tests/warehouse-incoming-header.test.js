@@ -17,7 +17,7 @@ test('compact order header is shared by incoming and preparing, preserving both 
  const list=ui.slice(ui.indexOf('function wh38List(orders,kind)'),ui.indexOf('async function wh38Paint(phase)'));
  assert.match(list,/order-compact-row/);assert.match(list,/data-action="wh38-order-details"/);
  assert.doesNotMatch(list,/class="wh38-meta"/);
- assert.match(list,/data-action="wh38-accept"/);assert.match(list,/data-action="wh38-start"/);
+ assert.doesNotMatch(list,/data-action="wh38-accept"/);assert.match(list,/data-action="wh38-start"/);
  assert.match(css,/\.wh38-incoming-card \{[\s\S]*?padding:10px 12px!important/);
 
 });

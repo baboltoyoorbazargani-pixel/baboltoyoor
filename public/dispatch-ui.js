@@ -110,7 +110,7 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
       const dRun = all.find((d) => d && d.run === run);
       if (dRun) o = { ...o, dispatch: dRun };
     }
-    const store = o.orderType === 'STORE';
+    const store = o.orderType === 'STORE', weightOnly=store||app.page==='gate';
     const items = dspScopedItems(o);
     const merged = new Map();
     for (const i of items) {
@@ -118,7 +118,7 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
       const prev = merged.get(key) || { name: i.product?.name || '—', requested: 0, weight: 0, amount: 0, descriptions: [] };
       prev.requested += Number(i.requestedQty || 0); if(i.description)prev.descriptions.push(i.description); prev.weight += Number(i.deliveredKg || 0); prev.amount += Number(i.finalAmount ?? Math.round(Number(i.deliveredKg || 0) * Number(i.unitPrice || 0))); merged.set(key, prev);
     }
-    const rows = [...merged.values()].map((m, idx) => `<tr><td>${fa(String(idx + 1))}</td><td><b>${esc(m.name)}</b></td><td>${qty(m.requested)} کیلوگرم</td><td>${dspKg(m.weight)}</td><td>${esc(m.descriptions.join(' • ')||'—')}</td>${store ? '' : `<td>${m.amount > 0 ? money(m.amount) : '—'}</td>`}</tr>`).join('');
+    const rows = [...merged.values()].map((m, idx) => `<tr><td>${fa(String(idx + 1))}</td><td><b>${esc(m.name)}</b></td><td>${qty(m.requested)} کیلوگرم</td><td>${dspKg(m.weight)}</td><td>${esc(m.descriptions.join(' • ')||'—')}</td>${weightOnly ? '' : `<td>${m.amount > 0 ? money(m.amount) : '—'}</td>`}</tr>`).join('');
     const ops = o.storeRunOps || {};
     const labels = { PENDING_SALES: 'منتظر تعیین راننده', DISPATCHED: 'واگذارشده', FINALIZED: 'نهایی‌شده' };
     const opsLine = (sh, label) => sh ? `<div class="dsp-ops-line"><span class="st-run-chip st-run-r${label === 'دوم' ? 2 : 1}">سرویس ${label}</span> وضعیت: <b>${esc(labels[sh.status] || sh.status || '—')}</b>${sh.sentAt ? ` • ارسال انبار: ${esc(formatDateTime24(sh.sentAt))}` : ''}</div>` : '';
@@ -127,10 +127,10 @@ async function dspOrderDetails(orderId, run = null) { // v37.6.0 — جزئیا�
       ${o.dispatch?.driverName ? `<div class="dsp-driver">راننده: <b>${esc(o.dispatch.driverName)}</b> ${plateViewHtml(o.dispatch.driverPlate, '—', true)}</div>` : ''}
       ${store ? opsLine(ops.r1Shipment, 'اول') + opsLine(ops.r2Shipment, 'دوم') : ''}
       ${(o.dispatch?.events?.length) ? `<details class="dsp-log"><summary>سوابق این سفارش</summary><ol>${dspEvents(o.dispatch)}</ol></details>` : ''}
-      <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن محموله</th><th>توضیحات</th>${store ? '' : '<th>مبلغ</th>'}</tr></thead><tbody>${rows || `<tr><td colspan="5">قلمی ثبت نشده است.</td></tr>`}</tbody></table></div>
-      ${o.dispatch?.priceApprovedAt?(store?dspQtyInvoiceMarkup(o,true):dspInvoiceMarkup(o,true)):''}
-      ${['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch,store):''}
-      <p class="adm-note">${store ? 'محمولهٔ فروشگاه‌ها کاملاً بدون مبلغ است؛ سند این تحویل «سند تحویل وزنی» است.' : 'ارزش ریالی فقط برای مشتریان عادی نمایش داده می‌شود.'}</p>
+      <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>محصول</th><th>مقدار درخواستی</th><th>وزن محموله</th><th>توضیحات</th>${weightOnly ? '' : '<th>مبلغ</th>'}</tr></thead><tbody>${rows || `<tr><td colspan="5">قلمی ثبت نشده است.</td></tr>`}</tbody></table></div>
+      ${!weightOnly&&o.dispatch?.priceApprovedAt?(store?dspQtyInvoiceMarkup(o,true):dspInvoiceMarkup(o,true)):''}
+      ${!weightOnly&&['DELIVERED','SALES_FINALIZED','CLOSED'].includes(o.dispatch?.status)?dspDeliverySummary(o.dispatch,store):''}
+      <p class="adm-note">${weightOnly ? 'اقلام و وزن را با بار واقعی تطبیق دهید.' : 'ارزش ریالی فقط برای مشتریان عادی نمایش داده می‌شود.'}</p>
       <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div></div>`);
     finishEntityNotices(notices);return true;
   } catch (err) { toast(err.message);return false; }

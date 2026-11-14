@@ -3,13 +3,13 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const source=fs.readFileSync(path.join(__dirname,'../public/ui2.js'),'utf8');
 function fragment(start,end){return source.slice(source.indexOf(start),source.indexOf(end));}
 const escape=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-test('سند مشتری پخش محل امضای راننده و مشتری دارد، بدون تغییر سند مشتری قدیمی',()=>{
+test('سند انبار پخش فقط امضای راننده دارد و سند مشتری مستقل می‌ماند',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,formatDateTime24:()=> 'تاریخ'});
  vm.runInContext(fragment('function whDocumentTares(line){','async function whDeliveredDetails(id){'),ctx);
  const base={orderNo:'001',warehouseDocumentNo:'W-000001',customerName:'مشتری',customerPhone:'09',items:[]};
  const html=ctx.whDeliveredDocument({...base,deliveryMode:'DELIVERY',driverName:'<راننده>',driverPhone:'0912'});
- assert.match(html,/امضاء مشتری پس از تحویل/);assert.match(html,/امضاء راننده هنگام دریافت از انبار/);assert.match(html,/&lt;راننده&gt;/);assert.match(html,/امانت/);
- const old=ctx.whDeliveredDocument(base);assert.doesNotMatch(old,/راننده/);assert.match(old,/<span>امضاء<\/span>/);
+ assert.doesNotMatch(html,/امضاء مشتری/);assert.match(html,/امضاء راننده پخش هنگام دریافت از انبار/);assert.match(html,/&lt;راننده&gt;/);assert.doesNotMatch(html,/امانت/);
+ const old=ctx.whDeliveredDocument(base);assert.doesNotMatch(old,/راننده/);assert.match(old,/نام و امضاء مشتری/);
 });
 test('تحویل با تأیید فیزیکی ثبت و سند بلافاصله برای چاپ ارسال می‌شود',async()=>{
  const calls=[];let confirmed=false,fail=false;const ctx=vm.createContext({confirm:()=>confirmed,api:async(...args)=>{calls.push(args);if(fail)throw Error('network');return {handover:{document:{warehouseDocumentNo:'W-1'}}};},closeModal:()=>calls.push('close'),toast:x=>calls.push(x),whPrintDocument:(doc,run)=>calls.push(['print',doc,run]),whDeliveredLoad:async()=>calls.push('regular'),loadWhStoreDocuments:async()=>calls.push('store'),encodeURIComponent,JSON});
@@ -27,7 +27,7 @@ test('فاکتور پیش از خروج تسویه یا تحویل را تأیی
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ'});
  vm.runInContext(fragment('function transportDraftInvoiceHtml(order,invoice){','async function transportDraftPreview(id){'),ctx);
  const html=ctx.transportDraftInvoiceHtml({orderNo:'123'},{invoiceNumber:'456',customerName:'<مشتری>',customerPhone:'09',priceLines:[{productName:'<کالا>',deliveredKg:2,unitPrice:1000,amount:2000}],subtotalAmount:2000,discountAmount:300,additionsAmount:50,totalAmount:1750});
- assert.match(html,/پیش از تحویل و تعیین تسویه/);assert.match(html,/به‌تنهایی تأیید تحویل، امضا یا تسویه نیست/);assert.match(html,/امضای دستی مشتری/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);assert.doesNotMatch(html,/تسویه نهایی و آماده خروج/);
+ assert.match(html,/پیش از تحویل و تعیین تسویه/);assert.match(html,/پیش از امضای دستی مشتری، تأیید تحویل یا تسویه نیست/);assert.match(html,/امضای دستی مشتری/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);assert.doesNotMatch(html,/تسویه نهایی و آماده خروج/);
 });
 test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر واقعی و چک وصول‌نشده را درست نشان می‌دهد',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ',n:x=>Number(x||0)});

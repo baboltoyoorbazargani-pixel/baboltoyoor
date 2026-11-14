@@ -7,7 +7,7 @@ test('صف تسویه از ردیف فشرده و دکمه انتخاب قابل
  vm.runInContext(app.slice(app.indexOf('function orderSummaryRow('),app.indexOf('\nconst app =')),c);
  vm.runInContext(ui.slice(ui.indexOf('function settlementPendingRowsV27(rows){'),ui.indexOf('\nfunction invoiceRowsV27')),c);
  const html=c.settlementPendingRowsV27([{id:'internal-id',orderNo:'000123',status:'SETTLEMENT_PENDING',customer:{name:'مشتری <آزمایشی>'},createdAt:'تاریخ',items:[{}]}]);
- assert.match(html,/stl-queue-item stl-queue-item-card active/);assert.match(html,/data-stl="select" data-id="internal-id"/);assert.match(html,/مشتری &lt;آزمایشی&gt;/);assert.match(html,/شماره سفارش ۰۰۰۱۲۳/);assert.match(html,/stl-queue-customer/);assert.match(html,/stl-queue-order/);assert.match(html,/تاریخ/);assert.match(html,/۱ قلم|1 قلم/);assert.match(html,/آماده تسویه/);
+ assert.match(html,/stl-queue-item stl-queue-item-card active/);assert.match(html,/data-stl="select" data-action="select-settlement" data-id="internal-id"/);assert.match(html,/مشتری &lt;آزمایشی&gt;/);assert.match(html,/شماره سفارش ۰۰۰۱۲۳/);assert.match(html,/stl-queue-customer/);assert.match(html,/stl-queue-order/);assert.match(html,/تاریخ/);assert.match(html,/۱ قلم|1 قلم/);assert.match(html,/آماده تسویه/);
  assert.match(c.settlementPendingRowsV27([]),/سفارشی در انتظار تسویه نیست/);
 });
 test('صف تسویه عرض ثابت و بدون پیمایش افقی دارد',()=>{

@@ -50,7 +50,7 @@ test('final warehouse documents return through an audited edit queue; invoice pr
   assert.equal(result.order.payment.settlementMethods[0].amount,2400);
   assert.equal(result.order.items[0].unitPrice,1200);
   const beforeExit=(await ok('POST',`/api/orders/${first.order.id}/exit`,{checkedItems:[first.order.items[0].id]},gate)).order;
-  assert.equal(beforeExit.status,'EXITED');const exitedAt=beforeExit.exitedAt,warehouseCompletedAt=beforeExit.warehouseCompletedAt;
+  assert.equal(beforeExit.status,'EXITED');assert(!('payment' in beforeExit));assert(!('payments' in beforeExit));assert(!('unitPrice' in beforeExit.items[0]));const gateRead=(await ok('GET',`/api/orders/${first.order.id}`,null,gate)).order;assert(!('payment' in gateRead));assert(!('finalAmount' in gateRead.items[0]));const exitedAt=beforeExit.exitedAt,warehouseCompletedAt=beforeExit.warehouseCompletedAt;
 
   const request=await ok('POST',`/api/sales/orders/${first.order.id}/invoices/${first.payment.id}/warehouse-edit`,{reason:'اصلاح وزن و محصول'},sales);
   assert.equal(request.edit.status,'PENDING_WAREHOUSE');

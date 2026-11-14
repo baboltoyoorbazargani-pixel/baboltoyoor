@@ -43,6 +43,7 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
     if(kind==='invoice')html=`<div class="sd-invoice-list">${invoiceRowsV27([{...o,status:'SETTLED'}])}</div>`;
     el.innerHTML=html;
    },kind);
+   if(kind==='invoice'){for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const table=page.locator('.settlement-invoice-table');await table.waitFor();assert.equal(await table.locator('th').count(),7);assert(await table.evaluate(e=>e.scrollWidth<=e.clientWidth+1));}continue;}
    for(const width of [1280,768,390,320]){
     await page.setViewportSize({width,height:900});
     const row=page.locator('#content .order-summary-row:visible,#content .sales-delivery-summary-row:visible,#content .stl-queue-item:visible,#content .gt-exit-card:visible').first();await row.waitFor();
