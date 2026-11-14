@@ -290,6 +290,7 @@ async function salesV29ClickHandler(e){
     if(a==='pickup-approve')return pickupApprove(el.dataset.id,el);
     if(a==='edit-returned-order')return openReturnedOrderEditor(el.dataset.id);
     if(a==='resubmit-order')return resubmitOrder(el.dataset.id);
+    if(a==='transport-sales-work')return goTransportSalesWork(el.dataset.id);
     if(a==='select-settlement')return selectSettlement(el.dataset.id);
     if(a==='back-settlement')return renderSales('settlement');
     if(a==='settlement-reopen-prep')return reopenSettlementToWarehouse(el.dataset.id);
