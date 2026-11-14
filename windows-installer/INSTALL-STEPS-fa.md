@@ -31,7 +31,7 @@
 
 | ✔ | کار | کجا / چه چیزی |
 |---|---|---|
-| ☐ | ۱. دانلود بستهٔ نصب | [`BabolToyor-Windows-Setup-1.0.95.zip`](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.95/BabolToyor-Windows-Setup-1.0.95.zip) |
+| ☐ | ۱. دانلود بستهٔ نصب | [`BabolToyor-Windows-Setup-1.0.96.zip`](https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye) |
 | ☐ | ۲. (فقط سرور بدون اینترنت) دانلود Node پورتابل | `node-v22.x.x-win-x64.zip` از [nodejs.org/dist](https://nodejs.org/dist/) |
 | ☐ | ۳. کپی فایلها در پوشهای مثل `C:\BabolToyor-Install` | همان ۳ فایل کنار هم |
 | ☐ | ۴. راستکلیک روی ZIP → **Extract All** | پوشهٔ استخراجشده |
@@ -64,15 +64,15 @@
 
 | فایل | پوشهٔ دانلود | اندازه |
 |---|---|---|
-| **`BabolToyor-Windows-Setup-1.0.95.zip`** | [دانلود مستقیم از GitHub Releases](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.95/BabolToyor-Windows-Setup-1.0.95.zip) | حدود ۳٫۳ مگابایت |
+| **`BabolToyor-Windows-Setup-1.0.96.zip`** | [پوشهٔ دریافت در Google Drive](https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye) | حدود ۴٫۲ مگابایت |
 
-صفحهٔ انتشار GitHub (فهرست دارایی‌های نسخه):
-<https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/tag/v1.0.95>
+پوشهٔ انتشار Google Drive (فهرست دارایی‌های نسخه):
+<https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye>
 
 > در این حالت، نصبکننده خودش Node.js را از `winget` یا سایت رسمی `nodejs.org` میگیرد و **چکسام SHA-256 اش را بررسی میکند**. شما هیچ کاری نمیکنید.
 
-**اگر فقط همان یک فایل `BabolToyor-Setup-1.0.95.cmd` را میخواهید** (بدون بستهٔ آفلاین)، آن را از GitHub Releases بگیرید؛ برای دانلود برنامه و Node اینترنت لازم است:
-<https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.95/BabolToyor-Setup-1.0.95.cmd>
+**اگر فقط همان یک فایل `BabolToyor-Setup-1.0.96.cmd` را میخواهید** (بدون بستهٔ آفلاین)، آن را از پوشهٔ Google Drive دریافت کنید؛ برای دانلود برنامه و Node اینترنت لازم است:
+<https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye>
 
 ### حالت ب — سرور کاملاً آفلاین است (هیچ اینترنتی ندارد)
 
@@ -94,7 +94,7 @@
 
 1. روی ویندوز سرور، یک پوشهٔ ساده بسازید:
    `C:\BabolToyor-Install`
-2. فایل `BabolToyor-Windows-Setup-1.0.95.zip` را از کامپیوتر خودتان (فلش، شبکه، RDP، Share، ...) به این پوشه کپی کنید.
+2. فایل `BabolToyor-Windows-Setup-1.0.96.zip` را از کامپیوتر خودتان (فلش، شبکه، RDP، Share، ...) به این پوشه کپی کنید.
 3. **(فقط حالت ب)** فایل `node-v22.x.x-win-x64.zip` را هم به همان پوشه کپی کنید.
 
 > اگر فایل از اینترنت دانلود شده و ویندوز هشدار داد: روی فایل راستکلیک → **Properties** → تیک **Unblock** پایین پنجره → **OK**.
@@ -103,7 +103,7 @@
 
 ## گام ۳ — استخراج ZIP
 
-1. روی `BabolToyor-Windows-Setup-1.0.95.zip` **راستکلیک** کنید.
+1. روی `BabolToyor-Windows-Setup-1.0.96.zip` **راستکلیک** کنید.
 2. **Extract All...** را بزنید.
 3. محل استخراج را همان `C:\BabolToyor-Install` نگه دارید (یا پوشهای که ساختید) → **Extract**.
 
@@ -347,9 +347,9 @@ node scripts\backup-db.js D:\Backup\baboltoyoor.db
 
 | مورد | لینک |
 |---|---|
-| صفحهٔ انتشار GitHub | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/tag/v1.0.95> |
-| بستهٔ آفلاین نصب (پیشنهادی) | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.95/BabolToyor-Windows-Setup-1.0.95.zip> |
-| فقط نصبکنندهٔ تکفایل | <https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.95/BabolToyor-Setup-1.0.95.cmd> |
+| پوشهٔ انتشار Google Drive | <https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye> |
+| بستهٔ آفلاین نصب (پیشنهادی) | <https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye> |
+| فقط نصبکنندهٔ تکفایل | <https://drive.google.com/drive/folders/10S6eLv6Fi-GM6gkwqxC2mN4mFJ5y4vye> |
 | Node.js (فقط اگر خواستید دستی نصب کنید) | <https://nodejs.org/en/download> — LTS، Windows x64 |
 | فایل پورتابل Node برای سرور آفلاین | <https://nodejs.org/dist/> → `v22.x.x/` → `node-v22.x.x-win-x64.zip` |
 | ابزار اختیاری SQLite (نیازی نیست) | <https://www.sqlite.org/download.html> |
