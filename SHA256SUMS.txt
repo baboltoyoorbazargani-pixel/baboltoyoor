@@ -157,7 +157,7 @@ daff7639dca5f63bb2fff9ad83dd6cb9f837a4fab470a2b98205027dfb60e317  ./lib/routes/o
 85090481736c50d654fc87de4076ec3335ef3118eb899b2f5e0fc98336bc89a2  ./lib/routes/pickup.js
 3a027a77740b9f75d1b0f37c0aae0a8f87f479096b59ab492c86962bad6f9eb1  ./lib/routes/resources.js
 d6894c3c708429e0f5fd461c75710613edec4be1c4bd1e2ff5a33214cfa354f7  ./lib/routes/sales-history.js
-4681ebcc6b6e58d78bd0a645c107876da328f794fd8b6b72258bc77f1aa7ef6d  ./lib/routes/store-runs.js
+19f6911c11274534ea199f7f5ac8e988d4ef5a2228408245da30b23fe50c7ff0  ./lib/routes/store-runs.js
 702e4fe02225ce55199975b190e7c54326b0fc76e0a1bc6a68416babbef66b79  ./lib/routes/tls.js
 211a30825f10b0b4d15f531358340020aa576bfb75bcc0fbf90bd008a83a7eff  ./lib/routes/transport-plans.js
 7cdc79817b7caaa5d2bfade21ccaea3029ea5d49110cba56b5091906907ef58c  ./lib/routes/transport-resources.js
@@ -173,7 +173,7 @@ c206a5e194fe346fd967a032561f2e96845fdbf3e7849245d23688f4b8332452  ./lib/service-
 b176418ca7c4b781a86063d14f7cfa015c2a682d92a2a0dc265ac609e256417d  ./lib/sqlite-store.js
 f8e012aac4483c753c33bcc8bd98cfb9a37f4a831bc7c39fb1da60cc59b7a07f  ./lib/store-name.js
 82144b23ac67b5c06a6266d67d137a0c084dc357863042fbddb7f34cb5cda192  ./lib/store-order-kind.js
-e8555a471c2b3a00b6754ca8f2514c51a90714bdec53ae4c6c5c3791c682df9c  ./lib/store-run-print.js
+dac306a3d247d9d39fd9ca1ac1d782258a1e7b7bf44d6b65265d084b315b3875  ./lib/store-run-print.js
 e1cc7eb3b35b8d8908640122c0ec8d7b0164b2f5e27d3dfd8a89d9863c07b1df  ./lib/store-run-recovery.js
 2a01c141ff22c7ad56d0bbdda789334fd4bb902432777d88b50c46a622aea4be  ./lib/store-runs.js
 0b14b3200221628b3235c4e9fc2c2e28400e12f8d6c384e95deb879aac76fdd5  ./lib/store-transport.js
@@ -229,7 +229,7 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-1c32239492f636c3b16ac88a932b4ef4b579a35d7b9323062745a6ef3821d81b  ./public/ui2.js
+5dfa53bcc81885b49809b2b3c80ceaa57209bd9499c8c4924e387dc1d657a052  ./public/ui2.js
 c5e573e4da983529891175e551bc35009e50fc4dc83ad5d3f2a607071a279851  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
@@ -380,13 +380,13 @@ cb7bdc6c4905bec01d1fc3a5d578720d55526298821dcccbb89783e608fd67f3  ./tests/sql-ph
 43119b2260b7be0da94990dd1323485bf20cb20b6000e2e7ba812cacbda50f72  ./tests/store-form-and-warehouse-completion.test.js
 4fa3b4ece8ab1838f2dcb78830578c616ab5839085fe855bba3cccc78acb30f6  ./tests/store-order-auto-close.test.js
 e6ebad88f64aada148a2b30d6d419ffb9a9d0a788fd192e885669baa43a46123  ./tests/store-order-kind.test.js
-f118e3d93906a9d4132e9b2a6c3b5846b86040e1127f3e0244662fd4f3194bcc  ./tests/store-partial-api.test.js
-3214f10d080e7283123d095f8d3dcf3412bc0e6e82d3daf6d1e22c8afe5432ef  ./tests/store-partial-browser.test.js
+fe7f27a71c3bd0ed7e98737d7e2fa5383cf9cbc0e76fdc6828bf175967cb5dbe  ./tests/store-partial-api.test.js
+b86482beca441fa31569971eb7fffe055187d8d07b78483e1453b4706a867766  ./tests/store-partial-browser.test.js
 d8595af8ddcc12609e99b7422c182ec3ea563a0c4a6c2355e198eaf5ed8e889e  ./tests/store-partial-disabled.test.js
 9a38ca25481efe8e1efd6ac79c0eea8a3ab70d2da65cc7d8badac7f96dc35b7c  ./tests/store-receipt.test.js
 e5efbd6ee34d6c6e30e3c69b4e00a1d8f3255296b434f2c247c110845658dcd2  ./tests/store-registered-browser.test.js
 e8242b34dc33760cb66f87c7f762b53e31e5ce42b6d2946466de0dd839d96627  ./tests/store-run-auto-finalize.test.js
-84a847f0192c8489557beb3606c440ea841619225e38439a66ef11adfd8bb21b  ./tests/store-run-print.test.js
+28eb82fc6e896bc1190d0e9b7ae04048c6085401fcf0a2515cab07ef26a123b0  ./tests/store-run-print.test.js
 19a928588684f37ea8b32fdba137eb2f2133b2204d6c02bc0e87a995e5c2b80b  ./tests/store-run-recovery.test.js
 73bb4b3455e576f18fadaa553f8d65e38a9d6185a982c4cb559f43e3ca843f1b  ./tests/store-run-reopen-browser.test.js
 ba44dca04a7e9734a5e2065f1443ece5d620cbf89b86e96ebb33931e5f9c2dd7  ./tests/store-run-reopen.test.js
@@ -433,7 +433,7 @@ df43e25b24990fb3012cb584d94aba5a311f941b5c3155052845de9d5cb68d38  ./tests/wareho
 f14558077b8181ac8c84f230a2c0c0aa8041d6bb980670283d8f04f215a1029d  ./tests/warehouse-return-message-browser.test.js
 1c6c56c3459d0188aa73ad267041c7dd0390dec37d99108ecf8961006f61be24  ./tests/warehouse-return-message.test.js
 97e54e689eb35f5b6a7535c96c4078559b43e8be4553cc52ceb7572224443fbc  ./tests/warehouse-store-details-prep-sheet.test.js
-0fba47187be36dccedea22afa8e38ca901f4652c640941bc2887c50987911ce3  ./tests/warehouse-store-document-browser.test.js
+d96525b745de299a46b3e864db751fa80a12acb4fccd36bd2e426afdde95cd4d  ./tests/warehouse-store-document-browser.test.js
 ba6e24c6e002daeeed2298977b3559fc573d0c2deea7769e48a98690118a75fb  ./tests/warehouse-store-history-tab.test.js
 cbda3303712697e297bd6f89521521d1c659a3f0c57ada843bdb4adbf5f137b4  ./tests/warehouse-store-incoming-minimal.test.js
 8b33baec576b3d81894798c67821ff1c5ad7ff7c438a7f9f59e13d36cb15859d  ./tests/warehouse-store-tabs.test.js
@@ -462,8 +462,8 @@ dc6425aa0ebc3ea2b54b10d3ef3594c9b58bdb48f6ea9bf47f16a37841221a28  ./ui-src/ui2/0
 2850b06232e05ef19244d5c585ec65f2d4df37b5e46a36d948f35711a96a106e  ./ui-src/ui2/02-invoice-edits.js
 28cd805dfb2ee466c82deb18a9727dd6a8147ffab2a55bb0be1032a518904b41  ./ui-src/ui2/03-delivery.js
 f14964326a70efdde72de5a4d62bc1a3ff92d45530277ee07ce5423966354304  ./ui-src/ui2/04-gate.js
-727705b2ddf7212c94730d74be19a56349718eba64a7946747f95385c4fb2405  ./ui-src/ui2/05-warehouse.js
-c16b30bd672eca5d8d1afd58cca31a20a51e9231f29866f4d88dba357025c7c1  ./ui-src/ui2/06-store-services.js
+9370ce0441ccd8e14e26feb62f0ac618f9ee55ba6ec550e40b55c677f86f633c  ./ui-src/ui2/05-warehouse.js
+edd4c1bcd126b2e98b109725b7a004c577bb36717c2aa5cde772080b04c1abe1  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
 81c331f90f9773dc0bc3eb5ba1a735fa4a1b3b7d0aea7445a6500b22d71618d2  ./ui-src/ui2/08-transport-invoices.js
 cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/README.md
