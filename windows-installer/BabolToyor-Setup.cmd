@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-title Babol Toyor 1.0.89 Setup - Windows Server 2025
+title Babol Toyor 1.0.90 Setup - Windows Server 2025
 chcp 65001 >nul 2>&1
 
 rem ===== 1. Require administrator (port 80, firewall and scheduled task) =====
