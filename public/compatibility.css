@@ -1315,3 +1315,14 @@
 #appView #content [data-store-section=history] .order-summary-row>*{height:auto!important;max-height:none!important;white-space:normal!important;min-width:0!important;max-width:100%!important;padding:4px 8px!important;overflow-wrap:anywhere}
 #appView #content [data-store-section=history] .order-summary-row :is(.ssin21-history-buttons,.store-receipt-summary,.order-summary-actions){display:flex!important;flex-wrap:wrap!important;white-space:normal!important;max-width:100%!important;gap:8px!important}
 #appView #content [data-store-section=history] .order-summary-row .btn{white-space:normal!important;height:auto!important;min-height:36px;padding:7px 10px!important}
+
+/* Fixed-column settlement pilot: headers above values; wrap rather than scroll. */
+#appView #content .v26-settlement-layout>section{min-width:0!important}
+#appView #content .v26-invoice-list{display:block!important;min-width:0!important;overflow:visible!important}
+#appView #content .settlement-invoice-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;min-width:0!important}
+#appView #content .settlement-invoice-table :is(th,td){padding:10px 6px;border:1px solid var(--border,#ddd);white-space:normal!important;overflow-wrap:anywhere;vertical-align:top;text-align:right}
+#appView #content .settlement-invoice-table th{background:var(--surface-alt,#f3f5f7);position:sticky;top:0;z-index:1}
+#appView #content .settlement-invoice-table small{display:block;margin-top:6px}
+#appView #content .settlement-invoice-table :is(.toolbar,.badge){display:flex;flex-wrap:wrap;min-width:0;white-space:normal!important}
+#appView #content .settlement-invoice-table .btn{min-width:0!important;white-space:normal!important;padding:5px!important}
+#appView #content #phoneOrderFormV25 .transport-delivery-choice,#appView #content #phoneOrderFormV25 [data-sales-dispatch-place]{order:0!important;grid-column:auto!important}

@@ -10,9 +10,9 @@ const ui=read('public/ui2.js');
 test('تکمیل سفارش حضوری انبار را به سند قابل مشاهده و چاپ هدایت می‌کند و ارسال به فروش را حفظ می‌کند',()=>{
  const finalize=ui.slice(ui.indexOf('async function wh38Finalize(id)'),ui.indexOf('/* ---------------- v37.4.0 — سفارش فروشگاه',ui.indexOf('async function wh38Finalize(id)')));
  assert.match(finalize,/api\('\/api\/orders\/'\+id\+'\/warehouse'/);
- assert.match(finalize,/order\?\.orderType==='ONSITE'/);
- assert.match(finalize,/app\.sub\.warehouse='delivered';renderNav\(\);wh38Shell\('delivered'\);[\s\S]*?await whDeliveredDetails\(id\)/);
- assert.match(finalize,/وزن نهایی ثبت و برای فروش ارسال شد/);
+ assert.match(finalize,/physicalHandoverConfirmed:true/);
+ assert.match(finalize,/whPrintDocument\(doc,0\)/);
+ assert.match(finalize,/تحویل فیزیکی ثبت شد/);
  assert.match(ui,/data-wh-delivered-print/);
 });
 

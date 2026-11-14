@@ -207,8 +207,9 @@ function renderSalesRemoteV32(orders){
       <div class="sales-customer-grid-v25 sales-remote-customer-grid-v40">
         <div class="field contact-field-v41"><label for="phoneCustomerName">نام مشتری</label><div class="input-shell"><span>${icon('user',18)}</span><input id="phoneCustomerName" name="name" required placeholder="نام و نام خانوادگی"></div></div>
         <div class="field contact-field-v41"><label for="phoneCustomerPhone">شماره تماس</label><div class="input-shell"><span>${icon('phone',18)}</span><input id="phoneCustomerPhone" name="phone" required inputmode="tel" placeholder="۰۹۱۲ ..."></div></div>
-        <div class="field sales-remote-place-v40" data-sales-dispatch-place><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
         ${app.features?.experimentalTransport?deliveryModeInputHtml('phone'):''}
+        <div class="field sales-remote-place-v40" data-sales-dispatch-place><label for="phoneDispatchPlace">محل ارسال</label><div class="input-shell"><span>${icon('truck',18)}</span><input id="phoneDispatchPlace" name="dispatchPlace" placeholder="مقصد یا آدرس ارسال"></div></div>
+
       </div>
       ${app.features?.pickupStaging?jalaliInput('تاریخ تحویل در انبار','deliveryDate',today(),true):''}
       <div class="sales-items-head-v25"><div><span class="eyebrow">ORDER LINES</span><h3>اقلام سفارش</h3><p>با کلیدهای جهت‌دار محصول را انتخاب کنید؛ Enter از مقدار و واحد به توضیح می‌رود و در پایان ردیف، قلم بعدی را باز می‌کند. Insert نیز ردیف جدید می‌افزاید؛ ارسال فقط با دکمهٔ ثبت انجام می‌شود.</p></div></div>
@@ -309,12 +310,12 @@ function settlementPendingRowsV27(rows){
  return rows.map(o=>{
   const name=storeAwareOrderName(o),number=fa(o.orderNo||'—');
   const description=`${name}، شماره سفارش ${number}، تاریخ ${formatDateTime24(o.createdAt)}، ${qty(activeItemsOf(o).length)} قلم، آماده تسویه`;
-  return `<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-id="${esc(o.id)}" title="${esc(description)}" aria-label="${esc(description)}"><span class="stl-queue-customer" title="${esc(name)}">${esc(name)}</span><span class="stl-queue-order">سفارش <bdi>${esc(number)}</bdi></span></button>`;
+  return `<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-action="select-settlement" data-id="${esc(o.id)}" title="${esc(description)}" aria-label="${esc(description)}"><span class="stl-queue-customer" title="${esc(name)}">${esc(name)}</span><span class="stl-queue-order">سفارش <bdi>${esc(number)}</bdi></span></button>`;
  }).join('')||'<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
 }
 
 function invoiceRowsV27(rows){
- return rows.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{
+ const body=rows.flatMap(o=>(o.payments&&o.payments.length>1?o.payments:[o.payment]).filter(Boolean).map(pay=>{
   const run=pay.deliveryRun||null;
   const edit=(o.documentEdits||[]).slice().reverse().find(row=>row.paymentId===pay.id);
   if(edit?.status==='PENDING_WAREHOUSE')return '';
@@ -325,12 +326,12 @@ function invoiceRowsV27(rows){
   const warehouseStamp=Date.parse(o.warehouseCompletedAt||pay.verifiedAt||pay.createdAt||'');
   const warehouseExpired=!Number.isFinite(warehouseStamp)||serverEpoch()>warehouseStamp+72*60*60*1000;
   const editLocked=salesExpired&&role!=='admin',warehouseLocked=warehouseExpired&&role!=='admin';
-  const extras=[{html:`فاکتور ${esc(fa(pay.invoiceNumber||'—'))}`},...(run?[{html:o.storeOrderKind==='PARTIAL'?'سفارش جزئی':`سرویس ${run===2?'دوم':'اول'}`}]:[]),{html:o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount||0)},{html:verificationBadges(pay)},{html:`زمان تسویه: ${esc(formatDateTime24(pay.verifiedAt||o.updatedAt||o.createdAt))}`},...(review?[{html:'اصلاح انبار انجام شد؛ بازبینی تسویه لازم است'}]:[])];
   const editActions=o.orderType==='STORE'?'':`<button class="btn btn-secondary btn-sm" data-action="sales-invoice-edit" data-id="${esc(o.id)}" data-payment-id="${esc(pay.id)}" ${editLocked?'disabled title="مهلت ویرایش گذشته است؛ فقط مدیر مجاز است"':''}>${icon('edit',13)} ${editLocked?'فقط مدیر':review?'بازبینی ویرایش':'ویرایش قیمت/تسویه'}</button>`;
   const warehouseAction=edit?.status==='PENDING_SALES_REVIEW'?'':`<button class="btn btn-ghost btn-sm" data-action="sales-warehouse-edit-request" data-id="${esc(o.id)}" data-payment-id="${esc(pay.id)}" ${warehouseLocked?'disabled title="مهلت ارجاع اصلاح گذشته است؛ فقط مدیر مجاز است"':''}>${icon('scale',13)} ${warehouseLocked?'فقط مدیر: اصلاح وزن':'ارجاع اصلاح وزن به انبار'}</button>`;
   const actions=`<button class="btn btn-secondary btn-sm" data-action="invoice" data-id="${esc(o.id)}"${run?` data-run="${run}"`:''}>${icon('eye',13)} فاکتور</button><button class="btn btn-primary btn-sm" data-action="print-invoice" data-id="${esc(o.id)}"${run?` data-run="${run}"`:''}>${icon('receipt',13)} چاپ</button>${editActions}${warehouseAction}`;
   const badges=`${status}${review?'<span class="badge orange">نیازمند بازبینی فروش</span>':''}`;
-  return orderSummaryRow(o,{className:'sd-invoice-row',statusHtml:badges,itemCount:activeItemsOf(o).length,extras,actionsHtml:actions});
- })).join('')||sdEmpty('receipt','فاکتور نهایی‌شده‌ای وجود ندارد','پس از تسویه، فاکتور در این فهرست قرار می‌گیرد.');
+  return `<tr><td>${esc(storeAwareOrderName(o))}</td><td>${esc(fa(storeAwareOrderPhone(o)))}</td><td>${esc(fa(o.orderNo||'—'))}</td><td>${esc(fa(pay.invoiceNumber||'—'))}${run?` · ${o.storeOrderKind==='PARTIAL'?'جزئی':'سرویس '+fa(run)}`:''}</td><td>${o.orderType==='STORE'?'سند وزنی — بدون مبلغ':money(pay.totalAmount||0)}</td><td>${badges}<small>${esc(formatDateTime24(pay.verifiedAt||o.updatedAt||o.createdAt))}</small></td><td><div class="toolbar">${actions}</div></td></tr>`;
+ })).join('');
+ return body?`<table class="settlement-invoice-table"><thead><tr>${['نام مشتری','شماره تماس','شماره سفارش','شماره فاکتور','مبلغ / نوع سند','وضعیت و تاریخ','عملیات'].map(t=>`<th scope="col">${t}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`:sdEmpty('receipt','فاکتور نهایی‌شده‌ای وجود ندارد','پس از تسویه، فاکتور در این فهرست قرار می‌گیرد.');
 }
 const DOCUMENT_EDIT_METHODS=[['CASH','نقدی'],['POS','پوز'],['CARD_TRANSFER','کارت‌به‌کارت'],['CHECK','چک'],['CREDIT','معوق']];

@@ -80,7 +80,7 @@ function renderSalesSettlementV25(orders){
   </section>`;
 }
 function settlementPendingRowsV27(rows){
-  return rows.map(o=>`<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-id="${esc(o.id)}">
+  return rows.map(o=>`<button type="button" class="stl-queue-item stl-queue-item-card ${stl.orderId===o.id?'active':''}" data-stl="select" data-action="select-settlement" data-id="${esc(o.id)}">
     <strong class="stl-queue-customer">${esc(storeAwareOrderName(o))}</strong>
     <span class="stl-queue-order"><span>شماره سفارش</span><bdi>${esc(fa(o.orderNo||'—'))}</bdi></span>
   </button>`).join('') || '<div class="stl-q-empty">سفارشی در انتظار تسویه نیست.</div>';
@@ -327,6 +327,7 @@ if(!window.__stlBoundV374){
   document.addEventListener('click', e=>{
     const t=e.target.closest && e.target.closest('[data-stl]'); if(!t) return;
     const a=t.dataset.stl;
+    if(a==='select'&&t.dataset.action==='select-settlement')return;
     if(a==='select'||a==='retry') return stlOpen(t.dataset.id);
     if(a==='close') return stlClose();
     if(a==='send-dispatch') return sendToDispatch(stl.orderId, ()=>stlOpen(stl.orderId));
