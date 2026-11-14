@@ -8,6 +8,10 @@ for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async funct
  const order={orderNo:'123',customer:{name:'مشتری'},items:[{product:{name:'محصول'},deliveredKg:1,unitPrice:100,finalAmount:100}]};
  const html=p=>c.invoiceHtml({...order,payment:p});
  test(file+': POS label includes historical bank and terminal, safely escaped',()=>{const s=html({totalAmount:100,settlementMethods:[{type:'POS',amount:100,deviceSnapshot:{bank:'صادرات',terminalNumber:'98563214'}}]});assert.match(s,/پوز صادرات 98563214/);const unsafe=html({totalAmount:100,settlementMethods:[{type:'POS',amount:100,deviceSnapshot:{bank:'<script>',terminalNumber:'<img>'}}]});assert.doesNotMatch(unsafe,/<script>|<img>/);});
+ test(file+': pickup contacts are grouped outside products and omit vehicle details',()=>{
+  const s=c.invoiceHtml({...order,orderType:'REMOTE',deliveryMode:'PICKUP',pickupHandover:{document:{customerName:'مالک',customerPhone:'09120000001',recipient:{name:'<نماینده>',phone:'09120000002',vehicleType:'خودروی محرمانه',plate:'پلاک محرمانه'}}},payment:{totalAmount:100,settlementMethods:[{type:'CASH',amount:100}]}});
+  const identity=s.match(/<section class="inv38-pickup-contacts"[\s\S]*?<\/section>/)[0];assert.match(identity,/مالک/);assert.match(identity,/09120000001/);assert.match(identity,/&lt;نماینده&gt;/);assert.match(identity,/09120000002/);assert.doesNotMatch(s,/خودروی محرمانه|پلاک محرمانه|وسیله \/ پلاک/);assert(s.indexOf(identity)<s.indexOf('<table'));assert.doesNotMatch(s,/<نماینده>/);
+ });
  if(file==='ui2.js'){
   test('active invoice: totals contain paid/balance and methods show only type and amount',()=>{
    const s=html({totalAmount:100,amountDue:80,depositAmount:20,deposit:{type:'CASH',amount:20},settlementMethods:[{type:'CASH',amount:10},{type:'CHECK',amount:40,checkStatus:'PENDING',bank:'secret bank',reference:'secret reference'},{type:'CREDIT',amount:30}]});

@@ -2220,7 +2220,7 @@ function invoiceHtml(o,paySel){
   const additions=p.additionsAmount != null ? n(p.additionsAmount) : Math.max(0,difference);
   const customerName=esc((pickupDoc?.customerName ?? p.customerName ?? o.customer?.name)||'—');const customerPhone=esc((pickupDoc?.customerPhone ?? p.customerPhone ?? o.customer?.phone)||'—');
   const recipient=pickupDoc?.recipient||null;
-  const recipientInfo=recipient?`<div class="inv38-cust"><div><span>تحویل‌گیرنده</span><b>${esc(recipient.name||'—')}</b></div><div><span>تماس تحویل‌گیرنده</span><b dir="ltr">${esc(recipient.phone||'—')}</b></div><div><span>وسیله / پلاک</span><b>${esc([recipient.vehicleType,recipient.carType,recipient.plate].filter(Boolean).join(' — ')||'—')}</b></div></div>`:'';
+  const recipientInfo=recipient?`<section class="inv38-pickup-contacts" aria-label="مشخصات صاحب سفارش و تحویل‌گیرنده"><div><span>نام صاحب سفارش</span><b>${customerName}</b></div><div><span>شماره تماس</span><b dir="ltr">${customerPhone}</b></div><div><span>نام تحویل‌گیرنده</span><b>${esc(recipient.name||'—')}</b></div><div><span>تماس تحویل‌گیرنده</span><b dir="ltr">${esc(recipient.phone||'—')}</b></div></section>`:'';
   const settleLabels=Object.assign(Object.create(null),{CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'معوق'});
   const methods=Array.isArray(p.settlementMethods)?p.settlementMethods:[];
   const amountKnown=v=>(typeof v==='number'||typeof v==='string')&&String(v).trim()!==''&&Number.isSafeInteger(Number(v))&&Number(v)>=0;
@@ -2245,9 +2245,9 @@ function invoiceHtml(o,paySel){
     return `<div class="inv38-payment-row"><span>${esc(settlementMethodLabel(m))}</span><b>${amountKnown(m.amount)?money(m.amount):'نامشخص'}</b></div>`;
   }).join('');
   const paymentBox=`<section class="inv38-payment-box" aria-label="روش‌های تسویه"><h3>روش‌های تسویه</h3>${paymentRows||'<div class="inv38-payment-empty">تراکنشی ثبت نشده است.</div>'}</section>`;
-  return `<div class="inv38-sheet inv38-compact inv38-settlement${o.deliveryMode==='DELIVERY'?' inv38-distribution':''}">
+  return `<div class="inv38-sheet inv38-compact inv38-settlement${recipient?' inv38-pickup-recipient':''}${o.deliveryMode==='DELIVERY'?' inv38-distribution':''}">
   <div class="inv38-head"><div class="inv38-meta inv38-settlement-meta${o.deliveryMode==='DELIVERY'?' inv38-distribution-meta':''}">
-    <div><span>مشتری</span><b>${customerName}</b></div><div><span>تماس</span><b class="inv38-phone" dir="ltr">${customerPhone}</b></div>
+    ${recipient?'':`<div><span>مشتری</span><b>${customerName}</b></div><div><span>تماس</span><b class="inv38-phone" dir="ltr">${customerPhone}</b></div>`}
     <div><span>فاکتور</span><b>${esc(fa(String(p.invoiceNumber||'—').replace(/^0+(?=\d)/,'')))}</b></div>
     <div><span>سفارش</span><b>${esc(fa(String(o.orderNo||'—').replace(/^0+(?=\d)/,'')))}</b></div>
     <div><span>${o.deliveryMode==='DELIVERY'?'تاریخ فاکتور':'تاریخ تسویه'}</span><b>${esc(dt(p.verifiedAt||o.createdAt))}</b></div>
