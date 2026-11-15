@@ -207,7 +207,7 @@ aebc418b4d559390680c227a7845f1d4991b171244be6011d4d121ebad02f0df  ./package.json
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./public/android-chrome-512x512.png
 a89481079f644b01c483a3cf14ed2082024b7bf04f5b0725dafe60d78130c459  ./public/app.js
 cea98dba58c31f5d95773c711c10b626d0253a7281d7bfa0d9928b9c99650110  ./public/apple-touch-icon.png
-7c40d1a3c9b653da1c764e9410ae58a7ee37600b03ff389400ba89774f34128e  ./public/compatibility.css
+08fb7156f0e56c7bf6a663a99856e71c56cfe2ba1ff7451461d11cf16ffca4d7  ./public/compatibility.css
 d73b57f7f6cc89482eb6ed82d81a2a8cb2c64490a3756689129045506a7d4c11  ./public/connection-status.js
 9e31ed22cbfd8a1a3c0d3b5eb3d6afe5e6d99bb53b11258882b28fa4f4111565  ./public/customers-ui.js
 c04c41aacfd10278e8bfe3ceff8758bd0aef92b751f99bcdc3aae608ab54cb78  ./public/design.css
@@ -219,7 +219,7 @@ c04c41aacfd10278e8bfe3ceff8758bd0aef92b751f99bcdc3aae608ab54cb78  ./public/desig
 17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31  ./public/fonts/OFL.txt
 4e3fa217d38fdafc1fea4414ceb58ca5e662cf0ab5fa735a8c8c20e8b42cad92  ./public/fonts/Vazirmatn-Variable.woff2
 a85456faaed8f29d884bfb2dc3148dffbf22d22ecff589176764cfe2679a1e3f  ./public/form-layout.css
-f29d980ab71882e26416a56114a70544da00107f2a10062b22523ac598b17d4a  ./public/index.html
+5f39ee4ac026cb3f0d939eaf4294546cbbb3aaf2eef323d2df918be10ee1ffdb  ./public/index.html
 83a9f28cab3177b37e7a1900cadb13bfaaed8dcbfbd9940a8e45ec9131e39cbf  ./public/invoice-compact.css
 22b5cb653f7de60bd2284582fc1a1cdabba3950931b206cebe0c9276cd5ec6b4  ./public/invoice-print.html
 538d7d1fe00569ec69cac470798012076eeb5da5ac5b5c5c500022548196ae35  ./public/invoice-print.js
@@ -240,7 +240,7 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-5658b0da1336893a304bcc03aa9d6d3103947fad00f2e13b81eb01e011582df7  ./public/ui2.js
+be246d9abd9ef7e5f88d99fcd40ac8cfe81639ef06deeed47aefcbd41b215761  ./public/ui2.js
 9c18a79682ccd24626fd5beee2d1381c9b9c34937b7a62727f6cb46c663cef2f  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
@@ -268,9 +268,9 @@ fd18f8d1825e0db67c6475eb1ea7d975cd0cb00d1cdabf6832663ccf84a6f75c  ./tests/audit-
 fe5163f6e70d7c2ed3047227243d2093c03c510b06589abfeafd4333fe7886a0  ./tests/auto-backup-print-browser.test.js
 2a80a046aa8a944902ae9e115bda17865dfee306bc03e92a33109e3b4ef1a054  ./tests/auto-backup-schedule.test.js
 561f0956306a8f110526d2ae84241573ca80e1832e90566a67e61a0223356a29  ./tests/auto-backup.test.js
-7a1bbb467270a64f24d041a24ef2784e81d9963c412e8e191058a4da1b71cc30  ./tests/cartable-layout-adjustments.test.js
+7523341fd5b91a26eb965051029e04a96594a629a73d8a6aea6f0972d0271d10  ./tests/cartable-layout-adjustments.test.js
 1bc85cf04a432274860ecb687cd4f09acc66250df499aabc2ec8222cbdca50b2  ./tests/cartable-runtime-regressions.test.js
-48baa57c4b8631638ab2dbff19b85c3b098a2130af9e96228854a060771b91c9  ./tests/cartable-side-nav-redesign.test.js
+745fbcfe2279030d2a469eb23f754febe0a05f2441ec02ac66500ea0a8c7a6a5  ./tests/cartable-side-nav-redesign.test.js
 a71018a21ae0d8e8fc315358bb0502084885e4677dcd56fddbf5776eb6847a57  ./tests/catalog-resources.test.js
 aab5a8a64ed4e0388a50e654d4a9aa481e996ade2dbb1a9f4789e59ccec208c6  ./tests/catalog-ui.test.js
 5fe538c51e0c335648c2e44731c108c5597b61b09c2fa7cc3f94e3bd2da03908  ./tests/connection-status.test.js
@@ -279,7 +279,7 @@ edcc5d249be7c9f8e0ec329e829d9d6c886d650c849505b9eea3979f9d991844  ./tests/custom
 39040f9ea441b7ecb2047ff259af47180f6862e7d59318c8580eb13a09c39f75  ./tests/customer-debts-browser.test.js
 140a533dd36153f313aa3c76eed36471248c564cb93fb5f6ee3d3446325967b3  ./tests/customer-store-isolation.test.js
 c4642ec0fe9ad443f691d576697813908abecd4a3f2b6f9e2880653b2e907f54  ./tests/customers.test.js
-f37818b3e6ffa13e4d2c80f3bc4b4375672f21a411e65058e389854db43661f0  ./tests/dashboard-modern-logo.test.js
+fa27121f9f9e5c0b5734314ece76c7d5511e4d2893ed2dbfd7f979ba5c56c36f  ./tests/dashboard-modern-logo.test.js
 50fc4a5bdeeacc6e83749ee0438327228321bdc1ad21df3940d88ee40dbd5936  ./tests/dashboard-product-charts.test.js
 34b998260080f0f51df2a48d3c13710ead0cf53d8717633b3feac51d2dcccd78  ./tests/datepicker-sales-products.test.js
 cc80ba00e2089663bfc96a5f63fc352451ba4a8aa3e5482e8a1c2dc7ed996501  ./tests/delivery-date-browser.test.js
@@ -288,7 +288,7 @@ cc80ba00e2089663bfc96a5f63fc352451ba4a8aa3e5482e8a1c2dc7ed996501  ./tests/delive
 6ef9cf7298d1214618992d0172732567397e989e815d3192e3e41c3b46796942  ./tests/deposits-browser.test.js
 9643ecfcb1113d81eeefb625fe90ad5fb2d710464ddc596b352754fbbe10d1fb  ./tests/desktop-responsive-browser.test.js
 2114f9132463eb09133ddef7bad9870a40ef58bc4b31850975aa9e9d028fe3eb  ./tests/dispatch-invoice.test.js
-ed3ef6f12813ff674a0bc4b52202ef3eb79b389c204c9217397480e7ae54cf17  ./tests/dispatch-ui.test.js
+9ea3f8a22138a10e5a20fe41f6d655c9ef2cbfc997c1dc5b89a3edac7922f6df  ./tests/dispatch-ui.test.js
 1de9cd09e5b1a8906a265a30d5d32a3305cbbdf084564e688c0fe2b2b22f062c  ./tests/dispatch.test.js
 c923241dddb1325ec3c53e11610542c2526c6aee479efbc622bfde8cee1569dd  ./tests/document-edits-api.test.js
 4e66a982a2db2f4b0af62e5774b5332143cbe40060cf501eec6da11ae411544f  ./tests/driver-delivery-form-compact.test.js
@@ -302,11 +302,11 @@ d2613da0cd39e4380f33da6c8c140317b242bd6be917d3e6c8b48b52ded7550c  ./tests/fixtur
 7051ec962a31da48240069d4d7eaf0dcbc798b3066e89a72d3c316e9def21e29  ./tests/fixtures/tls/test-cert.pem
 017c064e91810c5223a3f056b03b40020b4602083225f339f328fea6e4da2c07  ./tests/fixtures/tls/test-key.pem
 d95b0b6c921ce6d6d6c27fcfcd98116a90b2849a5008a75f45e4b12e5dc7c00f  ./tests/form-browser.test.js
-74963cca946abeda0331f50076041d49f86ba4b84ec2ed6fb4acd2eb9482ef65  ./tests/form-layout.test.js
-f8f4f37531357447f55072939e33aa808507a05fc4584940a5fb36ca0a9e4612  ./tests/forms-headers-modern.test.js
+56d9806c554b3e54919e7c349a38e79587e93f8c42ec9a164cb2a3b9b9c36ff0  ./tests/form-layout.test.js
+32c18bd020d5440a20f52ef8dbc25dbfd983ee1b4f1d108328e7ea1889a9a08b  ./tests/forms-headers-modern.test.js
 676f59fceeb8b228f471ab6f74581f8addc51086916e1ed05e024815c47296e9  ./tests/gate-adjustments.test.js
 f077adbba8688ebcd52ba5071eda49f3df83a1a7d25ad2c58ffb917897194ddd  ./tests/gate-clear-onsite-enter-settlement.test.js
-0012090398bea3ec8413ff508185074cedfb0960e14f66dbc165377ff5fad6bb  ./tests/gate-entry-redesign.test.js
+61642dab4e905ec83d8b1bee816c14464ddcfc4dbb1554f307da661e9733d6fb  ./tests/gate-entry-redesign.test.js
 381dd465b79c38dfb88732ec8a60355a99969428be5a020984767cd683a438d6  ./tests/gate-exit-feedback.test.js
 cbe1f36b0849fb85bec0e3971927b05e0bd870aaac4325a8831d34b3d98da118  ./tests/gate-history-search.test.js
 fc25dd0ac519cdc8ccfc7e338be7c5f6011beca18871ef3484c5d44e489c3e20  ./tests/gate-order-view.test.js
@@ -324,7 +324,7 @@ ee7cfc9e7d3e3e86211567ee5a142892bea34acde237cf7397ac6c6c766b5a7f  ./tests/invoic
 7a746ed239d2a6873184ba21e13711925d9306bf44fa1d5ad3186b9952bced69  ./tests/invoice-signature-layout-browser.test.js
 0be7030f2a21828afbbb6912fa0bdb7e8fe1b0f5866690c7f8d8d00d2eb0af33  ./tests/legacy-driver-retirement.test.js
 2eaf80551c3da668fb2192b9df3e7b70ca775fa93595b248e8d50b876ba96945  ./tests/live-sales-cache.test.js
-171df5bb4b4e7b90ec25ba34f7f61f53bbb23183e716a2dfac13c32ee36761a4  ./tests/login-branding.test.js
+52552efded727f424eedbfaa535e08eb3ab9073f50c9c1afafaaf6364d7ae993  ./tests/login-branding.test.js
 b344c95fbed334cfa0de74007085299ebcf5c70b51e73d531e8b89baa75f5b6f  ./tests/long-text-browser.test.js
 ec3549e7a48ca7cedef74875546b1bec061bfde5991b2b182f2641929c01d806  ./tests/mobile-layout.test.js
 2be56980d44c212d7c1ff5ac496094d10b96a8115acb4a5eb592a9d823b8c3e6  ./tests/notification-api.test.js
@@ -332,7 +332,7 @@ ec3549e7a48ca7cedef74875546b1bec061bfde5991b2b182f2641929c01d806  ./tests/mobile
 b287f0281e02cbb8b47b64de6486c6bbd9887a6d9e05882fd18c25c43fafc77f  ./tests/notification-count-consistency.test.js
 141661545521728646d6a764f8b31d433f1263fe18b08274361bc86d6337956b  ./tests/notification-precision-browser.test.js
 232f7cf65367bb6459b348d30bb2d3a371020a1bf400e265abe9751884f4c3c1  ./tests/notification-precision.test.js
-fe0125276f27fe670354b09f03999fa23f731701ebb6331d7b6134ecf7cf783c  ./tests/notification-roles-compact-browser.test.js
+d87ea2caa4c38f88bf32005218b17cd8dd6f5dc9dbf8aacb5a9e05814a236531  ./tests/notification-roles-compact-browser.test.js
 90170bd150103f317752838f50f21cbcd1d5b0d3737581f6b643d94b7caacbea  ./tests/notification-sound.test.js
 b15328f1a3f10b78c3613776895e795b3ed216fbe952845ac8aa779cfd23db81  ./tests/operations-rehearsal.test.js
 514b362f8679b81346a8d2beb6bdc564ff396f581e7b6822a21ac98fbfdf2516  ./tests/order-entry-cleanup.test.js
@@ -359,7 +359,7 @@ da9e4ef4ea03537f8e4a455e8f515cff5b17adb793eb07a153f917db8fddd90a  ./tests/print-
 5afabb8d78b6e982182000b02e7256b8d4b13ba8377f2d096d80c0ded3c1e5e0  ./tests/product-catalog-seed.test.js
 d3b00331bb591046bb0c9e4a59f306abfd538d7902356bfd48e2f29940166ea7  ./tests/product-price-print-browser.test.js
 80463cd830e3eb9ed77ce45014343b9a9328b2a57c6a5de1e83d19ef009bb197  ./tests/project-review-regressions.test.js
-f7a0f30fa5e3431c8ca7850b7b66d6cb6b8d9f8f6b07c4c163a354128502d242  ./tests/rail-branding.test.js
+ee65a9a63f317eb39745c9bf6d4e74de4f5522ad3c5dabc3a411f4077e84b8a3  ./tests/rail-branding.test.js
 7c4bd10f4ecf9a63552856ea08ab67238c7ef79a18fca745db0b2a6d6d0fb239  ./tests/rail-clock-bell.test.js
 72f3a1fc04a50c1c2ba9fe3dbec987495ee1fbe5adf12194500021aa2bcc7333  ./tests/release-version.test.js
 93fe84c739f74dfc8a28781815ff264f335c155424ddc8c94fba05913cd193ff  ./tests/remaining-work.test.js
@@ -367,7 +367,7 @@ f7a0f30fa5e3431c8ca7850b7b66d6cb6b8d9f8f6b07c4c163a354128502d242  ./tests/rail-b
 70751db2f9ed0fe39dfd9e7eab3baf69279d3aa24b44d137cc5bc996647bd8c2  ./tests/remote-enter.test.js
 ce87cf9f342864900046d61c6012f9bb36cdbf00fce95df334f347d16f6308e6  ./tests/reports.test.js
 0543c43073ae1d839e352899e8cc06bb9677199d1d8a2cc5b8715fca6ba9baa8  ./tests/responsive-drawer.test.js
-cbcf7f6999544766842cdfb6dae5a4424470c5449fe7bad1099366d65a516567  ./tests/responsive-mobile-tablet.test.js
+e238f9a74b58b77ec3aa0b8cda54c0448648d60e0ab6c153ae58ce35b106b2ad  ./tests/responsive-mobile-tablet.test.js
 82bc673780ed401e9d1488991fe006b2fc7f4425b6428da71a09a7e78a59252b  ./tests/sales-daily-stats.test.js
 76eee0c80c71bf3fb8563073b3ccc175767ae61300631a32e9d8a019af002c1f  ./tests/sales-delivery-sections.test.js
 5dc7d86378335caa165e5041289d756b9709d6fa0b60615bb08ea8bfac717e01  ./tests/sales-delivery-tabs-browser.test.js
@@ -454,7 +454,7 @@ bd008165ecb7b62905291797be3f12f82835e9487a0cdc5b5213ba10018f914c  ./tests/wareho
 ba6e24c6e002daeeed2298977b3559fc573d0c2deea7769e48a98690118a75fb  ./tests/warehouse-store-history-tab.test.js
 cbda3303712697e297bd6f89521521d1c659a3f0c57ada843bdb4adbf5f137b4  ./tests/warehouse-store-incoming-minimal.test.js
 8b33baec576b3d81894798c67821ff1c5ad7ff7c438a7f9f59e13d36cb15859d  ./tests/warehouse-store-tabs.test.js
-553c0fc70bd1eb318f605b385bf150be678a5787f26ff636f706a04e22a27e21  ./tests/warehouse-today-stats.test.js
+0ffea62e1d0751483ac2abb740c9769adf1c82644ade982b39badf6bd3016947  ./tests/warehouse-today-stats.test.js
 6dee26eeb15e43334202fcb9c28e1151e4cda20f7612402f56a4640a038003cf  ./tests/warehouse-weighing-api.test.js
 5354efa4d4111376036751ac2165441a869b44b54ea6790ee278562de82169da  ./tests/warehouse-weighing-browser.test.js
 711ec65cdded9353b6aef7ba4dac7b9a2284ce9b37eaf182f2224967b20172a2  ./tests/warehouse-weighing.test.js
@@ -478,7 +478,7 @@ b9afcc489a500be9b963ec217cac475bf09a2a2b86c3b766cad40a426d387dfe  ./ui-src/manif
 3fed40cdfdb45dd41b94d772aadbd38444f51beb57e41020c016ea9e1d0476c0  ./ui-src/ui2/01-sales-orders.js
 2850b06232e05ef19244d5c585ec65f2d4df37b5e46a36d948f35711a96a106e  ./ui-src/ui2/02-invoice-edits.js
 2c73f103f0cbf6d2cde217a3569caf85b05563139deec790202a70570a945cf5  ./ui-src/ui2/03-delivery.js
-9eaba02acc1c680dfa55bfe4d325dc863c88e18897d74951a54446b5fd5a3263  ./ui-src/ui2/04-gate.js
+42f887cdafe826bcfe117359782a226cdc541fd973764006a7eac0624579b1d2  ./ui-src/ui2/04-gate.js
 fd036bd14af74fbfea958895b59336cc0cc77460631c66fa057a240a30548d23  ./ui-src/ui2/05-warehouse.js
 abc8c46c9bb3bed4eae426db7aab8662f5f176b8a07b3767bd52a86141f725d6  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
