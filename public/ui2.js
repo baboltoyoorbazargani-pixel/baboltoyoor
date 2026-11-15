@@ -823,10 +823,28 @@ function gtQueueRow(v){
   </div>`;
 }
 
+function gateDispatchTableRow(o){
+  const d=o.dispatch||{};
+  const cell=(field,label,value)=>`<td class="gate-dispatch-cell gate-dispatch-cell-${field}" data-field="${field}" data-label="${label}">${value}</td>`;
+  const type=o.gateTransportShipment?'پخش':o.orderType==='STORE'?'فروشگاه':o.orderType==='ONSITE'?'حضوری':o.orderType==='REMOTE'?'غیرحضوری':'—';
+  const typeHtml=`<span class="gate-dispatch-order-type">${type}</span>${o.orderType==='STORE'?'<small class="gate-dispatch-table-note">بدون مبلغ</small>':''}`;
+  const service=o.gateStoreService?(o.storeOrderKind==='PARTIAL'?'سفارش جزئی':`سرویس ${d.run===2?'دوم':'اول'}`):d.run?`سرویس ${d.run===2?'دوم':'اول'}`:'—';
+  const statusHtml=o.gateTransportShipment?'<span class="badge orange">آماده ثبت خروج نگهبان</span>':o.gateStoreService?'<span class="badge purple">منتظر تأیید خروج نگهبانی</span>':dspBadge(d.status);
+  const itemCount=o.gateStoreService?(d.lines||[]).length:dspScopedItems(o).length;
+  const actions=o.gateTransportShipment
+    ?`<button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}">جزئیات اقلام</button><button type="button" class="btn btn-primary btn-sm" data-gate="transport-exit" data-id="${esc(o.id)}">ثبت خروج پخش</button>`
+    :o.gateStoreService
+      ?`<button type="button" class="btn btn-secondary btn-sm" data-gate="store-details" data-id="${esc(o.id)}" data-run="${d.run}">جزئیات محموله</button><button type="button" class="btn btn-primary btn-sm" data-gate="store-exit" data-id="${esc(o.id)}" data-run="${d.run}">تأیید خروج سرویس</button>`
+      :`<button type="button" class="btn btn-secondary btn-sm" data-gate="details" data-id="${esc(o.id)}" data-run="${Number(d.run)||0}">جزئیات محموله</button><button type="button" class="btn btn-primary btn-sm" data-gate="exit" data-id="${esc(o.id)}">تأیید خروج راننده</button>`;
+  return `<tr class="gate-dispatch-table-row" data-order="${esc(o.id)}">${cell('customer','مشتری / فروشگاه',`<strong>${esc(dspCustomer(o)||'—')}</strong>`)}${cell('order','شماره سفارش',`<bdi>${esc(fa(o.orderNo||'—'))}</bdi>`)}${cell('date','تاریخ ثبت',`<span>${esc(formatDateTime24(o.createdAt))}</span>`)}${cell('type','نوع سفارش',typeHtml)}${cell('service','سرویس',`<span>${esc(service)}</span>`)}${cell('driver','راننده',`<span>${esc(d.driverName||'—')}</span>`)}${cell('plate','پلاک',`<div class="gate-dispatch-table-plate">${plateViewHtml(d.driverPlate,'—',true)}</div>`)}${cell('status','وضعیت',statusHtml)}${cell('items','اقلام',`<span>${qty(itemCount)} قلم</span>`)}${cell('actions','عملیات',`<div class="gate-dispatch-table-actions">${actions}</div>`)}</tr>`;
+}
+function gateDispatchTableMarkup(rows){
+  const empty='<tr class="gate-dispatch-table-empty"><td colspan="10">'+sdEmpty('truck','سفارشی در انتظار تأیید خروج نیست','پس از ثبت خروج راننده یا تأیید سرویس فروشگاه توسط فروش، محموله برای کنترل در این بخش نمایش داده می‌شود.')+'</td></tr>';
+  return `<div class="gate-dispatch-table-wrap"><table class="gate-dispatch-table" aria-label="فهرست پخش در انتظار تأیید خروج"><thead><tr><th scope="col">مشتری / فروشگاه</th><th scope="col">شماره سفارش</th><th scope="col">تاریخ ثبت</th><th scope="col">نوع سفارش</th><th scope="col">سرویس</th><th scope="col">راننده</th><th scope="col">پلاک</th><th scope="col">وضعیت</th><th scope="col">اقلام</th><th scope="col">عملیات</th></tr></thead><tbody>${rows.map(gateDispatchTableRow).join('')||empty}</tbody></table></div>`;
+}
 function gateDispatchFocusMarkup(data){
   const rows=data.leaving||[];
-  const cards=rows.map(o=>gateDispatchCard(o,'exit')).join('')||sdEmpty('truck','سفارشی در انتظار تأیید خروج نیست','پس از ثبت خروج راننده یا تأیید سرویس فروشگاه توسط فروش، محموله برای کنترل در این بخش نمایش داده می‌شود.');
-  return `<section class="sd-panel gate-dispatch-focus" aria-label="در انتظار تأیید خروج"><div class="gate-tab-context"><p>خروج پخش و سرویس‌های تأییدشده فروش را پس از کنترل تأیید کنید.</p><span class="sd-count"><strong>${qty(rows.length)}</strong><span>سفارش</span></span></div><div class="adm-list dsp-list gate-dispatch-vertical-list">${cards}</div></section>`;
+  return `<section class="sd-panel gate-dispatch-focus" aria-label="در انتظار تأیید خروج"><div class="gate-tab-context"><p>خروج پخش و سرویس‌های تأییدشده فروش را پس از کنترل تأیید کنید.</p><span class="sd-count"><strong>${qty(rows.length)}</strong><span>سفارش</span></span></div>${gateDispatchTableMarkup(rows)}</section>`;
 }
 function gateDispatchTabsHtml(data,active,error=''){
   const nav=`<div class="gate-dispatch-tabs" role="tablist" aria-label="مراحل پخش"><button type="button" role="tab" aria-selected="true" class="active" data-gate-dispatch-tab="leaving">در انتظار تأیید خروج <b class="gate-dispatch-count" data-gate-dispatch-count="leaving">${qty((data.leaving||[]).length)}</b></button></div>`;

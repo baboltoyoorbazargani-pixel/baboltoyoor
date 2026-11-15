@@ -12,6 +12,7 @@ const dispatch = fs.readFileSync(path.join(root, 'dispatch-ui.js'), 'utf8');
 const dispatchServer = fs.readFileSync(path.join(__dirname, '..', 'lib', 'dispatch.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'design.css'), 'utf8');
 const mobileCss = fs.readFileSync(path.join(root, 'mobile.css'), 'utf8');
+const compatibilityCss = fs.readFileSync(path.join(root, 'compatibility.css'), 'utf8');
 const adminUi = fs.readFileSync(path.join(root, 'admin-ui.js'), 'utf8');
 const core = fs.readFileSync(path.join(__dirname, '..', 'lib', 'routes', 'core.js'), 'utf8');
 
@@ -29,6 +30,18 @@ test('خروج‌های منتظر تأیید در تب اصلی نگهبانی 
   assert.match(dispatch, /home\.innerHTML = gateHomeDispatchMarkup\(data\)/);
   assert.match(dispatch, /data\.leaving\s*\|\|\s*\[\]/);
   assert.doesNotMatch(dispatch.slice(dispatch.indexOf('function gateHomeDispatchMarkup'), dispatch.indexOf('function gateDispatchMarkup')), /returning|data-gate="close"/);
+});
+
+test('فهرست پخش نگهبانی ستون‌های مستقل دارد و کنترل‌های ردیف را حفظ می‌کند', () => {
+  const start=ui.indexOf('function gateDispatchTableRow('),end=ui.indexOf('\nfunction gateDispatchFocusMarkup',start);
+  assert.ok(start>=0&&end>start);
+  const table=ui.slice(start,end);
+  for(const label of ['مشتری / فروشگاه','شماره سفارش','تاریخ ثبت','نوع سفارش','سرویس','راننده','پلاک','وضعیت','اقلام','عملیات'])assert(table.includes(label),`missing gate table column: ${label}`);
+  for(const action of ['details','store-details','transport-exit','store-exit','exit'])assert(table.includes('data-gate=')&&table.includes(action),`missing ${action} action`);
+  assert.match(table,/data-order=/);assert.match(table,/esc\(o\.id\)/);
+  assert.match(compatibilityCss,/\.gate-dispatch-table>tbody>\.gate-dispatch-table-row\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(compatibilityCss,/gate-dispatch-table-row>td::before[\s\S]*?content:attr\(data-label\)/);
+  assert.doesNotMatch(compatibilityCss,/gate-dispatch-table-wrap[^}]*overflow-x:auto/);
 });
 
 test('با جابه‌جایی نگهبانی به فروش، رندر async قدیمی فرم نگهبانی را دوباره نمایش نمی‌دهد', async () => {
