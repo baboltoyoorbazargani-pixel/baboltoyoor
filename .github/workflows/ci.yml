@@ -26,13 +26,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.22.3'
-      - run: npm install --no-save --package-lock=false playwright-core@1.56.1
-      - name: Require browser and run browser regressions
+      - run: npm install --no-save --package-lock=false playwright-core@1.56.1 @sparticuz/chromium@141.0.0
+      - name: Prepare Chromium and run browser regressions
         shell: bash
         run: |
-          CHROME="$(command -v google-chrome)"
+          node - <<'NODE'
+          const path = require('node:path');
+          const chromium = require('@sparticuz/chromium');
+          const entry = require.resolve('@sparticuz/chromium');
+          const { inflate } = require(path.join(path.dirname(entry), 'lambdafs.cjs'));
+          (async () => {
+            await chromium.executablePath();
+            await inflate(path.resolve(path.dirname(entry), '../../bin/al2023.tar.br'));
+          })().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
+          CHROME=/tmp/chromium
           test -x "$CHROME"
-          BT_CHROMIUM_PATH="$CHROME" node --test --test-concurrency=2 tests/*browser*.test.js
+          LD_LIBRARY_PATH="/tmp/al2023/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+            BT_CHROMIUM_PATH="$CHROME" node --test --test-concurrency=2 tests/*browser*.test.js
   windows-installer:
     runs-on: windows-latest
     timeout-minutes: 10
