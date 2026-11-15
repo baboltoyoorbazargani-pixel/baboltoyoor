@@ -440,21 +440,46 @@
 #appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-actions{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-inline-start:auto;flex:0 0 auto}
 #appView[data-cartable-page="sales"] .sales-store-pane-v43 .ssin21-actions .btn{white-space:nowrap}
 
-/* ===== v37.22.0 — کارت ورودی فروشگاه در انبار: خلاصهٔ حداقلی + جزئیات و تأیید در پایان فهرست ===== */
-/* روی کارت فقط نام فروشگاه، نام مشتری، شمارهٔ سفارش و تاریخ/ساعت می‌آید؛ بقیه در مودال جزئیات است. */
-.wh38-store-pane .whsin22-list{overflow-x:auto;padding-bottom:6px}
-.wh38-store-pane .whsin22-card.wh38-store-card{display:flex;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:14px;min-width:720px;min-height:52px;padding:7px 14px}
-.wh38-store-pane .whsin22-id{display:flex;flex-direction:column;align-items:flex-start;gap:0;flex:0 1 230px;min-width:150px}
-.wh38-store-pane .whsin22-store{font-size:15px;font-weight:800;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
-.wh38-store-pane .whsin22-customer{color:var(--muted);font-size:11.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
-.wh38-store-pane .whsin22-card .order-code{white-space:nowrap;flex:0 0 auto}
-.wh38-store-pane .whsin22-time{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:var(--muted);font-size:12px;flex:0 0 auto}
-.wh38-store-pane .whsin22-actions{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-inline-start:auto;flex:0 0 auto}
-.wh38-store-pane .whsin22-actions .btn{white-space:nowrap}
-
-/* ===== v37.23.0 — جزئیات کادری تک‌خطی + کارت آماده‌سازی حداقلی + برگهٔ سرویس استاندارد ===== */
-/* ۱) ردیف اقلام در جزئیات سفارش فروشگاه (انبار): محصول، مقدار، واحد و توضیحات در یک خط،
-      هر فیلد در کادر جداگانه با برچسب، ارتفاع و فرم یکدست. */
+/* Warehouse > Stores: explicit, fixed-layout columns; cards become labelled rows on narrow screens. */
+#appView[data-cartable-page="warehouse"] .wh38-store-pane .wh38-store-list{display:block;width:100%;min-width:0;margin-top:10px}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-wrap{max-width:100%;overflow:hidden;border:1px solid var(--line,#e3e6ea);border-radius:12px;background:var(--panel,#fff)}
+#appView[data-cartable-page="warehouse"] .wh38-store-table{width:100%;table-layout:fixed;border-collapse:collapse}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th,#appView[data-cartable-page="warehouse"] .wh38-store-table td{min-width:0;padding:9px 7px;border-bottom:1px solid var(--line,#e3e6ea);text-align:right;vertical-align:middle;line-height:1.5;overflow-wrap:anywhere}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th{background:var(--bg-alt,#f7f8fa);font-size:11px;font-weight:850;color:var(--muted,#667085)}
+#appView[data-cartable-page="warehouse"] .wh38-store-table td{font-size:12px;color:var(--ink,#27272a)}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(1),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(1){width:17%}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(2),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(2){width:11%;text-align:center}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(3),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(3){width:11%}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(4),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(4){width:16%}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(5),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(5){width:11%;text-align:center}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(6),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(6){width:14%}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(7),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(7){width:7%;text-align:center}
+#appView[data-cartable-page="warehouse"] .wh38-store-table th:nth-child(8),#appView[data-cartable-page="warehouse"] .wh38-store-table td:nth-child(8){width:13%}
+#appView[data-cartable-page="warehouse"] .wh38-store-table tbody tr:last-child td{border-bottom:0}
+#appView[data-cartable-page="warehouse"] .wh38-store-table tbody tr:hover td{background:#fffafa}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-identity{display:grid;gap:2px;min-width:0}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-identity strong{font-size:12px;font-weight:900;line-height:1.5}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-identity small,#appView[data-cartable-page="warehouse"] .wh38-store-table-scheduled{font-size:10px;color:var(--muted,#667085);line-height:1.5}
+#appView[data-cartable-page="warehouse"] .wh38-store-table .order-code{white-space:normal;overflow-wrap:anywhere}
+#appView[data-cartable-page="warehouse"] .wh38-store-table .badge{white-space:normal;line-height:1.4}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-actions{display:flex;justify-content:flex-start;align-items:center;gap:5px;min-width:0}
+#appView[data-cartable-page="warehouse"] .wh38-store-table-actions .btn{max-width:100%;height:auto;min-height:34px;padding:5px 8px;white-space:normal;line-height:1.45;text-align:center}
+@media(max-width:900px){
+  #appView[data-cartable-page="warehouse"] .wh38-store-table,#appView[data-cartable-page="warehouse"] .wh38-store-table tbody{display:block;width:100%}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px;margin:0;padding:8px 10px;border-bottom:1px solid var(--line,#e3e6ea)}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table tbody tr:last-child{border-bottom:0}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table td{display:grid;grid-template-columns:minmax(72px,.65fr) minmax(0,1fr);align-items:start;gap:6px;width:auto!important;padding:6px 2px;border:0;text-align:right!important}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table td::before{content:attr(data-label);font-size:10px;font-weight:800;color:var(--muted,#667085)}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table td:first-child,#appView[data-cartable-page="warehouse"] .wh38-store-table td:last-child{grid-column:1/-1}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table-actions .btn{justify-content:center}
+}
+@media(max-width:480px){
+  #appView[data-cartable-page="warehouse"] .wh38-store-table tbody tr{grid-template-columns:minmax(0,1fr);padding:8px}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table td,#appView[data-cartable-page="warehouse"] .wh38-store-table td:first-child,#appView[data-cartable-page="warehouse"] .wh38-store-table td:last-child{grid-column:1}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table td{grid-template-columns:minmax(95px,.7fr) minmax(0,1fr)}
+  #appView[data-cartable-page="warehouse"] .wh38-store-table-actions .btn{width:100%}
+}
 .whd23-list{display:grid;gap:6px}
 .whd23-row{display:grid;grid-template-columns:28px 1.5fr .55fr .55fr 1.5fr;gap:6px;align-items:stretch}
 .whd23-num{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--muted)}

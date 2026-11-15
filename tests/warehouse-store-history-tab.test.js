@@ -1,10 +1,7 @@
 'use strict';
 // This suite exercises records and accounts from the retired delivery workflow.
 process.env.BT_EXPERIMENTAL_TRANSPORT_WORKFLOW='0';
-/* v37.36.0 — سربرگ «سوابق و گزارشات» فروشگاه‌ها در کارتابل انبار:
-   سربرگ سوم کنار «ورودی» و «آماده‌سازی و سرویس‌ها»؛ گزارش سفارش‌های فروشگاهیِ پایان‌یافتهٔ انبار
-   از همان دادهٔ ‎/api/warehouse/history‎ با فیلتر ‎orderType=STORE‎، همراه وزن سرویس اول/دوم هر قلم،
-   فیلتر بازه/جستجو و چاپ اختصاصی. سفارش فروشگاهیِ ناتمام و سفارش عادی در این سوابق دیده نمی‌شوند. */
+/* Store history now lists the individual warehouse documents and keeps the legacy history API available. */
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
@@ -50,20 +47,21 @@ const IDEM = () => 'k-' + Math.random().toString(36).slice(2);
 
 let ADMIN, SALES, WH, STORE, O1, O2, ON; // eslint-disable-line
 
-test('اتصالات ایستا: سربرگ سوم، فیلتر نوع سفارش API و ستون وزن هر سرویس', () => {
+test('اتصالات ایستا: تب سوابق به فهرست اسناد فروشگاه وصل است و تاریخچهٔ عمومی وزن سرویس‌ها را نگه می‌دارد', () => {
   const ui = read('public/ui2.js');
   const app = read('public/app.js');
   const route = read('lib/routes/orders.js');
   const css = read('public/compatibility.css');
-  assert.ok(ui.indexOf("['incoming','ورودی']") < ui.indexOf("['history','سوابق و گزارشات']"), 'سربرگ سوابق بعد از دو سربرگ کاری فروشگاه است');
-  assert.match(ui, /\['incoming','preparing','history'\]\.includes\(app\.wh38\.storeTab\)/, 'کلمپ سربرگ history را می‌پذیرد');
+  assert.ok(ui.indexOf("['incoming','ورودی']") < ui.indexOf("['history','سوابق سفارش‌های ثبت‌شده']"), 'تب سوابق بعد از دو تب کاری فروشگاه است');
+  assert.match(ui, /\['incoming','preparing','history'\]\.includes\(app\.wh38\.storeTab\)/, 'کلمپ تب history را می‌پذیرد');
   assert.match(ui, /app\.wh38\.storeTab=\['incoming','preparing','history'\]\.includes\(st\.dataset\.wh38StoreTab\)/, 'کلیک تب history را فعال می‌کند');
-  assert.match(ui, /active==='history'&&host\.querySelector\('\[data-wh38-store-history\]'\)\) return;/, 'نوسازی خودکار فیلترهای سوابق را خراب نمی‌کند');
-  assert.match(ui, /function renderWhStoreHistory\(\)/, 'رندر سوابق فروشگاه تعریف شده است');
-  assert.match(ui, /orderType:'STORE'/, 'درخواست سوابق فروشگاه فیلتر نوع سفارش دارد');
-  assert.match(ui, /wh-store-history-range/);
-  assert.match(ui, /wh-store-history-print/);
-  assert.match(ui, /history:\(histAll&&histAll\.summary&&histAll\.summary\.orders\)\|\|0/, 'شمارش تب سوابق از خلاصهٔ API می‌آید');
+  assert.match(ui, /active==='history'&&host\.querySelector\('\[data-wh38-store-history\]'\)\) return;/, 'نوسازی خودکار تب فعال را دوباره نمی‌سازد');
+  assert.match(ui, /function renderWhStoreHistory\(\)/);
+  assert.match(ui, /function renderWhStoreDocuments\(\)/);
+  assert.match(ui, /api\('\/api\/warehouse\/store-documents\?'/, 'سوابق فروشگاه از فهرست اسناد انبار خوانده می‌شود');
+  assert.doesNotMatch(ui, /wh-store-history-range|wh-store-history-print/, 'فیلتر و گزارش چاپ قدیمی حذف شده‌اند');
+  assert.match(ui, /orderType=STORE/, 'شمارش سفارش‌های تکمیل‌شدهٔ فروشگاه همچنان فیلتر نوع سفارش دارد');
+  assert.match(ui, /history:\(histAll&&histAll\.summary&&histAll\.summary\.orders\)\|\|0/);
   assert.match(css, /\.wh38-store-tabs\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/, 'سربرگ‌ها سه‌ستونه شده‌اند');
   assert.match(route, /ctx\.query\.get\('orderType'\)/);
   assert.match(route, /if \(onlyType && String\(o\.orderType \|\| ''\) !== onlyType\) continue;/);

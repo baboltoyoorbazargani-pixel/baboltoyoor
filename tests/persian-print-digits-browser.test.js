@@ -24,10 +24,10 @@ test('چاپ: ارقام فارسی در فاکتور، گزارش‌ها، سن
   const done=async()=>{await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});};
   const start=async action=>{const n=await page.evaluate(()=>window.__prints||0);await action();await page.waitForFunction(x=>window.__prints===x+1,n);};
   const history={from:'2026-10-01',to:'2026-10-31',summary:{orders:1,deliveredKg:12,itemCount:1,outOfStock:0,returned:0,byProduct:[{productName:'کالا 23',orders:1,deliveredKg:12}]},rows:[{day:'2026-10-30',completedAt:'2026-10-30T12:34:00Z',orderNo:'001234',customerName:'فروشگاه شعبه 1',items:[{productName:'کالا 23',deliveredKg:12}],deliveredKg:12,completedBy:'انبار 5'}],returns:[]};
-  for(const fn of ['printWarehouseHistory','printWhStoreHistory']){
-   await page.evaluate(({history,fn})=>{const target=fn==='printWhStoreHistory'?app.whStoreHist:app.whHist;Object.assign(target,{data:history,q:'جستجو 99',result:''});},{history,fn});
-   await start(()=>page.evaluate(fn=>window[fn](),fn));await frame().locator('tbody tr').first().waitFor();const text=await frame().locator('body').innerText();assert.doesNotMatch(text,/[0-9٠-٩]/,fn+': '+text);assert.match(text,/فروشگاه شعبه ۱/);assert.match(text,/کالا ۲۳/);await done();
-  }
+  await page.evaluate(history=>Object.assign(app.whHist,{data:history,q:'جستجو 99',result:''}),history);
+  await start(()=>page.evaluate(()=>printWarehouseHistory()));await frame().locator('tbody tr').first().waitFor();let text=await frame().locator('body').innerText();assert.doesNotMatch(text,/[0-9٠-٩]/,'warehouse history: '+text);assert.match(text,/فروشگاه شعبه ۱/);assert.match(text,/کالا ۲۳/);await done();
+  const storeDocument={storeOrderKind:'DAILY',orderNo:'001234',warehouseDocumentNo:'W-000123',storeName:'فروشگاه شعبه 34',driverName:'راننده 5',createdAt:'2026-10-30T12:34:00Z',run:1,lines:[{productName:'کالا 23',deliveredKg:12}]};
+  await start(()=>page.evaluate(doc=>whPrintDocument(doc,1),storeDocument));await frame().locator('.whd-doc').waitFor();text=await frame().locator('body').innerText();assert.doesNotMatch(text,/[0-9٠-٩]/,'warehouse store document: '+text);assert.match(text,/فروشگاه شعبه ۳۴/);assert.match(text,/کالا ۲۳/);await done();
   await page.evaluate(()=>{adm.report={label:'گزارش 12',total:1,columns:[{key:'customerName',label:'نام 1'},{key:'reference',label:'شناسه 2'}],rows:[{customerName:'مشتری 34',reference:'000123'}]};});
   await start(()=>page.evaluate(()=>printReport()));await frame().locator('tbody tr').waitFor();const rpt=await frame().locator('body').innerText();assert.doesNotMatch(rpt,/[0-9٠-٩]/);assert.match(rpt,/مشتری ۳۴/);assert.match(rpt,/۰۰۰۱۲۳/);await done();
   // The dashboard report also displays arbitrary district names and dates.
