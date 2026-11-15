@@ -45,8 +45,22 @@ jobs:
           NODE
           CHROME=/tmp/chromium
           test -x "$CHROME"
+          set +e
           LD_LIBRARY_PATH="/tmp/al2023/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
-            BT_CHROMIUM_PATH="$CHROME" node --test --test-concurrency=2 tests/*browser*.test.js
+            BT_CHROMIUM_PATH="$CHROME" node --test --test-concurrency=2 tests/*browser*.test.js > /tmp/browser-tests.tap 2>&1
+          test_status=$?
+          set -e
+          cat /tmp/browser-tests.tap
+          if [ "$test_status" -ne 0 ]; then
+            while IFS= read -r line; do
+              case "$line" in
+                "not ok "*|"  location: "*|"  error: "*|"  name: "*|"  code: "*)
+                  printf '::error title=Browser regression diagnostic::%s\n' "$line"
+                  ;;
+              esac
+            done < /tmp/browser-tests.tap
+          fi
+          exit "$test_status"
   windows-installer:
     runs-on: windows-latest
     timeout-minutes: 10
