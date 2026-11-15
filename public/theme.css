@@ -1266,6 +1266,70 @@ body{background:var(--bt-bg)!important;color:var(--bt-ink);font-size:var(--bt-fs
   #appView .wh-dash-prod{transition:none!important}
 }
 
+/* Stable paired dashboard tables: update row values in place instead of clearing the list. */
+#appView .wh-dash-content{display:grid;gap:14px;min-width:0}
+#appView .wh-dash-tables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0;margin-top:2px}
+#appView .wh-dash-table-card{min-width:0;overflow:hidden;border:1px solid var(--bt-line);border-radius:14px;background:var(--bt-panel)}
+#appView .wh-dash-table-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:13px 14px 10px;border-bottom:1px solid var(--bt-line)}
+#appView .wh-dash-table-heading>div{min-width:0}
+#appView .wh-dash-table-heading h4{margin:0;font-size:14px;font-weight:900;color:var(--bt-ink)}
+#appView .wh-dash-table-heading p{margin:3px 0 0;font-size:11px;line-height:1.6;color:var(--bt-muted)}
+#appView .wh-dash-table-heading>span{flex:0 0 auto;padding:3px 8px;border-radius:999px;background:var(--bt-soft);color:var(--bt-muted);font-size:10.5px;font-weight:800}
+#appView .wh-dash-table-wrap{width:100%;max-width:100%;overflow:hidden}
+#appView .wh-dash-table{width:100%;table-layout:fixed;border-collapse:collapse}
+#appView .wh-dash-table th,#appView .wh-dash-table td{min-width:0;padding:8px 7px;border-bottom:1px solid var(--bt-line);text-align:right;vertical-align:middle;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#appView .wh-dash-table th{background:var(--bt-panel-2);color:var(--bt-muted);font-size:10px;font-weight:800}
+#appView .wh-dash-table th:first-child,#appView .wh-dash-table td:first-child{width:36px;text-align:center}
+#appView .wh-dash-table th:nth-child(3),#appView .wh-dash-table td:nth-child(3){width:27%;text-align:center;font-variant-numeric:tabular-nums}
+#appView .wh-dash-table th:nth-child(4),#appView .wh-dash-table td:nth-child(4){width:16%;text-align:center;font-variant-numeric:tabular-nums}
+#appView .wh-dash-table th:nth-child(5),#appView .wh-dash-table td:nth-child(5){width:17%;text-align:center;font-variant-numeric:tabular-nums}
+#appView .wh-dash-table tbody tr:last-child td{border-bottom:0}
+#appView .wh-dash-table tbody tr:not(.wh-dash-empty-row):hover td{background:#fffafa}
+#appView .wh-dash-table .wh-dash-rank-cell{color:var(--bt-muted);font-weight:800}
+#appView .wh-dash-product-link{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--bt-ink);font:inherit;font-weight:850;text-align:right;cursor:pointer;overflow-wrap:anywhere}
+#appView .wh-dash-product-link:hover{color:var(--bt-brand);text-decoration:underline;text-underline-offset:2px}
+#appView .wh-dash-product-link:focus-visible{outline:2px solid var(--bt-brand);outline-offset:2px;border-radius:3px}
+#appView .wh-dash-product-name{display:block;font-weight:850;color:var(--bt-ink);overflow-wrap:anywhere}
+#appView .wh-dash-product-link .code-pill,#appView .wh-dash-product-name .code-pill{margin-inline-end:4px}
+#appView .wh-dash-empty-row td{padding:18px 10px;text-align:center!important;color:var(--bt-muted);font-weight:700}
+#appView .wh-dash-all-products{display:inline-flex;align-items:center;justify-content:center;margin:9px 12px 12px;padding:7px 12px;border:1px solid var(--bt-line);border-radius:9px;background:var(--bt-panel-2);color:var(--bt-brand);font:inherit;font-size:11px;font-weight:850;cursor:pointer}
+#appView .wh-dash-all-products:hover{border-color:var(--bt-brand);background:var(--bt-red-bg)}
+#appView .wh-dash-all-products[hidden]{display:none!important}
+#appView .wh-dash-delivered-total{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding:9px 12px;border-top:1px solid var(--bt-line);background:var(--bt-panel-2);font-size:11px;color:var(--bt-muted);font-weight:750}
+#appView .wh-dash-delivered-total b{color:var(--bt-green);font-size:13px;font-weight:900}
+#appView .wh-dash-delivered-total span b{font-size:11px}
+#appView .wh-dash-refresh-error{margin-inline-start:auto;font-size:10.5px;font-weight:700;color:var(--bt-amber)}
+#appView .wh-dash-all-modal{display:grid;gap:10px;max-height:70vh;overflow:auto}
+#appView .wh-dash-all-modal>p{margin:0;color:var(--bt-muted);font-size:12px}
+@media (max-width:960px){#appView .wh-dash-tables{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){
+  #appView .wh-dash-table-heading{padding:11px 10px 8px}
+  #appView .wh-dash-table-heading h4{font-size:12.5px}
+  #appView .wh-dash-table-heading p{font-size:10px}
+  #appView .wh-dash-table th,#appView .wh-dash-table td{padding:7px 4px;font-size:10px}
+  #appView .wh-dash-table th:first-child,#appView .wh-dash-table td:first-child{width:26px}
+  #appView .wh-dash-table th:nth-child(3),#appView .wh-dash-table td:nth-child(3){width:29%}
+  #appView .wh-dash-table th:nth-child(4),#appView .wh-dash-table td:nth-child(4){width:16%}
+  #appView .wh-dash-table th:nth-child(5),#appView .wh-dash-table td:nth-child(5){width:18%}
+  #appView .wh-dash-refresh-error{margin-inline-start:0}
+}
+/* The all-products dialog lives under #modal, outside the dashboard subtree. */
+#modal .wh-dash-all-modal{display:grid;gap:10px;max-height:70vh;overflow:auto;min-width:0}
+#modal .wh-dash-all-modal>p{margin:0;color:var(--bt-muted);font-size:12px}
+#modal .wh-dash-table-wrap{width:100%;max-width:100%;overflow:hidden}
+#modal .wh-dash-table{width:100%;table-layout:fixed;border-collapse:collapse;background:var(--bt-panel)}
+#modal .wh-dash-table th,#modal .wh-dash-table td{min-width:0;padding:7px 5px;border-bottom:1px solid var(--bt-line);text-align:right;vertical-align:middle;font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+#modal .wh-dash-table th{background:var(--bt-panel-2);color:var(--bt-muted);font-size:9px;font-weight:800}
+#modal .wh-dash-table th:first-child,#modal .wh-dash-table td:first-child{width:28px;text-align:center}
+#modal .wh-dash-table th:nth-child(3),#modal .wh-dash-table td:nth-child(3){width:27%;text-align:center;font-variant-numeric:tabular-nums}
+#modal .wh-dash-table th:nth-child(4),#modal .wh-dash-table td:nth-child(4){width:16%;text-align:center;font-variant-numeric:tabular-nums}
+#modal .wh-dash-table th:nth-child(5),#modal .wh-dash-table td:nth-child(5){width:17%;text-align:center;font-variant-numeric:tabular-nums}
+#modal .wh-dash-product-link{display:block;width:100%;padding:0;border:0;background:transparent;color:var(--bt-ink);font:inherit;font-weight:850;text-align:right;cursor:pointer;overflow-wrap:anywhere}
+#modal .wh-dash-product-link:hover{color:var(--bt-brand);text-decoration:underline;text-underline-offset:2px}
+#modal .wh-dash-product-link:focus-visible{outline:2px solid var(--bt-brand);outline-offset:2px;border-radius:3px}
+#modal .wh-dash-table .wh-dash-rank-cell{color:var(--bt-muted);font-weight:800}
+#modal .wh-dash-table tbody tr:last-child td{border-bottom:0}
+
 /* ====================================================================
    v37.12.0 — صفحهٔ ورود با طرح گرافیکی لوگوِ بنر داشبورد
    --------------------------------------------------------------------

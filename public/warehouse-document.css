@@ -91,3 +91,27 @@
 .whd-store-print .whd-head{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.3fr);align-items:stretch}
 .whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:3px 5px;overflow-wrap:anywhere}
 .whd-store-print .whd-store-meta>span b{font-size:9px}
+
+/* Remote-order handover header: nine compact, ordered fields on a clear 3×3 grid. */
+.whd-remote-head{display:block!important;direction:rtl;margin-bottom:8px}
+.whd-remote-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;min-width:0}
+.whd-remote-meta>span{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:42px;padding:5px 8px;text-align:right;background:#fbfcfd;border-color:#dfe4e9}
+.whd-remote-meta .whd-label{font-size:8px;color:#687685;white-space:normal}
+.whd-remote-meta>span b{font-size:10px;line-height:1.45}
+.whd-remote-meta .whd-document-number{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;padding:5px 8px;text-align:right}
+.whd-remote-meta .whd-document-number span{font-size:8px;color:#687685;white-space:normal}
+.whd-remote-meta .whd-document-number b{font-size:12px}
+@media screen and (max-width:700px){
+ .whd-remote-head .whd-remote-meta{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .whd-remote-meta>span{justify-content:center;min-height:40px}
+ .whd-remote-meta>span:first-child,.whd-remote-meta>span:nth-child(4),.whd-remote-meta>span:last-child{grid-column:1/-1}
+}
+@media print{
+ .whd-remote-head{margin-bottom:6px}
+ .whd-remote-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+ .whd-remote-meta>span{min-height:34px;padding:3px 6px;background:#fff}
+ .whd-remote-meta .whd-document-number{padding:3px 6px}
+ .whd-remote-meta .whd-label,.whd-remote-meta .whd-document-number span{font-size:7px}
+ .whd-remote-meta>span b{font-size:9px}
+ .whd-remote-meta .whd-document-number b{font-size:11px}
+}

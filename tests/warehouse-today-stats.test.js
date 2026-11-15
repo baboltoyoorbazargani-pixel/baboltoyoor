@@ -55,8 +55,9 @@ test('UI: داشبورد انبار بخش سفارشات ورودی امروز 
   assert.match(app,/data-cartable="incoming" data-role-page="warehouse"/);
   assert.match(css,/\.wh-dash-live\{/);
   assert.match(css,/\.wh-dash-prod\{/);
-  assert.match(html,/app\.js\?v=37\.47\.0/);
-  assert.match(html,/theme\.css\?v=37\.47\.0/);
+  assert.match(css,/#modal \.wh-dash-table\{/, 'جدول همهٔ محصولات در مودال نیز سبک ثابت دارد');
+  assert.match(html,/app\.js\?v=37\.48\.0/);
+  assert.match(html,/theme\.css\?v=37\.48\.0/);
 });
 
 test('API: آمار امروز انبار — ورودی امروز با هر وضعیت نهایی، به تفکیک محصول و واحد؛ لغوشده‌ها حذف',async()=>{
@@ -74,6 +75,8 @@ test('API: آمار امروز انبار — ورودی امروز با هر و
   assert.equal(empty.json.date,localDay());
   assert.deepEqual([empty.json.totals.orders,empty.json.totals.items,empty.json.totals.products],[0,0,0]);
   assert.deepEqual(empty.json.byProduct,[]);
+  assert.deepEqual(empty.json.deliveredTotals,{orders:0,items:0,products:0,deliveredKg:0,outOfStock:0});
+  assert.deepEqual(empty.json.deliveredByProduct,[]);
   assert.equal((await call('GET','/api/warehouse/today-stats',{cookie:sales})).status,403);
   assert.equal((await call('GET','/api/warehouse/today-stats')).status,401);
 
@@ -90,7 +93,7 @@ test('API: آمار امروز انبار — ورودی امروز با هر و
   // o1 کاملاً آماده‌سازی و نهایی می‌شود؛ باز هم در آمار امروز می‌ماند (انجام‌شده)
   assert.equal((await call('POST',`/api/orders/${o1.id}/warehouse/accept`,{cookie:wh,body:{}})).status,200);
   const full=(await call('GET',`/api/orders/${o1.id}`,{cookie:wh})).json.order;
-  const fin=await call('POST',`/api/orders/${o1.id}/warehouse`,{cookie:wh,body:{items:full.items.map((i)=>({itemId:i.id,deliveredKg:90,outOfStock:false}))}});
+  const fin=await call('POST',`/api/orders/${o1.id}/warehouse`,{cookie:wh,body:{items:full.items.map((i,index)=>index===1?{itemId:i.id,outOfStock:true}:{itemId:i.id,deliveredKg:90,outOfStock:false})}});
   assert.equal(fin.status,200,JSON.stringify(fin.json));
   // o3 به فروش ارجاع و بعد لغو می‌شود؛ نباید در آمار بماند
   assert.equal((await call('POST',`/api/orders/${o3.id}/return-sales`,{cookie:wh,body:{reason:'اصلاح سفارش'}})).status,200);
@@ -111,6 +114,11 @@ test('API: آمار امروز انبار — ورودی امروز با هر و
   assert.equal(byProduct[0].productId,p1.id,'مرتب‌سازی بر اساس کیلوگرم نزولی');
   assert.deepEqual([r1.orders,r1.lines,r1.units['کیلوگرم']],[2,2,150]);
   assert.deepEqual([r2.orders,r2.lines,r2.units['کیلوگرم'],r2.units['عدد']],[2,2,20,3]);
+  const {deliveredTotals,deliveredByProduct}=r.json;
+  assert.deepEqual([deliveredTotals.orders,deliveredTotals.items,deliveredTotals.products,deliveredTotals.deliveredKg,deliveredTotals.outOfStock],[1,2,2,90,1]);
+  const delivered1=deliveredByProduct.find((x)=>x.productId===p1.id),delivered2=deliveredByProduct.find((x)=>x.productId===p2.id);
+  assert.deepEqual([delivered1.orders,delivered1.lines,delivered1.deliveredKg,delivered1.outOfStock],[1,1,90,0]);
+  assert.deepEqual([delivered2.orders,delivered2.lines,delivered2.deliveredKg,delivered2.outOfStock],[1,1,0,1]);
   // مدیر هم می‌تواند ببیند (کارتابل انبار نزد مدیر)
   assert.equal((await call('GET','/api/warehouse/today-stats',{cookie:admin})).status,200);
 });

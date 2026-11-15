@@ -1,31 +1,117 @@
-function whDashUnitsText(units){const parts=Object.entries(units||{}).filter(([,v])=>Number(v)>0).map(([u,v])=>`${qty(v)} ${esc(u)}`);return parts.length?parts.join(' • '):'—'}
-function whDashProdMain(p){return Number(p.units?.['کیلوگرم']||Object.values(p.units||{})[0]||0)}
+function whDashUnitsPlain(units){const parts=Object.entries(units||{}).filter(([,v])=>Number(v)>0).map(([u,v])=>`${qty(v)} ${u}`);return parts.length?parts.join(' • '):'—'}
+function whDashUnitsText(units){return esc(whDashUnitsPlain(units))}
+function whDashProductKey(p,i){return String(p.productId||`${p.productName||'product'}-${i}`)}
+function whDashProductLabelHtml(p){return `${p.quickCode?`<span class="code-pill">${esc(p.quickCode)}</span>`:''}${esc(p.productName||'—')}`}
+function whDashProductRowHtml(p,i,kind){
+  const key=`${kind}:${whDashProductKey(p,i)}`;
+  const values=kind==='orders'?[p.productName,p.quickCode,whDashUnitsPlain(p.units),Number(p.orders||0),Number(p.lines||0)]:[p.productName,p.quickCode,Number(p.deliveredKg||0),Number(p.orders||0),Number(p.outOfStock||0)];
+  const signature=esc(JSON.stringify(values));
+  const product=kind==='orders'?`<button type="button" class="wh-dash-product-link" data-wh-dash-product data-cartable="incoming" data-role-page="warehouse">${whDashProductLabelHtml(p)}</button>`:`<span class="wh-dash-product-name" data-wh-dash-product>${whDashProductLabelHtml(p)}</span>`;
+  const cells=kind==='orders'
+    ?`<td class="wh-dash-rank-cell">${fa(i+1)}</td><td>${product}</td><td>${whDashUnitsText(p.units)}</td><td>${qty(p.orders||0)}</td><td>${qty(p.lines||0)}</td>`
+    :`<td class="wh-dash-rank-cell">${fa(i+1)}</td><td>${product}</td><td>${qty(p.deliveredKg||0)} کیلوگرم</td><td>${qty(p.orders||0)}</td><td>${p.outOfStock?qty(p.outOfStock):'—'}</td>`;
+  return `<tr data-wh-dash-key="${esc(key)}" data-wh-dash-signature="${signature}">${cells}</tr>`;
+}
+function whDashProductRowsHtml(products,kind){
+  if(!products.length)return `<tr class="wh-dash-empty-row"><td colspan="5">${kind==='orders'?'امروز هنوز سفارشی وارد انبار نشده است.':'امروز هنوز محصولی به‌عنوان تحویل‌شده ثبت نشده است.'}</td></tr>`;
+  return products.map((p,i)=>whDashProductRowHtml(p,i,kind)).join('');
+}
+function whDashProductTableHtml(products,kind,live=false){
+  const orders=kind==='orders',bodyData=live?(orders?' data-wh-dash-orders':' data-wh-dash-delivered'):'';
+  return `<div class="wh-dash-table-wrap"><table class="wh-dash-table"><thead><tr><th>#</th><th>محصول</th><th>${orders?'مقدار سفارش':'وزن تحویلی'}</th><th>تعداد سفارش</th><th>${orders?'ردیف کالا':'ناموجود'}</th></tr></thead><tbody${bodyData}>${whDashProductRowsHtml(products,kind)}</tbody></table></div>`;
+}
 function whDashLiveBodyHtml(s){
-  if(!s)return `<div class="wh-dash-empty">دریافت آمار زنده در این لحظه ممکن نشد؛ چند ثانیه دیگر خودکار دوباره تلاش می‌شود.</div>`;
-  const t=s.totals||{},prods=Array.isArray(s.byProduct)?s.byProduct:[];
-  const maxMain=Math.max(1,...prods.map(whDashProdMain));
+  if(!s)return `<div class="wh-dash-empty" data-wh-dash-load-error>دریافت آمار زنده در این لحظه ممکن نشد؛ چند ثانیه دیگر خودکار دوباره تلاش می‌شود.</div>`;
+  const t=s.totals||{},prods=Array.isArray(s.byProduct)?s.byProduct:[],top=prods.slice(0,10);
+  const delivered=Array.isArray(s.deliveredByProduct)?s.deliveredByProduct:[],dt=s.deliveredTotals||{};
   const updated=serverNow().toLocaleTimeString('fa-IR');
-  const totalsHtml=`<div class="wh-dash-totals">
-      <div class="wh-dash-total"><span>سفارش امروز</span><b>${qty(t.orders||0)}</b></div>
-      <div class="wh-dash-total"><span>ردیف کالا</span><b>${qty(t.items||0)}</b></div>
-      <div class="wh-dash-total"><span>محصول متمایز</span><b>${qty(t.products||0)}</b></div>
-      <div class="wh-dash-total is-wide"><span>مجموع مقدار سفارش</span><b>${whDashUnitsText(t.units)}</b></div>
+  return `<div class="wh-dash-content" data-wh-dash-layout>
+    <div class="wh-dash-totals">
+      <div class="wh-dash-total"><span>سفارش‌های ورودی امروز</span><b data-wh-dash-value="orders">${qty(t.orders||0)}</b></div>
+      <div class="wh-dash-total"><span>ردیف کالا</span><b data-wh-dash-value="items">${qty(t.items||0)}</b></div>
+      <div class="wh-dash-total"><span>محصول متمایز</span><b data-wh-dash-value="products">${qty(t.products||0)}</b></div>
+      <div class="wh-dash-total is-wide"><span>مجموع مقدار سفارش</span><b data-wh-dash-units>${whDashUnitsText(t.units)}</b></div>
     </div>
     <div class="wh-dash-status">
-      <span class="wh-dash-chip is-pending">در صف انبار: <b>${qty(t.pending||0)}</b></span>
-      <span class="wh-dash-chip is-preparing">در حال آماده‌سازی: <b>${qty(t.preparing||0)}</b></span>
-      <span class="wh-dash-chip is-done">انجام‌شده: <b>${qty(t.done||0)}</b></span>
-      <span class="wh-dash-updated">آخرین به‌روزرسانی: ${esc(updated)}</span>
-    </div>`;
-  if(!prods.length)return totalsHtml+`<div class="wh-dash-empty">امروز هنوز سفارشی وارد انبار نشده است؛ به‌محض ورود اولین سفارش، آمار محصولات همین‌جا زنده نمایش داده می‌شود.</div>`;
-  return totalsHtml+`<div class="wh-dash-list">${prods.map((p,i)=>{const pct=Math.max(6,Math.round(whDashProdMain(p)/maxMain*100));return `<button type="button" class="wh-dash-prod" data-cartable="incoming" data-role-page="warehouse"><span class="wh-dash-rank">${fa(i+1)}</span><span class="wh-dash-prod-main"><span class="wh-dash-prod-name">${p.quickCode?`<span class="code-pill">${esc(p.quickCode)}</span>`:''}${esc(p.productName||'—')}</span><span class="wh-dash-prod-bar" aria-hidden="true"><i style="width:${pct}%"></i></span></span><span class="wh-dash-prod-meta"><b>${whDashUnitsText(p.units)}</b><small>${qty(p.orders||0)} سفارش • ${qty(p.lines||0)} ردیف</small></span><span class="wh-dash-go" aria-hidden="true">←</span></button>`}).join('')}</div>`;
+      <span class="wh-dash-chip is-pending">در صف انبار: <b data-wh-dash-value="pending">${qty(t.pending||0)}</b></span>
+      <span class="wh-dash-chip is-preparing">در حال آماده‌سازی: <b data-wh-dash-value="preparing">${qty(t.preparing||0)}</b></span>
+      <span class="wh-dash-chip is-done">انجام‌شده: <b data-wh-dash-value="done">${qty(t.done||0)}</b></span>
+      <span class="wh-dash-updated">آخرین به‌روزرسانی: <b data-wh-dash-updated>${esc(updated)}</b></span>
+      <span class="wh-dash-refresh-error" data-wh-dash-refresh-error hidden>به‌روزرسانی تازه دریافت نشد؛ آمار قبلی حفظ شده است.</span>
+    </div>
+    <div class="wh-dash-tables">
+      <section class="wh-dash-table-card" aria-label="سفارش‌های امروز به تفکیک محصول">
+        <header class="wh-dash-table-heading"><div><h4>سفارش‌های امروز به تفکیک محصول</h4><p>۱۰ محصول پرفروش در این نما؛ کلیک روی نام محصول، صف سفارش‌های ورودی را باز می‌کند.</p></div><span data-wh-dash-order-count>${qty(prods.length)} محصول</span></header>
+        ${whDashProductTableHtml(top,'orders',true)}
+        <button type="button" class="wh-dash-all-products" data-wh-dash-all-orders ${prods.length>10?'':'hidden'}>مشاهدهٔ همهٔ ${qty(prods.length)} محصول</button>
+      </section>
+      <section class="wh-dash-table-card wh-dash-delivered-card" aria-label="محصولات تحویل‌شدهٔ امروز">
+        <header class="wh-dash-table-heading"><div><h4>محصولات تحویل‌شدهٔ امروز</h4><p>مقدار نهایی ثبت‌شده در انبار، به تفکیک محصول</p></div><span data-wh-dash-delivered-count>${qty(dt.products||delivered.length)} محصول</span></header>
+        ${whDashProductTableHtml(delivered,'delivered',true)}
+        <div class="wh-dash-delivered-total">جمع وزن تحویلی: <b data-wh-dash-delivered-total>${qty(dt.deliveredKg||0)} کیلوگرم</b> <span>در <b data-wh-dash-delivered-orders>${qty(dt.orders||0)}</b> سفارش</span></div>
+      </section>
+    </div>
+  </div>`;
+}
+function whDashUpdateRows(tbody,products,kind){
+  if(!tbody)return;
+  const current=new Map([...tbody.querySelectorAll('tr[data-wh-dash-key]')].map(row=>[row.dataset.whDashKey,row]));
+  const wanted=(products||[]).map((p,i)=>{
+    const key=`${kind}:${whDashProductKey(p,i)}`;
+    let row=current.get(key);
+    if(!row){const template=document.createElement('template');template.innerHTML=whDashProductRowHtml(p,i,kind);row=template.content.firstElementChild;}
+    const values=kind==='orders'?[p.productName,p.quickCode,whDashUnitsPlain(p.units),Number(p.orders||0),Number(p.lines||0)]:[p.productName,p.quickCode,Number(p.deliveredKg||0),Number(p.orders||0),Number(p.outOfStock||0)];
+    const signature=JSON.stringify(values);
+    if(row.dataset.whDashSignature!==signature){
+      row.querySelector('[data-wh-dash-product]').innerHTML=whDashProductLabelHtml(p);
+      if(kind==='orders'){
+        row.children[2].textContent=whDashUnitsPlain(p.units);row.children[3].textContent=qty(p.orders||0);row.children[4].textContent=qty(p.lines||0);
+      }else{
+        row.children[2].textContent=qty(p.deliveredKg||0)+' کیلوگرم';row.children[3].textContent=qty(p.orders||0);row.children[4].textContent=p.outOfStock?qty(p.outOfStock):'—';
+      }
+      row.dataset.whDashSignature=signature;
+    }
+    row.dataset.whDashKey=key;row.children[0].textContent=fa(i+1);current.delete(key);return row;
+  });
+  let empty=null;
+  if(!wanted.length){const template=document.createElement('template');template.innerHTML=whDashProductRowsHtml([],kind);empty=template.content.firstElementChild;}
+  const ordered=empty?[empty]:wanted;
+  let cursor=tbody.firstElementChild;
+  for(const row of ordered){if(row!==cursor)tbody.insertBefore(row,cursor);cursor=row.nextElementSibling;}
+  while(cursor){const next=cursor.nextElementSibling;cursor.remove();cursor=next;}
+}
+function whDashApplyData(host,s){
+  if(!host)return;
+  if(!s){const warning=host.querySelector('[data-wh-dash-refresh-error]');if(warning)warning.hidden=false;else if(!host.querySelector('[data-wh-dash-load-error]'))host.innerHTML=whDashLiveBodyHtml(null);return;}
+  app.whDashData=s;
+  if(!host.querySelector('[data-wh-dash-layout]')){host.innerHTML=whDashLiveBodyHtml(s);return;}
+  const t=s.totals||{},prods=Array.isArray(s.byProduct)?s.byProduct:[],delivered=Array.isArray(s.deliveredByProduct)?s.deliveredByProduct:[],dt=s.deliveredTotals||{};
+  for(const key of ['orders','items','products','pending','preparing','done']){const el=host.querySelector(`[data-wh-dash-value="${key}"]`);if(el)el.textContent=qty(t[key]||0);}
+  const units=host.querySelector('[data-wh-dash-units]');if(units)units.innerHTML=whDashUnitsText(t.units);
+  const updated=host.querySelector('[data-wh-dash-updated]');if(updated)updated.textContent=serverNow().toLocaleTimeString('fa-IR');
+  const orderCount=host.querySelector('[data-wh-dash-order-count]');if(orderCount)orderCount.textContent=qty(prods.length)+' محصول';
+  const deliveredCount=host.querySelector('[data-wh-dash-delivered-count]');if(deliveredCount)deliveredCount.textContent=qty(dt.products||delivered.length)+' محصول';
+  const deliveredTotal=host.querySelector('[data-wh-dash-delivered-total]');if(deliveredTotal)deliveredTotal.textContent=qty(dt.deliveredKg||0)+' کیلوگرم';
+  const all=host.querySelector('[data-wh-dash-all-orders]');if(all){all.hidden=prods.length<=10;all.textContent='مشاهدهٔ همهٔ '+qty(prods.length)+' محصول';}
+  whDashUpdateRows(host.querySelector('[data-wh-dash-orders]'),prods.slice(0,10),'orders');
+  whDashUpdateRows(host.querySelector('[data-wh-dash-delivered]'),delivered,'delivered');
+  const deliveredOrders=host.querySelector('[data-wh-dash-delivered-orders]');if(deliveredOrders)deliveredOrders.textContent=qty(dt.orders||0);
+  const warning=host.querySelector('[data-wh-dash-refresh-error]');if(warning)warning.hidden=true;
 }
 function whDashLiveHtml(s){
-  return `<section class="wh-dash-live tone-red" aria-label="آمار سفارشات ورودی امروز"><div class="wh-dash-head"><span class="wh-dash-ico">${icon('package',22)}</span><div class="wh-dash-title"><h3>سفارشات ورودی امروز</h3><p>همهٔ سفارش‌هایی که امروز وارد انبار شده‌اند؛ حتی اگر آماده‌سازی یا تحویلشان تمام شده باشد (به‌جز لغوشده‌ها). با کلیک روی هر محصول، صف سفارش‌های ورودی باز می‌شود.</p></div><span class="role-dash-live"><i></i> زنده</span><button type="button" class="btn btn-primary btn-sm" data-cartable="incoming" data-role-page="warehouse">مشاهدهٔ سفارش‌های ورودی ←</button></div><div id="whDashLiveBody">${whDashLiveBodyHtml(s)}</div></section>`;
+  if(s)app.whDashData=s;
+  return `<section class="wh-dash-live tone-red" aria-label="آمار زندهٔ سفارش‌های انبار"><div class="wh-dash-head"><span class="wh-dash-ico">${icon('package',22)}</span><div class="wh-dash-title"><h3>سفارش‌های انبار امروز</h3><p>سفارش‌های ورودی به تفکیک محصول و محصولاتی که امروز در انبار تحویل‌شده ثبت شده‌اند؛ جدول‌ها بدون خالی‌شدن ناگهانی به‌روز می‌شوند.</p></div><span class="role-dash-live"><i></i> زنده</span><button type="button" class="btn btn-primary btn-sm" data-cartable="incoming" data-role-page="warehouse">مشاهدهٔ سفارش‌های ورودی ←</button></div><div id="whDashLiveBody">${whDashLiveBodyHtml(s)}</div></section>`;
 }
+function openWhDashAllOrders(){
+  const products=app.whDashData?.byProduct||[];
+  if(products.length<=10)return;
+  openModal('همهٔ محصولات سفارش‌های ورودی امروز',`<div class="wh-dash-all-modal"><p>همهٔ ${qty(products.length)} محصولِ مرتب‌شده بر اساس مقدار سفارش.</p>${whDashProductTableHtml(products,'orders')}</div>`);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-wh-dash-all-orders]');if(b){e.preventDefault();openWhDashAllOrders();}});
 async function refreshWhDashToday(){
-  if(!$('#whDashLiveBody'))return;
-  try{const s=await api('/api/warehouse/today-stats');const host=$('#whDashLiveBody');if(host)host.innerHTML=whDashLiveBodyHtml(s);}catch{}
+  const host=$('#whDashLiveBody');if(!host||app.whDashRefreshBusy)return;
+  app.whDashRefreshBusy=true;
+  try{const s=await api('/api/warehouse/today-stats');if(host.isConnected)whDashApplyData(host,s);}catch{if(host.isConnected)whDashApplyData(host,null);}finally{app.whDashRefreshBusy=false;}
 }
 
 function salesHistoryRow(o){
