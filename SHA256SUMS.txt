@@ -414,7 +414,7 @@ f5e0944300417762a8dd24609522de7e3f842a341d4b6337e8e9f6398805cb91  ./tests/store-
 c29516ab6fb3c53cc8280519570a9edeb3674d3a83d05b9d285335f2f39e1ea0  ./tests/store-runs-dispatch.test.js
 a7e6ab3940775eac92d2be258cb8a36c0252ef6ace649632d884e11990297436  ./tests/store-runs.test.js
 67d71e50e2e30a548a4d5e71bcf2e1e1982f4ca5c24e0a4df829fa7354c05c13  ./tests/store-send-run2-footer.test.js
-b3ed481be3f4d112f7da9c18096d441207f81bea81d6ab66366beb3b5726186d  ./tests/store-service-handover-print-browser.test.js
+c2347019f50868a6252cd76d2a1f655d657d74b7264831380018a2e49f230dab  ./tests/store-service-handover-print-browser.test.js
 ea3a424646b436ee3c47fbcbe10cfcaf458696186a4b2f8a85fb58c055ca6b10  ./tests/store-services-keyboard-browser.test.js
 b93beeb35f714d343eedc664bee5fa0f9ab4cdfbbabffc502e9a8b25333cd6f2  ./tests/store-sheet-fit-page.test.js
 5fcb3484f687d5bffef2d54a19247f481760e265ca6e6b3245d8e6a6c27a910a  ./tests/store-sheet-layout-debug.test.js
@@ -423,7 +423,7 @@ f97311106e0b60855f70294fabc7f87a4128cce41210b82c88664234adf13742  ./tests/ticket
 c346c7709e811dbf49eb72c0d242e7c7151a3ab391be120810442007f123fe9b  ./tests/tls-manager.test.js
 95a8bd75bd58a9e294d209f4a9e05109d448bc9a200135c71de0e10011c00fad  ./tests/transport-desk-browser.test.js
 9f029371e9daa31922f02ff955e3be93f3e4c8d16bbb754e081549337f66a008  ./tests/transport-entry-ui.test.js
-df7bfda28e12e27e5e097d6c02fcdcba88a54167d1ccd11d8f0197ef188b4bb2  ./tests/transport-financial-layout-browser.test.js
+549784aedfcccf52529f29aa6710110044f328a5e5f14d5ba853a75e45b7b563  ./tests/transport-financial-layout-browser.test.js
 f139635a0a3c60bde65e85b5b9f2048b91d655ca2369cfd1232dc41ef5b9a65d  ./tests/transport-fleet-assignment-api.test.js
 d863ab4511d7a6a8bea37759edb9888f46e2c31540b895d93d121a7384afe08f  ./tests/transport-handover-browser.test.js
 c25a1d2322b48ac6a9d7bf76eb6470193e6e1fb439725222e542fc613961503f  ./tests/transport-handover-ui.test.js
