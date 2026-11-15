@@ -51,9 +51,9 @@ test('مرورگر: دسکتاپ کوچک و بزرگ، کارت‌ها و پن�
   }
   await post(`/api/store/orders/${shop.id}/quick-send`,{});
   for(const [width,height] of sizes){
-   await page.setViewportSize({width,height});await page.evaluate(()=>go('warehouse','stores'));await page.locator('.whsin22-card').waitFor();
-   assert.equal(await page.locator('.whsin22-list').evaluate(e=>e.scrollWidth<=e.clientWidth+1||['auto','scroll'].includes(getComputedStyle(e).overflowX)),true,`warehouse list scroll containment ${width}`);await check('.whsin22-card',`warehouse card ${width}x${height}`);
-   await page.locator('.whsin22-card [data-action=wh38-store-details]').click();await page.locator('#modal.open .modal-card').waitFor();
+   await page.setViewportSize({width,height});await page.evaluate(()=>go('warehouse','stores'));const storeRow=page.locator('.wh38-store-table tr[data-store-order]').first();await storeRow.waitFor();
+   assert.equal(await page.locator('.wh38-store-table-wrap').evaluate(e=>e.scrollWidth<=e.clientWidth+1||['auto','scroll'].includes(getComputedStyle(e).overflowX)),true,`warehouse list scroll containment ${width}`);await check('.wh38-store-table tr[data-store-order]',`warehouse row ${width}x${height}`);
+   await storeRow.locator('[data-action=wh38-store-details]').click();await page.locator('#modal.open .modal-card').waitFor();
    assert.ok(await page.locator('#modal .modal-card').evaluate(e=>e.scrollWidth<=e.clientWidth+1),`warehouse modal ${width}`);
    const button=page.locator('#modal [data-action=wh38-accept-details]');await button.scrollIntoViewIfNeeded();assert.equal(await button.isVisible(),true);const r=await button.boundingBox();assert.ok(r.x>=-1&&r.x+r.width<=width+1,`modal action ${width}`);await page.locator('#modal .modal-close').click();
   }

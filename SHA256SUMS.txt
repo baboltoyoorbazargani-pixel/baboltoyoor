@@ -287,7 +287,7 @@ cc80ba00e2089663bfc96a5f63fc352451ba4a8aa3e5482e8a1c2dc7ed996501  ./tests/delive
 4c67909fc2b079258ea1d8b1ffcad14f3c770a13be5263526efda5c7efa38f04  ./tests/delivery-date.test.js
 4e74ce04e852c1875db7fb0444f2376541a9e702622eb1f77439da6e50268e54  ./tests/deposits-api.test.js
 6ef9cf7298d1214618992d0172732567397e989e815d3192e3e41c3b46796942  ./tests/deposits-browser.test.js
-9643ecfcb1113d81eeefb625fe90ad5fb2d710464ddc596b352754fbbe10d1fb  ./tests/desktop-responsive-browser.test.js
+ffbb7cbb0a275cea91f65cf25db6b40ec6cf027e814732da55f4092e9dbf6c3b  ./tests/desktop-responsive-browser.test.js
 2114f9132463eb09133ddef7bad9870a40ef58bc4b31850975aa9e9d028fe3eb  ./tests/dispatch-invoice.test.js
 9ea3f8a22138a10e5a20fe41f6d655c9ef2cbfc997c1dc5b89a3edac7922f6df  ./tests/dispatch-ui.test.js
 1de9cd09e5b1a8906a265a30d5d32a3305cbbdf084564e688c0fe2b2b22f062c  ./tests/dispatch.test.js
@@ -339,8 +339,8 @@ b15328f1a3f10b78c3613776895e795b3ed216fbe952845ac8aa779cfd23db81  ./tests/operat
 514b362f8679b81346a8d2beb6bdc564ff396f581e7b6822a21ac98fbfdf2516  ./tests/order-entry-cleanup.test.js
 4f96d9a2734956c47c7cfe0fabdf8bab5ab26e63849ac42041a9c30af59a4482  ./tests/order-entry-enter-browser.test.js
 1e61d99d4a9a8f7160c2aa5317b7bc82a67250c1d64083a27f9de066dc59eb14  ./tests/order-numbers.test.js
-031d9d30a661919ab2d72a840599bb502a159449171114a1d73e27483e7d6233  ./tests/order-unified-layout-browser.test.js
-57d67145068e73c288ea05f83e7937a62a2ef3a7655a01bb82d27e3bd5811483  ./tests/persian-print-digits-browser.test.js
+9f3925d0de7a4875349d11f171cea85e6804d7fc2f4a41aa0042f62fd5525cca  ./tests/order-unified-layout-browser.test.js
+5e9a06bb53edf7582b1b56e40bef981a7ff32692424c168436223df3424cb9c0  ./tests/persian-print-digits-browser.test.js
 68447e4b0887a285ad4b28e7dd03f4dd50985866a5cf513db0623672578c4a37  ./tests/persian-text-spacing.test.js
 aff5fb96252f9b5b49ebd67fd1ef3a910042ee0f2cae53f2d11c0c4dafbd5044  ./tests/pickup-activation-race.test.js
 687c270f636fe8c850d571f59e5f9e146255c927a1c4c7ba8f138df91f78ba1b  ./tests/pickup-concurrency-service.test.js
@@ -356,7 +356,7 @@ dab1c62bd741d1a63c1127449aca72a591dd6e0cc158aa059109929425a21f78  ./tests/pickup
 f9395398afd123b0d1a28c7ae1bcd3e0c0789e002aff8a6fdb04b1c9ff976d04  ./tests/pickup-workflow.test.js
 0c4cd7a4ed32a32554d226bf3c7d7b4907f83c1226433bad8db33b6f353dc9ca  ./tests/plate-editor.test.js
 d042287e65d66843bb98c097660a34c22c1f5a60ead05dd7cfa83929dd36c9c3  ./tests/pos-display-label.test.js
-da9e4ef4ea03537f8e4a455e8f515cff5b17adb793eb07a153f917db8fddd90a  ./tests/print-no-popup-browser.test.js
+1278012ed0c5e4e056bf96d7d5c69e4927168d79f11dd840278e4f74d22e5124  ./tests/print-no-popup-browser.test.js
 5afabb8d78b6e982182000b02e7256b8d4b13ba8377f2d096d80c0ded3c1e5e0  ./tests/product-catalog-seed.test.js
 d3b00331bb591046bb0c9e4a59f306abfd538d7902356bfd48e2f29940166ea7  ./tests/product-price-print-browser.test.js
 80463cd830e3eb9ed77ce45014343b9a9328b2a57c6a5de1e83d19ef009bb197  ./tests/project-review-regressions.test.js
@@ -399,14 +399,14 @@ c99c59beed12dc2866a85d5fa9054042d0f73e987fd554090abcdc2f8d87d6e9  ./tests/sqlite
 4fa3b4ece8ab1838f2dcb78830578c616ab5839085fe855bba3cccc78acb30f6  ./tests/store-order-auto-close.test.js
 e6ebad88f64aada148a2b30d6d419ffb9a9d0a788fd192e885669baa43a46123  ./tests/store-order-kind.test.js
 8af3b4ad0ed0d1802174f7768bb63a35cc3e4bc0f29140da54429590668855f4  ./tests/store-partial-api.test.js
-7571bde8b3ad60a5ba5f8d33f6f34073a51a5b7872f986ceda958d95bb08c8c7  ./tests/store-partial-browser.test.js
+0d41146f6d406634ac2fe1b29cc9b2ff6a1e2923a7d6c35fa3f7882016fa0ce6  ./tests/store-partial-browser.test.js
 d8595af8ddcc12609e99b7422c182ec3ea563a0c4a6c2355e198eaf5ed8e889e  ./tests/store-partial-disabled.test.js
 5f67dabda97ee456e0dc54c24f1a773666f8cff86626bbf10044318afca65e08  ./tests/store-receipt.test.js
 4f33865d0f086799731f6718f90c119b28332aea822ff06d72ceafc6de2c3b43  ./tests/store-registered-browser.test.js
 e8242b34dc33760cb66f87c7f762b53e31e5ce42b6d2946466de0dd839d96627  ./tests/store-run-auto-finalize.test.js
 28eb82fc6e896bc1190d0e9b7ae04048c6085401fcf0a2515cab07ef26a123b0  ./tests/store-run-print.test.js
 19a928588684f37ea8b32fdba137eb2f2133b2204d6c02bc0e87a995e5c2b80b  ./tests/store-run-recovery.test.js
-85bf4da5f84e7865009bdfb7275a0a08fbc5f624f20f9aba64dc26663a71d85c  ./tests/store-run-reopen-browser.test.js
+c00223e3f6ca20bc64aa76d900fb563c7020e2d97f364f106812b8ec91d3023e  ./tests/store-run-reopen-browser.test.js
 ba44dca04a7e9734a5e2065f1443ece5d620cbf89b86e96ebb33931e5f9c2dd7  ./tests/store-run-reopen.test.js
 623abb2b898362ba03c114b7cc0acb36c8c443027249f4636d577d64b50757e1  ./tests/store-run-restart-policy.test.js
 b8a0df70a71cd85dbb7bc2520bd5b42a5a9b19c8dc065cce3b9b0c7ab6078d71  ./tests/store-run-send-append.test.js
@@ -416,7 +416,7 @@ c29516ab6fb3c53cc8280519570a9edeb3674d3a83d05b9d285335f2f39e1ea0  ./tests/store-
 a7e6ab3940775eac92d2be258cb8a36c0252ef6ace649632d884e11990297436  ./tests/store-runs.test.js
 67d71e50e2e30a548a4d5e71bcf2e1e1982f4ca5c24e0a4df829fa7354c05c13  ./tests/store-send-run2-footer.test.js
 c2347019f50868a6252cd76d2a1f655d657d74b7264831380018a2e49f230dab  ./tests/store-service-handover-print-browser.test.js
-ea3a424646b436ee3c47fbcbe10cfcaf458696186a4b2f8a85fb58c055ca6b10  ./tests/store-services-keyboard-browser.test.js
+06d0245fdbf181ab7f53ecb575ae13d49a9b6ea6d614c5a311e34a633543ff10  ./tests/store-services-keyboard-browser.test.js
 b93beeb35f714d343eedc664bee5fa0f9ab4cdfbbabffc502e9a8b25333cd6f2  ./tests/store-sheet-fit-page.test.js
 5fcb3484f687d5bffef2d54a19247f481760e265ca6e6b3245d8e6a6c27a910a  ./tests/store-sheet-layout-debug.test.js
 68ede67ae2ea140227036f45c284d7f3bc059105641b59a7f8c35366e22ca806  ./tests/store-weight-placement.test.js
@@ -441,7 +441,7 @@ f8326e81872b63c91075dc283a7cba96c6d13f4906b23af0559972167dd63f57  ./tests/ui-sou
 518b2de413ac1c228024513780c7cdff0feaba955af0e64000754f1b1b96b9bf  ./tests/ui-text-sweep-browser.test.js
 27302aad62d8b18b29aa684a771deb0e45a71cf04cffadea2f2a90667aae6255  ./tests/unit-reports-backups.test.js
 b25de95201af45a02ca191b2bc757581a5c8df0a5168782696579031572d994d  ./tests/warehouse-cartable-followup.test.js
-33129bdc5af58bf499db12a7d1c826d003b50124aeb436d7425e028ef3915283  ./tests/warehouse-delivered-browser.test.js
+838184358f1a434a5a857394e8538509d4cd0461f9d1f081721394453d8256c5  ./tests/warehouse-delivered-browser.test.js
 9754268f8918262d10eba942952330f31d53845f8f38bed5c3c5e170f50c127b  ./tests/warehouse-delivered.test.js
 7db75c49c0bd36c23bc07aa7bf6ec53d2f506f22fb0bb5d39c55e82f5d4db506  ./tests/warehouse-document-layout.test.js
 52da83cdef44dba46af4658995b95e870788364aa9a3abae7aede5d0efa20f56  ./tests/warehouse-document-numbers.test.js

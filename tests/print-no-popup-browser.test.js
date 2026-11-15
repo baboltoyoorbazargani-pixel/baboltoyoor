@@ -39,10 +39,10 @@ test('چاپ فاکتور، سرویس و گزارش‌ها بدون برگهٔ 
   await check(()=>page.evaluate(()=>printStoreService('o',1)),'.service-sheet',/فروشگاه ۱/);
   await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-123',orderNo:'123',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:[{productName:'مرغ',deliveredKg:5,weighings:[]}]},0)),'.whd-doc',/مشتری ۳۴/);
   await check(()=>page.evaluate(()=>whPrintDocument({warehouseDocumentNo:'W-124',orderNo:'124',customerName:'مشتری 34',customerPhone:'09121234567',createdAt:'2026-10-30',deliveryMode:'PICKUP',items:Array.from({length:70},(_,i)=>({productName:'محصول '+i,deliveredKg:i+1,weighings:[]}))},0)),'.whd-doc',/مشتری ۳۴/);
-  for(const fn of ['printWarehouseHistory','printWhStoreHistory']){
-   await page.evaluate(({fn,history})=>Object.assign(fn==='printWhStoreHistory'?app.whStoreHist:app.whHist,{data:history,q:'',result:''}),{fn,history});
-   await check(()=>page.evaluate(fn=>window[fn](),fn),'table',/مشتری ۳۴/);
-  }
+  await page.evaluate(history=>Object.assign(app.whHist,{data:history,q:'',result:''}),history);
+  await check(()=>page.evaluate(()=>printWarehouseHistory()),'table',/مشتری ۳۴/);
+  const storeDocument={storeOrderKind:'DAILY',orderNo:'001234',warehouseDocumentNo:'W-000123',storeName:'فروشگاه 34',driverName:'راننده 5',createdAt:'2026-10-30T12:34:00Z',run:1,lines:[{productName:'مرغ 2',deliveredKg:5}]};
+  await check(()=>page.evaluate(doc=>whPrintDocument(doc,1),storeDocument),'.whd-doc',/فروشگاه ۳۴/);
   await page.evaluate(()=>adm.report={label:'گزارش 12',total:1,columns:[{key:'customerName',label:'نام'}],rows:[{customerName:'مشتری 34'}]});
   await check(()=>page.evaluate(()=>printReport()),'table',/مشتری ۳۴/);
   await ctx.route('**/api/reports',r=>r.fulfill({json:{gate:{today:1,byDistrict:[{district:'محله 12',count:2}]},sales:{todayOrders:3},finance:{revenue:400},remote:{scheduled:5,byDate:[]}}}));

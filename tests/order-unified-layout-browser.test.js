@@ -45,6 +45,19 @@ test('مرورگر: ردیف سفارش در کارتابل‌ها و همه ع�
    },kind);
    if(kind==='delivery'){for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const row=page.locator('.sales-distribution-table tr');await row.waitFor();assert.equal(await row.locator('td').count(),8);assert.equal(await row.evaluate(e=>getComputedStyle(e).display),'table-row');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}continue;}
    if(kind==='invoice'){for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const table=page.locator('.settlement-invoice-table');await table.waitFor();assert.equal(await table.locator('th').count(),7);assert(await table.evaluate(e=>e.scrollWidth<=e.clientWidth+1));}continue;}
+   if(kind==='warehouse-store-incoming'||kind==='warehouse-store-preparing'){
+    const table=page.locator('#content .wh38-store-table'),row=table.locator('tbody tr[data-store-order]').first();await row.waitFor();
+    for(const width of [1280,768,390,320]){
+     await page.setViewportSize({width,height:900});
+     const layout=await row.evaluate(el=>{const r=el.getBoundingClientRect();return{display:getComputedStyle(el).display,left:r.left,right:r.right,cells:[...el.children].map(x=>x.getBoundingClientRect().toJSON()),scroll:document.documentElement.scrollWidth,viewport:innerWidth};});
+     assert.equal(layout.cells.length,8,`${kind}/${width} cells`);assert.equal(layout.display,width<=900?'grid':'table-row',`${kind}/${width} row display`);
+     assert(layout.cells.every(c=>c.left>=layout.left-1&&c.right<=layout.right+1),`${kind}/${width} cells outside row ${JSON.stringify(layout)}`);
+     assert(layout.scroll<=layout.viewport+1,`${kind}/${width} page overflow ${JSON.stringify(layout)}`);
+     const action=kind==='warehouse-store-incoming'?'wh38-store-details':'wh38-start',button=row.locator(`[data-action=${action}]`);await button.scrollIntoViewIfNeeded();assert.equal(await button.isVisible(),true,`${kind}/${width} action`);
+     assert.equal(await button.evaluate(e=>{const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return r.left>=-1&&r.right<=innerWidth+1&&!!hit&&(hit===e||e.contains(hit));}),true,`${kind}/${width} action hit target`);
+    }
+    continue;
+   }
    for(const width of [1280,768,390,320]){
     await page.setViewportSize({width,height:900});
     const row=page.locator('#content .order-summary-row:visible,#content .sales-delivery-summary-row:visible,#content .stl-queue-item:visible,#content .gt-exit-card:visible').first();await row.waitFor();
