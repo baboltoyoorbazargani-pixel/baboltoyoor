@@ -47,7 +47,7 @@ test('phase 3: a memory mutation is written to SQL immediately, before store.sav
   assert.equal(value.column, 'محصول ویرایششده فاز ۳');
   assert.equal(value.payload, 'محصول ویرایششده فاز ۳');
   assert.equal(value.writes, 1, 'only the changed row must be written');
-  assert.ok(value.products >= 63, 'the other 62 rows must not be rewritten');
+  assert.ok(value.products >= 90, 'the other catalog rows must not be rewritten');
 });
 
 test('phase 3: store.save() is an incremental sync, not a whole-database snapshot', () => {
@@ -63,7 +63,7 @@ test('phase 3: store.save() is an incremental sync, not a whole-database snapsho
       saveUpserts:d.upserts-c.upserts, saveDeletes:d.deletes-c.deletes,
     }));
   `);
-  assert.ok(value.products >= 63);
+  assert.ok(value.products >= 90);
   assert.equal(value.idleUpserts, 0, 'an unchanged database must trigger zero INSERT/UPDATE');
   assert.equal(value.idleDeletes, 0, 'an unchanged database must trigger zero DELETE');
   assert.equal(value.writeThrough, 1, 'the mutation itself performs one row-level UPDATE');

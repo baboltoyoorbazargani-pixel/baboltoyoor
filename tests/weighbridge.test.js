@@ -98,7 +98,7 @@ test('افزودن وسیله و کالا، سپس ورود و خروج با م�
   assert.equal(v.status, 201, v.text);
   const dup = await call('POST', '/api/weighbridge/vehicles', { cookie: gateC, body: { plate: '12ب345-67' } });
   assert.equal(dup.status, 409);
-  const p = await call('POST', '/api/admin/products', { cookie: adminC, body: { quickCode: '77', name: 'گندم', defaultUnit: 'کیلوگرم' } });
+  const p = await call('POST', '/api/admin/products', { cookie: adminC, body: { quickCode: '99', name: 'گندم', defaultUnit: 'کیلوگرم' } });
   assert.equal(p.status, 201, p.text);
   const productId = p.json.product.id;
 

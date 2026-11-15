@@ -123,11 +123,10 @@ test('چرخهٔ کامل: سرویس دوم پس از ارسال انبار ن�
   assert.equal(rows.length, 2, 'هر دو سرویس باید نزد فروش باشند');
   const run2 = rows.find((s) => s.run === 2);
   assert.ok(run2, 'محمولهٔ سرویس دوم نزد فروش نیست');
-  const kg = Object.fromEntries(run2.items.map((i) => [i.productName, i.serviceKg]));
-  assert.equal(kg[Object.keys(kg).find((k) => k.includes('1600'))], 35, 'وزن سرویس دوم p02 باید ۳۵ باشد');
-  assert.equal(kg[Object.keys(kg).find((k) => k.includes('1300'))], 40, 'وزن سرویس دوم p03 باید ۴۰ باشد');
-  const planned = Object.fromEntries(run2.items.map((i) => [i.productName, i.plannedRunKg]));
-  assert.equal(planned[Object.keys(planned).find((k) => k.includes('1600'))], 35, 'ماندهٔ سرویس دوم p02 = ۸۵−۵۰');
+  const itemsById = Object.fromEntries(run2.items.map((i) => [i.itemId, i]));
+  assert.equal(itemsById[it.p02].serviceKg, 35, 'وزن سرویس دوم p02 باید ۳۵ باشد');
+  assert.equal(itemsById[it.p03].serviceKg, 40, 'وزن سرویس دوم p03 باید ۴۰ باشد');
+  assert.equal(itemsById[it.p02].plannedRunKg, 35, 'ماندهٔ سرویس دوم p02 = ۸۵−۵۰');
 
   // تعیین رانندهٔ سرویس دوم از همان فهرست
   const assign = await call('POST', `/api/orders/${o.id}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId, run: 2 } });
