@@ -3,7 +3,8 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {storeDisplayName}=require('../lib/store-name');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 test('نام نمایشی شعبه به ترتیب استاندارد و بدون تغییر نام‌های قدیمی',()=>{
- for(const [name,no,want] of [['حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه شعبه ۱ حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['شعبه حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه مرکزی',null,'فروشگاه مرکزی'],['فروشگاه شعبه ٣ مرکزی',null,'فروشگاه شعبه 3 مرکزی'],['123 بازار',2,'فروشگاه شعبه 2 123 بازار']])assert.equal(storeDisplayName(name,no),want);
+ for(const [name,no,want] of [['حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه شعبه ۱ حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['شعبه حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه شعبه 1 بابل طیور حمزه کلا',1,'فروشگاه شعبه 1 حمزه کلا'],['بابل طیور حمزه کلا',null,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه شعبه ۱ بابل طیور حمزه کلا',null,'فروشگاه شعبه 1 حمزه کلا'],['فروشگاه مرکزی',null,'فروشگاه مرکزی'],['فروشگاه شعبه ٣ مرکزی',null,'فروشگاه شعبه 3 مرکزی'],['123 بازار',2,'فروشگاه شعبه 2 123 بازار']])assert.equal(storeDisplayName(name,no),want);
+ const gateOrderView=require('../lib/gate-order-view');assert.equal(gateOrderView({orderType:'STORE',storeName:'فروشگاه شعبه 1 بابل طیور حمزه کلا',branchNo:1}).storeName,'فروشگاه شعبه 1 حمزه کلا');
 });
 test('مرورگر: ردیف افقی انبار، جزئیات تفکیکی محموله و چاپ تک‌ردیفی', {skip:!process.env.BT_CHROMIUM_PATH,timeout:90000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});

@@ -120,7 +120,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const invoiceRequest={items:[{itemId:third.items[0].id,unitPrice:1200}],discountAmount:100,additionsAmount:50};
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}`,invoiceRequest,wh)).status,403);
   assert.equal((await call('POST',`/api/gate/transport-shipments/${third.id}/depart`,{},gate)).status,409);
-  assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true},sales)).status,409);
+  assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true},sales)).status,404);
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}/close`,{settlementMethods:[]},sales)).status,409);
   assert.equal((await call('POST',`/api/sales/transport-invoices/${third.id}`,{items:[{itemId:third.items[0].id,unitPrice:0}]},sales)).status,400);
   let planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===third.id).services[0];assert.equal(planned.handedOver,true);assert.equal(planned.canDepart,false);
@@ -131,20 +131,16 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await call('GET',`/api/sales/transport-invoices/${third.id}`,null,transport)).status,403);
   assert.equal((await ok('GET',`/api/sales/transport-invoices/${third.id}`,null,sales)).invoice.invoiceNumber,invoice.invoiceNumber);
   let still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');assert.equal(still.transportDeparture,undefined);
-  assert.equal((await call('POST',`/api/gate/transport-shipments/${third.id}/depart`,{invoicePaperGiven:true,departureConfirmed:false},gate)).status,400);
   assert.equal((await call('POST',`/api/gate/transport-shipments/${third.id}/depart`,{invoicePaperGiven:true,invoiceNumber:invoice.invoiceNumber},sales)).status,403);
   assert.equal((await call('POST',`/api/transport/shipments/${third.id}/depart`,{invoicePaperGiven:true,invoiceNumber:invoice.invoiceNumber},transport)).status,403);const gateQueue=await ok('GET','/api/gate/dispatch',null,gate);const gateShipment=gateQueue.leaving.find(x=>x.id===third.id&&x.gateTransportShipment);assert(gateShipment);assert(!JSON.stringify(gateShipment).includes('unitPrice'));assert(!JSON.stringify(gateShipment).includes('invoiceNumber'));assert((await ok('GET','/api/workload',null,gate)).counts.gateDispatchPending>0);
-  const departure=(await ok('POST',`/api/gate/transport-shipments/${third.id}/depart`,{invoicePaperGiven:true,departureConfirmed:true},gate)).departure;
+  const departure=(await ok('POST',`/api/gate/transport-shipments/${third.id}/depart`,{},gate)).departure;
   assert.equal(departure.driverName,'راننده');assert(!('invoiceNumber' in departure));
-  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.inTransit.some(x=>x.id===third.id&&x.transportService.label.includes('تأیید نشده')));assert(!cart.pending.some(x=>x.id===third.id));assert.equal((await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_DEPARTED').navSection,'delivery');
+  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.inTransit.some(x=>x.id===third.id&&x.transportService.label.includes('آماده ثبت پرداختی')));assert(!cart.pending.some(x=>x.id===third.id));assert.equal((await ok('GET','/api/notifications',null,sales)).notifications.find(n=>n.entityId===third.id&&n.type==='TRANSPORT_DEPARTED').navSection,'delivery');
   planned=(await ok('GET','/api/transport/plans',null,transport)).orders.find(x=>x.id===third.id).services[0];assert.equal(planned.departed,true);assert.equal(planned.canDepart,false);
   still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.transportReturn,undefined);assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');
-  assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:false},sales)).status,400);
-  assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'NOT_DELIVERED',customerSignatureOnPaper:true},sales)).status,400);
-  const returned=(await ok('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:true},sales)).return;
-  assert.equal(returned.outcome,'DELIVERED');assert.equal(returned.customerSignatureOnPaper,true);
-  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.pending.some(x=>x.id===third.id&&x.transportService.outcome==='DELIVERED'));assert(!cart.finalized.some(x=>x.id===third.id));assert((await ok('GET','/api/workload',null,sales)).counts.salesDeliveryPending>=1);
-  still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');
+  assert.equal((await call('POST',`/api/sales/transport-returns/${third.id}`,{documentsReturned:true,outcome:'DELIVERED',customerSignatureOnPaper:false},sales)).status,404);
+  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert(cart.inTransit.some(x=>x.id===third.id));assert(!cart.pending.some(x=>x.id===third.id));assert((await ok('GET','/api/workload',null,sales)).counts.salesDeliveryActive>=1);
+  still=(await ok('GET',`/api/orders/${third.id}`,null,sales)).order;assert.equal(still.transportReturn,undefined);assert.equal(still.payments.length,0);assert.equal(still.status,'SETTLEMENT_PENDING');
   assert.equal((await call('POST',`/api/orders/${third.id}/settle`,{},sales)).status,409);
 
 
@@ -174,7 +170,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET','/api/returns',null,sales)).returns.some(x=>x.id===closed.returns[0].id),true);
   await ok('POST',`/api/returns/${closed.returns[0].id}/refer`,{},sales);
 
-  // Non-delivery requires a full return; an invoice with discounts can close at zero without a fabricated payment.
+  // A complete merchandise return can close an invoice at zero without a fabricated payment.
   const undelivered=(await ok('POST','/api/orders/remote',{...body,deliveryMode:'DELIVERY',phone:'09121112238'},sales)).order;
   await ok('POST',`/api/orders/${undelivered.id}/warehouse/accept`,{},wh);
   await ok('POST',`/api/orders/${undelivered.id}/warehouse`,{items:[{itemId:undelivered.items[0].id,deliveredKg:2}]},wh);
@@ -182,14 +178,14 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   const udDoc=(await ok('GET',`/api/warehouse/delivered/${undelivered.id}`,null,wh)).order;
   await ok('POST',`/api/warehouse/transport-handovers/${undelivered.id}`,{signedPaperConfirmed:true,handoverToken:udDoc.handoverToken},wh);
   const udInvoice=(await ok('POST',`/api/sales/transport-invoices/${undelivered.id}`,{items:[{itemId:undelivered.items[0].id,unitPrice:1000}],discountAmount:300,additionsAmount:50},sales)).invoice;assert.notEqual(udInvoice.invoiceNumber,invoice.invoiceNumber);
-  await ok('POST',`/api/gate/transport-shipments/${undelivered.id}/depart`,{invoicePaperGiven:true,departureConfirmed:true},gate);
-  await ok('POST',`/api/sales/transport-returns/${undelivered.id}`,{documentsReturned:true,outcome:'NOT_DELIVERED',customerSignatureOnPaper:false},sales);
-  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.match(cart.pending.find(x=>x.id===undelivered.id).transportService.label,/تحویل‌نشده/);assert(!cart.finalized.some(x=>x.id===undelivered.id));
-  assert.equal((await call('POST',`/api/sales/transport-invoices/${undelivered.id}/close`,{returns:[{itemId:undelivered.items[0].id,returnKg:1}],settlementMethods:[]},sales)).status,409);
+  await ok('POST',`/api/gate/transport-shipments/${undelivered.id}/depart`,{},gate);
+  assert.equal((await call('POST',`/api/sales/transport-returns/${undelivered.id}`,{documentsReturned:true,outcome:'NOT_DELIVERED'},sales)).status,404);
+  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.match(cart.inTransit.find(x=>x.id===undelivered.id).transportService.label,/آماده ثبت پرداختی/);assert(!cart.finalized.some(x=>x.id===undelivered.id));
+  assert.equal((await call('POST',`/api/sales/transport-invoices/${undelivered.id}/close`,{returns:[{itemId:undelivered.items[0].id,returnKg:1}],settlementMethods:[]},sales)).status,400);
   const fullReturn={returns:[{itemId:undelivered.items[0].id,returnKg:2}],settlementMethods:[]};
   const attempts=await Promise.all([call('POST',`/api/sales/transport-invoices/${undelivered.id}/close`,fullReturn,sales),call('POST',`/api/sales/transport-invoices/${undelivered.id}/close`,fullReturn,sales)]);
   assert.deepEqual(attempts.map(x=>x.status).sort(),[200,409]);const zero=attempts.find(x=>x.status===200).data;
-  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.match(cart.finalized.find(x=>x.id===undelivered.id).transportService.label,/تحویل‌نشده/);
+  cart=await ok('GET','/api/sales/dispatch-deliveries',null,sales);assert.match(cart.finalized.find(x=>x.id===undelivered.id).transportService.label,/فاکتور بسته شد/);
   assert.equal(zero.payment.totalAmount,0);assert.equal(zero.payment.returnProductValue,2000);assert.equal(zero.payment.returnDeduction,1750);assert.equal(zero.returns[0].deliveredAt,null);assert.equal(zero.payment.settlementMethods.length,0);assert.equal(zero.payment.debtAccount,undefined);
 
   // Two store services use independently assigned drivers and separate documents.
@@ -279,7 +275,7 @@ test('ارسال برنامه‌ریزی ترابری مستقل از انبار
   assert.equal((await ok('GET',`/api/warehouse/delivered/${third.id}`,null,whAgain)).order.warehouseDocumentNo,doc.warehouseDocumentNo);
   const salesAgain=(await call('POST','/api/login',{username:'plan-sales',password:pass})).cookie;
   assert.equal((await ok('GET',`/api/sales/transport-invoices/${third.id}`,null,salesAgain)).invoice.invoiceNumber,invoice.invoiceNumber);
-  const restarted=(await ok('GET',`/api/orders/${third.id}`,null,salesAgain)).order;assert.equal(restarted.transportReturn.outcome,'DELIVERED');assert.equal(restarted.payments.length,1);assert.equal(restarted.status,'CLOSED');assert.equal(restarted.payments[0].invoiceNumber,invoice.invoiceNumber);assert.equal((await ok('GET',`/api/customers/${restarted.customerId}/debts`,null,salesAgain)).balance,850);
+  const restarted=(await ok('GET',`/api/orders/${third.id}`,null,salesAgain)).order;assert.equal(restarted.transportReturn,undefined);assert.equal(restarted.payments.length,1);assert.equal(restarted.status,'CLOSED');assert.equal(restarted.payments[0].invoiceNumber,invoice.invoiceNumber);assert.equal((await ok('GET',`/api/customers/${restarted.customerId}/debts`,null,salesAgain)).balance,850);
 
 
  }finally{if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}

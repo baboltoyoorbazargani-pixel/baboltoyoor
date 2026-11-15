@@ -1,7 +1,14 @@
 const WEIGHBRIDGE_CARTABLE_ENABLED=false; // غیرفعال تا اصلاح کامل فرم توزین
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
-function storeAwareOrderName(o){return o?.orderType==='STORE'?(o.storeName||'فروشگاه'):(o?.customer?.name||o?.storeName||'—')}
+function storeDisplayName(value,branchNo){
+ const normalized=String(value||'').normalize('NFKC').replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u200c\u200e\u200f]/g,' ').replace(/[‐‑‒–—-]/g,' ').replace(/\s+/g,' ').trim();
+ let rest=normalized.replace(/^(?:فروشگاه\s+)+/,'').trim();const match=rest.match(/^شعبه(?:\s+([0-9]+))?(?:\s+|$)/),parsed=Number(branchNo??match?.[1]??''),number=Number.isInteger(parsed)&&parsed>0?parsed:null;
+ if(match)rest=rest.slice(match[0].length).trim();const place=rest.replace(/^بابل\s+طیور\s+/,'').trim();
+ if(place==='حمزه کلا'&&(number===null||number===1))return 'فروشگاه شعبه 1 حمزه کلا';
+ return ['فروشگاه',number?'شعبه '+number:'',rest].filter(Boolean).join(' ');
+}
+function storeAwareOrderName(o){return o?.orderType==='STORE'?storeDisplayName(o.storeName||'فروشگاه',o.branchNo):(o?.customer?.name||o?.storeName||'—')}
 function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':(o?.customer?.phone||'—')}
 function settlementMethodLabel(method){
  const m=method||{},type=String(m.type||'').toUpperCase(),labels={CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'معوق'};
