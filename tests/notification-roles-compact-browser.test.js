@@ -33,7 +33,14 @@ assert.ok((await get('driver','/api/notifications')).notifications.some(n=>n.ent
 for(const width of [1440,390]){
   await pages.gate.setViewportSize({width,height:850});
   await pages.gate.evaluate(()=>{app.gateDispatchTab='leaving';return go('gate','dispatch')});
-  const gateRow=pages.gate.locator(`[data-order="${order.id}"]`).first();assert.equal(await gateRow.evaluate(e=>getComputedStyle(e).flexDirection),'row');assert.equal(await gateRow.evaluate(e=>getComputedStyle(e).flexWrap),'nowrap');await gateRow.locator('[data-gate=details]').click();
+  const gateTable=pages.gate.locator('.gate-dispatch-table'),gateRow=pages.gate.locator(`[data-order="${order.id}"]`).first();
+  assert.equal(await gateTable.locator('thead th').count(),10);assert.equal(await gateRow.locator('td').count(),10);
+  assert.deepEqual(await gateRow.locator('td').evaluateAll(cells=>cells.map(cell=>cell.dataset.label)),['مشتری / فروشگاه','شماره سفارش','تاریخ ثبت','نوع سفارش','سرویس','راننده','پلاک','وضعیت','اقلام','عملیات']);
+  assert.equal(await gateRow.evaluate(e=>getComputedStyle(e).display),width<=1100?'grid':'table-row');
+  const gateLayout=await pages.gate.evaluate(()=>{const table=document.querySelector('.gate-dispatch-table');return{tableScroll:table.scrollWidth,tableClient:table.clientWidth,pageScroll:document.documentElement.scrollWidth,viewport:innerWidth};});
+  assert.ok(gateLayout.tableScroll<=gateLayout.tableClient+1,`gate table horizontal overflow ${width}: ${JSON.stringify(gateLayout)}`);assert.ok(gateLayout.pageScroll<=gateLayout.viewport+1,`gate page horizontal overflow ${width}: ${JSON.stringify(gateLayout)}`);
+  assert.equal(await gateRow.locator('[data-gate=details]').count(),1);assert.equal(await gateRow.locator('[data-gate=exit]').count(),1);
+  await gateRow.locator('[data-gate=details]').click();
   await pages.gate.locator('#modal.open .dsp-order-details').waitFor();assert.ok((await pages.gate.locator('#modal').innerText()).includes('فروشگاه شعبه 1 اول'));
   await pages.gate.locator('#modal .modal-close').click();
   await pages.dispatch.setViewportSize({width,height:850});
@@ -46,6 +53,13 @@ for(const width of [1440,390]){
   await pages.driver.locator(`[data-order="${order.id}"] [data-dsp=details]`).first().click();await pages.driver.locator('#modal.open .dsp-order-details').waitFor();
   assert.equal(await pages.driver.locator('#modal .dsp-detail-head').evaluate(e=>getComputedStyle(e).flexWrap),'nowrap');await pages.driver.locator('#modal .modal-close').click();
 }
+for(const width of [1024,768,320]){
+ await pages.gate.setViewportSize({width,height:850});
+ const layout=await pages.gate.evaluate(()=>{const table=document.querySelector('.gate-dispatch-table'),row=table.querySelector('[data-order]');return{rowDisplay:getComputedStyle(row).display,tableScroll:table.scrollWidth,tableClient:table.clientWidth,pageScroll:document.documentElement.scrollWidth,viewport:innerWidth,labels:[...row.cells].map(cell=>cell.dataset.label)};});
+ assert.equal(layout.rowDisplay,'grid',`gate card-table layout ${width}`);assert.ok(layout.tableScroll<=layout.tableClient+1,`gate table horizontal overflow ${width}: ${JSON.stringify(layout)}`);assert.ok(layout.pageScroll<=layout.viewport+1,`gate page horizontal overflow ${width}: ${JSON.stringify(layout)}`);
+ assert.equal(layout.labels.length,10,`gate table retains all columns ${width}`);
+}
+await pages.gate.setViewportSize({width:1440,height:850});
 // Confirm both separate deliveries in a real store browser; archived run 1
 // must not be mistaken for the current second shipment.
 const signatureData='data:image/png;base64,'+'A'.repeat(300);
