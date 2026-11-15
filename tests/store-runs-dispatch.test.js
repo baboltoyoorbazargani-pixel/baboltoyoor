@@ -9,6 +9,7 @@ const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { PRODUCTS_SEED } = require('../lib/catalog');
 
 const ADMIN_PASS = 'Ta1!' + require('crypto').randomBytes(8).toString('hex');
 const PASS = 'Ts7!' + require('crypto').randomBytes(8).toString('hex');
@@ -147,7 +148,7 @@ test('فروش: send-dispatch بدون run روی سفارش سرویس‌دار
   assert.equal(o.dispatch.status, 'ASSIGNED');
   assert.equal(o.dispatch.priceFree, true, 'فلوی فروشگاه کاملاً بدون قیمت است');
   assert.equal(o.dispatch.approvedTotalAmount, 0);
-  assert.deepEqual(o.dispatch.priceLines, [{ itemId: ids.i1, productName: 'مرغ بسته بندی گرم', deliveredKg: 105, unitPrice: null, amount: null }]);
+  assert.deepEqual(o.dispatch.priceLines, [{ itemId: ids.i1, productName: PRODUCTS_SEED[0].name, deliveredKg: 105, unitPrice: null, amount: null }]);
   assert.deepEqual(o.dispatch.shipmentItemIds, [ids.i1]);
   assert.equal(o.items.find((x) => x.id === ids.i1).unitPrice ?? null, null, 'روی قلم هیچ فی ثبت نمی‌شود');
   const after = await getOrder(sales, ids.order);

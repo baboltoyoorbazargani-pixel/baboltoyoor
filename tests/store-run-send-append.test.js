@@ -134,9 +134,9 @@ test('سناریوی گزارش: ارسال زودهنگام سرویس دوم،
   const ships = await call('GET', '/api/sales/store-run-shipments', { cookie: sales });
   const run2 = (ships.json.shipments || []).find((s) => s.orderId === o.id && s.run === 2);
   assert.ok(run2, 'محمولهٔ سرویس دوم نزد فروش نیست');
-  const kg = Object.fromEntries(run2.items.map((i) => [i.productName, i.serviceKg]));
-  assert.equal(kg[Object.keys(kg).find((k) => k.includes('1600'))], 35);
-  assert.equal(kg[Object.keys(kg).find((k) => k.includes('1300'))], 40, 'قلم کاملاً منتقل‌شده هم باید نزد فروش دیده شود');
+  const itemsById = Object.fromEntries(run2.items.map((i) => [i.itemId, i]));
+  assert.equal(itemsById[it.p02].serviceKg, 35);
+  assert.equal(itemsById[it.p03].serviceKg, 40, 'قلم کاملاً منتقل‌شده هم باید نزد فروش دیده شود');
 
   // پس از واگذاری به راننده، سرویس کامل قفل می‌شود
   const assign = await call('POST', `/api/orders/${o.id}/send-dispatch`, { ...IDEM(), cookie: sales, body: { driverId, run: 2 } });

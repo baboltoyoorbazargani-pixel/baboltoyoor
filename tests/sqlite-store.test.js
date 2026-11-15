@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { PRODUCTS_SEED } = require('../lib/catalog');
 
 const root = path.join(__dirname, '..');
 const NEW_PROCESS = (body, setup = '') => `
@@ -41,7 +42,7 @@ test('SQLite is the source of truth: a real table per entity with typed columns'
   assert.equal(value.schema, 1);
 });
 
-test('fresh install writes admin, roles and the 63-product catalog into SQL tables', () => {
+test('fresh install writes admin, roles and the 90-product catalog into SQL tables', () => {
   const { value } = child(`
     s.init();
     const sql=s.sql;
@@ -53,7 +54,7 @@ test('fresh install writes admin, roles and the 63-product catalog into SQL tabl
   `);
   assert.equal(value.stats.users, 1);
   assert.equal(value.stats.roles, 7);
-  assert.equal(value.stats.products, 63);
+  assert.equal(value.stats.products, 90);
   assert.equal(value.admin[0].username, 'admin');
   assert.equal(value.admin[0].role_code, 'admin');
   assert.equal(value.admin[0].is_active, 1);
@@ -131,12 +132,19 @@ test('data survives a completely fresh process (SQLite, not an in-memory cache)'
 
 test('legacy data/db.json is migrated into SQL and archived (no data loss)', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bt-sql-legacy-'));
+  const firstProductId = 'legacy-product-01';
   const legacy = {
-    meta: { schemaVersion: 2, auditSeq: 0, lastAuditHash: 'GENESIS' },
+    meta: { schemaVersion: 2, productCatalogVersion: '2026-10-05-catalog-63', auditSeq: 0, lastAuditHash: 'GENESIS' },
     users: [{ id: 'u1', username: 'admin', fullName: 'مدیر', roleCode: 'admin', isActive: true, passwordHash: 'x', mustChangePassword: false }],
     customers: [{ id: 'c1', name: 'مشتری قدیمی', phone: '09120000000', code: '00001' }],
     orders: [{ id: 'o1', orderNo: '000001', customerId: 'c1', status: 'NEW', createdAt: '2026-01-01', nested: { weight: 12.5, lines: [1, 2] } }],
-    orderItems: [{ id: 'it1', orderId: 'o1', description: 'مرغ' }],
+    orderItems: [{ id: 'it1', orderId: 'o1', productId: firstProductId, description: 'مرغ' }],
+    products: PRODUCTS_SEED.slice(0, 63).map((product, index) => ({
+      ...product,
+      id: index === 0 ? firstProductId : product.id,
+      name: `نام قبلی ${product.quickCode}`,
+    })),
+    priceList: [{ id: 'price-1', productId: firstProductId, price: 100 }],
     counters: { orderNumber: 5 }, audit: [],
   };
   fs.writeFileSync(path.join(dir, 'db.json'), JSON.stringify(legacy));
@@ -148,12 +156,25 @@ test('legacy data/db.json is migrated into SQL and archived (no data loss)', () 
       order:sql.query("SELECT order_no, customer_id FROM orders"),
       nested:s.get().orders[0].nested,
       counter:s.get().counters.orderNumber,
+      products:sql.query("SELECT id, quick_code, name FROM products WHERE quick_code IN (?, ?) ORDER BY quick_code",['01','90']),
+      productCount:sql.stats().products,
+      orderItemProductId:s.get().orderItems[0].productId,
+      priceProductId:s.get().priceList[0].productId,
+      catalogVersion:s.get().meta.productCatalogVersion,
     }));
   `, { dir });
   assert.equal(value.customer[0].name, 'مشتری قدیمی');
   assert.equal(value.order[0].order_no, '000001');
   assert.deepEqual(value.nested, { weight: 12.5, lines: [1, 2] });
   assert.equal(value.counter, 5);
+  assert.deepEqual(value.products, [
+    { id: firstProductId, quick_code: '01', name: PRODUCTS_SEED[0].name },
+    { id: 'p90', quick_code: '90', name: PRODUCTS_SEED[89].name },
+  ]);
+  assert.equal(value.productCount, 90);
+  assert.equal(value.orderItemProductId, firstProductId);
+  assert.equal(value.priceProductId, firstProductId);
+  assert.equal(value.catalogVersion, '2026-11-11-catalog-90');
   assert.equal(fs.existsSync(path.join(dir, 'db.json')), false, 'legacy file must be archived, not left as a second source of truth');
   assert.ok(fs.readdirSync(dir).some((f) => f.startsWith('db.json.migrated-')));
 });
