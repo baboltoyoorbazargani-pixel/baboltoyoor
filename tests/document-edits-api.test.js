@@ -31,7 +31,7 @@ test('final warehouse documents return through an audited edit queue; invoice pr
   proc=start();await ready();
   const admin=(await call('POST','/api/login',{username:'admin',password:'Initial!2345'})).cookie;
   await ok('POST','/api/account/password',{currentPassword:'Initial!2345',newPassword:password},admin);
-  for(const [username,roleCode,extra] of [['edit-sales','sales',{}],['edit-warehouse','warehouse',{}],['edit-gate','gate',{}],['edit-store','store',{storeName:'فروشگاه آزمون ویرایش'}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'آزمون',password,mustChangePassword:false,...extra},admin,201);
+  for(const [username,roleCode,extra] of [['edit-sales','sales',{}],['edit-warehouse','warehouse',{}],['edit-gate','gate',{}],['edit-store','store',{storeName:'فروشگاه شعبه ۱ بابل طیور حمزه کلا',branchNo:1}]])await ok('POST','/api/admin/users',{username,roleCode,fullName:username,position:'آزمون',password,mustChangePassword:false,...extra},admin,201);
   const driverRecord=await ok('POST','/api/drivers',{fullName:'راننده آزمون ویرایش',phone:'09124445555',vehicleType:'وانت',plate:'12ب34567'},admin,201);
   await ok('POST','/api/admin/users',{username:'edit-driver',roleCode:'driver',fullName:'راننده آزمون ویرایش',position:'آزمون',password,mustChangePassword:false,driverId:driverRecord.driver.id},admin,201);
   const sales=(await call('POST','/api/login',{username:'edit-sales',password})).cookie;
@@ -126,6 +126,9 @@ test('final warehouse documents return through an audited edit queue; invoice pr
   // A store-service document follows the same referral queue, while retaining
   // its no-settlement/no-invoice nature and per-run corrected snapshot.
   const storeOrder=(await ok('POST','/api/store/orders',{name:'مشتری فروشگاه آزمون',phone:'09123334444',items:[{productId:'p01',requestedQty:10,requestedUnit:'کیلوگرم'}]},shop,201)).order;
+  const canonicalStoreName='فروشگاه شعبه 1 حمزه کلا';
+  const salesHistory=(await ok('GET',`/api/sales/history?q=${encodeURIComponent(storeOrder.orderNo)}`,null,sales)).orders.find(row=>row.id===storeOrder.id);
+  assert.equal(salesHistory?.customerName,canonicalStoreName,'فهرست فروش برای سفارش فروشگاه نام مشتری سفارش را جای نام فروشگاه نشان ندهد');
   await ok('POST',`/api/store/orders/${storeOrder.id}/quick-send`,{},sales);
   await ok('POST',`/api/orders/${storeOrder.id}/warehouse/accept`,{},warehouse);
   await ok('POST',`/api/orders/${storeOrder.id}/warehouse/start-preparing`,{},warehouse);
@@ -139,7 +142,8 @@ test('final warehouse documents return through an audited edit queue; invoice pr
   const storeFinal=(await ok('GET',`/api/orders/${storeOrder.id}`,null,sales)).order;
   const storePayment=storeFinal.payments.find(row=>Number(row.deliveryRun)===1);assert(storePayment,'سند سرویس فروشگاه صادر شده باشد');
   await ok('POST',`/api/sales/orders/${storeOrder.id}/invoices/${storePayment.id}/warehouse-edit`,{reason:'اصلاح وزن سرویس فروشگاه'},sales);
-  assert.equal((await ok('GET','/api/warehouse/document-edits',null,warehouse)).requests.find(row=>row.orderId===storeOrder.id)?.orderType,'STORE');
+  const pendingStoreEdit=(await ok('GET','/api/warehouse/document-edits',null,warehouse)).requests.find(row=>row.orderId===storeOrder.id);
+  assert.equal(pendingStoreEdit?.orderType,'STORE');assert.equal(pendingStoreEdit?.customerName,canonicalStoreName,'صف اصلاح سند برای سفارش فروشگاه نام canonical را نشان دهد');
   assert.equal((await ok('GET','/api/warehouse/store-documents',null,warehouse)).documents.some(row=>row.orderId===storeOrder.id&&row.run===1),false,'سند فروشگاه هنگام ارجاع از فهرست چاپ جدا شود');
   const storeEdit=await ok('GET',`/api/warehouse/document-edits/${storeOrder.id}/${storePayment.id}`,null,warehouse);assert.equal(storeEdit.edit.items[0].deliveredKg,5);
   result=await ok('PUT',`/api/warehouse/document-edits/${storeOrder.id}/${storePayment.id}`,{items:[{itemId:storeOrder.items[0].id,productId:'p02',deliveredKg:6}]},warehouse);

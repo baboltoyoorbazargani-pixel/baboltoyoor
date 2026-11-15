@@ -25,6 +25,9 @@ test('independent catalogs, selections, permissions and no orphan records on err
   let r=await call('POST','/api/admin/transport-vehicles',{vehicleType:'وانت',plate:'12ب34567'});assert.equal(r.status,201,JSON.stringify(r.json));vehicle=r.json.vehicle;
   r=await call('POST','/api/admin/payment-devices',{title:'دستگاه ۱',terminalNumber:'1234',bank:'ملت',model:'X',connection:'wired'});assert.equal(r.status,201,JSON.stringify(r.json));device=r.json.device;
   r=await call('POST','/api/admin/store-branches',{name:'شعبه مرکزی',branchNo:7});assert.equal(r.status,201,JSON.stringify(r.json));branch=r.json.branch;
+  const hamzeh=await call('POST','/api/admin/store-branches',{name:'فروشگاه شعبه 1 بابل طیور حمزه کلا',branchNo:1});assert.equal(hamzeh.status,201,JSON.stringify(hamzeh.json));assert.equal(hamzeh.json.branch.name,'فروشگاه شعبه 1 حمزه کلا');
+  assert.equal((await call('GET','/api/admin/store-branches')).json.branches.find(x=>x.branchNo===1).name,'فروشگاه شعبه 1 حمزه کلا');
+  assert.equal((await call('GET','/api/store/scope')).json.branches.find(x=>x.branchNo===1).storeName,'فروشگاه شعبه 1 حمزه کلا');
   assert.equal((await call('POST','/api/admin/store-branches',{name:'دیگر',branchNo:7})).status,409);
   assert.equal((await call('POST','/api/admin/transport-vehicles',{vehicleType:'وانت',plate:'12ب34567'})).status,409);
   assert.equal((await mk('invalid','driver',{drvPhone:'09121234567',vehicleId:vehicle.id,paymentDeviceId:'invalid'})).status,400);
