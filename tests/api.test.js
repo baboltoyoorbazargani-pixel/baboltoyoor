@@ -66,14 +66,20 @@ test('صفحه اصلی با Security Headers و بدون Inline Script سرو �
   assert.equal(r.headers.get('x-content-type-options'), 'nosniff');
 });
 
-test('stylesheet موبایل از allowlist استاتیک با content-type صحیح سرو می‌شود', async () => {
+test('لایه‌های CSS واکنش‌گرایی از allowlist استاتیک با content-type صحیح سرو می‌شوند', async () => {
   const page = await call('GET', '/');
   assert.equal(page.status, 200);
   assert.match(page.text, /href="\/mobile\.css"/);
+  assert.match(page.text, /href="\/responsive\.css"/);
+  assert.ok(page.text.indexOf('href="/responsive.css"') > page.text.indexOf('href="/transport-resources.css"'));
   const css = await call('GET', '/mobile.css');
   assert.equal(css.status, 200);
   assert.match(css.headers.get('content-type'), /text\/css/);
   assert.match(css.text, /max-width:\s*1024px/);
+  const responsive = await call('GET', '/responsive.css');
+  assert.equal(responsive.status, 200);
+  assert.match(responsive.headers.get('content-type'), /text\/css/);
+  assert.match(responsive.text, /overflow-x:\s*clip/);
 });
 
 test('مسیرهای خارج از Allowlist و Path Traversal قابل دسترسی نیستند', async () => {

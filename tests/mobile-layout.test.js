@@ -18,6 +18,19 @@ test('stylesheet موبایل پس از دو stylesheet اصلی بارگذار�
   assert.ok(fs.statSync(path.join(root, 'public/mobile.css')).size > 5000);
 });
 
+test('لایهٔ responsive نهایی بعد از تمام سبک‌ها بارگذاری می‌شود و حاشیهٔ کارتابل را حفظ می‌کند', () => {
+  const html = read('public/index.html');
+  const transport = html.indexOf('href="/transport-resources.css"');
+  const responsive = html.indexOf('href="/responsive.css"');
+  const css = read('public/responsive.css');
+  assert.ok(transport >= 0 && responsive > transport);
+  assert.match(read('lib/http.js'), /'\/responsive\.css':\s*\{\s*file:\s*'responsive\.css',\s*type:\s*'text\/css/);
+  assert.match(css, /overflow-x:\s*clip/);
+  assert.match(css, /data-cartable-page="gate"\]:has\(\.gt-exit-panel\)[\s\S]*?margin-inline:\s*-12px/);
+  assert.match(css, /data-cartable-page="sales"[\s\S]*?sales-v29-pane-settlement[\s\S]*?margin-inline:\s*-12px/);
+  assert.match(css, /max-width:\s*min\(100%,\s*calc\(100vw\s*-\s*20px\)\)/);
+});
+
 test('لایهٔ responsive breakpoint، safe-area، هدف لمسی و ورودی سازگار با Safari موبایل دارد', () => {
   const css = read('public/mobile.css');
   assert.match(css, /max-width:\s*1024px/);
