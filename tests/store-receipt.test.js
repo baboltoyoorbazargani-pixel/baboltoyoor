@@ -13,7 +13,7 @@ test('store portal has a dedicated delivered-orders inbox and explicit store rec
 });
 test('all order queues prefer store name and hide store customer phone',()=>{
  const ui=read('public/ui2.js'),app=read('public/app.js');
- assert.match(app,/function storeAwareOrderName\(o\).*o\?\.orderType==='STORE'\?\(o\.storeName\|\|'فروشگاه'\)/);
+ assert.match(app,/function storeAwareOrderName\(o\).*o\?\.orderType==='STORE'\?storeDisplayName\(o\.storeName\|\|'فروشگاه',o\.branchNo\)/);
  assert.ok(app.includes("function storeAwareOrderPhone(o){return o?.orderType==='STORE'?'':"));
  assert.match(ui,/storeAwareOrderName\(o\)/);
  assert.match(ui,/storeAwareOrderPhone\(o\)/);

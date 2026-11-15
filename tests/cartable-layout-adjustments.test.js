@@ -15,7 +15,7 @@ test('gate driver-exit confirmation is only mounted in driver-delivery tab, not 
  assert.match(src,/gateDispatchTabsHtml\(dispatchData,app\.gateDispatchTab,dispatchError\)/);
  assert.doesNotMatch(src,/<nav class="sd-tabs"/,'legacy in-content gate navigation must not be rendered');
  const panel=driver.slice(driver.indexOf('function gateDispatchMarkup(data)'),driver.indexOf('function updateGateDispatchInCartable'));
- assert.match(panel,/section\('در انتظار تأیید خروج نگهبان'[\s\S]*?gateDispatchCard\(o, 'exit'\)/);
+ assert.match(panel,/section\('آماده ثبت خروج نگهبانی'[\s\S]*?gateDispatchCard\(o, 'exit'\)/);
 });
 test('driver cartable has four ordered state tabs and store customer name box beneath store name',()=>{
  const paint=driver.slice(driver.indexOf('function paintDriver(data)'),driver.indexOf('function dspDriverCard'));
