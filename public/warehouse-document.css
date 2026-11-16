@@ -1,7 +1,7 @@
 /* Warehouse document: the same compact table language as the sales invoice. */
 .whd-doc{color:#1d222a;font-family:'Vazirmatn',Tahoma,sans-serif;box-sizing:border-box;direction:rtl;line-height:1.4}
 .whd-doc *{box-sizing:border-box}
-.whd-head{display:flex;direction:rtl;align-items:stretch;gap:5px;margin-bottom:4px;break-inside:avoid}
+.whd-head{display:flex;direction:rtl;align-items:stretch;gap:5px;min-height:50px;margin-bottom:4px;break-inside:avoid}
 .whd-document-number{flex:0 0 130px;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;border:1px solid #e3e6ea;border-radius:6px;padding:3px 4px;text-align:center;font-size:9px;font-weight:700}
 .whd-document-number span{white-space:nowrap;flex-shrink:0}.whd-document-number b{font-size:13px;line-height:1.35;white-space:nowrap;unicode-bidi:isolate}
 .whd-meta{display:grid;flex:1;min-width:0;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:5px;font-size:9px}

@@ -30,8 +30,9 @@ test('مرورگر: چیدمان ردیف‌های انبار، سرویس فر�
    assert.equal(await page.locator('.wh38-prep-item:not(.sr318-row)').count(),1);
    const cells=await contained('.wh38-prep-item:not(.sr318-row) .wh38-cell-box, .wh38-prep-item:not(.sr318-row) input, .wh38-prep-item:not(.sr318-row) .wh38-oos','.wh38-prep-item');
    assert.ok(cells.length>=6);for(const p of cells)assert.ok(p&&p.left>=-1&&p.right>=-1&&p.top>=-1&&p.bottom>=-1,`warehouse ${width}: ${JSON.stringify(p)}`);
-   assert.equal(await page.locator('.wh38-prep-items').evaluate(e=>e.scrollWidth<=e.clientWidth+1||['auto','scroll'].includes(getComputedStyle(e).overflowX)),true,`warehouse scrolling contained ${width}`);
-   const coords=await page.locator('.wh38-prep-cell').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().top));assert.equal(new Set(coords).size,1,'warehouse cells stay on one row');
+   const prepList=await page.locator('.wh38-prep-items').evaluate(e=>({scroll:e.scrollWidth,client:e.clientWidth,overflow:getComputedStyle(e).overflowX}));
+   if(width<=1150)assert(prepList.scroll<=prepList.client+1,`warehouse prep does not scroll horizontally ${width}: ${JSON.stringify(prepList)}`);
+   else{const coords=await page.locator('.wh38-prep-cell').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().top));assert.equal(new Set(coords).size,1,'desktop warehouse cells stay on one row');}
    await page.locator('[data-wh38-weight]').fill('5');assert.match(await page.locator('#wh38Total').innerText(),/۵/);
    await page.locator('[data-wh38-oos]').check();assert.equal(await page.locator('[data-wh38-weight]').isDisabled(),true);await page.locator('[data-wh38-oos]').uncheck();
    await page.evaluate(o=>sr38Sheet(o),shop);

@@ -8,7 +8,7 @@ const css=read('public/form-layout.css');
 test('form layout and final compatibility stylesheet are ordered and served through the static allowlist',()=>{
  const html=read('public/index.html');
  assert(html.indexOf('/form-layout.css?v=37.3.18')>html.indexOf('/theme.css'));
- assert(html.indexOf('/compatibility.css?v=37.48.0')>html.indexOf('/form-layout.css'));
+ assert(html.indexOf('/compatibility.css?v=37.49.1')>html.indexOf('/form-layout.css'));
  assert.match(read('lib/http.js'),/'\/compatibility\.css'/);
  assert.match(read('lib/http.js'), /'\/form-layout\.css': \{ file: 'form-layout\.css', type: 'text\/css; charset=utf-8'/);
 });

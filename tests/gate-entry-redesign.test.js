@@ -60,9 +60,9 @@ test('compact horizontal layout and 3D plate styles are in place',()=>{
   assert.match(css,/@media \(prefers-reduced-motion:reduce\)\{\s*#appView \.iran-plate\{transform:none!important/);
 });
 
-test('updated assets are cache-busted for 37.48.1',()=>{
+test('updated assets are cache-busted for 37.49.1',()=>{
   assert.match(html,/theme\.css\?v=37\.48\.0/);
-  assert.match(html,/app\.js\?v=37\.48\.1/);
-  assert.match(html,/ui2\.js\?v=37\.48\.1/);
+  assert.match(html,/app\.js\?v=37\.49\.1/);
+  assert.match(html,/ui2\.js\?v=37\.49\.1/);
   assert.match(html,/dispatch-ui\.js\?v=37\.47\.0/);
 });

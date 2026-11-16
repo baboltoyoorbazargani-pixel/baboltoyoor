@@ -8,6 +8,7 @@ test('سوابق فروشگاه دکمهٔ چاپ مرجوعی را فقط با 
  const start=ui.indexOf('function renderSalesStoresV41'),end=ui.indexOf('/* ---------- تب ۳:',start),view=ui.slice(start,end);
  assert(start>=0&&end>start);
  assert.match(view,/kind==='history'\?storeReturnPrintButton\(o\)/);
+ assert.match(view,/storeSalesDocumentButtons\(o,kind==='history',kind!=='history'\)/);
  assert.doesNotMatch(view,/storeServicePrintButtons\(o\.id,[^)]*,[^)]*,true\)/);
  const fnStart=ui.indexOf('function storeReturnPrintButton('),fnEnd=ui.indexOf('\nfunction renderSalesStoresV41',fnStart);
  assert(fnStart>=0&&fnEnd>fnStart);
@@ -17,6 +18,13 @@ test('سوابق فروشگاه دکمهٔ چاپ مرجوعی را فقط با 
  const button=context.storeReturnPrintButton({id:'returned',hasReturnedGoods:true});
  assert.match(button,/data-action="print-store-return"/);assert.match(button,/چاپ مرجوعی/);assert.equal((button.match(/چاپ مرجوعی/g)||[]).length,1);
  assert.match(app,/if\(a==='print-store-return'\)return printStoreReturns\(el\.dataset\.id\)/);
+ const docStart=app.indexOf('function storeSalesDocumentButtons('),docEnd=app.indexOf('\nfunction storeSalesReviewButtons',docStart);
+ assert(docStart>=0&&docEnd>docStart);
+ const helper={storeAvailableRuns:()=>[1,2],normalizeRole:()=> 'admin',serverEpoch:()=>Date.now(),app:{user:{roleCode:'admin'}},esc:value=>String(value??''),icon:()=>''};
+ vm.createContext(helper);vm.runInContext(app.slice(docStart,docEnd),helper);
+ const retained=helper.storeSalesDocumentButtons({id:'history',storeOrderKind:'DAILY',payments:[{id:'p1',deliveryRun:1,verifiedAt:'2026-11-10T10:00:00Z'},{id:'p2',deliveryRun:2,verifiedAt:'2026-11-10T10:00:00Z'}],storeRunOps:{r1Shipment:{sentAt:'2026-11-10T10:00:00Z'},r2Shipment:{sentAt:'2026-11-10T10:00:00Z'}}},true,false);
+ assert.doesNotMatch(retained,/sales-store-document-print|چاپ/);
+ assert.match(retained,/sales-warehouse-edit-request/);
 });
 
 test('نمای سفارش فروشگاه، وجود مرجوعی را از برگه‌های مثبت ثبت‌شده تشخیص می‌دهد',()=>{
