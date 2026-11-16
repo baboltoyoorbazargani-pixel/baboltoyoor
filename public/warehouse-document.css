@@ -92,26 +92,24 @@
 .whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:3px 5px;overflow-wrap:anywhere}
 .whd-store-print .whd-store-meta>span b{font-size:9px}
 
-/* Remote-order handover header: nine compact, ordered fields on a clear 3×3 grid. */
-.whd-remote-head{display:block!important;direction:rtl;margin-bottom:8px}
-.whd-remote-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;min-width:0}
-.whd-remote-meta>span{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:42px;padding:5px 8px;text-align:right;background:#fbfcfd;border-color:#dfe4e9}
-.whd-remote-meta .whd-label{font-size:8px;color:#687685;white-space:normal}
-.whd-remote-meta>span b{font-size:10px;line-height:1.45}
-.whd-remote-meta .whd-document-number{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-width:0;padding:5px 8px;text-align:right}
-.whd-remote-meta .whd-document-number span{font-size:8px;color:#687685;white-space:normal}
-.whd-remote-meta .whd-document-number b{font-size:12px}
+/* Remote-order documents: all metadata remains in one short horizontal row. */
+.whd-remote-head{display:block!important;direction:rtl;margin:0 0 4px;padding:2px 3px;background:#f4f7fb;border:1px solid #cbd5e1;border-radius:5px}
+.whd-remote-meta{display:grid;grid-template-columns:var(--whd-remote-columns,repeat(5,minmax(0,1fr)));align-items:center;gap:2px;min-width:0;font-size:var(--whd-remote-font,8px);line-height:1.05}
+.whd-remote-group{min-width:0;display:flex;align-items:center;justify-content:center;gap:3px;padding:2px 3px;border:1px solid #dfe4e9;border-radius:3px;background:#fbfcfd;white-space:nowrap}
+.whd-remote-pair{min-width:0;display:inline-flex;align-items:baseline;gap:1px;white-space:nowrap}
+.whd-remote-label{flex:none;color:#475569;font-size:.9em;font-weight:600;white-space:nowrap}
+.whd-remote-pair>b{flex:0 0 auto;min-width:0;color:#0f172a;font-size:1em;line-height:1.05;font-weight:800;white-space:nowrap}
+.whd-remote-pair>b[dir=ltr]{direction:ltr;unicode-bidi:isolate}
 @media screen and (max-width:700px){
- .whd-remote-head .whd-remote-meta{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
- .whd-remote-meta>span{justify-content:center;min-height:40px}
- .whd-remote-meta>span:first-child,.whd-remote-meta>span:nth-child(4),.whd-remote-meta>span:last-child{grid-column:1/-1}
+ .whd-remote-head{padding:1px}
+ .whd-remote-meta{gap:1px;font-size:min(var(--whd-remote-font,8px),4.4px)}
+ .whd-remote-group{gap:1px;padding:1px}
+ .whd-remote-pair{gap:1px}
 }
+@media screen and (max-width:340px){.whd-remote-meta{font-size:min(var(--whd-remote-font,8px),3.7px)}}
 @media print{
- .whd-remote-head{margin-bottom:6px}
- .whd-remote-meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
- .whd-remote-meta>span{min-height:34px;padding:3px 6px;background:#fff}
- .whd-remote-meta .whd-document-number{padding:3px 6px}
- .whd-remote-meta .whd-label,.whd-remote-meta .whd-document-number span{font-size:7px}
- .whd-remote-meta>span b{font-size:9px}
- .whd-remote-meta .whd-document-number b{font-size:11px}
+ .whd-remote-head{margin-bottom:3px;padding:1px 2px}
+ .whd-remote-meta{gap:1px 2px;line-height:1}
+ .whd-remote-group{gap:2px;padding:1px 2px;background:#fff}
+ .whd-remote-pair{gap:1px}
 }
