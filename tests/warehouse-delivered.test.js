@@ -33,5 +33,5 @@ test('remote delivery warehouse document includes all customer, handover, vehicl
  const html=c.whDeliveredDocument({orderType:'REMOTE',orderNo:'R-101',warehouseDocumentNo:'W-101',customerName:'مشتری نمونه',customerPhone:'09120000000',deliveryMode:'DELIVERY',driverName:'راننده نمونه',driverPhone:'09121111111',vehicleType:'وانت',vehiclePlate:'12ب34567',completedAt:'2026-01-02 09:00',handedOverAt:'2026-01-02 09:30',items:[]});
  for(const value of ['مشتری نمونه','09120000000','R-101','W-101','2026-01-02 09:30','راننده نمونه','09121111111','وانت','12ب34567'])assert.ok(html.includes(value),`سند باید مقدار «${value}» را نمایش دهد`);
  for(const label of ['سند:','سفارش:','مشتری:','تماس:','تحویل:','گیرنده:','خودرو:','پلاک:'])assert.ok(html.includes(label),`برچسب فشرده «${label}» باید نمایش داده شود`);
- assert.match(html,/whd-remote-meta/);assert.equal((html.match(/class="whd-remote-group whd-remote-/g)||[]).length,5);assert.equal((html.match(/class="whd-remote-pair"/g)||[]).length,9);
+ assert.match(html,/whd-remote-meta/);assert.deepEqual(Array.from(html.matchAll(/class="whd-remote-group whd-remote-([a-z-]+)"/g),match=>match[1]),['customer','recipient','vehicle','order','time']);assert.equal((html.match(/class="whd-remote-pair"/g)||[]).length,9);
 });

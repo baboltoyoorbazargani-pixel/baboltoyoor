@@ -214,11 +214,11 @@ function whDeliveredDocument(o,print=false){
   const documentNumberRaw=String(o.warehouseDocumentNo||'—'),orderNumberRaw=String(o.orderNo||'—');
   const documentNumber=esc(fa(documentNumberRaw)),orderNumber=esc(fa(orderNumberRaw));
   const remoteGroups=[
-    {name:'order',fields:[['سند',documentNumber,documentNumberRaw,'ltr'],['سفارش',orderNumber,orderNumberRaw,'ltr']]},
     {name:'customer',fields:[['مشتری',customer,customerRaw,''],['تماس',phone,customerPhoneRaw||'—','ltr']]},
-    {name:'time',fields:[['تحویل',deliveryAt,deliveryAtRaw,'']]},
     {name:'recipient',fields:[['گیرنده',receiverSummary,receiverIsCustomer?'همان مشتری':receiverNameRaw,''],['تماس',receiverContact,receiverContactRaw,receiverIsCustomer?'':'ltr']]},
     {name:'vehicle',fields:[['خودرو',vehicleName,vehicleNameRaw,''],['پلاک',receiverPlate,receiverPlateRaw,'ltr']]},
+    {name:'order',fields:[['سند',documentNumber,documentNumberRaw,'ltr'],['سفارش',orderNumber,orderNumberRaw,'ltr']]},
+    {name:'time',fields:[['تحویل',deliveryAt,deliveryAtRaw,'']]},
   ];
   const remoteWeight=group=>group.fields.reduce((sum,[label,,value])=>sum+String(label).length+String(value||'—').length+3,0);
   const remoteHeaderChars=remoteGroups.reduce((sum,group)=>sum+remoteWeight(group),0);
