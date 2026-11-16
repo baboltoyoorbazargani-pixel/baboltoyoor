@@ -203,19 +203,30 @@ function whDeliveredDocument(o,print=false){
   const sameOwner=pickupRecipient?.name?.trim()===customerRaw.trim()&&String(pickupRecipient?.phone||'').trim()===String(o.customerPhone||'').trim();
   const deliveryReceiver=o.deliveryMode==='DELIVERY'&&o.driverName?{name:o.driverName,phone:o.driverPhone,vehicleType:o.vehicleType,plate:o.vehiclePlate}:null;
   const documentReceiver=pickupRecipient||deliveryReceiver||{name:customerRaw,phone:o.customerPhone,vehicleType:'',carType:'',plate:''};
-  const receiverName=esc(documentReceiver.name||customerRaw),receiverPhone=esc(fa(documentReceiver.phone||o.customerPhone||'—'));
-  const vehicleName=esc(documentReceiver.carType||documentReceiver.vehicleType||'—'),receiverPlate=esc(fa(documentReceiver.plate||'—'));
-  const deliveryAt=esc(formatDateTime24(o.handedOverAt||o.completedAt||o.warehouseCompletedAt||''));
-  const remoteHeader=`<div class="whd-head whd-remote-head"><div class="whd-meta whd-remote-meta">
-    <span><span class="whd-label">نام مشتری:</span><b>${customer}</b></span>
-    <span><span class="whd-label">شماره تماس:</span><b dir="ltr">${phone}</b></span>
-    <span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo||'—'))}</b></span>
-    <span class="whd-document-number whd-remote-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></span>
-    <span><span class="whd-label">تاریخ و ساعت تحویل:</span><b>${deliveryAt}</b></span>
-    <span><span class="whd-label">نام تحویل‌گیرنده:</span><b>${receiverName}</b></span>
-    <span><span class="whd-label">تماس تحویل‌گیرنده:</span><b dir="ltr">${receiverPhone}</b></span>
-    <span><span class="whd-label">نام خودرو:</span><b>${vehicleName}</b></span>
-    <span><span class="whd-label">پلاک تحویل‌گیرنده:</span><b dir="ltr">${receiverPlate}</b></span>
+  const customerPhoneRaw=String(o.customerPhone||'').trim();
+  const receiverNameRaw=String(documentReceiver.name||customerRaw),receiverPhoneRaw=String(documentReceiver.phone||customerPhoneRaw||'').trim();
+  const receiverName=esc(receiverNameRaw),receiverPhone=esc(fa(receiverPhoneRaw||'—'));
+  const vehicleNameRaw=String(documentReceiver.carType||documentReceiver.vehicleType||'—'),vehicleName=esc(vehicleNameRaw);
+  const receiverPlateRaw=String(documentReceiver.plate||'—'),receiverPlate=esc(fa(receiverPlateRaw));
+  const deliveryAtRaw=formatDateTime24(o.handedOverAt||o.completedAt||o.warehouseCompletedAt||'')||'—',deliveryAt=esc(deliveryAtRaw);
+  const receiverIsCustomer=receiverNameRaw.trim()===String(customerRaw).trim()&&(!receiverPhoneRaw||receiverPhoneRaw===customerPhoneRaw);
+  const receiverSummary=receiverIsCustomer?'همان مشتری':receiverName,receiverContact=receiverIsCustomer?(customerPhoneRaw?'مشتری':'—'):receiverPhone,receiverContactRaw=receiverIsCustomer?(customerPhoneRaw?'مشتری':'—'):receiverPhoneRaw||'—';
+  const documentNumberRaw=String(o.warehouseDocumentNo||'—'),orderNumberRaw=String(o.orderNo||'—');
+  const documentNumber=esc(fa(documentNumberRaw)),orderNumber=esc(fa(orderNumberRaw));
+  const remoteGroups=[
+    {name:'order',fields:[['سند',documentNumber,documentNumberRaw,'ltr'],['سفارش',orderNumber,orderNumberRaw,'ltr']]},
+    {name:'customer',fields:[['مشتری',customer,customerRaw,''],['تماس',phone,customerPhoneRaw||'—','ltr']]},
+    {name:'time',fields:[['تحویل',deliveryAt,deliveryAtRaw,'']]},
+    {name:'recipient',fields:[['گیرنده',receiverSummary,receiverIsCustomer?'همان مشتری':receiverNameRaw,''],['تماس',receiverContact,receiverContactRaw,receiverIsCustomer?'':'ltr']]},
+    {name:'vehicle',fields:[['خودرو',vehicleName,vehicleNameRaw,''],['پلاک',receiverPlate,receiverPlateRaw,'ltr']]},
+  ];
+  const remoteWeight=group=>group.fields.reduce((sum,[label,,value])=>sum+String(label).length+String(value||'—').length+3,0);
+  const remoteHeaderChars=remoteGroups.reduce((sum,group)=>sum+remoteWeight(group),0);
+  const remoteFontSize=Math.max(5,Math.min(8,8-Math.max(0,remoteHeaderChars-145)*0.015));
+  const remoteStyle=`--whd-remote-font:${remoteFontSize.toFixed(1)}px;--whd-remote-columns:${remoteGroups.map(group=>`minmax(0,${remoteWeight(group)}fr)`).join(' ')};`;
+  const compactPair=([label,value,,dir])=>`<span class="whd-remote-pair"><span class="whd-remote-label">${label}:</span><b${dir?' dir="ltr"':''} title="${value}">${value}</b></span>`;
+  const remoteHeader=`<div class="whd-head whd-remote-head"><div class="whd-remote-meta" style="${remoteStyle}" aria-label="اطلاعات سفارش و تحویل">
+    ${remoteGroups.map(group=>`<span class="whd-remote-group whd-remote-${group.name}">${group.fields.map(compactPair).join('')}</span>`).join('')}
   </div></div>`;
   const legacyHeader=`<div class="whd-head"><div class="whd-document-number"><span>شماره سند انبار</span><b dir="ltr">${esc(fa(o.warehouseDocumentNo||'—'))}</b></div><div class="whd-meta"><span><span class="whd-label">نام مشتری:</span><b>${customer}</b></span><span><span class="whd-label">شماره تماس:</span><b dir="ltr">${phone}</b></span><span><span class="whd-label">شماره سفارش:</span><b dir="ltr">${esc(fa(o.orderNo||'—'))}</b></span><span><span class="whd-label">تاریخ ثبت سفارش:</span><b>${esc(formatDateTime24(o.createdAt))}</b></span></div></div>`;
   const header=o.orderType==='REMOTE'?remoteHeader:legacyHeader;
@@ -246,7 +257,7 @@ async function whTransportHandover(button,id,run,token){
 }
 function whPrintDocument(doc,run){
   const body=run?whStoreDocument(doc,true):whDeliveredDocument(doc,true);
-  const started=BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css?v=37.48.0"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${body}<script src="/print-ready.js"><\/script></body></html>`));
+  const started=BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css?v=37.49.0"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${body}<script src="/print-ready.js"><\/script></body></html>`));
   if(!started)throw new Error('چاپ قبلی هنوز در حال آماده‌سازی است؛ سند را از جزئیات دوباره چاپ کنید.');
 }
 async function whDeliveredPrint(id){

@@ -242,8 +242,8 @@ dad9e3a7a6a848ec16537af8c3791f7953a7b3930129b4d78b13321897a83901  ./public/style
 1c3c8acb1737d78bfe539fa704a14b3256b4c298a0eebea9f40702fb0ff6e090  ./public/transport-resources.css
 e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/transport-resources.js
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
-957580c956a608a3911eac50c928c52d681a6e00649bcd41cb2bc9d606227b2a  ./public/ui2.js
-1ecd1e5d211b282613e402ecd970f09fa2933db33a099a35a501f5328bab9577  ./public/warehouse-document.css
+31ab47df939cb024e4d062f1b1ec4d21b4b2b75a2d256e7ba994325e3eb5484f  ./public/ui2.js
+252ee31ea0d60738aaea00f7c8c8e9d9b8880af4507e91195a1ad65413260557  ./public/warehouse-document.css
 3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
 5cdadf3e08404a5c94215c917d270b04a0ca901f3547573957a421af9ad4acb8  ./scripts/benchmark-order-search.js
@@ -442,8 +442,8 @@ f8326e81872b63c91075dc283a7cba96c6d13f4906b23af0559972167dd63f57  ./tests/ui-sou
 518b2de413ac1c228024513780c7cdff0feaba955af0e64000754f1b1b96b9bf  ./tests/ui-text-sweep-browser.test.js
 27302aad62d8b18b29aa684a771deb0e45a71cf04cffadea2f2a90667aae6255  ./tests/unit-reports-backups.test.js
 b25de95201af45a02ca191b2bc757581a5c8df0a5168782696579031572d994d  ./tests/warehouse-cartable-followup.test.js
-838184358f1a434a5a857394e8538509d4cd0461f9d1f081721394453d8256c5  ./tests/warehouse-delivered-browser.test.js
-9754268f8918262d10eba942952330f31d53845f8f38bed5c3c5e170f50c127b  ./tests/warehouse-delivered.test.js
+69e7ed1f4f3a043b1b8aeb68f6b4729f8ab5086eb725c70fdb3267802f6f04af  ./tests/warehouse-delivered-browser.test.js
+2ac1a292012a2a84ead7be34e03b0ea24025b42eb212f99ee59d9218d55f3abd  ./tests/warehouse-delivered.test.js
 7db75c49c0bd36c23bc07aa7bf6ec53d2f506f22fb0bb5d39c55e82f5d4db506  ./tests/warehouse-document-layout.test.js
 52da83cdef44dba46af4658995b95e870788364aa9a3abae7aede5d0efa20f56  ./tests/warehouse-document-numbers.test.js
 9f11c40b680c429ab7014054e933086a085b73a2acb7b77e800326529a47ac52  ./tests/warehouse-incoming-header.test.js
@@ -481,7 +481,7 @@ b9afcc489a500be9b963ec217cac475bf09a2a2b86c3b766cad40a426d387dfe  ./ui-src/manif
 2850b06232e05ef19244d5c585ec65f2d4df37b5e46a36d948f35711a96a106e  ./ui-src/ui2/02-invoice-edits.js
 2c73f103f0cbf6d2cde217a3569caf85b05563139deec790202a70570a945cf5  ./ui-src/ui2/03-delivery.js
 42f887cdafe826bcfe117359782a226cdc541fd973764006a7eac0624579b1d2  ./ui-src/ui2/04-gate.js
-bf8b49cb7d263a8f1f3246361d033a59ea8103731a5f9783b03e5489d11040b0  ./ui-src/ui2/05-warehouse.js
+0618c23b679d303fac1a770e341aad88b23e6043e7d1b9d755a68e65e3325b5b  ./ui-src/ui2/05-warehouse.js
 abc8c46c9bb3bed4eae426db7aab8662f5f176b8a07b3767bd52a86141f725d6  ./ui-src/ui2/06-store-services.js
 aa522800999201e723f17616f8b5d0b503029b549cc7240af720247a6bf9fe30  ./ui-src/ui2/07-dashboard-reports.js
 4c65bd2c283776174bfd8f2c597cbc7dd542ad96b7e713d708f7e52225d9d469  ./ui-src/ui2/08-transport-invoices.js
