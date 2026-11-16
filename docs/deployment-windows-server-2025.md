@@ -1,4 +1,4 @@
-# نصب و استقرار روی Windows Server 2025 (نسخهٔ انتشار عمومی 1.0.87)
+# نصب و استقرار روی Windows Server 2025 (نسخهٔ انتشار عمومی 1.1.2)
 
 ## خلاصه
 
@@ -15,7 +15,7 @@
 ## نصبکننده چه میکند
 
 1. **Node.js ۲۲٫۵+**: اگر نباشد، بهترتیب از (الف) فایل پورتابل `node-v*-win-x64.zip` کنار نصبکننده، (ب) `winget` و (ج) دانلود رسمی `nodejs.org` **همراه بررسی SHA256** نصب میکند.
-2. **کپی فایلهای برنامه** در `C:\BabolToyor`: اگر `app.zip` کنار نصبکننده باشد از همان استفاده میکند (نصب آفلاین)، وگرنه نصب‌کننده از `AppZipUrl` پیش‌فرض، بستهٔ `BabolToyor-App-1.0.87.zip` را از [GitHub Releases](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.0.87/BabolToyor-App-1.0.87.zip) دریافت می‌کند.
+2. **کپی فایلهای برنامه** در `C:\BabolToyor`: اگر `app.zip` کنار نصبکننده باشد از همان استفاده میکند (نصب آفلاین)، وگرنه نصب‌کننده از `AppZipUrl` پیش‌فرض، بستهٔ `BabolToyor-App-1.1.2-bootstrap.zip` را از [پوشهٔ انتشار نسخهٔ 1.1.2 در Google Drive](https://drive.google.com/drive/folders/1C0Ky5YlZHk909lH6S83eXZBQ_9-cyBur) دریافت می‌کند.
 3. **ساخت `.env`** با `PORT=80`، `HOST=0.0.0.0`، `DATA_DIR=C:\BabolToyor\data` و یک رمز تصادفی قوی برای `admin`. دسترسی فایل فقط برای `SYSTEM` و `Administrators` است.
 4. **پورت ۸۰**: اگر IIS/HTTP.sys پورت را گرفته باشد، سایت مربوطه متوقف و `serverAutoStart` آن خاموش میشود (با هشدار در لاگ)؛ در صورت نیاز `W3SVC` متوقف و Manual میشود. با `-NoAutoStopIis` میتوان جلوی این کار را گرفت.
 5. **فایروال**: قانون ورودی `Babol Toyor - HTTP (TCP 80)` برای پروفایلهای Domain/Private/Public.
