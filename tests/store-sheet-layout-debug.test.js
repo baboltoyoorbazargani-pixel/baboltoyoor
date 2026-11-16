@@ -21,9 +21,11 @@ test('ردیف برگهٔ سرویس از گرید عمومی فرم‌ها آز
   assert.ok(compat.indexOf('v37.24.0') > compat.indexOf('v37.18.0'), 'ترتیب بلوک‌های اصلاحی به‌هم ریخته است');
 });
 
-test('در صفحهٔ باریک ردیف و دکمه‌ها تک‌خطی و فهرست قابل پیمایش است', () => {
-  const final=compat.slice(compat.lastIndexOf('/* وزن و عملیات'));
-  assert.match(final, /\.sr318-rows\{display:block!important;overflow-x:auto!important/);
-  assert.match(final, /\.wh38-prep-item\.sr318-row\{width:max-content!important;min-width:100%!important;flex-wrap:nowrap!important/);
-  assert.match(final, /\.sr318-row>\.sr318-ops\{flex:0 0 auto!important;max-width:none!important;flex-wrap:nowrap!important/);
+test('در موبایل و تبلت ردیف‌های وزن و پنجرهٔ ناخالصی بدون پیمایش افقی جا می‌گیرند', () => {
+  const responsive=compat.slice(compat.lastIndexOf('/* v37.49.0 — warehouse preparation'));
+  assert.match(responsive, /@media\(max-width:1150px\)\{[\s\S]*?\.sr318-rows\{display:grid!important[\s\S]*?overflow-x:visible!important/);
+  assert.match(responsive, /\.wh38-prep-item\.sr318-row\{display:flex!important;flex-wrap:wrap!important[\s\S]*?width:100%!important;min-width:0!important/);
+  assert.match(responsive, /\.sr318-row>\.sr318-ops\{display:flex!important;flex:1 1 100%!important;flex-wrap:wrap!important/);
+  assert.match(responsive, /\.wh-weight-scroll\{[\s\S]*?overflow-x:visible!important/);
+  assert.match(responsive, /\.wh-weight-line\{display:grid!important;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/);
 });

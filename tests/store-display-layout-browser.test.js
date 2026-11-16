@@ -19,11 +19,12 @@ test('مرورگر: ردیف افقی انبار، جزئیات تفکیکی م�
   await page.route('**/api/orders?status=WAREHOUSE_PREPARING',r=>r.fulfill({json:{orders:[]}}));
   await page.evaluate(()=>{if(app.timer)clearInterval(app.timer);app.page='warehouse';document.querySelector('#appView').dataset.cartablePage='warehouse';app.wh38={phase:'preparing'};wh38Shell('preparing');clearInterval(app.wh38.timer)});
   await page.locator('#wh38Body .sd-empty').waitFor();await page.evaluate(o=>sr38Sheet(o),order);
-  for(const width of [1440,768,390,320]){
+  for(const width of [1440,1150,1024,768,390,320]){
    await page.setViewportSize({width,height:900});
-   const geometry=await page.locator('.sr318-row').first().evaluate(e=>{const children=[...e.children],tops=children.map(c=>Math.round(c.getBoundingClientRect().top+c.getBoundingClientRect().height/2));return {tops,row:getComputedStyle(e).flexWrap,ops:getComputedStyle(e.querySelector('.sr318-ops')).flexWrap,overflow:getComputedStyle(e.parentElement).overflowX};});
-   assert.equal(geometry.row,'nowrap');assert.equal(geometry.ops,'nowrap');assert.ok(Math.max(...geometry.tops)-Math.min(...geometry.tops)<4,`width ${width}: ${geometry.tops}`);assert.equal(geometry.overflow,'auto');
-   const head=await page.locator('.wh38-store-head').evaluate(e=>[...e.children].map(c=>Math.round(c.getBoundingClientRect().top)));assert.ok(Math.max(...head)-Math.min(...head)<10);
+   const geometry=await page.locator('.sr318-row').first().evaluate(e=>{const children=[...e.children],tops=children.map(c=>Math.round(c.getBoundingClientRect().top+c.getBoundingClientRect().height/2)),list=e.parentElement;return {tops,row:getComputedStyle(e).flexWrap,ops:getComputedStyle(e.querySelector('.sr318-ops')).flexWrap,overflow:getComputedStyle(list).overflowX,rowScroll:e.scrollWidth,rowClient:e.clientWidth,listScroll:list.scrollWidth,listClient:list.clientWidth,page:document.documentElement.scrollWidth,viewport:innerWidth};});
+   if(width>1150){assert.equal(geometry.row,'nowrap');assert.equal(geometry.ops,'nowrap');assert.ok(Math.max(...geometry.tops)-Math.min(...geometry.tops)<4,`desktop width ${width}: ${geometry.tops}`);assert.equal(geometry.overflow,'auto');}
+   else{assert.equal(geometry.row,'wrap');assert.equal(geometry.ops,'wrap');assert.equal(geometry.overflow,'visible');assert(geometry.rowScroll<=geometry.rowClient+1&&geometry.listScroll<=geometry.listClient+1&&geometry.page<=geometry.viewport+1,`mobile/tablet horizontal scroll ${width}: ${JSON.stringify(geometry)}`);}
+   const head=await page.locator('.wh38-store-sheet-head').evaluate(e=>({scroll:e.scrollWidth,client:e.clientWidth,parts:[...e.querySelectorAll('.wh38-store-head>*')].map(c=>c.getBoundingClientRect().toJSON())}));if(width<=1150)assert(head.scroll<=head.client+1,`store heading scroll ${width}: ${JSON.stringify(head)}`);else assert.ok(Math.max(...head.parts.map(x=>x.top))-Math.min(...head.parts.map(x=>x.top))<10);
   }
   await page.locator('[data-action="sr38-history"]').first().click();assert.match(await page.locator('#modal').innerText(),/آزمایش/);await page.evaluate(()=>closeModal());
   // Real store portal click handler opens only the selected service, even when both are in transit.

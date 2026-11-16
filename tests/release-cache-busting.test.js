@@ -7,8 +7,8 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 
 test('changed application and document assets have refreshed cache keys on both page shells',()=>{
  const index=read('public/index.html');
- for(const asset of ['app.js','ui2.js','design.css','warehouse-document.css'])
-  assert.match(index,new RegExp(`(?:src|href)="/${asset}\\?v=37\\.48\\.1"`),`${asset} must use the refreshed cache key`);
+ for(const [asset,version] of [['app.js','37.49.1'],['ui2.js','37.49.1'],['design.css','37.48.1'],['warehouse-document.css','37.49.1']])
+  assert.ok(index.includes(`/${asset}?v=${version}`),`${asset} must use the refreshed cache key`);
  const invoice=read('public/invoice-print.html');
  assert.match(invoice,/href="\/design\.css\?v=37\.48\.1"/);
  assert.match(invoice,/href="\/invoice-compact\.css\?v=37\.3\.18"/,'unchanged invoice stylesheet keeps its existing key');

@@ -42,6 +42,8 @@ test('مرورگر: انتخاب کیبورد در ردیف‌ها، تفکیک 
   assert.equal(await page.locator('[data-store-section=history] [data-store-summary-id="o"] [data-action=print-store-return]').count(),0);
   assert.equal(await page.locator('[data-store-section=history] [data-store-summary-id="r"] [data-action=print-store-return]').count(),1);
   assert.equal(await page.locator('[data-store-section=history] [data-action=print-store-service]').count(),0);
+  assert.equal(await page.locator('[data-store-section=history] [data-action=sales-store-document-print]').count(),0);
+  assert.doesNotMatch(text,/چاپ سند|سند اول|سند دوم/);
   // مرجوعی‌های ثبت‌شده در همان سفارش، با یک گزینهٔ چاپ مستقل و بدون پنجرهٔ اضافی.
   await ctx.route('**/api/orders/r/returns',route=>route.fulfill({json:{order:{id:'r',orderType:'STORE',orderNo:'2',storeName:'تست',dispatchPlace:'تهران'},returns:[{id:'t1',productName:'کالای مرجوعی',kg:2.5,reason:'بسته آسیب‌دیده',driverName:'راننده',driverPlate:'12ب34567',deliveredAt:'2026-01-02T10:00:00Z'}]}}));
   async function checkPrint(target,run){const n=await page.evaluate(()=>window.__prints||0);if(typeof target==='function')await target();else await page.locator(target).click();await page.waitForFunction(x=>window.__prints===x+1,n);const frame=page.frameLocator('iframe[title="سند آماده چاپ"]');await frame.locator('table tbody tr').waitFor();const printed=await frame.locator('body').innerText();assert.match(printed,run===1?/کالای اول/:/کالای دوم/);assert.doesNotMatch(printed,run===1?/کالای دوم/:/کالای اول/);await page.locator('iframe[title="سند آماده چاپ"]').evaluate(el=>el.contentWindow.dispatchEvent(new Event('afterprint')));await page.locator('iframe[title="سند آماده چاپ"]').waitFor({state:'detached'});}
