@@ -168,8 +168,15 @@ function invoiceHtml(o,paySel){
   const difference=n(p.totalAmount)-subtotal+returns;
   const discount=p.discountAmount != null ? n(p.discountAmount) : Math.max(0,-difference);
   const additions=p.additionsAmount != null ? n(p.additionsAmount) : Math.max(0,difference);
-  const customerName=esc((pickupDoc?.customerName ?? p.customerName ?? o.customer?.name)||'—');const customerPhone=esc((pickupDoc?.customerPhone ?? p.customerPhone ?? o.customer?.phone)||'—');
-  const recipient=pickupDoc?.recipient||null;
+  const customerNameRaw=String((pickupDoc?.customerName ?? p.customerName ?? o.customer?.name)||'').trim();const customerPhoneRaw=String((pickupDoc?.customerPhone ?? p.customerPhone ?? o.customer?.phone)||'').trim();
+  const customerName=esc(customerNameRaw||'—');const customerPhone=esc(customerPhoneRaw||'—');
+  const recipientCandidate=pickupDoc?.recipient||null;
+  const contactNameKey=value=>String(value||'').normalize('NFKC').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u200c\u200e\u200f]/g,' ').replace(/\s+/g,' ').trim().toLocaleLowerCase();
+  const contactPhoneKey=value=>String(value||'').replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/\D/g,'');
+  const customerNameKey=contactNameKey(customerNameRaw);
+  const sameRecipientName=!!recipientCandidate&&!!customerNameKey&&contactNameKey(recipientCandidate.name)===customerNameKey;
+  const sameRecipientPhone=!!recipientCandidate&&contactPhoneKey(recipientCandidate.phone)===contactPhoneKey(customerPhoneRaw);
+  const recipient=sameRecipientName&&sameRecipientPhone?null:recipientCandidate;
 
   const settleLabels=Object.assign(Object.create(null),{CASH:'نقدی',POS:'پوز',CARD_TRANSFER:'کارت‌به‌کارت',CHECK:'چک',CREDIT:'معوق'});
   const methods=Array.isArray(p.settlementMethods)?p.settlementMethods:[];

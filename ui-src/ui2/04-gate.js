@@ -45,14 +45,13 @@ async function renderGate(tab){
   let dispatchError='';
   try{dispatchData=await api('/api/gate/dispatch');}
   catch(err){dispatchError=err.message||'صف خروج ارسالی بارگذاری نشد.';}
-  const exitHistory=tab==='history'?(await api('/api/gate/exit-history')).orders||[]:[];
   const exitOrders=tab==='exit'?((await api('/api/orders?status=SETTLED')).orders||[]):[];
   const pickupExits=tab==='exit'&&app.features?.pickupStaging?(await fetchPagedList('/api/pickup/active','orders')).orders:[];
   if(app.page!=='gate'||app.sub.gate!==tab||app.gateRenderSeq!==renderSeq)return;
   let html='<span class="gate-ui-build" data-ui-build="37.3.18" hidden></span><div class="gate-workspace-content">';
   if(tab==='entry')html+=renderGateEntry();
   else if(tab==='waiting')html+=renderGateWaiting(visits.filter(v=>v.status==='WAITING_SALES'));
-  else if(tab==='history')html+=`<div class="gate-history-search"><label for="gateHistorySearch">جستجوی سوابق مراجعه</label><input id="gateHistorySearch" type="search" maxlength="80" value="${esc(app.gateHistoryQ||'')}" placeholder="نام، شماره تماس، پلاک، کد یا هدف مراجعه" autocomplete="off"><small>آخرین ۱۰۰ نتیجه نمایش داده می‌شود.</small></div><div id="gateHistoryLive" aria-live="polite">${renderGateHistory(visits,true)}</div><section class="sd-panel sd-pad"><h2>سوابق خروج سفارش‌ها</h2>${exitHistory.map(o=>`<article class="gt-exit-card"><strong>${esc(storeAwareOrderName(o))}</strong><span>سفارش ${esc(fa(o.orderNo||'—'))}${o.serviceRun?' · سرویس '+fa(o.serviceRun):''}</span><button class="btn btn-secondary" data-action="gate-order-history" data-id="${esc(o.id)}">جزئیات اقلام خروج</button></article>`).join('')||'<p>خروجی ثبت نشده است.</p>'}</section>`;
+  else if(tab==='history')html+=`<div class="gate-history-search"><label for="gateHistorySearch">جستجوی سوابق مراجعه</label><input id="gateHistorySearch" type="search" maxlength="80" value="${esc(app.gateHistoryQ||'')}" placeholder="نام، شماره تماس، پلاک، کد یا شماره سفارش" autocomplete="off"><small>آخرین ۱۰۰ نتیجه نمایش داده می‌شود.</small></div><div id="gateHistoryLive" aria-live="polite">${renderGateHistory(visits,true)}</div>`;
   else if(tab==='exit')html+=renderGateExit(exitOrders)+(app.features?.pickupStaging?`<div id="pickupExitPanel">${renderPickupExits(pickupExits)}</div>`:'');
   else if(tab==='dispatch'){app.gateDispatchTab='leaving';html+=gateDispatchTabsHtml(dispatchData,app.gateDispatchTab,dispatchError);}
   html+='</div>';
@@ -112,9 +111,9 @@ function renderGateWaiting(queue){
 }
 
 function renderGateHistory(visits,hideHeading=false){
-  return `<section class="sd-panel">
-    ${hideHeading?'':`<div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico" style="background:var(--blue-bg);color:var(--blue)">${icon('reports',19)}</span><div><h2>سوابق مراجعه</h2><p>آخرین ورودهای ثبت‌شده و وضعیت هر مراجعه.</p></div></div><div class="sd-count"><strong>${qty(visits.length)}</strong><span>مراجعه</span></div></div>`}
-    <div class="gt-table-pad"><div class="table-wrap"><table class="table gt-table"><thead><tr><th>مشتری</th><th>پلاک</th><th>نوع وسیله</th><th>محله</th><th>هدف</th><th>وضعیت</th><th>زمان</th></tr></thead><tbody>${visits.map(v=>`<tr><td><div class="gt-cust-cell"><span class="sd-avatar">${esc(initials(v.customer?.name||''))}</span><div><strong>${esc(v.customer?.name||'—')}</strong><small>${esc(v.customer?.phone||'')}</small>${v.recipient?`<small>تحویل‌گیرنده: ${esc(v.recipient.name||'—')} • ${esc(v.recipient.phone||'')}</small>`:''}</div></div></td><td>${plateViewHtml(v.plate ?? v.customer?.plate, 'بدون پلاک', true)}</td><td>${esc([v.vehicleType ?? v.customer?.vehicleType, v.carType ?? v.customer?.carType].filter(Boolean).join(' — ')||'—')}</td><td>${esc(v.district||'—')}</td><td>${esc(v.purpose||'—')}</td><td>${badge(v.status)}</td><td>${dt(v.createdAt)}</td></tr>`).join('')||'<tr><td colspan="7" class="empty">سابقه‌ای ثبت نشده است.</td></tr>'}</tbody></table></div></div>
+  return `<section class="sd-panel gate-customer-history">
+    ${hideHeading?'':`<div class="sd-head"><div class="sd-head-main"><span class="sd-head-ico" style="background:var(--blue-bg);color:var(--blue)">${icon('reports',19)}</span><div><h2>سوابق مراجعه</h2><p>مشتری، پلاک و سفارش‌های مرتبط با مراجعه.</p></div></div><div class="sd-count"><strong>${qty(visits.length)}</strong><span>مراجعه</span></div></div>`}
+    <div class="gt-table-pad"><div class="table-wrap"><table class="table gt-table gt-customer-history-table"><thead><tr><th>مشتری</th><th>پلاک</th><th>شماره سفارش</th><th>جزئیات سفارش</th></tr></thead><tbody>${visits.map(v=>{const order=v.order||null,orderId=order?.id,canOpen=!!orderId&&!!order.gateExitAvailable;return `<tr data-gate-visit="${esc(v.id)}"><td data-label="مشتری"><div class="gt-cust-cell"><span class="sd-avatar">${esc(initials(v.customer?.name||''))}</span><div><strong>${esc(v.customer?.name||'—')}</strong><small>${esc(v.customer?.phone||'')}</small></div></div></td><td data-label="پلاک">${plateViewHtml(v.plate ?? v.customer?.plate, 'بدون پلاک', true)}</td><td data-label="شماره سفارش">${order?esc(fa(order.orderNo||'—')):'—'}</td><td data-label="جزئیات سفارش"><button type="button" class="btn btn-secondary btn-sm" data-action="gate-order-history"${orderId?` data-id="${esc(orderId)}"`:''} ${canOpen?'':'disabled title="جزئیات پس از تسویه یا ثبت خروج سفارش در دسترس است"'}>${icon('eye',14)} جزئیات سفارش</button></td></tr>`;}).join('')||'<tr><td colspan="4" class="empty">سابقه‌ای ثبت نشده است.</td></tr>'}</tbody></table></div></div>
   </section>`;
 }
 
@@ -276,5 +275,14 @@ if(!['incoming','preparing','history'].includes(app.wh38.storeTab)) app.wh38.sto
 
 
 async function gateOrderHistory(id){
- try{const rows=(await api('/api/gate/exit-history')).orders||[],o=rows.find(x=>x.id===id);if(!o)throw Error('سابقه خروج یافت نشد.');openModal('جزئیات سفارش خروج‌شده',`<div class="sd-pad"><h2>سفارش ${esc(fa(o.orderNo||'—'))}</h2><p>${esc(storeAwareOrderName(o))}${o.serviceRun?' · سرویس '+fa(o.serviceRun):''}</p><table class="table"><thead><tr><th>محصول</th><th>وزن (کیلوگرم)</th></tr></thead><tbody>${o.items.filter(i=>i.itemStatus!=='CANCELLED').map(i=>`<tr><td>${esc(i.product?.name||'—')}</td><td>${qty(i.deliveredKg)}</td></tr>`).join('')}</tbody></table></div>`);}catch(e){toast(e.message);}
+ try{
+  const exitRows=(await api('/api/gate/exit-history?id='+encodeURIComponent(id))).orders||[];
+  const exited=exitRows.filter(row=>row.id===id||String(row.id||'').startsWith(id+':'));
+  let order=exited[0]||null;
+  if(!order)order=(await api('/api/orders/'+encodeURIComponent(id))).order;
+  if(!order)throw Error('جزئیات سفارش در دسترس نیست.');
+  const records=exited.length?exited:[order];
+  const items=records.flatMap(record=>(record.items||[]).filter(item=>item.itemStatus!=='CANCELLED').map(item=>({serviceRun:record.serviceRun||record.dispatch?.run||null,...item})));
+  openModal('جزئیات سفارش',`<div class="sd-pad"><h2>سفارش ${esc(fa(order.orderNo||'—'))}</h2><p>${esc(storeAwareOrderName(order))}</p><div class="table-wrap"><table class="table"><thead><tr><th>سرویس</th><th>محصول</th><th>وزن (کیلوگرم)</th></tr></thead><tbody>${items.map(item=>`<tr><td>${item.serviceRun?`سرویس ${fa(item.serviceRun)}`:'—'}</td><td>${esc(item.product?.name||'—')}</td><td>${qty(item.deliveredKg)}</td></tr>`).join('')||'<tr><td colspan="3">قلم تحویلی ثبت نشده است.</td></tr>'}</tbody></table></div></div>`);
+ }catch(e){toast(e.message);}
 }

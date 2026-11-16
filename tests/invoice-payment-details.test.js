@@ -15,6 +15,12 @@ for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async funct
   assert.match(header,/مالک/);assert.match(header,/09120000001/);assert.match(header,/&lt;نماینده&gt;/);assert.match(header,/09120000002/);assert.match(header,/123/);assert.match(header,/456/);assert.match(header,/1405\/08\/23/);assert.equal((header.match(/<div><span>/g)||[]).length,7);
   assert(s.indexOf(header)<s.indexOf('<table'));assert.doesNotMatch(s,/inv38-pickup-contacts|خودروی محرمانه|پلاک محرمانه|وسیله \/ پلاک|<نماینده>/);
  });
+ test(file+': identical pickup recipient is omitted, while a distinct or incomplete contact stays visible',()=>{
+  const base={...order,orderType:'REMOTE',deliveryMode:'PICKUP',pickupHandover:{document:{customerName:'صاحب سفارش',customerPhone:'۰۹۱۲۰۰۰۰۰۰۱',recipient:{name:'  صاحب   سفارش ',phone:'09120000001'}}},payment:{invoiceNumber:'000456',verifiedAt:'1405/08/23',totalAmount:100,settlementMethods:[{type:'CASH',amount:100}]}};
+  const duplicate=c.invoiceHtml(base);assert.doesNotMatch(duplicate,/inv38-pickup-recipient|تحویل‌گیرنده|تماس تحویل/);assert.match(duplicate,/صاحب سفارش/);assert.match(duplicate,/۰۹۱۲۰۰۰۰۰۰۱|09120000001/);
+  const different=c.invoiceHtml({...base,pickupHandover:{document:{...base.pickupHandover.document,recipient:{name:'صاحب سفارش',phone:'09125556677'}}}});assert.match(different,/inv38-pickup-recipient/);assert.match(different,/09125556677/);
+  const incomplete=c.invoiceHtml({...base,pickupHandover:{document:{...base.pickupHandover.document,recipient:{name:'صاحب سفارش',phone:''}}}});assert.match(incomplete,/inv38-pickup-recipient/);
+ });
  if(file==='ui2.js'){
   test('active invoice: totals contain paid/balance and methods show only type and amount',()=>{
    const s=html({totalAmount:100,amountDue:80,depositAmount:20,deposit:{type:'CASH',amount:20},settlementMethods:[{type:'CASH',amount:10},{type:'CHECK',amount:40,checkStatus:'PENDING',bank:'secret bank',reference:'secret reference'},{type:'CREDIT',amount:30}]});

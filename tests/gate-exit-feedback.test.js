@@ -103,6 +103,18 @@ test('چرخهٔ زنده: فاکتور تسویه‌شده در کنترل خر
   const settled = await call('GET', '/api/orders?status=SETTLED', { cookie: gate });
   assert.ok((settled.json.orders || []).some((x) => x.id === orderId), 'فاکتور باید در کنترل خروج نگهبانی دیده شود');
 
+  // سوابق مراجعه باید پیش از خروج هم اجازهٔ دیدن جزئیات بار را بدهد؛
+  // این نمای نگهبانی محدود است و هیچ دادهٔ مالی یا امضایی ندارد.
+  const visitHistory = await call('GET', `/api/visits?id=${encodeURIComponent(v.json.visit.id)}`, { cookie: gate });
+  assert.equal(visitHistory.status, 200);
+  const linkedVisit = (visitHistory.json.visits || []).find((x) => x.id === v.json.visit.id);
+  assert.equal(linkedVisit.order.gateExitAvailable, true, 'سفارش SETTLED بدون dispatch پیش از خروج قابل بررسی است');
+  const gateDetails = await call('GET', `/api/orders/${orderId}`, { cookie: gate });
+  assert.equal(gateDetails.status, 200, 'نگهبان باید پیش از ثبت خروج بتواند جزئیات سفارش تسویه‌شده را باز کند');
+  assert.equal(gateDetails.json.order.status, 'SETTLED');
+  assert.ok(gateDetails.json.order.items.some((x) => x.id === itemId));
+  assert.doesNotMatch(JSON.stringify(gateDetails.json.order), /payment|payments|amount|price|signature/i);
+
   const exit = await call('POST', `/api/orders/${orderId}/exit`, { cookie: gate, body: { checkedItems: [itemId] } });
   assert.equal(exit.status, 200);
   assert.equal(exit.json.order.status, 'EXITED');
