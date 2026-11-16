@@ -302,6 +302,7 @@ async function salesV29ClickHandler(e){
     if(a==='sales-invoice-edit')return salesInvoiceEditOpen(el.dataset.id,el.dataset.paymentId);
     if(a==='sales-warehouse-edit-request')return salesWarehouseEditRequestOpen(el.dataset.id,el.dataset.paymentId);
     if(a==='print-store-service')return printStoreService(el.dataset.id,Number(el.dataset.run));
+    if(a==='print-store-return')return printStoreReturns(el.dataset.id);
     if(a==='sales-store-document-print')return printSalesStoreDocument(el.dataset.id,Number(el.dataset.run));
     if(a==='sales-store-review')return salesStoreReview(el.dataset.id,Number(el.dataset.run));
     if(a==='sales-delivery-history-page')return salesDeliveryHistoryPage(el);
