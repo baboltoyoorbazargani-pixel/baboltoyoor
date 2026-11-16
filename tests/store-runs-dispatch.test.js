@@ -331,6 +331,8 @@ test('ارسال سرویس بدون قیمت: فقط اقلام همان ارس
 test('رگرسیون ۳۷.۵ (v37.6.0 بدون قیمت): قلم با بخشی در سرویس اول و مانده در دوم → اسناد هر سرویس فقط وزن خودش را دارند', async () => {
   const o = await freshStoreOrder([{ productId: 'p01', requestedQty: 20, requestedUnit: 'کیلوگرم' }]);
   const i1 = o.items[0].id;
+  assert.equal((await getOrder(sales, o.id)).hasReturnedGoods, false, 'پیش از ثبت مرجوعی، پرچم سوابق خاموش است');
+  assert.equal((await call('GET', `/api/orders/${o.id}/returns`, { cookie: sales })).status, 404, 'برگه‌ای برای سفارش بدون مرجوعی وجود ندارد');
   assert.equal((await call('POST', `/api/orders/${o.id}/store-run/weights`, { ...IDEM(), cookie: wh, body: { run: 1, items: [{ itemId: i1, deliveredKg: 10 }] } })).status, 200);
   ok(await call('POST', `/api/orders/${o.id}/store-run/send-run`, { ...IDEM(), cookie: wh, body: { run: 1 } }), 'send r1');
   // قلم در هر دو سرویس وزن دارد: مانده به سرویس دوم
@@ -362,6 +364,11 @@ test('رگرسیون ۳۷.۵ (v37.6.0 بدون قیمت): قلم با بخشی �
   assert.equal(dl.json.order.dispatch.lines[0].netKg, 3);
   assert.equal((await call('POST', `/api/sales/dispatch-deliveries/${o.id}/finalize`, { ...IDEM(), cookie: sales, body: {} })).status, 200);
   const full = await getOrder(sales, o.id);
+  assert.equal(full.hasReturnedGoods, true, 'بعد از ثبت مرجوعی گزینهٔ چاپ فعال است');
+  const returnSheet = await call('GET', `/api/orders/${o.id}/returns`, { cookie: sales });
+  assert.equal(returnSheet.status, 200, JSON.stringify(returnSheet.json));
+  assert.deepEqual(returnSheet.json.returns.map(item => item.kg).sort((a,b) => a-b), [1, 4]);
+  assert.equal((await call('GET', `/api/orders/${o.id}/returns`, { cookie: wh })).status, 403, 'فقط فروش و مدیر به برگهٔ چاپ دسترسی دارند');
   const p1 = full.payments.find((p) => p.deliveryRun === 1);
   const p2 = full.payments.find((p) => p.deliveryRun === 2);
   assert.equal(p1.totalAmount, 0);

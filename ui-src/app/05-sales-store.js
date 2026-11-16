@@ -92,9 +92,9 @@ async function cancelRemoteOrder(id){if(!confirm('این سفارش غیرحضو
 
 
 // چاپ فقط وزن همان محمولهٔ ارسال‌شده؛ سند تسویه یا تأیید دریافت نیست.
-function storeServicePrintButtons(id,runs,kind,reportLabel=false){
+function storeServicePrintButtons(id,runs,kind){
   const available=new Set(runs||[]);
-  return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}${reportLabel?' (برگه وزن و مرجوعی)':''}</button>`).join('')}</div>`;
+  return `<div class="store-service-print">${(kind==='PARTIAL'?[1]:[1,2]).map(run=>`<button type="button" class="btn btn-secondary btn-sm" data-action="print-store-service" data-id="${esc(id)}" data-run="${run}" ${available.has(run)?'':'disabled title="سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${kind==='PARTIAL'?'چاپ محموله سفارش جزئی':'چاپ سرویس '+(run===1?'اول':'دوم')}</button>`).join('')}</div>`;
 }
 // Separate sales copy of the warehouse handover document; it does not record handover.
 function storeSalesDocumentButtons(o,compact=false){
@@ -133,6 +133,18 @@ async function printSalesStoreDocument(id,run){
 function storeAvailableRuns(o){return [1,2].filter(run=>{const sh=run===1?o?.storeRunOps?.r1Shipment:o?.storeRunOps?.r2Shipment;return sh?.itemIds?.length||Object.keys(sh?.weights||{}).length||[...(o?.dispatchRuns||[]),...(o?.dispatches||[]),o?.dispatch].some(d=>Number(d?.run)===run&&(d?.shipmentItemIds?.length||Object.keys(d?.shipmentWeights||{}).length))||(o?.payments||[]).some(p=>Number(p.deliveryRun)===run&&p.priceLines?.length);});}
 function printStoreService(id,run){
   return BTPrintFrame.url('/store-service-print.html',{query:new URLSearchParams({id,run}).toString()});
+}
+async function printStoreReturns(id){
+  try{
+    const {order,returns}=await api('/api/orders/'+encodeURIComponent(id)+'/returns');
+    if(!Array.isArray(returns)||!returns.length)throw Error('برای این سفارش کالای مرجوعی ثبت نشده است.');
+    const rows=returns.map((item,index)=>`<tr><td>${fa(index+1)}</td><td>${esc(item.productName||'—')}</td><td>${qty(item.kg)}</td><td>${esc(item.reason||'بدون توضیح')}</td><td>${esc(item.driverName||'—')}</td><td dir="ltr">${esc(fa(item.driverPlate||'—'))}</td><td>${esc(formatDateTime24(item.deliveredAt||item.createdAt))}</td></tr>`).join('');
+    const total=returns.reduce((sum,item)=>sum+Number(item.kg||0),0);
+    const title=`چاپ مرجوعی سفارش ${fa(order.orderNo||'—')}`;
+    return BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><title>${esc(title)}</title><style>
+      @page{size:A4 portrait;margin:12mm}*{box-sizing:border-box}body{margin:0;color:#202a33;font:11px/1.8 Vazirmatn,Tahoma,sans-serif}.return-sheet{max-width:186mm;margin:0 auto}.return-head{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:2px solid #9f1c32;padding-bottom:10px}.return-brand{display:flex;align-items:center;gap:9px}.return-brand img{width:42px;height:42px;object-fit:contain}.return-brand b,.return-brand span{display:block}.return-brand b{font-size:17px;color:#8b182b}.return-brand span{font-size:9px;color:#586672}.return-title{text-align:left}.return-title h1{font-size:16px;margin:0}.return-title small{color:#586672}.return-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}.return-meta>div{border:1px solid #d7dee4;border-radius:4px;padding:5px 8px;min-width:0}.return-meta span,.return-meta b{display:block;overflow-wrap:anywhere}.return-meta span{font-size:8px;color:#65727d}.return-meta b{font-size:10px}.return-table{width:100%;border-collapse:collapse;table-layout:fixed}.return-table th,.return-table td{border:1px solid #cbd3da;padding:6px 4px;text-align:center;vertical-align:top;overflow-wrap:anywhere}.return-table th{background:#edf1f4;font-size:9px}.return-table td:nth-child(2),.return-table td:nth-child(4){text-align:right}.return-table tfoot td{font-weight:700;background:#f5f7f8}.return-signatures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:28px;break-inside:avoid}.return-signatures div{min-height:48px;border-top:1px solid #7d8992;padding-top:5px;text-align:center;font-size:9px}.return-table tr{break-inside:avoid;page-break-inside:avoid}@media print{.return-sheet{max-width:none}.return-head,.return-meta{break-inside:avoid}}
+      </style></head><body><main class="return-sheet"><header class="return-head"><div class="return-brand"><img src="/logo.png" alt=""><div><b>بابل طیور</b><span>واحد فروش و پیگیری مرجوعی کالا</span></div></div><div class="return-title"><h1>برگهٔ مرجوعی کالا</h1><small>چاپ سوابق ثبت‌شدهٔ مرجوعی</small></div></header><section class="return-meta"><div><span>شماره سفارش</span><b>${esc(fa(order.orderNo||'—'))}</b></div><div><span>فروشگاه</span><b>${esc(storeAwareOrderName(order))}</b></div><div><span>مقصد ارسال</span><b>${esc(order.dispatchPlace||'—')}</b></div></section><table class="return-table"><thead><tr><th>ردیف</th><th>کالا</th><th>وزن مرجوعی (کیلوگرم)</th><th>علت مرجوعی</th><th>راننده</th><th>پلاک</th><th>زمان ثبت مرجوعی</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2">جمع وزن مرجوعی</td><td>${qty(total)}</td><td colspan="4">کیلوگرم</td></tr></tfoot></table><footer class="return-signatures"><div>نام و امضای تحویل‌دهنده</div><div>نام و امضای دریافت‌کننده</div></footer></main><script src="/print-ready.js"><\\/script></body></html>`));
+  }catch(e){toast(e.message);return false;}
 }
 function storeOrderDispatches(o){return [...(Array.isArray(o?.dispatches)?o.dispatches:[]),...(o?.dispatch?[o.dispatch]:[])].filter((d,i,a)=>a.findIndex(x=>x.id===d.id&&x.run===d.run)===i)}
 function isStoreDeliveryComplete(o){if(o?.storeReceiptConfirmedAt)return true;const ds=storeOrderDispatches(o);return ds.length>0&&ds.every(d=>!!d.storeReceiptConfirmedAt)}
