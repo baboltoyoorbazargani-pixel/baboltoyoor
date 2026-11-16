@@ -1243,6 +1243,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;charset=utf-8,%3
   .gt-table td:nth-child(4)::before{content:'هدف'}
   .gt-table td:nth-child(5)::before{content:'وضعیت'}
   .gt-table td:nth-child(6)::before{content:'زمان'}
+  .gt-customer-history-table td:nth-child(3)::before{content:'شماره سفارش'}
+  .gt-customer-history-table td:nth-child(4)::before{content:'جزئیات سفارش'}
 }
 
 /* موبایل: ردیف‌های آماده خروج تک‌ستونه؛ تب‌ها دوستونه و بدون اسکرول افقی */

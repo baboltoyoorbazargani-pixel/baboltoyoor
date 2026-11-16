@@ -92,11 +92,11 @@
 .whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:3px 5px;overflow-wrap:anywhere}
 .whd-store-print .whd-store-meta>span b{font-size:9px}
 
-/* Remote-order documents: keep the requested field order on one row and make
-   the header box twice the former compact height for clearer separation. */
-.whd-remote-head{display:flex!important;align-items:center;min-height:32px;direction:rtl;margin:0 0 4px;padding:4px;background:#f4f7fb;border:1px solid #cbd5e1;border-radius:5px}
-.whd-remote-meta{display:grid;flex:1 1 auto;grid-template-columns:var(--whd-remote-columns,repeat(5,minmax(0,1fr)));align-items:center;gap:2px;min-width:0;min-height:22px;font-size:var(--whd-remote-font,8px);line-height:1.05}
-.whd-remote-group{min-width:0;min-height:22px;display:flex;align-items:center;justify-content:center;gap:3px;padding:3px 3px;border:1px solid #dfe4e9;border-radius:3px;background:#fbfcfd;white-space:nowrap}
+/* Remote-order documents: keep the requested field order on one row with a
+   50px header height for clearer separation. */
+.whd-remote-head{display:flex!important;align-items:center;min-height:50px;direction:rtl;margin:0 0 4px;padding:4px;background:#f4f7fb;border:1px solid #cbd5e1;border-radius:5px}
+.whd-remote-meta{display:grid;flex:1 1 auto;grid-template-columns:var(--whd-remote-columns,repeat(5,minmax(0,1fr)));align-items:center;gap:2px;min-width:0;min-height:40px;font-size:var(--whd-remote-font,8px);line-height:1.05}
+.whd-remote-group{min-width:0;min-height:40px;display:flex;align-items:center;justify-content:center;gap:3px;padding:3px 3px;border:1px solid #dfe4e9;border-radius:3px;background:#fbfcfd;white-space:nowrap}
 .whd-remote-pair{min-width:0;display:inline-flex;align-items:baseline;gap:1px;white-space:nowrap}
 .whd-remote-label{flex:none;color:#475569;font-size:.9em;font-weight:600;white-space:nowrap}
 .whd-remote-pair>b{flex:0 0 auto;min-width:0;color:#0f172a;font-size:1em;line-height:1.05;font-weight:800;white-space:nowrap}

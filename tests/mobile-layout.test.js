@@ -10,7 +10,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 test('stylesheet موبایل پس از دو stylesheet اصلی بارگذاری و در allowlist ثبت شده است', () => {
   const html = read('public/index.html');
   const core = html.indexOf('href="/styles.css"');
-  const design = html.indexOf('href="/design.css"');
+  const design = html.indexOf('href="/design.css');
   const mobile = html.indexOf('href="/mobile.css"');
   assert.ok(core >= 0 && design > core && mobile > design, 'ترتیب cascade باید styles → design → mobile باشد');
   assert.match(html, /name="viewport"[^>]*viewport-fit=cover/);
