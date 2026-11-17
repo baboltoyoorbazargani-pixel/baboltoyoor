@@ -479,7 +479,7 @@ function paintActivity() {
         <span class="adm-cell"><small>عملیات</small><b>${admE(admActionLabel(a.action))}</b><span dir="ltr" class="adm-code">${admE(a.action)}</span></span>
         <span class="adm-cell"><small>موجودیت</small><b>${admE(admEntityLabel(a.entityType))}</b><span dir="ltr">${admE(a.entityId ? String(a.entityId).slice(0, 12) : '')}</span></span>
       </summary>
-      <div class="adm-detail"><div><small>شناسه‌ی کامل موجودیت</small><code dir="ltr">${admE(a.entityId || '—')}</code></div>
+      <div class="adm-detail">${(a.entityType==='order'&&a.entityId)||(a.entityType==='order_item'&&a.details?.orderId)?`<button type="button" class="btn btn-secondary btn-sm" data-admin-order-history="${admE(a.entityType==='order'?a.entityId:a.details.orderId)}">${icon('eye',14)} نمایش مسیر کامل سفارش</button>`:''}<div><small>شناسه‌ی کامل موجودیت</small><code dir="ltr">${admE(a.entityId || '—')}</code></div>
         <div><small>مرورگر</small><code dir="ltr">${admE(a.userAgent || '—')}</code></div>
         <div><small>جزئیات</small><pre dir="ltr">${admE(JSON.stringify(a.details || {}, null, 2))}</pre></div>
         <div><small>شماره‌ی ردیف و هش</small><code dir="ltr">#${fa(a.seq || 0)} • ${admE(String(a.hash || '').slice(0, 24))}…</code></div></div>
@@ -628,6 +628,8 @@ function admNorm(v) { return en(String(v || '')).toLowerCase().replace(/\s+/g, '
 function bindAdm(page, root = $('#content')) {
   const c = root;
   c.onclick = async (e) => {
+    const orderHistory = e.target.closest('[data-admin-order-history]');
+    if (orderHistory) { e.preventDefault(); return openSalesHistory(orderHistory.dataset.adminOrderHistory); }
     const el = e.target.closest('[data-adm]'); if (!el) return;
     const a = el.dataset.adm, id = el.dataset.id;
     const find = (arr) => arr.find((x) => x.id === id);

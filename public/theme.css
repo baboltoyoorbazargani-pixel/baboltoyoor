@@ -2019,3 +2019,42 @@ body{background:var(--bt-bg)!important;color:var(--bt-ink);font-size:var(--bt-fs
 .wh-delivered-search>div{display:flex;gap:8px;flex:1;min-width:200px}.wh-delivered-search input{flex:1;min-width:0;padding:9px;border:1px solid #cbd5e1;border-radius:8px}
 .wh-delivered-row{grid-template-columns:1fr 1.5fr .7fr 1fr 1.4fr auto;gap:10px;align-items:center;min-width:800px}
 .wh-delivered-pages{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px}
+
+/* کارتابل انبار: عنوان هدر کمی درشت‌تر تا با فضای سربرگ توازن داشته باشد. */
+#appView[data-cartable-page="warehouse"] .workspace-header .header-main h1{font-size:26px!important;line-height:1.3!important}
+@media(max-width:768px){#appView[data-cartable-page="warehouse"] .workspace-header .header-main h1{font-size:18px!important;line-height:1.35!important}}
+.whh-order-detail{display:grid;gap:18px;min-width:0}
+.whh-order-detail>section{min-width:0}
+.whh-order-detail h3{margin:0 0 10px;font-size:16px}
+.whh-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.whh-detail-cell{display:grid;gap:3px;min-width:0;padding:9px 11px;border:1px solid var(--bt-line);border-radius:9px;background:var(--bt-panel-2)}
+.whh-detail-cell small,.whh-order-detail small{color:var(--bt-muted);font-size:11px;line-height:1.5}
+.whh-detail-cell b{min-width:0;overflow-wrap:anywhere;font-size:13px;line-height:1.6}
+.whh-detail-actor{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--bt-brand-50);color:var(--bt-ink-2)}
+.whh-order-timeline,.whh-order-events{display:grid;gap:8px;padding:0 20px 0 0;margin:0}
+.whh-order-timeline>li,.whh-order-events>li{padding:9px 11px;border-right:2px solid var(--bt-brand-200);background:var(--bt-panel-2);border-radius:8px;overflow-wrap:anywhere}
+.whh-order-timeline>li{display:grid;gap:2px}
+.whh-event-head{display:grid;gap:3px}
+.whh-event-details{margin-top:7px}
+.whh-event-details summary{cursor:pointer;color:var(--bt-brand);font-size:12px;font-weight:800}
+.whh-event-details pre,.whh-weight-log pre{max-width:100%;max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:9px;background:#f3f4f6;border-radius:7px;font:11px/1.6 ui-monospace,monospace}
+.whh-weight-log{display:grid;gap:2px;padding:7px 0;border-bottom:1px solid var(--bt-line)}
+.whh-weight-log:last-child{border-bottom:0}
+.whh-item-description{display:block;margin-top:4px}
+@media(max-width:768px){.whh-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.whh-order-detail h3{font-size:15px}}
+@media(max-width:480px){.whh-detail-grid{grid-template-columns:minmax(0,1fr)}.whh-detail-cell{padding:8px}.whh-order-timeline,.whh-order-events{padding-right:16px}}
+.sales-history-detail{display:grid;gap:14px;min-width:0}
+.sales-history-detail>section{min-width:0}
+.sales-history-detail h3{margin:8px 0;font-size:16px}
+.sales-history-summary{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--bt-line);border-radius:10px;background:var(--bt-panel-2)}
+.sales-history-info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.sales-history-info-grid>div{display:grid;gap:3px;min-width:0;padding:8px 10px;border:1px solid var(--bt-line);border-radius:8px;background:var(--bt-panel-2)}
+.sales-history-info-grid small{font-size:11px;color:var(--bt-muted)}
+.sales-history-info-grid b{font-size:12px;overflow-wrap:anywhere;line-height:1.5}
+.sales-history-event-details{margin-top:7px}
+.sales-history-event-details summary{cursor:pointer;font-size:12px;font-weight:800;color:var(--bt-brand)}
+.sales-history-event-details pre{max-width:100%;max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:8px;background:#f3f4f6;font:11px/1.6 ui-monospace,monospace}
+.sales-history-timeline>li{overflow-wrap:anywhere}
+.sales-history-items td small{display:block;color:var(--bt-muted);margin-top:3px}
+@media(max-width:768px){.sales-history-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.sales-history-info-grid{grid-template-columns:minmax(0,1fr)}}

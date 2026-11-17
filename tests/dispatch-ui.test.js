@@ -252,3 +252,15 @@ test('پلاک خودروی راننده در تمام کارتابل‌های �
   assert.match(css,/\.sd-line \.cell-desc input/);
   assert.match(css,/#bell #bellCount\{/);
 });
+
+test('کارتابل ترابری ورودی و سفارش‌های دارای راننده را در تب‌های روشن و جدا نشان می‌دهد', () => {
+  const start=dispatch.indexOf('function paintDispatch(data)'),end=dispatch.indexOf('\nfunction dspDispatchCard',start);
+  assert.ok(start>=0&&end>start);
+  const paint=dispatch.slice(start,end);
+  assert.match(paint,/\['pending', 'ورودی', 'pending'\]/);
+  assert.match(paint,/\['assigned', 'تخصیص‌یافته', 'assigned'\]/);
+  assert.match(paint,/\['delivered', 'تحویل‌شده', 'delivered'\]/,'تب تحویل‌های ثبت‌شده هم برای دسترسی به سوابق حفظ می‌شود');
+  const route=fs.readFileSync(path.join(__dirname,'..','lib','routes','dispatch.js'),'utf8');
+  assert.match(route,/if \(filter === 'pending'\) return s === 'PENDING_ASSIGN'/);
+  assert.match(route,/if \(filter === 'assigned'\) return \['ASSIGNED', 'DRIVER_EXIT_REPORTED', 'IN_TRANSIT'\]\.includes\(s\)/);
+});

@@ -27,7 +27,7 @@ test('role rail is the only navigator for gate, sales and warehouse; required tr
  assert.doesNotMatch(shell,/renderSalesTabsV29\(/);
  assert.doesNotMatch(gate,/<nav class="sd-tabs"/);
  assert.doesNotMatch(wh,/wh38Tabs\(phase\)/);
- assert.match(dispatch,/const tabs = \[\['pending', 'سفارش ورودی'/);
+ assert.match(dispatch,/const tabs = \[\['pending', 'ورودی', 'pending'\], \['assigned', 'تخصیص‌یافته', 'assigned'/);
  assert.match(ui,/data-store-delivery-tab="inProgress"[\s\S]*?data-store-delivery-tab="delivered"/);
 });
 
