@@ -111,7 +111,7 @@ ddd2b17fa91922e9bc862fc8e045f29345b520ca61caa3482e8ac91cb86e5123  ./RELEASE-1.0.
 69cad2295f76e51c5318a0d111457997f66b3d1ab31b6abf608342f9717af6e4  ./RELEASE-1.1.2-fa.md
 d045df16bb26a2feb54555fda1b39f4745f44c10a635d544cbc2950b89ec32af  ./RELEASE-1.1.3-fa.md
 6b202c8dc5bf26452044e7db5bf407b58c4a551ebcfe5c5354a646790955f41f  ./RELEASE-1.1.4-fa.md
-821dbb2cc51f0b6e8f88b3c6ddb4959de8aa9782b8339b6653473708b90221e0  ./RELEASE-1.1.5-fa.md
+ca4a372186b5663a2e91ddf88003492688ea84924ccbc913aec0e9a6e39a3b5b  ./RELEASE-1.1.5-fa.md
 320c7fa99424c56b9d5e2a1bde9f1610b5678b302497e3dac620fb825091f20a  ./RELEASE-37.37.0-fa.md
 47d694d1bc5032fb8543c7f400c9cc14a7ac0f03b751bc6f3bf1b966b5b1d9d9  ./RELEASE-37.38.0-fa.md
 06d5341eb192c86b7cf9499dc195428d082da65ac6bfce75f6fd3ea708a1e576  ./RELEASE-37.39.0-fa.md
@@ -123,7 +123,7 @@ c9fbfc2417b4f91a648473156f59f3a138e4dc8a275b74ab13b684ae18e18b38  ./RELEASE-37.4
 6e5a006e078f48892f1622c0fb8370e143c6cb6ce7f17aef2d1941a6a90b2829  ./VERSION.txt
 a0bd3b3fd14e7b3ef311543c910bfeb861346022e258f3d65474aec2a5b5b4f3  ./assets/logo.png
 62f7a5474a54ef5c9d4e404cf3bb5c63425359f5943075a80ebf69a5e4f744ba  ./docs/PROJECT-PROMPT-fa.md
-c65618f71faf6f72265a7310f9beea30049074d61192b909939291c7d03ef34a  ./docs/deployment-windows-server-2025.md
+ef725930e9ff3835b4f0cbba527d5e6a590331ef2cfc728ff079cd1bef0c8580  ./docs/deployment-windows-server-2025.md
 84ef2fcaff7e118259ca6e5572972e1d42ab0850f069959dbb8f3bf08df386e0  ./docs/domain-https-fa.md
 6791cb09b6006a317ee05d3ef8461ca1ae9749f44e2c250418d88e7fb5401e96  ./docs/hardening-rollout-fa.md
 f089836e1878ed22217a25f8cc826d63abe8cc197c80ffcfad9f9bef08b40d53  ./docs/remaining-work-fa.md
@@ -252,7 +252,7 @@ e8e2e4411bb9197e5a1959f21252abf359260fa3ec8d550a6bc0bc39b3b5ad9c  ./public/trans
 76d033745f0f2c81f43397aefcbbe49174eee07982df15cfee4ca4d976f3c4d2  ./public/ui-polish.js
 855fb56eb30bb5fdaaf9707277dfda73c7eb67c0aec6e443ee261ecc96de7806  ./public/ui2.js
 752ac675c47c22eaee784bf080c7baf1b2e9f2342b9670ca371cfe1d96feb4e3  ./public/warehouse-document.css
-3d9ce146653b9016cac4e07738c143efa453775d3ebe06d25348789b477d385c  ./scripts/arena-release-build.py
+4b269249e5f812b46eddbff935cd736332a3c9b597c0c3380fad2bddb36213ba  ./scripts/arena-release-build.py
 b7e67493ccf5bf21eba5721eea612c4236ee6a7f271d34f5a68818ca1c120ab4  ./scripts/backup-db.js
 5cdadf3e08404a5c94215c917d270b04a0ca901f3547573957a421af9ad4acb8  ./scripts/benchmark-order-search.js
 c86d419ee22bcbc2d64332b7d99ad472734875158c89b919220496dec36bf1c9  ./scripts/build-ui.js
@@ -375,7 +375,7 @@ d3b00331bb591046bb0c9e4a59f306abfd538d7902356bfd48e2f29940166ea7  ./tests/produc
 7678d0fe24e5755edc0b90006ed6c9cb9da5921d65ac791f7e500e857edeaa09  ./tests/rail-branding.test.js
 7c4bd10f4ecf9a63552856ea08ab67238c7ef79a18fca745db0b2a6d6d0fb239  ./tests/rail-clock-bell.test.js
 f1c414936bedf065cf7f86d4fb0b4af1ed3b5b772d14b1415528970b2579d099  ./tests/release-cache-busting.test.js
-c96bd65884a3ef3ad36318607ac23bb457f7aba8c07fe20d27d224b554937d63  ./tests/release-version.test.js
+e9bb4505439cd15fc5aeb4686dcea7fe0becc1ec7cde314e1903dbe453c5c245  ./tests/release-version.test.js
 93fe84c739f74dfc8a28781815ff264f335c155424ddc8c94fba05913cd193ff  ./tests/remaining-work.test.js
 32532680777eee23aed296b09f4ea94087a5d49d015bc2ea577ad7874704ac21  ./tests/remote-enter-browser.test.js
 70751db2f9ed0fe39dfd9e7eab3baf69279d3aa24b44d137cc5bc996647bd8c2  ./tests/remote-enter.test.js
@@ -505,9 +505,9 @@ cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
 3545f8a45c37aca7222861006dc75175ae532944e88c087b49fbbb218ed47947  ./vendor/acme/package-lock.json
 93c58e2aa525b4850e390f62eb149aa0c49b385aaaf291b0c26d488f5dbb56f5  ./vendor/acme/package.json
-ba518a1a7b6266752de34afbf414fe1a185ad253bf78979395eb26aa73a953c8  ./windows-installer/BabolToyor-Setup.cmd
+4d5c0eff1760b12a0bee974f7d1c5a123960b3e6fa256018f0b577d6d863e337  ./windows-installer/BabolToyor-Setup.cmd
 8bddee6e4bf51acc55359dcd44a987f303e84fc49c6d3e37e06c6b566eb472de  ./windows-installer/INSTALL-STEPS-fa.html
 abbf773bb89ea2048a0057312767f95410866c798c79b81cdd209b875f5e9fe1  ./windows-installer/INSTALL-STEPS-fa.md
-1e56a470fbd5c88bb0c599c7340c132dbbaee4d9f2a9a140e1accede9874b558  ./windows-installer/Install-BabolToyor.ps1
+28109d491e134e4b5040a1119b467992697b70f705299fa82b6dcb7134c72dc0  ./windows-installer/Install-BabolToyor.ps1
 229e2a6ece745a938e06301cd6150630671187a4f434e99e34b96be3d8feb3e8  ./windows-installer/README-fa.md
 097a3fb0f5ca372039cc7e1ec8967affa42e1049fe3f46f6abd00c377ad437aa  ./windows-installer/build-single-file.js
