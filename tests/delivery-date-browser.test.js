@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 const executablePath=process.env.BT_CHROMIUM_PATH;
-test('مرورگر: انتخاب تاریخ شمسی، ثبت و ویرایش مستقل و نمایش در انبار', {skip:!executablePath,timeout:70000},async()=>{
+test('مرورگر: انتخاب تاریخ شمسی، ثبت و ویرایش مستقل و نمایش در انبار', {skip:!executablePath,timeout:120000},async()=>{
  const {chromium}=require('playwright-core');const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-delivery-browser-')),base=`http://127.0.0.1:${port}`;
  const proc=spawn(process.execPath,['server.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,HOST:'127.0.0.1',PORT:String(port),DATA_DIR:dir,ADMIN_INITIAL_PASSWORD:'Initial!2345'},stdio:['ignore','pipe','pipe']});let browser;

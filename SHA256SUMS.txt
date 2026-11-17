@@ -290,7 +290,7 @@ c4642ec0fe9ad443f691d576697813908abecd4a3f2b6f9e2880653b2e907f54  ./tests/custom
 8179dd44de35050de1a664a93413a64c9058f2a6f7013f20b9f77315e31079b9  ./tests/dashboard-modern-logo.test.js
 50fc4a5bdeeacc6e83749ee0438327228321bdc1ad21df3940d88ee40dbd5936  ./tests/dashboard-product-charts.test.js
 34b998260080f0f51df2a48d3c13710ead0cf53d8717633b3feac51d2dcccd78  ./tests/datepicker-sales-products.test.js
-cc80ba00e2089663bfc96a5f63fc352451ba4a8aa3e5482e8a1c2dc7ed996501  ./tests/delivery-date-browser.test.js
+d5205ab832e97005aad1204419f74083b665fb0e7c5d2964e197f9b62451a570  ./tests/delivery-date-browser.test.js
 4c67909fc2b079258ea1d8b1ffcad14f3c770a13be5263526efda5c7efa38f04  ./tests/delivery-date.test.js
 4e74ce04e852c1875db7fb0444f2376541a9e702622eb1f77439da6e50268e54  ./tests/deposits-api.test.js
 7e9b0ff529b8bfaa1a7a1cef901d23eb6214a8b659cca596de5d9e5d9a1a2a47  ./tests/deposits-browser.test.js
@@ -501,9 +501,9 @@ cbe0548f44f0278831f81de32b00453c7a47f5dd268a7b7b1f52432150c4efe9  ./vendor/acme/
 14fa0bd54ccc2d15bf3c4f1d6b64e63914503ada596cb8b5fc8f4bebcd6d89b8  ./vendor/acme/acme-client.cjs
 3545f8a45c37aca7222861006dc75175ae532944e88c087b49fbbb218ed47947  ./vendor/acme/package-lock.json
 93c58e2aa525b4850e390f62eb149aa0c49b385aaaf291b0c26d488f5dbb56f5  ./vendor/acme/package.json
-2605fa0d3b9a8ffe7fc4ce45d246045f236a659638a303615ed8b99017b96e65  ./windows-installer/BabolToyor-Setup.cmd
+7a284efdd4089d683995754730a8f973e0682b572e8e05c343bd818dbdddc47d  ./windows-installer/BabolToyor-Setup.cmd
 a694322da1b4b007e36f563c67d60b78c2051c351e674cd62f5afc608bbbbd4d  ./windows-installer/INSTALL-STEPS-fa.html
 bc3ac16dba13926729e74fe2e49ba67cd2f6bda12d8c8abbbfaa4ae516aa42b8  ./windows-installer/INSTALL-STEPS-fa.md
-ac16561a4c39ff887bbe279be200a338bda2c13e98119688bdf4af469aa54c39  ./windows-installer/Install-BabolToyor.ps1
+f85828583a550ed125ee6b770c6b51f5eaf9ae4f945dfdd5d060194f95431529  ./windows-installer/Install-BabolToyor.ps1
 229e2a6ece745a938e06301cd6150630671187a4f434e99e34b96be3d8feb3e8  ./windows-installer/README-fa.md
 097a3fb0f5ca372039cc7e1ec8967affa42e1049fe3f46f6abd00c377ad437aa  ./windows-installer/build-single-file.js
