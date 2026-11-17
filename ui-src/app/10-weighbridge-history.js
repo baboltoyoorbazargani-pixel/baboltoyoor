@@ -318,13 +318,65 @@ function whhDocumentDetailsActions(r){
   if(['WAREHOUSE_PENDING','WAREHOUSE_PREPARING','RETURNED_TO_SALES'].includes(r.status))return '';
   return `<button type="button" class="btn btn-secondary btn-sm" data-action="wh-history-document" data-id="${esc(r.id)}">${icon('eye',14)} جزئیات</button>`;
 }
+const WHH_EVENT_LABELS={CREATE_VISIT:'ثبت مراجعه',CREATE_ORDER:'ثبت سفارش حضوری',CREATE_REMOTE_ORDER:'ثبت سفارش غیرحضوری',CREATE_STORE_ORDER:'ثبت سفارش فروشگاه',UPDATE_STORE_ORDER:'ویرایش سفارش فروشگاه',SALES_EDIT_STORE_ORDER:'اصلاح سفارش فروشگاه توسط فروش',APPROVE_STORE_ORDER:'تأیید فروشگاه',QUICK_SEND_STORE_ORDER:'ارسال سریع به انبار',WAREHOUSE_ACCEPT_ORDER:'دریافت سفارش در انبار',WAREHOUSE_START_PREPARING:'شروع آماده‌سازی',WAREHOUSE_DRAFT_SAVED:'ذخیرهٔ پیش‌نویس وزن',WAREHOUSE_FINALIZE:'ثبت وزن نهایی انبار',WAREHOUSE_DOCUMENT_EDITED:'اصلاح سند انبار',WAREHOUSE_DOCUMENT_EDIT_REQUESTED:'درخواست اصلاح سند',REOPEN_WAREHOUSE_PREPARING:'بازگشایی آماده‌سازی',RETURN_TO_SALES:'ارجاع به فروش',RESUBMIT_TO_WAREHOUSE:'ارسال مجدد به انبار',WAREHOUSE_PHYSICAL_HANDOVER:'تحویل فیزیکی از انبار',TRANSPORT_WAREHOUSE_HANDOVER:'تحویل به راننده',TRANSPORT_PLAN_ASSIGNED:'تخصیص راننده',STORE_RUN_R1_WEIGHT:'ثبت وزن سرویس اول',STORE_RUN_R2_WEIGHT:'ثبت وزن سرویس دوم',STORE_RUN_R1_SEND:'ارسال سرویس اول',STORE_RUN_R2_SEND:'ارسال سرویس دوم',STORE_RUN_MOVE_R2:'انتقال قلم به سرویس دوم',STORE_RUN_ITEM_COMPLETED:'تکمیل قلم فروشگاه',STORE_RUN_OUT_OF_STOCK:'ثبت عدم موجودی',STORE_RUN_DAY_FINALIZED:'پایان عملیات انبار فروشگاه',STORE_ORDER_OUT_OF_STOCK:'ثبت ناموجودی سفارش فروشگاه',STORE_PARTIAL_OUT_OF_STOCK:'ثبت ناموجودی سفارش جزئی'};
+function whhActorName(user){return user?.name||user?.username||'ثبت‌کنندهٔ نامشخص';}
+function whhOrderEventDetailsHtml(event){
+  const details=event.details||{};
+  if(!Object.keys(details).length)return '';
+  return `<details class="whh-event-details"><summary>جزئیات ثبت‌شده</summary><pre dir="ltr">${esc(JSON.stringify(details,null,2))}</pre></details>`;
+}
+function whhHistoryItemsHtml(items){
+  const rows=(items||[]).map(item=>{
+    const status=item.outOfStock?'ناموجود':(item.status==='DELIVERED'?'تحویل‌شده':item.status||'—');
+    const logs=[...(item.runR1||[]).map(entry=>({...entry,runLabel:'سرویس اول'})),...(item.runR2||[]).map(entry=>({...entry,runLabel:'سرویس دوم'}))];
+    const weighing=item.weighings?`<details class="whh-event-details"><summary>جزئیات توزین</summary><pre dir="ltr">${esc(JSON.stringify(item.weighings,null,2))}</pre></details>`:'';
+    const runHistory=logs.map(entry=>`<div class="whh-weight-log"><b>${entry.runLabel}</b><span>${qty(entry.kg)} کیلوگرم</span><small>${esc(formatDateTime24(entry.at))} · ${esc(whhActorName(entry.user))}</small>${entry.note?`<small>${esc(entry.note)}</small>`:''}${entry.weighings?`<pre dir="ltr">${esc(JSON.stringify(entry.weighings,null,2))}</pre>`:''}</div>`).join('');
+    return `<tr><td>${esc(item.productName||'—')}</td><td>${qty(item.requestedQty)} ${esc(item.requestedUnit||'')}</td><td>${item.outOfStock?'—':`${qty(item.deliveredKg)} کیلوگرم`}</td><td>${esc(status)}${item.description?`<small class="whh-item-description">${esc(item.description)}</small>`:''}${weighing}${runHistory?`<details class="whh-event-details"><summary>سوابق وزن‌کشی و ثبت‌کننده</summary>${runHistory}</details>`:''}</td></tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table class="whh-table whh-order-items"><thead><tr><th>کالا</th><th>مقدار درخواستی</th><th>وزن نهایی</th><th>وضعیت و ریز توزین</th></tr></thead><tbody>${rows||'<tr><td colspan="4">قلمی در سفارش ثبت نشده است.</td></tr>'}</tbody></table></div>`;
+}
+async function openWarehouseHistoryOrder(id){
+  try{
+    const data=await api('/api/warehouse/history/'+encodeURIComponent(id));
+    const o=data.order||{},c=data.customer||{},visit=data.visit||{};
+    const typeLabels={ONSITE:'حضوری',REMOTE:'غیرحضوری',STORE:'فروشگاهی'};
+    const detailCell=(label,value)=>`<div class="whh-detail-cell"><small>${label}</small><b>${value||'—'}</b></div>`;
+    const customerFields=[
+      ['کد مشتری',c.code],['نام و نام خانوادگی',c.name],['شماره تماس',c.phone],['شماره تماس دوم',c.phone2],['کد ملی',c.nationalId],
+      ['شرکت / واحد',c.company],['پلاک',c.plate],['نوع وسیله',c.vehicleType],['نوع خودرو',c.carType],['محله',c.district],['نشانی',c.address],['یادداشت مشتری',c.notes],
+    ].map(([label,value])=>detailCell(label,esc(label.includes('تماس')||label==='کد ملی'||label==='کد مشتری'?fa(value||''):value||'—'))).join('');
+    const orderFields=[
+      detailCell('نوع سفارش',esc(typeLabels[o.orderType]||o.orderType||'—')),
+      detailCell('وضعیت فعلی',badge(o.status)),
+      detailCell('شماره سفارش',esc(fa(o.orderNo||'—'))),
+      detailCell('شماره سند انبار',esc(fa(o.warehouseDocumentNo||'—'))),
+      detailCell('فروشگاه',esc(o.storeName||'—')),
+      detailCell('تاریخ و ساعت ثبت سفارش',esc(formatDateTime24(o.createdAt))),
+      detailCell('زمان تحویل برنامه‌ریزی‌شده',esc(formatDateTime24(o.scheduledAt||o.deliveryDate||o.scheduledDate))),
+      detailCell('محل ارسال',esc(o.dispatchPlace||'—')),
+      detailCell('یادداشت سفارش',esc(o.notes||'—')),
+      detailCell('ثبت مراجعه',esc(formatDateTime24(visit.createdAt))),
+    ].join('');
+    const stages=(data.stages||[]).map(stage=>`<li><b>${esc(stage.label)}</b><small>${esc(formatDateTime24(stage.at))} · ثبت‌کننده: ${esc(whhActorName(stage.user))}</small></li>`).join('')||'<li>مرحلهٔ ثبت‌شده‌ای در دسترس نیست.</li>';
+    const events=(data.events||[]).map(event=>`<li><div class="whh-event-head"><b>${esc(WHH_EVENT_LABELS[event.action]||event.action||'اقدام')}</b><small>${esc(formatDateTime24(event.createdAt))} · ثبت‌کننده: ${esc(whhActorName(event.user))}</small></div>${whhOrderEventDetailsHtml(event)}</li>`).join('')||'<li>رویداد ممیزی برای این سفارش موجود نیست.</li>';
+    openModal(`جزئیات سفارش ${fa(o.orderNo||'')}`,`<div class="whh-order-detail">
+      <section><h3>مشخصات سفارش</h3><div class="whh-detail-grid">${orderFields}</div><p class="whh-detail-actor"><b>ثبت‌کنندهٔ سفارش:</b> ${esc(whhActorName(o.createdBy))}</p></section>
+      <section><h3>اطلاعات کامل مشتری</h3><div class="whh-detail-grid">${customerFields}</div></section>
+      ${visit.id?`<section><h3>اطلاعات مراجعهٔ مرتبط</h3><div class="whh-detail-grid">${detailCell('هدف مراجعه',esc(visit.purpose||'—'))}${detailCell('پلاک ثبت‌شده در مراجعه',esc(visit.plate||'—'))}${detailCell('نوع وسیله',esc(visit.vehicleType||'—'))}${detailCell('محله',esc(visit.district||'—'))}<p class="whh-detail-actor"><b>ثبت‌کنندهٔ مراجعه:</b> ${esc(whhActorName(visit.createdBy))}</p></div></section>`:''}
+      <section><h3>اقلام و وزن‌کشی</h3>${whhHistoryItemsHtml(data.items||[])}</section>
+      <section><h3>مراحل سفارش</h3><ol class="whh-order-timeline">${stages}</ol></section>
+      <section><h3>همهٔ رویدادهای ثبت‌شده</h3><ol class="whh-order-events">${events}</ol></section>
+      <div class="modal-actions"><button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button></div>
+    </div>`);
+  }catch(err){toast(err.message);}
+}
 function whhBody(d,opts){
   const s=d.summary||{};
   const kpis=[['receipt','تحویل به فروش',qty(s.orders||0),''],['scale','وزن کل تحویلی',qty(s.deliveredKg||0),'کیلوگرم'],['warehouse','اقلام ثبت‌شده',qty(s.itemCount||0),'قلم'],['info','اقلام ناموجود',qty(s.outOfStock||0),'قلم'],['arrow','ارجاع به فروش',qty(s.returned||0),'مورد']]
     .map(([ic,l,v,u],k)=>`<div class="whh-kpi ${k===3&&s.outOfStock?'is-warn':''}"><span class="whh-kpi-ico">${icon(ic,18)}</span><div><small>${l}</small><b>${v}${u?` <em>${u}</em>`:''}</b></div></div>`).join('');
   const days=new Map(); (d.rows||[]).forEach(r=>{ if(!days.has(r.day)) days.set(r.day,[]); days.get(r.day).push(r); });
   const list=[...days.entries()].map(([day,rows])=>`<section class="whh-day"><header class="whh-day-head"><b>${dateLabel(day)}</b><span>${qty(rows.length)} سفارش • ${qty(rows.reduce((t,r)=>t+r.deliveredKg,0))} کیلوگرم</span></header>
-    ${rows.map(r=>`<div class="whh-record">${orderSummaryRow(r,{className:'whh-row',name:r.customerName||'—',statusHtml:badge(r.status),itemCount:r.itemCount,extras:[{html:sdTypeBadge(r)},{html:`تلفن: ${esc(fa(r.customerPhone||'—'))}`},{html:`مقصد: ${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}`},...(r.deliveryDate?[{html:`تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`}]:[]),{html:`وزن تحویلی: ${qty(r.deliveredKg)} کیلوگرم`},...(r.outOfStock?[{html:`ناموجود: ${qty(r.outOfStock)}`}]:[]),{html:`ثبت‌کننده: ${esc(r.completedBy||'—')}`},{html:`ثبت وزن: ${whhTime(r.completedAt)}`},...(r.acceptedAt?[{html:`دریافت: ${whhTime(r.acceptedAt)}`}]:[])],actionsHtml:`${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[],r.storeOrderKind):''}${whhDocumentDetailsActions(r)}<button type="button" class="btn btn-secondary btn-sm" data-whh-detail aria-expanded="false" aria-controls="whhDetails-${esc(r.id)}">نمایش اقلام</button>`})}<div class="whh-details" id="whhDetails-${esc(r.id)}" hidden>${whhItemsHtml(r.items,r.orderType==='STORE',r.id,opts?.allowReopen)}</div></div>` ).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
+    ${rows.map(r=>`<div class="whh-record">${orderSummaryRow(r,{className:'whh-row',name:r.customerName||'—',statusHtml:badge(r.status),itemCount:r.itemCount,extras:[{html:sdTypeBadge(r)},{html:`تلفن: ${esc(fa(r.customerPhone||'—'))}`},{html:`مقصد: ${esc(r.dispatchPlace||'محل ارسال ثبت نشده')}`},...(r.deliveryDate?[{html:`تاریخ تحویل: ${esc(dateLabel(r.deliveryDate))}`}]:[]),{html:`وزن تحویلی: ${qty(r.deliveredKg)} کیلوگرم`},...(r.outOfStock?[{html:`ناموجود: ${qty(r.outOfStock)}`}]:[]),{html:`ثبت‌کننده: ${esc(r.completedBy||'—')}`},{html:`ثبت وزن: ${whhTime(r.completedAt)}`},...(r.acceptedAt?[{html:`دریافت: ${whhTime(r.acceptedAt)}`}]:[])],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-whh-order-details data-id="${esc(r.id)}">${icon('eye',14)} جزئیات سفارش</button>${r.orderType==='STORE'?storeServicePrintButtons(r.id,r.printRuns||[],r.storeOrderKind):''}${whhDocumentDetailsActions(r)}<button type="button" class="btn btn-secondary btn-sm" data-whh-detail aria-expanded="false" aria-controls="whhDetails-${esc(r.id)}">نمایش اقلام</button>`})}<div class="whh-details" id="whhDetails-${esc(r.id)}" hidden>${whhItemsHtml(r.items,r.orderType==='STORE',r.id,opts?.allowReopen)}</div></div>` ).join('')}</section>`).join('') || sdEmpty('receipt','سابقه‌ای در این بازه نیست','بازهٔ تاریخ را تغییر دهید یا عبارت جستجو را پاک کنید.');
   const prod=(s.byProduct||[]).map(p=>`<tr><td data-label="کالا">${esc(p.productName)}</td><td data-label="سفارش">${qty(p.orders)}</td><td data-label="وزن (کیلوگرم)">${qty(p.deliveredKg)}</td><td data-label="ناموجود">${p.outOfStock?`<b class="danger-text">${qty(p.outOfStock)}</b>`:'—'}</td></tr>`).join('');
   const rets=(d.returns||[]).map(x=>`<li><div><span class="order-code">${esc(fa(x.orderNo))}</span><b>${esc(x.customerName)}</b></div><p>${esc(x.reason||'بدون توضیح')}</p><small>${esc(formatDateTime24(x.at))} • ${esc(x.by)}</small></li>`).join('');
   return `<div class="whh-kpis">${kpis}</div>
@@ -378,7 +430,7 @@ async function loadWarehouseHistory(){
     const b=$('#whhBody'); if(b) b.innerHTML=whhBody(d);
   }catch(err){ const b=$('#whhBody'); if(b) b.innerHTML=`<div class="empty">خطا در دریافت سوابق انبار: ${esc(err.message)}</div>`; }
 }
-document.addEventListener('click',e=>{const b=e.target.closest('[data-whh-detail]');if(!b)return;const detail=b.closest('.whh-record')?.querySelector('.whh-details');if(!detail)return;detail.hidden=!detail.hidden;b.setAttribute('aria-expanded',String(!detail.hidden));});
+document.addEventListener('click',e=>{const orderButton=e.target.closest('[data-whh-order-details]');if(orderButton){e.preventDefault();openWarehouseHistoryOrder(orderButton.dataset.id);return;}const b=e.target.closest('[data-whh-detail]');if(!b)return;const detail=b.closest('.whh-record')?.querySelector('.whh-details');if(!detail)return;detail.hidden=!detail.hidden;b.setAttribute('aria-expanded',String(!detail.hidden));});
 
 function printWarehouseHistory(){
   const d=app.whHist.data; if(!d) return toast('ابتدا سوابق بارگذاری شود.');

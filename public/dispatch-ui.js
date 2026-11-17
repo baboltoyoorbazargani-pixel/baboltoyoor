@@ -249,7 +249,7 @@ async function renderDispatchPage(resetToPending = false) {
 function paintDispatch(data) {
   const host=$('#transportDispatch');if(!host)return;
   dsp.orders = data.orders; dsp.counts = data.counts || {}; dsp.drivers = data.drivers || [];
-  const tabs = [['pending', 'سفارش ورودی', 'pending'], ['assigned', 'در حال ارسال', 'assigned'], ['delivered', 'تحویل‌شده', 'delivered']];
+  const tabs = [['pending', 'ورودی', 'pending'], ['assigned', 'تخصیص‌یافته', 'assigned'], ['delivered', 'تحویل‌شده', 'delivered']];
   const cards = dsp.orders.map(dspDispatchCard).join('') || sdEmpty('send', 'سفارشی در این بخش نیست', 'سفارش‌های ارسال‌شده از واحد فروش اینجا نمایش داده می‌شود.');
   const drivers=Array.isArray(data.drivers)?data.drivers:[];
   const driverWarning = drivers.length ? '' : `<div class="dsp-driver-warning" role="status"><b>رانندهٔ فعالی ثبت نشده است.</b> تا زمان فعال‌سازی راننده در «ترابری ← رانندگان»، سفارش‌ها در انتظار تخصیص می‌مانند.</div>`;

@@ -93,6 +93,12 @@ test('API: راننده با تلفن و بانک؛ سوابق انبار با �
     items: items.map(([productId, requestedQty]) => ({ productId, requestedQty, requestedUnit: 'کیلوگرم' })) } })).json.order;
   const o1 = await mkOrder('مشتری یک', '09110000001', [[p1.id, 100], [p2.id, 20]]);
   const o2 = await mkOrder('مشتری دو', '09110000002', [[p1.id, 50]]);
+  assert.ok(o1.customerId);
+  const profileUpdate = await call('PUT', `/api/customers/${o1.customerId}`, { cookie: admin, body: {
+    phone2: '09110000009', nationalId: '1234567890', company: 'شرکت آزمایشی', district: 'مرکز',
+    address: 'نشانی کامل مشتری', plate: '12ب34567', vehicleType: 'وانت', notes: 'یادداشت مشتری',
+  } });
+  assert.equal(profileUpdate.status, 200, JSON.stringify(profileUpdate.json));
   for (const o of [o1, o2]) assert.equal((await call('POST', `/api/orders/${o.id}/warehouse/accept`, { cookie: wh, body: {} })).status, 200);
   const full = (await call('GET', `/api/orders/${o1.id}`, { cookie: wh })).json.order;
   const items = full.items.map((i) => (i.productId === p2.id ? { itemId: i.id, outOfStock: true, deliveredKg: 0 } : { itemId: i.id, deliveredKg: 98.5 }));
@@ -107,6 +113,28 @@ test('API: راننده با تلفن و بانک؛ سوابق انبار با �
   assert.equal(h.json.rows[0].completedBy, 'wh1');
   assert.equal(h.json.returns[0].reason, 'اصلاح وزن');
   assert.ok(h.json.summary.byProduct.some((x) => x.outOfStock === 1));
+
+  const warehouseDetails = await call('GET', `/api/warehouse/history/${o1.id}`, { cookie: wh });
+  assert.equal(warehouseDetails.status, 200, JSON.stringify(warehouseDetails.json));
+  assert.equal(warehouseDetails.json.order.orderType, 'REMOTE');
+  assert.equal(warehouseDetails.json.customer.name, 'مشتری یک');
+  assert.equal(warehouseDetails.json.customer.phone2, '09110000009');
+  assert.equal(warehouseDetails.json.customer.nationalId, '1234567890');
+  assert.equal(warehouseDetails.json.customer.address, 'نشانی کامل مشتری');
+  assert.equal(warehouseDetails.json.order.createdBy.name, 'sales1');
+  assert.equal(warehouseDetails.json.items.find(i => i.productName === p1.name).deliveredKg, 98.5);
+  const warehouseStages = Object.fromEntries(warehouseDetails.json.stages.map(stage => [stage.key, stage]));
+  assert.equal(warehouseStages.warehouseAccepted.user.name, 'wh1');
+  assert.equal(warehouseStages.warehouseCompleted.user.name, 'wh1');
+  assert.ok(warehouseDetails.json.events.some(event => event.action === 'WAREHOUSE_FINALIZE' && event.user.name === 'wh1'));
+
+  const managerDetails = await call('GET', `/api/admin/orders/${o1.id}/history`, { cookie: admin });
+  assert.equal(managerDetails.status, 200, JSON.stringify(managerDetails.json));
+  assert.equal(managerDetails.json.order.orderTypeLabel, 'غیرحضوری');
+  assert.ok(managerDetails.json.events.some(event => event.action === 'CREATE_REMOTE_ORDER' && event.actor.name === 'sales1'));
+  assert.ok(managerDetails.json.events.some(event => event.action === 'WAREHOUSE_FINALIZE' && event.actor.name === 'wh1'));
+  assert.equal(managerDetails.json.events.find(event => event.action === 'WAREHOUSE_FINALIZE').details.items[0].deliveredKg, 98.5);
+  assert.equal((await call('GET', `/api/admin/orders/${o1.id}/history`, { cookie: sales })).status, 403, 'تاریخچهٔ کامل فقط برای مدیر باشد');
   // فیلترها
   assert.equal((await call('GET', `/api/warehouse/history?from=${day}&to=${day}&q=${encodeURIComponent('مشتری دو')}`, { cookie: wh })).json.rows.length, 0);
   assert.equal((await call('GET', `/api/warehouse/history?from=${day}&to=${day}&result=oos`, { cookie: wh })).json.rows.length, 1);
