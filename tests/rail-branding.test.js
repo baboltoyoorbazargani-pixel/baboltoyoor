@@ -33,7 +33,7 @@ test('clock and menu items turn glassy while nav contract stays intact',()=>{
   assert.match(app,/function renderNav\(\)/);
   assert.match(app,/\['incoming','سفارش‌های ورودی','inbox','warehouseIncomingRegular'\]/);
   assert.match(css,/prefers-reduced-motion:reduce\)\{[^}]*rail-logo\.logo-frame\{animation:none/);
-  assert.match(html,/app\.js\?v=37\.49\.1/);
+  assert.match(html,/app\.js\?v=37\.49\.2/);
   assert.match(html,/theme\.css\?v=37\.48\.0/);
 });
 

@@ -11,13 +11,13 @@ for(const [file,end] of [['app.js','function printCss()'],['ui2.js','async funct
  test(file+': pickup owner, recipient, order, invoice and date all stay in the invoice header',()=>{
   const s=c.invoiceHtml({...order,orderType:'REMOTE',deliveryMode:'PICKUP',pickupHandover:{document:{customerName:'مالک',customerPhone:'09120000001',recipient:{name:'<نماینده>',phone:'09120000002',vehicleType:'خودروی محرمانه',plate:'پلاک محرمانه'}}},payment:{invoiceNumber:'000456',verifiedAt:'1405/08/23',totalAmount:100,settlementMethods:[{type:'CASH',amount:100}]}});
   const start=s.indexOf('class="inv38-head inv38-pickup-header"');const end=s.indexOf('<div class="inv38-rule"',start);assert(start>=0&&end>start);const header=s.slice(start,end);
-  const labels=['مشتری','تماس صاحب','تحویل‌گیرنده','تماس تحویل','سفارش','فاکتور','تاریخ فاکتور'];const positions=labels.map(x=>header.indexOf(`<span>${x}</span>`));assert(positions.every(x=>x>=0));assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
+  const labels=['نام مشتری','شماره','تحویل گیرنده','شماره','سفارش','فاکتور','تاریخ'];const positions=[];let from=0;for(const label of labels){const position=header.indexOf(`<span>${label}</span>`,from);positions.push(position);from=position+label.length+13;}assert(positions.every(x=>x>=0));assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
   assert.match(header,/مالک/);assert.match(header,/09120000001/);assert.match(header,/&lt;نماینده&gt;/);assert.match(header,/09120000002/);assert.match(header,/123/);assert.match(header,/456/);assert.match(header,/1405\/08\/23/);assert.equal((header.match(/<div><span>/g)||[]).length,7);
   assert(s.indexOf(header)<s.indexOf('<table'));assert.doesNotMatch(s,/inv38-pickup-contacts|خودروی محرمانه|پلاک محرمانه|وسیله \/ پلاک|<نماینده>/);
  });
  test(file+': identical pickup recipient is omitted, while a distinct or incomplete contact stays visible',()=>{
   const base={...order,orderType:'REMOTE',deliveryMode:'PICKUP',pickupHandover:{document:{customerName:'صاحب سفارش',customerPhone:'۰۹۱۲۰۰۰۰۰۰۱',recipient:{name:'  صاحب   سفارش ',phone:'09120000001'}}},payment:{invoiceNumber:'000456',verifiedAt:'1405/08/23',totalAmount:100,settlementMethods:[{type:'CASH',amount:100}]}};
-  const duplicate=c.invoiceHtml(base);assert.doesNotMatch(duplicate,/inv38-pickup-recipient|تحویل‌گیرنده|تماس تحویل/);assert.match(duplicate,/صاحب سفارش/);assert.match(duplicate,/۰۹۱۲۰۰۰۰۰۰۱|09120000001/);
+  const duplicate=c.invoiceHtml(base);assert.doesNotMatch(duplicate,/inv38-pickup-recipient|تحویل گیرنده/);assert.match(duplicate,/صاحب سفارش/);assert.match(duplicate,/۰۹۱۲۰۰۰۰۰۰۱|09120000001/);
   const different=c.invoiceHtml({...base,pickupHandover:{document:{...base.pickupHandover.document,recipient:{name:'صاحب سفارش',phone:'09125556677'}}}});assert.match(different,/inv38-pickup-recipient/);assert.match(different,/09125556677/);
   const incomplete=c.invoiceHtml({...base,pickupHandover:{document:{...base.pickupHandover.document,recipient:{name:'صاحب سفارش',phone:''}}}});assert.match(incomplete,/inv38-pickup-recipient/);
  });
