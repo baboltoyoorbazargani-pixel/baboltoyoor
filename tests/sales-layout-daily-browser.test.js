@@ -17,9 +17,61 @@ test('مرورگر: چیدمان نگهبانی و فرم‌های فروش در
   await p.setViewportSize({width:1280,height:900});await p.locator('#delivery-mode-phone').selectOption('PICKUP');const pickupModeBox=await p.locator('#delivery-mode-phone').boundingBox();await p.locator('#delivery-mode-phone').selectOption('DELIVERY');const deliveryModeBox=await p.locator('#delivery-mode-phone').boundingBox(),placeBox=await p.locator('#phoneDispatchPlace').boundingBox();assert(Math.abs(pickupModeBox.x-deliveryModeBox.x)<2&&Math.abs(pickupModeBox.y-deliveryModeBox.y)<2);assert(deliveryModeBox.x>placeBox.x,'RTL delivery mode precedes destination');assert.equal(await p.locator('#delivery-mode-phone').inputValue(),'DELIVERY');
   await p.locator('#railNav [data-cartable=future]').click();await p.locator('#futureOrderFormV25').waitFor();await p.locator('#delivery-mode-future').selectOption('DELIVERY');const {a,d}=await p.evaluate(()=>{const a=document.querySelector('#futureDispatchPlace').getBoundingClientRect(),d=document.querySelector('#delivery-mode-future').getBoundingClientRect();return {a:{y:a.y,height:a.height},d:{y:d.y,height:d.height}};});assert(Math.abs(a.y-d.y)<2,`future address and delivery row ${JSON.stringify({a,d})}`);assert(Math.abs(a.height-d.height)<2);await p.locator('#delivery-mode-future').selectOption('PICKUP');assert.equal(await p.locator('#delivery-mode-future').inputValue(),'PICKUP');
   for(const tab of ['flow','settlement']){await p.locator(`#railNav [data-cartable=${tab}]`).click();await p.locator(`#sales-v29-pane-${tab}:not([hidden]) .sd-pane`).waitFor();assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}
-  // Settlement table pilot: long content stays under fixed headers, without horizontal scrolling.
+  // Settlement invoices stay tabular on desktop and become labeled, non-scrolling cards on phones.
   await p.evaluate(()=>{const o={id:'table-test',orderNo:'000123',status:'SETTLED',customer:{name:'نام مشتری بسیار طولانی '.repeat(8),phone:'09121112233'},payment:{invoiceNumber:'000987',totalAmount:123456789,verifiedAt:new Date().toISOString()},items:[]};document.querySelector('#content').innerHTML=renderSalesSettlementV25([o]);});
-  for(const width of [1600,1280,768,390,320]){await p.setViewportSize({width,height:900});const metrics=await p.locator('.settlement-invoice-table').evaluate(e=>({headers:[...e.querySelectorAll('th')].map(x=>x.textContent),scroll:e.scrollWidth,client:e.clientWidth,page:document.documentElement.scrollWidth,viewport:innerWidth}));assert.deepEqual(metrics.headers.slice(0,3),['نام مشتری','شماره تماس','شماره سفارش']);assert(metrics.scroll<=metrics.client+1&&metrics.page<=metrics.viewport+1,JSON.stringify(metrics));const style=await p.locator('.settlement-invoice-table td').first().evaluate(e=>({size:parseFloat(getComputedStyle(e).fontSize),weight:Number(getComputedStyle(e).fontWeight),align:getComputedStyle(e).textAlign}));assert(style.size>=14&&style.weight>=700&&style.align==='center',JSON.stringify(style));const statusDate=await p.locator('.settlement-invoice-table tbody tr td:nth-child(6)').evaluate(td=>{const badge=td.querySelector('.badge').getBoundingClientRect(),date=td.querySelector('small').getBoundingClientRect();return{badge:badge.toJSON(),date:date.toJSON(),badgeDisplay:getComputedStyle(td.querySelector('.badge')).display,dateDisplay:getComputedStyle(td.querySelector('small')).display,statusWidth:td.getBoundingClientRect().width,operationWidth:td.parentElement.children[6].getBoundingClientRect().width,tableWidth:td.closest('table').clientWidth};});assert(statusDate.badge.top<statusDate.date.bottom&&statusDate.badge.bottom>statusDate.date.top,`status/date share one line ${JSON.stringify(statusDate)}`);assert.equal(statusDate.badgeDisplay,'inline-flex');assert.equal(statusDate.dateDisplay,'inline-block');assert(statusDate.operationWidth>statusDate.tableWidth*.23&&statusDate.operationWidth<statusDate.tableWidth*.27,`operations column expanded ${JSON.stringify(statusDate)}`);assert(statusDate.statusWidth<(width<=900 ? .31 : .26)*statusDate.tableWidth,`status column compacted ${JSON.stringify(statusDate)}`);const ops=await p.locator('.settlement-invoice-table .toolbar').evaluate(e=>({display:getComputedStyle(e).display,wrap:getComputedStyle(e).flexWrap,buttons:[...e.children].map(b=>({text:b.innerText,whiteSpace:getComputedStyle(b).whiteSpace,scroll:b.scrollWidth,client:b.clientWidth})),scroll:e.scrollWidth,client:e.clientWidth}));assert(ops.buttons.length>=2,JSON.stringify({width,ops}));assert(ops.buttons.every(b=>b.whiteSpace==='nowrap'),JSON.stringify({width,ops}));if(width>600){assert.equal(ops.display,'grid');assert(ops.buttons.every(b=>b.scroll<=b.client+1),JSON.stringify({width,ops}));assert(ops.scroll<=ops.client+1,JSON.stringify({width,ops}));}else{assert.equal(ops.display,'flex');assert.equal(ops.wrap,'nowrap');}}
+  for(const width of [1600,1280,768,390,320]){
+   await p.setViewportSize({width,height:900});
+   const metrics=await p.locator('.settlement-invoice-table').evaluate(e=>({headers:[...e.querySelectorAll('th')].map(x=>x.textContent),scroll:e.scrollWidth,client:e.clientWidth,page:document.documentElement.scrollWidth,viewport:innerWidth}));
+   assert.deepEqual(metrics.headers.slice(0,3),['نام مشتری','شماره تماس','شماره سفارش']);
+   assert(metrics.scroll<=metrics.client+1&&metrics.page<=metrics.viewport+1,JSON.stringify(metrics));
+   const firstCell=await p.locator('.settlement-invoice-table tbody tr td').first().evaluate(e=>({size:parseFloat(getComputedStyle(e).fontSize),weight:Number(getComputedStyle(e).fontWeight),align:getComputedStyle(e).textAlign}));
+   assert(firstCell.size>=14&&firstCell.weight>=700,JSON.stringify(firstCell));
+   if(width<=600){
+    assert.equal(firstCell.align,'right',JSON.stringify(firstCell));
+    const card=await p.locator('.settlement-invoice-table tbody tr').evaluate(row=>{
+     const cells=[...row.cells],toolbar=row.querySelector('.toolbar'),buttons=[...toolbar.querySelectorAll('.btn')],status=cells[5],badge=status.querySelector('.badge'),date=status.querySelector('small');
+     return{
+      tableDisplay:getComputedStyle(row.closest('table')).display,
+      rowDisplay:getComputedStyle(row).display,
+      labels:cells.map(cell=>cell.dataset.label),
+      labelContent:cells.map(cell=>getComputedStyle(cell,'::before').content),
+      customerWidth:cells[0].getBoundingClientRect().width,
+      customerWrap:getComputedStyle(cells[0]).overflowWrap,
+      operationsWidth:cells[6].getBoundingClientRect().width,
+      tableWidth:row.closest('table').clientWidth,
+      toolbarDisplay:getComputedStyle(toolbar).display,
+      toolbarColumns:getComputedStyle(toolbar).gridTemplateColumns.split(' ').length,
+      toolbarScroll:toolbar.scrollWidth,
+      toolbarClient:toolbar.clientWidth,
+      buttons:buttons.map(button=>({text:button.innerText,whiteSpace:getComputedStyle(button).whiteSpace,scroll:button.scrollWidth,client:button.clientWidth})),
+      badgeWidth:badge.getBoundingClientRect().width,
+      dateWidth:date.getBoundingClientRect().width,
+     };
+    });
+    const labels=['نام مشتری','شماره تماس','شماره سفارش','شماره فاکتور','مبلغ / نوع سند','وضعیت و تاریخ','عملیات'];
+    assert.equal(card.tableDisplay,'block',JSON.stringify(card));assert.equal(card.rowDisplay,'grid',JSON.stringify(card));
+    assert.deepEqual(card.labels,labels);assert(card.labelContent.every((content,index)=>content.includes(labels[index])),JSON.stringify(card));
+    assert(card.customerWidth>=100&&card.customerWrap==='break-word',JSON.stringify(card));
+    assert(card.operationsWidth>card.tableWidth*.9,JSON.stringify(card));
+    assert.equal(card.toolbarDisplay,'grid');assert.equal(card.toolbarColumns,2,JSON.stringify(card));
+    assert(card.toolbarScroll<=card.toolbarClient+1,JSON.stringify(card));
+    assert(card.buttons.every(button=>button.whiteSpace==='nowrap'&&button.scroll<=button.client+1),JSON.stringify(card));
+    assert(card.badgeWidth>0&&card.dateWidth>0,JSON.stringify(card));
+    continue;
+   }
+   assert.equal(firstCell.align,'center',JSON.stringify(firstCell));
+   const statusDate=await p.locator('.settlement-invoice-table tbody tr td:nth-child(6)').evaluate(td=>{
+    const badge=td.querySelector('.badge').getBoundingClientRect(),date=td.querySelector('small').getBoundingClientRect();
+    return{badge:badge.toJSON(),date:date.toJSON(),badgeDisplay:getComputedStyle(td.querySelector('.badge')).display,dateDisplay:getComputedStyle(td.querySelector('small')).display,statusWidth:td.getBoundingClientRect().width,operationWidth:td.parentElement.children[6].getBoundingClientRect().width,tableWidth:td.closest('table').clientWidth};
+   });
+   assert(statusDate.badge.top<statusDate.date.bottom&&statusDate.badge.bottom>statusDate.date.top,`status/date share one line ${JSON.stringify(statusDate)}`);
+   assert.equal(statusDate.badgeDisplay,'inline-flex');assert.equal(statusDate.dateDisplay,'inline-block');
+   assert(statusDate.operationWidth>statusDate.tableWidth*.23&&statusDate.operationWidth<statusDate.tableWidth*.27,`operations column expanded ${JSON.stringify(statusDate)}`);
+   assert(statusDate.statusWidth<(width<=900 ? .31 : .26)*statusDate.tableWidth,`status column compacted ${JSON.stringify(statusDate)}`);
+   const ops=await p.locator('.settlement-invoice-table .toolbar').evaluate(e=>({display:getComputedStyle(e).display,wrap:getComputedStyle(e).flexWrap,buttons:[...e.children].map(b=>({text:b.innerText,whiteSpace:getComputedStyle(b).whiteSpace,scroll:b.scrollWidth,client:b.clientWidth})),scroll:e.scrollWidth,client:e.clientWidth}));
+   assert(ops.buttons.length>=2,JSON.stringify({width,ops}));assert(ops.buttons.every(b=>b.whiteSpace==='nowrap'),JSON.stringify({width,ops}));
+   assert.equal(ops.display,'grid');assert(ops.buttons.every(b=>b.scroll<=b.client+1),JSON.stringify({width,ops}));assert(ops.scroll<=ops.client+1,JSON.stringify({width,ops}));
+  }
   assert.deepEqual(errors,[]);await admin.close();await gate.close();await sales.close();
  }finally{if(browser)await browser.close();if(proc.exitCode===null&&proc.signalCode===null){const done=new Promise(r=>proc.once('exit',r));proc.kill('SIGTERM');await done;}fs.rmSync(dir,{recursive:true,force:true});}
 });
