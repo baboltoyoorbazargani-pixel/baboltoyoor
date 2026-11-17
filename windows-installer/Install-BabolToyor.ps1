@@ -13,7 +13,7 @@ param(
   [string]$InstallDir = 'C:\BabolToyor',
   [int]$Port = 80,
   [string]$SourcePath = '',
-  [string]$AppZipUrl = 'https://drive.google.com/uc?export=download&id=1n5og7OGRPWVBsXezmfru-uFN98u7yDSi',
+  [string]$AppZipUrl = 'https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.1.5/BabolToyor-App-1.1.5.zip',
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
   [ValidateSet('SYSTEM','LOCAL SERVICE')]

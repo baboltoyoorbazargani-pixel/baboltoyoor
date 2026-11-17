@@ -12,7 +12,7 @@ test('public release version, installer, UI and release notes stay in sync', () 
   const installer = read('windows-installer/Install-BabolToyor.ps1');
   const appZipUrl = installer.match(/\[string\]\$AppZipUrl = '([^']+)'/);
   assert.ok(appZipUrl, 'installer must define AppZipUrl');
-  assert.match(appZipUrl[1], /^https:\/\/drive\.google\.com\/uc\?export=download&id=[A-Za-z0-9_-]+$/);
+  assert.equal(appZipUrl[1], `https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v${version}/BabolToyor-App-${version}.zip`);
   assert.equal(read('VERSION.txt').trim(), '37.6.0');
   assert.equal(JSON.parse(read('package.json')).version, '37.6.0');
   assert.ok(installer.includes(`Babol Toyor ${version} - Windows Server`));
