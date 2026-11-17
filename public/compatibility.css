@@ -1425,6 +1425,23 @@
  #appView #content .settlement-invoice-table td .toolbar{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));overflow:visible!important;justify-content:stretch;align-items:center;gap:4px}
  #appView #content .settlement-invoice-table td .toolbar .btn{width:100%;max-width:100%;min-width:0!important;flex:none!important;white-space:nowrap!important;padding:4px 2px!important;gap:3px!important;font-size:12px!important;line-height:1.4}
 }
+/* Phone layout: issued invoices become readable, labeled cards instead of seven narrow columns. */
+@media(max-width:600px){
+ #appView #content .v26-invoice-list{padding:12px!important;overflow:visible!important;max-width:100%!important}
+ #appView #content .settlement-invoice-table{display:block!important;box-sizing:border-box;width:100%!important;table-layout:auto!important;border:0!important;border-collapse:separate!important}
+ #appView #content .settlement-invoice-table thead{display:none!important}
+ #appView #content .settlement-invoice-table tbody{display:grid!important;grid-template-columns:minmax(0,1fr);gap:10px}
+ #appView #content .settlement-invoice-table tbody tr{display:grid!important;box-sizing:border-box;grid-template-columns:repeat(2,minmax(0,1fr));width:100%!important;margin:0!important;border:1px solid var(--line,#dce4eb)!important;border-radius:12px;background:#fff;overflow:hidden}
+ #appView #content .settlement-invoice-table tbody tr td{display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-start;box-sizing:border-box;width:auto!important;min-width:0!important;padding:9px 10px!important;border:0!important;border-bottom:1px solid var(--line,#dce4eb)!important;text-align:right!important;vertical-align:top;white-space:normal!important;overflow:visible!important;overflow-wrap:break-word!important;word-break:normal!important;line-height:1.7}
+ #appView #content .settlement-invoice-table tbody tr td::before{content:attr(data-label);display:block;max-width:100%;margin-bottom:4px;color:var(--muted,#67707d);font-size:11px;font-weight:800;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(even):not(:nth-child(7)){border-right:1px solid var(--line,#dce4eb)!important}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(6){white-space:normal!important;overflow:visible!important}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(6) .badge{align-self:flex-start;max-width:100%!important;margin:0 0 4px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.5}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(6) small{display:block!important;max-width:100%!important;margin:0!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important;font-size:11px!important;line-height:1.6}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(7){grid-column:1/-1;border-bottom:0!important}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(7) .toolbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%!important;min-width:0!important;gap:7px!important;overflow:visible!important;padding:0!important}
+ #appView #content .settlement-invoice-table tbody tr td:nth-child(7) .toolbar .btn{width:100%;max-width:100%;min-width:0!important;min-height:38px!important;flex:none!important;justify-content:center;white-space:nowrap!important;padding:6px 4px!important;gap:3px!important;font-size:12px!important;line-height:1.4}
+}
 
 /* Consistent cartable tables: identity, state and operations remain separate. */
 #appView #content .sales-distribution-table{width:100%;min-width:1000px;table-layout:fixed;border-collapse:collapse}
