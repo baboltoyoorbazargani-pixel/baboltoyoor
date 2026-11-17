@@ -115,6 +115,20 @@ test('چرخهٔ زنده: فاکتور تسویه‌شده در کنترل خر
   assert.ok(gateDetails.json.order.items.some((x) => x.id === itemId));
   assert.doesNotMatch(JSON.stringify(gateDetails.json.order), /payment|payments|amount|price|signature/i);
 
+  // انبار فقط از مسیر محدود سوابق مراجعه جزئیات بار را می‌خواند؛ مسیر عمومی سفارش تسویه‌شده همچنان بسته است.
+  const warehouseDetails = await call('GET', `/api/warehouse/visit-order-details/${orderId}`, { cookie: wh });
+  assert.equal(warehouseDetails.status, 200);
+  assert.deepEqual(warehouseDetails.json.order, {
+    id: orderId, orderNo: gateDetails.json.order.orderNo, orderType: gateDetails.json.order.orderType,
+    storeName: null, customer: { name: 'مشتری خروج' },
+  });
+  const gateItem = gateDetails.json.order.items.find(x => x.id === itemId);
+  assert.deepEqual(warehouseDetails.json.records[0].items.map(x => ({ id: x.id, itemStatus: x.itemStatus, name: x.product.name, deliveredKg: x.deliveredKg })), [
+    { id: itemId, itemStatus: 'DELIVERED', name: gateItem.product.name, deliveredKg: 10 },
+  ]);
+  assert.doesNotMatch(JSON.stringify(warehouseDetails.json), /payment|payments|amount|price|signature|fingerprint|09120000001/i);
+  assert.equal((await call('GET', `/api/orders/${orderId}`, { cookie: wh })).status, 403, 'مسیر عمومی جزئیات برای انبار باز نمی‌شود');
+
   const exit = await call('POST', `/api/orders/${orderId}/exit`, { cookie: gate, body: { checkedItems: [itemId] } });
   assert.equal(exit.status, 200);
   assert.equal(exit.json.order.status, 'EXITED');

@@ -24,6 +24,7 @@ test('visit history links the newest related order with only gate-safe metadata'
   store:{get:()=>({orders})},
   repo:{repos:{visits:{all:()=>visits.slice()}},lookups:{customerOf:id=>customers.get(id)}},
   roleOf:()=> 'gate',normalizePlate:domain.normalizePlate,
+  isGateExitAvailable:require('../lib/gate-exit-availability'),
   route:(method,url,options,handler)=>{ctx.handler=handler;},
  };
  vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
