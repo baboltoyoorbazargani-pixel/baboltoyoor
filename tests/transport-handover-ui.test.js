@@ -11,6 +11,14 @@ test('سند انبار پخش فقط امضای راننده دارد و سند
  assert.doesNotMatch(html,/امضاء مشتری/);assert.match(html,/امضاء راننده پخش هنگام دریافت از انبار/);assert.match(html,/&lt;راننده&gt;/);assert.doesNotMatch(html,/امانت/);
  const old=ctx.whDeliveredDocument(base);assert.doesNotMatch(old,/راننده/);assert.match(old,/نام و امضاء مشتری/);
 });
+test('قیمت فاکتور پیش‌ازخروج از فهرست امروز بر اساس محصول همان قلم پیش‌فرض می‌شود',()=>{
+ const fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+ const ctx=vm.createContext({stl:{priceMap:{p01:123456}},fa});
+ vm.runInContext(fragment('function transportInvoicePriceDefault(', 'function transportSalesInvoicePanel('),ctx);
+ const order={items:[{id:'i1',productId:'p01',unitPrice:45000},{id:'i2',productId:'p02',unitPrice:45000}]};
+ assert.equal(ctx.transportInvoicePriceDefault(order,{itemId:'i1'}),'۱۲۳٬۴۵۶');
+ assert.equal(ctx.transportInvoicePriceDefault(order,{itemId:'i2'}),'۴۵٬۰۰۰');
+});
 test('تحویل با تأیید فیزیکی ثبت و سند بلافاصله برای چاپ ارسال می‌شود',async()=>{
  const calls=[];let confirmed=false,fail=false;const ctx=vm.createContext({confirm:()=>confirmed,api:async(...args)=>{calls.push(args);if(fail)throw Error('network');return {handover:{document:{warehouseDocumentNo:'W-1'}}};},closeModal:()=>calls.push('close'),toast:x=>calls.push(x),whPrintDocument:(doc,run)=>calls.push(['print',doc,run]),whDeliveredLoad:async()=>calls.push('regular'),loadWhStoreDocuments:async()=>calls.push('store'),encodeURIComponent,JSON});
  vm.runInContext(fragment('async function whTransportHandover(','function whPrintDocument('),ctx);
@@ -23,21 +31,25 @@ test('ثبت تحویل در کارتابل انبار برای مدیر و ان
  const ctx=vm.createContext({app:{page:'warehouse',user:{roleCode:'admin'}},normalizeRole:x=>x});vm.runInContext(fragment('function whCanRegisterHandover(){','async function whDeliveredDetails(id){'),ctx);
  assert.equal(ctx.whCanRegisterHandover(),true);ctx.app.user.roleCode='warehouse';assert.equal(ctx.whCanRegisterHandover(),true);ctx.app.user.roleCode='sales';assert.equal(ctx.whCanRegisterHandover(),false);ctx.app.user.roleCode='admin';ctx.app.page='sales';assert.equal(ctx.whCanRegisterHandover(),false);
 });
-test('فاکتور پیش از خروج تسویه یا تحویل را تأیید نمی‌کند و ارقام و محتوای سند ایمن است',()=>{
+test('فاکتور پخش سربرگ شش‌فیلدی، متن تحویل و محل امضای مشتری را به‌شکل فشرده چاپ می‌کند',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ'});
- vm.runInContext(fragment('function transportDraftInvoiceHtml(order,invoice){','async function transportDraftPreview(id){'),ctx);
- const html=ctx.transportDraftInvoiceHtml({orderNo:'123'},{invoiceNumber:'456',customerName:'<مشتری>',customerPhone:'09',priceLines:[{productName:'<کالا>',deliveredKg:2,unitPrice:1000,amount:2000}],subtotalAmount:2000,discountAmount:300,additionsAmount:50,totalAmount:1750});
- assert.doesNotMatch(html,/فاکتور فروش و تحویل|پیش از تحویل و تعیین تسویه|این سند پیش از|امضای دستی مشتری|________________/);assert.match(html,/inv38-delivery-signature/);assert.match(html,/<span>امضا<\/span>/);assert.match(html,/اینجانب <strong[^>]*>&lt;مشتری&gt;<\/strong>، اقلام فوق/);assert.match(html,/&lt;مشتری&gt;/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);assert.doesNotMatch(html,/تسویه نهایی و آماده خروج/);
+ vm.runInContext(fragment('function transportDeliverySignatureHtml(', 'async function transportDraftPreview(id){'),ctx);
+ const html=ctx.transportDraftInvoiceHtml({orderNo:'123',dispatchPlace:'نشانی <مشتری>'},{invoiceNumber:'456',customerName:'<مشتری>',customerPhone:'09',driverName:'<راننده>',priceLines:[{productName:'<کالا>',deliveredKg:2,unitPrice:1000,amount:2000}],subtotalAmount:2000,discountAmount:300,additionsAmount:50,totalAmount:1750});
+ for(const label of ['نام مشتری','شماره تماس','محل ارسال','شماره سفارش','شماره فاکتور','تاریخ'])assert(html.includes(`<span>${label}</span>`),label);
+ assert.doesNotMatch(html,/inv38-brand|<img/);assert.match(html,/نشانی &lt;مشتری&gt;/);assert.match(html,/inv38-delivery-signature-line/);assert.match(html,/<span>محل امضا<\/span>/);assert.match(html,/اینجانب <strong>&lt;مشتری&gt;<\/strong>، تأیید می‌کنم اقلام فوق توسط رانندهٔ پخش <strong>&lt;راننده&gt;<\/strong> به اینجانب تحویل شد/);assert.match(html,/<small>نام مشتری<\/small>/);assert.match(html,/&lt;کالا&gt;/);assert.match(html,/1750/);
 });
-test('فاکتور بسته‌شده، جمع پیش از مرجوعی و کسر واقعی و چک وصول‌نشده را درست نشان می‌دهد',()=>{
+test('فاکتور بسته‌شده و فاکتور پخش، ارقام مالی و سربرگ و امضای تحویل را درست نشان می‌دهند',()=>{
  const ctx=vm.createContext({esc:escape,fa:x=>x,qty:x=>x,money:x=>String(x),dt:()=> 'تاریخ',n:x=>Number(x||0)});
  const core=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');vm.runInContext(core.slice(core.indexOf('function settlementMethodLabel('),core.indexOf('// Shared compact')),ctx);
+ vm.runInContext(fragment('function transportDeliverySignatureHtml(', '// The distribution invoice'),ctx);
  vm.runInContext(fragment('function invoiceHtml(o,paySel){','async function printInvoice(id,run){'),ctx);
  const base={transportWorkflow:1,transportInvoice:{priceLines:[{productName:'کالا',deliveredKg:2,unitPrice:1000,amount:2000}]},transportReturn:{outcome:'NOT_DELIVERED'},items:[]};
  const html=ctx.invoiceHtml(base,{totalAmount:0,discountAmount:300,additionsAmount:50,returnDeduction:1750,settlementMethods:[]});
  assert.match(html,/جمع اقلام<\/span><b>2000/);assert.match(html,/کسر مرجوعی<\/span><b>1750/);assert.doesNotMatch(html,/<span>وضعیت<\/span>/);assert.match(html,/مبلغ پرداختی<\/span><b>0/);assert.doesNotMatch(html,/جزئیات روش پرداخت ثبت نشده/);
  const pending=ctx.invoiceHtml({...base,transportReturn:{outcome:'DELIVERED'}},{totalAmount:1750,discountAmount:300,additionsAmount:50,settlementMethods:[{type:'CHECK',amount:1750,checkStatus:'PENDING'}],debtAccount:{initial:1750,receipts:[{amount:1750,status:'PENDING'}]}});
- const delivery=ctx.invoiceHtml({...base,deliveryMode:'DELIVERY',customer:{name:'مشتری واقعی',phone:'0912'},transportHandovers:{'0':{driverName:'روح الله گلی'}}},{totalAmount:0,settlementMethods:[]});assert.match(delivery,/inv38-delivery-signature/);assert.match(delivery,/اینجانب <strong[^>]*>مشتری واقعی<\/strong>، اقلام فوق/);assert.match(delivery,/روح الله گلی/);assert.doesNotMatch(delivery,/________________|نام و امضای مشتری پس از/);
+ const delivery=ctx.invoiceHtml({...base,deliveryMode:'DELIVERY',dispatchPlace:'مقصد <نمونه>',orderNo:'123',customer:{name:'مشتری واقعی',phone:'0912'},transportHandovers:{'0':{driverName:'روح الله گلی'}}},{invoiceNumber:'456',totalAmount:0,settlementMethods:[]});
+ for(const label of ['نام مشتری','شماره تماس','محل ارسال','شماره سفارش','شماره فاکتور','تاریخ'])assert(delivery.includes(`<span>${label}</span>`),label);
+ assert.match(delivery,/مقصد &lt;نمونه&gt;/);assert.match(delivery,/inv38-distribution/);assert.doesNotMatch(delivery,/inv38-brand|<img/);assert.match(delivery,/inv38-delivery-signature-line/);assert.match(delivery,/تأیید می‌کنم اقلام فوق توسط رانندهٔ پخش <strong>روح الله گلی<\/strong> به اینجانب تحویل شد/);assert.match(delivery,/<strong>مشتری واقعی<\/strong>/);assert.match(delivery,/<small>نام مشتری<\/small>/);
  assert.match(pending,/مبلغ پرداختی<\/span><b>0/);assert.match(pending,/مانده حساب<\/span><b>1750/);
 });
 test('محاسبه فرم فروش با مرجوعی جزئی و کامل مطابق فاکتور است و وزن نامعتبر رد می‌شود',()=>{
