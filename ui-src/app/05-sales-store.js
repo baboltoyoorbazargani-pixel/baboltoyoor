@@ -108,7 +108,7 @@ function storeSalesDocumentButtons(o,compact=false,includePrint=true){
  }).join('');
  const printActions=includePrint?runs.map(run=>{
   const state=editState(run);if(state?.edit?.status==='PENDING_WAREHOUSE')return '';
-  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${compact?`سند ${o.storeOrderKind==='PARTIAL'?'جزئی':run===1?'اول':'دوم'}`:`چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش`}</button>`;
+  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${o.storeOrderKind==='PARTIAL'?(compact?'سند جزئی':'چاپ سند محموله سفارش جزئی برای فروش'):`چاپ سرویس ${run===1?'اول':'دوم'}`}</button>`;
  }).join(''):'';
  const actions=printActions+editActions;
  return actions?`<div class="store-service-print">${actions}</div>`:'';

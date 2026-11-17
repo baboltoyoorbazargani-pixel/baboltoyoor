@@ -2229,7 +2229,7 @@ function storeSalesDocumentButtons(o,compact=false,includePrint=true){
  }).join('');
  const printActions=includePrint?runs.map(run=>{
   const state=editState(run);if(state?.edit?.status==='PENDING_WAREHOUSE')return '';
-  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${compact?`سند ${o.storeOrderKind==='PARTIAL'?'جزئی':run===1?'اول':'دوم'}`:`چاپ سند ${o.storeOrderKind==='PARTIAL'?'محموله':`سرویس ${run===1?'اول':'دوم'}`} برای فروش`}</button>`;
+  return `<button type="button" class="btn btn-secondary btn-sm" data-action="sales-store-document-print" data-id="${esc(o.id)}" data-run="${run}" ${sent.has(run)?'':'disabled title="این سرویس هنوز ارسال نشده است"'}>${icon('receipt',14)} ${o.storeOrderKind==='PARTIAL'?(compact?'سند جزئی':'چاپ سند محموله سفارش جزئی برای فروش'):`چاپ سرویس ${run===1?'اول':'دوم'}`}</button>`;
  }).join(''):'';
  const actions=printActions+editActions;
  return actions?`<div class="store-service-print">${actions}</div>`:'';
@@ -3653,7 +3653,7 @@ document.addEventListener('click',e=>{
    ================================================================ */
 app.stl = app.stl || {orderId:null, order:null, items:[], drivers:[], devices:[], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false, dispatchBusy:false, paymentRows:[{type:'CASH',amount:''}]};
 const stl = app.stl;
-function stlReset(){ app.stl = {orderId:null, order:null, items:[], drivers:[], devices:[], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false, dispatchBusy:false, paymentRows:[{type:'CASH',amount:''}]}; Object.assign(stl, app.stl); app.selectedSettlement=null; }
+function stlReset(){ app.stl = {orderId:null, order:null, items:[], prices:[], priceMap:Object.create(null), drivers:[], devices:[], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false, dispatchBusy:false, paymentRows:[{type:'CASH',amount:''}]}; Object.assign(stl, app.stl); app.selectedSettlement=null; }
 function stlPrice(v){ return Number(en(String(v ?? '')).replace(/[^0-9]/g,'')) || 0; }
 function stlFmtPrice(v){ return v ? new Intl.NumberFormat('fa-IR').format(v) : ''; }
 function stlFormatPriceInput(input){
@@ -3679,12 +3679,16 @@ function stlAdjustmentsHtml(o){
 }
 function stlKg(){ return stl.items.filter(stlActive).reduce((s,i)=>s+i.delivered,0); }
 function stlItemsOf(o, prices){
-  const map = Object.fromEntries((prices||[]).map(x=>[x.productId, x.price]));
+  const map = Object.fromEntries((prices||[]).map(x=>[x.productId, Number(x.price)]));
   return (o.items||[]).map(i=>{
     const status = i.itemStatus || 'PENDING';
     const voided = status === 'CANCELLED';
     const delivered = Number(i.deliveredKg || 0);
-    const price = i.unitPrice != null ? Number(i.unitPrice) : (Number(map[i.productId] || 0) || 0);
+    const listedPrice = Number(map[i.productId] || 0);
+    const savedPrice = Number(i.unitPrice || 0);
+    // Pending settlement should start from today's product-list price; stale or
+    // zero item snapshots must not force sales staff to re-enter that price.
+    const price = listedPrice > 0 ? listedPrice : (savedPrice > 0 ? savedPrice : 0);
     return { id:i.id, productId:i.productId, name:i.product?.name || i.productId || 'کالا', status, voided, skip:false, delivered, outOfStock: !voided && (status === 'OUT_OF_STOCK' || delivered <= 0), price };
   });
 }
@@ -3872,7 +3876,10 @@ async function stlOpen(id){
     const transport=o.transportWorkflow===1&&o.deliveryMode==='DELIVERY'&&o.orderType!=='STORE';
     let prices=[],drivers=[],devices=[],devicesError=false;
     if(transport){
-      // Pricing and legacy driver lists are not needed by the transport form.
+      // The dispatch invoice is priced from today's product list. Keep that
+      // lookup best-effort so a temporary price-list outage does not hide the
+      // handover or prevent staff from entering a price manually.
+      try{prices=(await api('/api/prices')).prices||[];}catch(_){}
       // POS devices are only needed when the documents have returned.
       if(o.transportReturn){
         try{devices=(await api('/api/payment-devices')).devices||[];}catch(_){devicesError=true;}
@@ -3882,7 +3889,7 @@ async function stlOpen(id){
       prices=p.prices||[];drivers=driverData.drivers||[];devices=deviceData.devices||[];
     }
     if(!current())return;
-    Object.assign(stl, {orderId:id, order:o, items:stlItemsOf(o,prices), drivers, devices, devicesError, paymentRows:[{type:'CASH',amount:''}], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false});
+    Object.assign(stl, {orderId:id, order:o, items:stlItemsOf(o,prices), prices, priceMap:Object.fromEntries(prices.map(x=>[x.productId,Number(x.price)])), drivers, devices, devicesError, paymentRows:[{type:'CASH',amount:''}], discountAmount:0, additionsAmount:0, sig:false, fp:'', manual:false, busy:false});
     stl.discountAmount=Number(o.payment?.discountAmount ?? o.dispatch?.discountAmount ?? 0);
     stl.additionsAmount=Number(o.payment?.additionsAmount ?? o.dispatch?.additionsAmount ?? 0);
     app.selectedSettlement=id;

@@ -18,6 +18,7 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
   const vehicle=(await post(transport,'/api/transport/vehicles',{vehicleType:'وانت',plate:'12ب34567'})).vehicle;
   assert((await transport.request.put(base+`/api/transport/drivers/${driver.id}/resources`,{data:{vehicleId:vehicle.id,paymentDeviceId:''}})).ok());
   const day=new Date(),date=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+  await post(admin,'/api/admin/prices',{productId:'p01',price:234567,date});
   const order=(await post(sales,'/api/orders/remote',{name:'مشتری آزمایش',phone:'09121112234',dispatchPlace:'بابل',scheduledDate:date,scheduledAt:date+'T00:00',transportWorkflow:true,deliveryMode:'DELIVERY',items:[{productId:'p01',requestedQty:4,requestedUnit:'کیلوگرم'}]})).order;
   await post(wh,`/api/orders/${order.id}/warehouse/accept`,{});await post(wh,`/api/orders/${order.id}/warehouse`,{items:[{itemId:order.items[0].id,deliveredKg:2}]});
   await post(transport,`/api/transport/plans/${order.id}/assign`,{driverId:driver.id,vehicleId:vehicle.id});
@@ -28,14 +29,14 @@ test('فرم مالی پخش در عرض‌های مختلف و گردش واق�
   // A failed order request must leave a visible, retryable error instead of a blank panel.
   const orderUrl=`**/api/orders/${order.id}`;await page.route(orderUrl,route=>route.fulfill({status:503,json:{error:'خطای آزمایشی سفارش'}}));
   await queue.click();await page.locator('#stlMain .stl-load-error').waitFor();assert.match(await page.locator('#stlMain').innerText(),/خطای آزمایشی سفارش/);await page.unroute(orderUrl);
-  // The new transport flow must not depend on the legacy price and driver APIs.
+  // A temporary product-price or legacy-driver failure must not hide the dispatch form.
   await page.route('**/api/prices',route=>route.abort());await page.route('**/api/dispatch/drivers',route=>route.abort());
   await page.locator('#stlMain [data-stl=retry]').click();await page.locator('[data-ti-price]').waitFor();
   await page.unroute('**/api/prices');await page.unroute('**/api/dispatch/drivers');
-  // Leaving and re-entering via the real navigation rebuilds the settlement pane.
+  // Re-entering the real settlement pane loads today's catalog price into the invoice field.
   await page.evaluate(()=>go('sales','flow'));await page.evaluate(()=>go('sales','settlement'));await page.locator('[data-ti-price]').waitFor();
 
- const price=page.locator('[data-ti-price]');await price.waitFor();await price.fill('1234567');assert.equal(await price.inputValue(),'۱٬۲۳۴٬۵۶۷');
+ const price=page.locator('[data-ti-price]');await price.waitFor();assert.equal(await price.inputValue(),'۲۳۴٬۵۶۷');await price.fill('1234567');assert.equal(await price.inputValue(),'۱٬۲۳۴٬۵۶۷');
  for(const width of [1280,768,390,320]){await page.setViewportSize({width,height:900});const layout=await page.locator('.tr-invoice-panel').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth,page:document.documentElement.scrollWidth,viewport:innerWidth,table:el.querySelector('.tr-table-scroll').scrollWidth,tableClient:el.querySelector('.tr-table-scroll').clientWidth}));assert(layout.scroll<=layout.client+1,JSON.stringify(layout));assert(layout.page<=layout.viewport+1,JSON.stringify(layout));if(width<=390)assert(layout.table>layout.tableClient,'جدول باریک در محدوده خودش پیمایش دارد');}
  await page.locator('[name=discountAmount]').fill('100000');await page.locator('[name=additionsAmount]').fill('10000');
  assert.match(await page.locator('[data-ti-summary]').innerText(),/۲٬۴۶۹٬۱۳۴/);assert.match(await page.locator('[data-ti-summary]').innerText(),/۲٬۳۷۹٬۱۳۴/);
