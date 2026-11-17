@@ -13,7 +13,7 @@ param(
   [string]$InstallDir = 'C:\BabolToyor',
   [int]$Port = 80,
   [string]$SourcePath = '',
-  [string]$AppZipUrl = 'https://drive.google.com/uc?export=download&id=1FlUPAC65aluSwjyedz-ApxVeIRcJMm7d',
+  [string]$AppZipUrl = 'https://drive.google.com/uc?export=download&id=1io1-32C36GWsCQUfAMLJIQiHlhLABfj3',
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
   [ValidateSet('SYSTEM','LOCAL SERVICE')]
