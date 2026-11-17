@@ -138,15 +138,15 @@ body.invoice-print{margin:0;padding:8px;background:#fff}
 .inv38-compact .inv38-delivery-signer{margin-top:auto;padding-top:24px;align-self:flex-end;text-align:left;display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:100%;overflow-wrap:anywhere}
 .inv38-compact .inv38-delivery-signer :is(span,strong,b){font-size:11px;color:#111;margin:0}
 
-/* Pickup order owner, alternate recipient and invoice metadata share the header row. */
+/* Pickup recipient invoice header: all seven labeled values stay on one horizontal line. */
 .inv38-compact.inv38-pickup-recipient .inv38-head{display:block!important;width:100%;margin:0;gap:0}
 .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta{display:grid;width:100%;grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,.95fr);gap:2px}
-.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta>div{display:flex;flex-direction:column;align-items:center;justify-content:center;grid-column:auto;min-width:0;padding:3px 2px;gap:1px;text-align:center}
-.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta span{font-size:8px;line-height:1.2;white-space:nowrap}
-.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta b{display:block;margin:0;max-width:100%;min-width:0;font-size:10px;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta>div{display:flex;flex-direction:row;align-items:center;justify-content:center;grid-column:auto;min-width:0;overflow:hidden;padding:3px 2px;gap:3px;text-align:center}
+.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta span{flex:0 0 auto;font-size:8px;line-height:1.2;white-space:nowrap}
+.inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta b{display:inline-block;flex:0 1 auto;margin:0;max-width:100%;min-width:0;font-size:10px;line-height:1.3;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media screen and (max-width:640px){
  .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta{grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,.95fr);gap:1px}
- .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta>div{padding:2px 1px}
+ .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta>div{padding:2px 1px;gap:1px}
  .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta span{font-size:7px}
  .inv38-compact.inv38-pickup-recipient .inv38-pickup-recipient-meta b{font-size:8px;line-height:1.2}
 }
