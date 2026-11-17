@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net');
 const executablePath=process.env.BT_CHROMIUM_PATH;
 
-test('مرورگر: نگهبان جزئیات سفارش تسویه‌شده را پیش از ثبت خروج باز می‌کند',{skip:!executablePath,timeout:90000},async()=>{
+test('مرورگر: نگهبان و انبار جزئیات سفارش تسویه‌شدهٔ سوابق مراجعه را باز می‌کنند',{skip:!executablePath,timeout:90000},async()=>{
  const {chromium}=require('playwright-core');
  const port=await new Promise(resolve=>{const server=net.createServer().listen(0,'127.0.0.1',()=>{const p=server.address().port;server.close(()=>resolve(p));});});
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bt-gate-history-')),base=`http://127.0.0.1:${port}`;
@@ -44,6 +44,22 @@ test('مرورگر: نگهبان جزئیات سفارش تسویه‌شده ر�
   assert(modal.includes(productName),modal);assert.match(modal,/۳٫۵|3\.5/,'the verified delivered weight is shown');
   assert.doesNotMatch(modal,/پرداخت|مبلغ|قیمت|امضا|اثر انگشت/);
   assert.deepEqual(errors,[]);
+
+  const warehousePage=await warehouse.newPage(),warehouseErrors=[];
+  warehousePage.on('pageerror',error=>warehouseErrors.push(error.message));
+  await warehousePage.goto(base+'/',{waitUntil:'networkidle'});
+  await warehousePage.locator('#railNav [data-cartable=history]').click();
+  const warehouseRow=warehousePage.locator(`[data-gate-visit=\"${visit.id}\"]`);await warehouseRow.waitFor();
+  const warehouseButton=warehouseRow.locator('[data-action=warehouse-visit-order-details]');
+  assert.equal(await warehouseButton.isEnabled(),true);
+  const warehouseDetailsCall=warehousePage.waitForResponse(response=>new URL(response.url()).pathname===`/api/warehouse/visit-order-details/${order.id}`);
+  await warehouseButton.click();
+  const warehouseDetailsResponse=await warehouseDetailsCall;assert.equal(warehouseDetailsResponse.status(),200);
+  await warehousePage.locator('#modal.open .sd-pad').waitFor();
+  const warehouseModal=await warehousePage.locator('#modal').innerText();
+  assert(warehouseModal.includes(productName),warehouseModal);assert.match(warehouseModal,/۳٫۵|3\.5/,'the verified delivered weight is shown');
+  assert.doesNotMatch(warehouseModal,/پرداخت|مبلغ|قیمت|امضا|اثر انگشت|09120000001/);
+  assert.deepEqual(warehouseErrors,[]);
   await admin.close();await gate.close();await sales.close();await warehouse.close();
  }finally{
   if(browser)await browser.close();
