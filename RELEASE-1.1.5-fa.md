@@ -11,7 +11,7 @@
 ## دریافت و نصب
 - [پوشهٔ دارایی‌های نسخهٔ 1.1.5 در Google Drive](https://drive.google.com/drive/folders/1Rr-c1ZD6RAd5IjV5ZBQHw8KjbJ-fq5Tw)
 - [انتشار GitHub نسخهٔ 1.1.5](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/tag/v1.1.5)
-- [دریافت مستقیم بستهٔ برنامه از GitHub](https://github.com/baboltoyoorbazargani-pixel/baboltoyoor/releases/download/v1.1.5/BabolToyor-App-1.1.5.zip)
+- [بستهٔ پایهٔ برنامه برای نصب‌کنندهٔ تک‌فایل (`BabolToyor-App-1.1.5-bootstrap.zip`)](https://drive.google.com/uc?export=download&id=1IPhxu7Xxe5tluElW-EVr2UfVHjYbmob2)
 - بستهٔ نصب پیشنهادی: `BabolToyor-Windows-Setup-1.1.5.zip`؛ ZIP را کامل استخراج کنید و فایل‌های داخل را کنار هم نگه دارید.
 - نصب‌کنندهٔ تک‌فایل: `BabolToyor-Setup-1.1.5.cmd`؛ برای دریافت برنامه و Node.js به اینترنت نیاز دارد.
 - بستهٔ مستقل برنامه: `BabolToyor-App-1.1.5.zip`.

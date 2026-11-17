@@ -65,6 +65,30 @@ def main() -> None:
     ).encode("ascii")
     make_zip(app, [(name, archive_manifest if name == "SHA256SUMS.txt" else source / name) for name in files])
 
+    # The standalone installer downloads this minimal application payload from
+    # Drive. It intentionally excludes the Windows installer source, whose
+    # AppZipUrl points back to this stable bootstrap file ID.
+    bootstrap_excluded = {"README.md", "CHANGELOG.md", f"RELEASE-{version}-fa.md"}
+    bootstrap_files = [
+        name for name in files
+        if name not in bootstrap_excluded
+        and not name.startswith(("docs/", "tests/", "windows-installer/"))
+    ]
+    if "SHA256SUMS.txt" not in bootstrap_files:
+        raise SystemExit("Bootstrap package must contain SHA256SUMS.txt")
+    bootstrap_manifest = "".join(
+        f"{hashlib.sha256((source / name).read_bytes()).hexdigest()}  ./{name}\n"
+        for name in bootstrap_files if name != "SHA256SUMS.txt"
+    ).encode("ascii")
+    bootstrap = output / f"BabolToyor-App-{version}-bootstrap.zip"
+    make_zip(
+        bootstrap,
+        [
+            (name, bootstrap_manifest if name == "SHA256SUMS.txt" else source / name)
+            for name in bootstrap_files
+        ],
+    )
+
     setup_cmd = output / f"BabolToyor-Setup-{version}.cmd"
     shutil.copyfile(source / "windows-installer" / "BabolToyor-Setup.cmd", setup_cmd)
 
@@ -87,7 +111,7 @@ def main() -> None:
     backup_doc = output / "reports-backup-update-fa.md"
     shutil.copyfile(source / "docs" / "reports-backup-update-fa.md", backup_doc)
 
-    publish_assets = [app, setup_cmd, windows_setup, domain_doc, release_note, backup_doc]
+    publish_assets = [app, bootstrap, setup_cmd, windows_setup, domain_doc, release_note, backup_doc]
     checksum_file = output / f"SHA256SUMS-{version}.txt"
     checksum_file.write_text(
         "".join(
