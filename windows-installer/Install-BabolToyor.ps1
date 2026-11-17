@@ -13,7 +13,7 @@ param(
   [string]$InstallDir = 'C:\BabolToyor',
   [int]$Port = 80,
   [string]$SourcePath = '',
-  [string]$AppZipUrl = 'https://drive.google.com/uc?export=download&id=1io1-32C36GWsCQUfAMLJIQiHlhLABfj3',
+  [string]$AppZipUrl = 'https://drive.google.com/uc?export=download&id=1n5og7OGRPWVBsXezmfru-uFN98u7yDSi',
   [string]$NodeMsiUrl = '',
   [string]$InstallerDir = '',
   [ValidateSet('SYSTEM','LOCAL SERVICE')]
@@ -612,7 +612,7 @@ function Write-InfoFile {
 function Invoke-Install {
   Write-Host ''
   Write-Host '========================================================' -ForegroundColor Cyan
-  Write-Host '  Babol Toyor 1.1.4 - Windows Server 2025 one-click setup' -ForegroundColor Cyan
+  Write-Host '  Babol Toyor 1.1.5 - Windows Server 2025 one-click setup' -ForegroundColor Cyan
   Write-Host ("  Install dir : " + $InstallDir) -ForegroundColor Cyan
   Write-Host ("  Web address : " + (Get-AppUrl) + "  (port $Port)") -ForegroundColor Cyan
   Write-Host '========================================================' -ForegroundColor Cyan
