@@ -63,6 +63,6 @@ test('compact horizontal layout and 3D plate styles are in place',()=>{
 test('updated assets are cache-busted for the current bundle',()=>{
   assert.match(html,/theme\.css\?v=37\.48\.0/);
   assert.match(html,/app\.js\?v=37\.49\.3/);
-  assert.match(html,/ui2\.js\?v=37\.49\.3/);
+  assert.match(html,/ui2\.js\?v=37\.49\.4/);
   assert.match(html,/dispatch-ui\.js\?v=37\.47\.0/);
 });
