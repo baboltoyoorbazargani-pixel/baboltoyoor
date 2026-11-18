@@ -39,7 +39,7 @@ test('مرورگر: نگهبان و انبار جزئیات سفارش تسوی�
   await page.locator('#railNav [data-cartable=history]').click();
   const row=page.locator(`[data-gate-visit="${visit.id}"]`);await row.waitFor();
   const button=row.locator('[data-action=gate-order-history]');assert.equal(await button.isEnabled(),true);
-  await button.click();await page.locator('#modal.open .sd-pad').waitFor();
+  await button.click();await page.locator('#modal.open .whh-order-detail').waitFor();
   const modal=await page.locator('#modal').innerText();
   assert(modal.includes(productName),modal);assert.match(modal,/۳٫۵|3\.5/,'the verified delivered weight is shown');
   assert.doesNotMatch(modal,/پرداخت|مبلغ|قیمت|امضا|اثر انگشت/);
@@ -55,7 +55,7 @@ test('مرورگر: نگهبان و انبار جزئیات سفارش تسوی�
   const warehouseDetailsCall=warehousePage.waitForResponse(response=>new URL(response.url()).pathname===`/api/warehouse/visit-order-details/${order.id}`);
   await warehouseButton.click();
   const warehouseDetailsResponse=await warehouseDetailsCall;assert.equal(warehouseDetailsResponse.status(),200);
-  await warehousePage.locator('#modal.open .sd-pad').waitFor();
+  await warehousePage.locator('#modal.open .whh-order-detail').waitFor();
   const warehouseModal=await warehousePage.locator('#modal').innerText();
   assert(warehouseModal.includes(productName),warehouseModal);assert.match(warehouseModal,/۳٫۵|3\.5/,'the verified delivered weight is shown');
   assert.doesNotMatch(warehouseModal,/پرداخت|مبلغ|قیمت|امضا|اثر انگشت|09120000001/);
