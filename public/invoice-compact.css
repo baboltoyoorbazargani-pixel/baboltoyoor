@@ -127,33 +127,38 @@ body.invoice-print{margin:0;padding:8px;background:#fff}
 @media screen and (max-width:640px){.inv38-settlement .inv38-settlement-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.inv38-settlement .inv38-settlement-meta>div:last-child{grid-column:1/-1}}
 @media print{.inv38-settlement .inv38-settlement-meta{grid-template-columns:minmax(100px,1.3fr) minmax(100px,1fr) minmax(55px,.5fr) minmax(55px,.5fr) minmax(145px,1.4fr)}}
 
-/* Compact distribution invoice: six required identity fields, no legacy logo block. */
+/* Distribution invoices omit the printed title and keep customer contacts paired. */
 .inv38-compact.inv38-distribution .inv38-head{display:block;width:100%}
-.inv38-compact.inv38-distribution .inv38-distribution-title{margin:0 0 4px;text-align:center;font-size:12px;line-height:1.4;font-weight:900;color:#1d222a}
-.inv38-compact.inv38-distribution .inv38-distribution-meta{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.3fr) repeat(3,minmax(0,.9fr));width:100%;gap:3px}
+.inv38-compact.inv38-distribution .inv38-distribution-meta{display:grid;grid-template-columns:minmax(0,2.25fr) minmax(0,1.3fr) repeat(3,minmax(0,.9fr));width:100%;gap:3px}
 .inv38-compact.inv38-distribution .inv38-distribution-meta>div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:3px 2px;gap:2px;text-align:center;border:0;border-bottom:1px solid #e3e6ea;border-radius:0;background:transparent}
+.inv38-compact.inv38-distribution .inv38-distribution-meta>.inv38-distribution-contacts{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:3px;padding:0;border:0;border-radius:0;background:transparent}
+.inv38-compact.inv38-distribution .inv38-distribution-contacts>div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:3px 2px;gap:2px;text-align:center;border:0;border-bottom:1px solid #e3e6ea;border-radius:0;background:transparent}
 .inv38-compact.inv38-distribution .inv38-distribution-meta span{font-size:9px;white-space:nowrap}
 .inv38-compact.inv38-distribution .inv38-distribution-meta b{font-size:10px;line-height:1.4;margin:0;min-width:0;max-width:100%;overflow-wrap:anywhere}
-.inv38-compact .inv38-delivery-signature{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.32fr);align-items:end;gap:10px;min-height:0;padding:7px 10px;break-inside:avoid}
-.inv38-compact .inv38-delivery-declaration{grid-column:1;margin:0;text-align:right;line-height:1.8;font-size:11px;color:#111}
-.inv38-compact .inv38-delivery-signer{grid-column:2;margin:0;padding:0;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;max-width:100%;text-align:center;overflow-wrap:anywhere}
+/* Give the delivery declaration the complete RTL width of the signature box. */
+.inv38-compact .inv38-delivery-signature{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:10px;min-height:0;padding:7px 10px;break-inside:avoid}
+.inv38-compact .inv38-delivery-declaration{grid-column:1/-1;width:100%;margin:0;direction:rtl;text-align:right;line-height:1.8;font-size:11px;color:#111}
+.inv38-compact .inv38-delivery-signer{grid-column:1;margin:0;padding:0;align-self:stretch;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;max-width:100%;text-align:center;overflow-wrap:anywhere}
 .inv38-compact .inv38-delivery-signature-line{display:block;width:100%;max-width:150px;height:18px;border-bottom:1px solid #555}
 .inv38-compact .inv38-delivery-signer :is(span,strong,small){font-size:9px;line-height:1.35;color:#111;margin:0}
 .inv38-compact .inv38-delivery-signer strong{font-size:10px;font-weight:800}
- .inv38-compact .inv38-delivery-signer small{font-size:8px;color:#555}
+.inv38-compact .inv38-delivery-signer small{font-size:8px;color:#555}
+/* The signature track grows while settlement and totals give up a little width. */
+.inv38-compact.inv38-distribution .inv38-with-payments{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)}
 @media screen and (max-width:640px){
  .inv38-compact.inv38-distribution .inv38-distribution-meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
- .inv38-compact.inv38-distribution .inv38-distribution-title{text-align:right}
+ .inv38-compact.inv38-distribution .inv38-distribution-meta>.inv38-distribution-contacts{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .inv38-compact.inv38-distribution .inv38-with-payments{grid-template-columns:minmax(0,1fr)}
  .inv38-compact .inv38-delivery-signature{grid-template-columns:minmax(0,1fr);gap:6px}
  .inv38-compact .inv38-delivery-declaration{grid-column:1}
  .inv38-compact .inv38-delivery-signer{grid-column:1;justify-self:end;width:min(100%,180px)}
 }
 @media print{
- .inv38-compact.inv38-distribution .inv38-distribution-meta{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.3fr) repeat(3,minmax(0,.9fr));gap:3px}
- .inv38-compact.inv38-distribution .inv38-distribution-title{text-align:center}
- .inv38-compact .inv38-delivery-signature{grid-template-columns:minmax(0,1fr) minmax(120px,.32fr);min-height:0}
+ .inv38-compact.inv38-distribution .inv38-distribution-meta{grid-template-columns:minmax(0,2.25fr) minmax(0,1.3fr) repeat(3,minmax(0,.9fr));gap:3px}
+ .inv38-compact.inv38-distribution .inv38-with-payments{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)}
+ .inv38-compact .inv38-delivery-signature{grid-template-columns:minmax(0,1fr);min-height:0}
  .inv38-compact .inv38-delivery-declaration{grid-column:1}
- .inv38-compact .inv38-delivery-signer{grid-column:2;justify-self:auto;width:auto}
+ .inv38-compact .inv38-delivery-signer{grid-column:1;justify-self:auto;width:auto}
 }
 
 /* Pickup recipient invoice header: all seven labeled values stay on one horizontal line. */
