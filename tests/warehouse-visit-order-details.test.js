@@ -17,7 +17,9 @@ function registerWarehouseVisitDetailsRoute({orders,visits}){
   findOrder:id=>{const order=orders.find(row=>row.id===id);if(!order)context.fail(404,'سفارش یافت نشد.');return order;},
   enrichOrder:order=>order,
   isGateExitAvailable,
+  normalizeRole:role=>String(role||'').toLowerCase(),
   require:name=>{
+   if(name==='../warehouse-order-dossier')return require('../lib/warehouse-order-dossier');
    if(name==='../gate-order-view')return gateOrderView;
    if(name==='../dispatch')return{publicOrder:order=>order};
    throw Error('Unexpected require: '+name);
@@ -36,26 +38,35 @@ const linkedOrder=()=>({
  payment:{totalAmount:8750,invoiceNumber:'INV-SECRET'},signatureData:'SECRET-SIGNATURE',
 });
 
-test('warehouse visit-order details is scoped to linked, gate-ready visits and exposes no financial or contact fields',()=>{
+test('warehouse visit-order details is scoped to linked, gate-ready visits and exposes no financial fields',()=>{
  const order=linkedOrder();
  const route=registerWarehouseVisitDetailsRoute({orders:[order],visits:[{id:'visit-1'}]});
  assert.equal(route.method,'GET');
  assert.equal(route.path,'/api/warehouse/visit-order-details/:id');
  assert.deepEqual([...route.options.roles],['warehouse','admin']);
- const raw=route.handler({params:{id:order.id}});
+ const raw=route.handler({params:{id:order.id},user:{roleCode:'warehouse'}});
  const result=JSON.parse(JSON.stringify(raw.body));
- assert.deepEqual(result.order,{id:'order-1',orderNo:'001234',orderType:'REGULAR',storeName:null,customer:{name:'مشتری آزمایشی'}});
+ // v37.50.0 — پروندهٔ کامل سفارش (نوع، مشتری، اقلام، مراحل) به‌جای پاسخ حداقلی؛
+ // دادهٔ مالی، پرداخت، فاکتور و امضا همچنان بیرون می‌ماند.
+ assert.equal(result.order.id,'order-1');
+ assert.equal(result.order.orderNo,'001234');
+ assert.equal(result.order.orderType,'REGULAR');
+ assert.equal(result.order.customer.name,'مشتری آزمایشی');
  assert.deepEqual(result.records,[{serviceRun:null,items:[{id:'item-1',itemStatus:'DELIVERED',product:{name:'مرغ'},deliveredKg:3.5}]}]);
- assert.doesNotMatch(JSON.stringify(result),/09120000001|12ب34567|payment|invoice|8750|2500|signature|SECRET/);
+ for(const key of ['order','customer','visit','stages','items','events'])assert.ok(key in result,key);
+ assert.doesNotMatch(JSON.stringify(result),/payment|invoice|8750|2500|signature|SECRET/);
 });
 
 test('warehouse visit-order details rejects unrelated visits and orders not ready for gate verification',()=>{
  const order=linkedOrder();
  const missingVisit=registerWarehouseVisitDetailsRoute({orders:[order],visits:[]});
- assert.throws(()=>missingVisit.handler({params:{id:order.id}}),{status:404});
+ assert.throws(()=>missingVisit.handler({params:{id:order.id},user:{roleCode:'warehouse'}}),{status:404});
  const pendingOrder={...order,status:'WAREHOUSE_PREPARING'};
  const pending=registerWarehouseVisitDetailsRoute({orders:[pendingOrder],visits:[{id:'visit-1'}]});
- assert.throws(()=>pending.handler({params:{id:order.id}}),{status:409});
+ assert.throws(()=>pending.handler({params:{id:order.id},user:{roleCode:'warehouse'}}),{status:409});
+ // مدیر برای هر سفارشی، حتی بدون مراجعه و پیش از تسویه/خروج، پروندهٔ کامل را می‌گیرد.
+ assert.equal(missingVisit.handler({params:{id:order.id},user:{roleCode:'admin'}}).status,200);
+ assert.equal(pending.handler({params:{id:order.id},user:{roleCode:'admin'}}).status,200);
 });
 
 test('warehouse visit-order details preserves per-service weights from departed store trips',()=>{
@@ -64,7 +75,7 @@ test('warehouse visit-order details preserves per-service weights from departed 
   '2':{run:2,departedAt:'',lines:[{itemId:'item-1',productName:'مرغ',deliveredKg:1.25}]},
  }};
  const route=registerWarehouseVisitDetailsRoute({orders:[order],visits:[{id:'visit-1'}]});
- const result=JSON.parse(JSON.stringify(route.handler({params:{id:order.id}}).body));
+ const result=JSON.parse(JSON.stringify(route.handler({params:{id:order.id},user:{roleCode:'warehouse'}}).body));
  assert.deepEqual(result.records,[{serviceRun:1,items:[{id:'item-1',itemStatus:'DELIVERED',product:{name:'مرغ'},deliveredKg:2.25}]}]);
  assert.doesNotMatch(JSON.stringify(result),/unitPrice|999/);
 });

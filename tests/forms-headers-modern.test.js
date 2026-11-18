@@ -73,6 +73,6 @@ test('buttons, item rows and sticky action bars are modernized',()=>{
 
 test('updated assets are cache-busted for the current bundle',()=>{
   assert.match(html,/theme\.css\?v=37\.48\.0/);
-  assert.match(html,/compatibility\.css\?v=37\.49\.2/);
-  assert.match(html,/app\.js\?v=37\.49\.3/);
+  assert.match(html,/compatibility\.css\?v=37\.50\.0/);
+  assert.match(html,/app\.js\?v=37\.50\.0/);
 });
