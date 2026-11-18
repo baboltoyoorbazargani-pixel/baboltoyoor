@@ -1073,6 +1073,23 @@
 /* در صف ترابری، استایل قدیمی dsp-card جهت را ستونی می‌کرد. */
 #appView #content #transportPlans .order-compact-row{flex-direction:row!important}
 #appView #content #transportPlans .tp-plan-list{overflow-x:auto;max-width:100%;min-width:0}
+/* v37.50.0 — ردیف‌های «آخرین فعالیت‌ها» در داشبورد مدیر دکمه‌اند و پروندهٔ کامل را باز می‌کنند */
+#appView .v26-activity-row{width:100%;background:none;border:0;border-bottom:1px solid #f0f1f3;border-radius:0;font:inherit;color:inherit;text-align:right;cursor:pointer;padding:12px 2px}
+#appView .v26-activity-row:last-child{border-bottom:0}
+#appView .v26-activity-row:hover,#appView .v26-activity-row:focus-visible{background:#fafbfc}
+#appView .v26-activity-row:focus-visible{outline:2px solid var(--bt-brand-200);outline-offset:-2px}
+#appView .v26-activity-row div small .badge{margin-inline-start:2px}
+/* کارتابل مدیر: ردیف‌های سوابق سفارش */
+#appView .adm-orders-list .adm-order-row{grid-template-columns:1fr 1.5fr 1.2fr 1.3fr .9fr auto;gap:10px;align-items:center;min-width:900px}
+#appView .sales-history-pages{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}
+@media(max-width:900px){#appView .adm-orders-list{overflow-x:auto}}
+/* v37.50.0 — سربرگ‌های «ورودی / تخصیص‌یافته» در صفحهٔ سفارشات ترابری */
+#appView #content #transportPlans .tp-plan-tabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:12px 0!important;overflow:visible!important}
+#appView #content #transportPlans .tp-plan-tabs .sd-tab{min-width:0!important;justify-content:space-between!important;gap:8px;text-align:right!important}
+#appView #content #transportPlans .tp-plan-tabs .sd-tab-copy strong{white-space:normal!important}
+#appView #content #transportPlans .tp-plan-tabs .sd-tab-copy small{white-space:normal!important;line-height:1.5}
+#appView #content #transportPlans .tp-plan-tabs .sd-tab-count{min-width:24px!important;display:inline-grid!important}
+@media(max-width:700px){#appView #content #transportPlans .tp-plan-tabs{grid-template-columns:minmax(0,1fr)}#appView #content #transportPlans .tp-plan-tabs .sd-tab-copy small{display:none!important}}
 
 /* جزئیات ترابری: مشخصات کنار هم، با شکست کنترل‌شده و بدون بریدن متن. */
 #modal .tp-detail{display:grid;gap:16px;min-width:0;max-width:100%}

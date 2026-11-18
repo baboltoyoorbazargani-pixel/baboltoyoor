@@ -118,15 +118,22 @@ test('چرخهٔ زنده: فاکتور تسویه‌شده در کنترل خر
   // انبار فقط از مسیر محدود سوابق مراجعه جزئیات بار را می‌خواند؛ مسیر عمومی سفارش تسویه‌شده همچنان بسته است.
   const warehouseDetails = await call('GET', `/api/warehouse/visit-order-details/${orderId}`, { cookie: wh });
   assert.equal(warehouseDetails.status, 200);
-  assert.deepEqual(warehouseDetails.json.order, {
-    id: orderId, orderNo: gateDetails.json.order.orderNo, orderType: gateDetails.json.order.orderType,
-    storeName: null, customer: { name: 'مشتری خروج' },
-  });
+  // v37.50.0 — کارتابل انبار پروندهٔ کامل سفارش را می‌گیرد: مشخصات سفارش، اطلاعات کامل
+  // مشتری و مراحل/رویدادها با نام کاربر هر مرحله (بدون هیچ دادهٔ مالی یا امضا).
+  assert.equal(warehouseDetails.json.order.id, orderId);
+  assert.equal(warehouseDetails.json.order.orderNo, gateDetails.json.order.orderNo);
+  assert.equal(warehouseDetails.json.order.orderType, gateDetails.json.order.orderType);
+  assert.equal(warehouseDetails.json.order.customer.name, 'مشتری خروج');
+  assert.equal(warehouseDetails.json.order.customer.phone, '09120000001', 'شمارهٔ تماس مشتری برای هماهنگی انبار لازم است');
+  assert.equal(warehouseDetails.json.customer.phone, '09120000001');
+  assert.ok(warehouseDetails.json.items.some((x) => x.id === itemId), 'اقلام سفارش باید در پروندهٔ انبار باشد');
+  assert.ok(warehouseDetails.json.stages.some((x) => x.key === 'warehouseCompleted' && x.user), 'ثبت‌کنندهٔ هر مرحله باید مشخص باشد');
+  assert.ok(warehouseDetails.json.events.length > 0 && warehouseDetails.json.events.every((x) => x.label), 'رویدادها با برچسب فارسی');
   const gateItem = gateDetails.json.order.items.find(x => x.id === itemId);
   assert.deepEqual(warehouseDetails.json.records[0].items.map(x => ({ id: x.id, itemStatus: x.itemStatus, name: x.product.name, deliveredKg: x.deliveredKg })), [
     { id: itemId, itemStatus: 'DELIVERED', name: gateItem.product.name, deliveredKg: 10 },
   ]);
-  assert.doesNotMatch(JSON.stringify(warehouseDetails.json), /payment|payments|amount|price|signature|fingerprint|09120000001/i);
+  assert.doesNotMatch(JSON.stringify(warehouseDetails.json), /payment|payments|amount|price|signature|fingerprint/i);
   assert.equal((await call('GET', `/api/orders/${orderId}`, { cookie: wh })).status, 403, 'مسیر عمومی جزئیات برای انبار باز نمی‌شود');
 
   const exit = await call('POST', `/api/orders/${orderId}/exit`, { cookie: gate, body: { checkedItems: [itemId] } });

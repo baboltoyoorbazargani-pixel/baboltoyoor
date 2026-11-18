@@ -23,7 +23,7 @@ test('driver cartable has four ordered state tabs and store customer name box be
  assert.match(paint,/data-dsp-driver-tab/);
  assert.match(driver,/dsp-store-customer-box/);
  assert.match(driver,/نام مشتری/);
- assert.match(read('public/index.html'),/dispatch-ui\.js\?v=37\.47\.0/);
+ assert.match(read('public/index.html'),/dispatch-ui\.js\?v=37\.50\.0/);
  assert.match(driver,/function dspCustomer\(o\).*o\.orderType==='STORE'.*o\.storeName/);
 });
 test('transport history detail expansion stays inside the order card and scrolls long item tables',()=>{

@@ -222,7 +222,9 @@ function whDeliveredDocument(o,print=false){
   ];
   const remoteWeight=group=>group.fields.reduce((sum,[label,,value])=>sum+String(label).length+String(value||'—').length+3,0);
   const remoteHeaderChars=remoteGroups.reduce((sum,group)=>sum+remoteWeight(group),0);
-  const remoteFontSize=Math.max(5,Math.min(8,8-Math.max(0,remoteHeaderChars-145)*0.015));
+  // سربرگ سند انبار: اندازهٔ متن با فضای کادر تراز می‌شود؛ کف و سقف بزرگ‌تر شد تا
+  // برچسب‌ها در کادرهای کوتاه ریز و ناخوانا نمانند (قبلاً حداکثر ۸px بود).
+  const remoteFontSize=Math.max(7.5,Math.min(9.5,9.5-Math.max(0,remoteHeaderChars-150)*0.014));
   const remoteStyle=`--whd-remote-font:${remoteFontSize.toFixed(1)}px;--whd-remote-columns:${remoteGroups.map(group=>`minmax(0,${remoteWeight(group)}fr)`).join(' ')};`;
   const compactPair=([label,value,,dir])=>`<span class="whd-remote-pair"><span class="whd-remote-label">${label}:</span><b${dir?' dir="ltr"':''} title="${value}">${value}</b></span>`;
   const remoteHeader=`<div class="whd-head whd-remote-head"><div class="whd-remote-meta" style="${remoteStyle}" aria-label="اطلاعات سفارش و تحویل">
@@ -257,7 +259,7 @@ async function whTransportHandover(button,id,run,token){
 }
 function whPrintDocument(doc,run){
   const body=run?whStoreDocument(doc,true):whDeliveredDocument(doc,true);
-  const started=BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css?v=37.49.1"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${body}<script src="/print-ready.js"><\/script></body></html>`));
+  const started=BTPrintFrame.html(BTPrintDigits.documentHtml(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/fonts.css"><link rel="stylesheet" href="/warehouse-document.css?v=37.50.0"><title>سند انبار ${esc(fa(doc.warehouseDocumentNo||'—'))}</title><style>body{margin:0;padding:0;font-family:"Vazirmatn",Tahoma,sans-serif}@page{size:A4;margin:12mm}</style></head><body>${body}<script src="/print-ready.js"><\/script></body></html>`));
   if(!started)throw new Error('چاپ قبلی هنوز در حال آماده‌سازی است؛ سند را از جزئیات دوباره چاپ کنید.');
 }
 async function whDeliveredPrint(id){

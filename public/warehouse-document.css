@@ -2,12 +2,12 @@
 .whd-doc{color:#1d222a;font-family:'Vazirmatn',Tahoma,sans-serif;box-sizing:border-box;direction:rtl;line-height:1.4}
 .whd-doc *{box-sizing:border-box}
 .whd-head{display:flex;direction:rtl;align-items:stretch;gap:5px;min-height:50px;margin-bottom:4px;break-inside:avoid}
-.whd-document-number{flex:0 0 130px;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;border:1px solid #e3e6ea;border-radius:6px;padding:3px 4px;text-align:center;font-size:9px;font-weight:700}
-.whd-document-number span{white-space:nowrap;flex-shrink:0}.whd-document-number b{font-size:13px;line-height:1.35;white-space:nowrap;unicode-bidi:isolate}
-.whd-meta{display:grid;flex:1;min-width:0;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:5px;font-size:9px}
-.whd-meta>span{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;padding:3px 4px;border:1px solid #e3e6ea;border-radius:6px;overflow-wrap:anywhere}
+.whd-document-number{flex:0 0 148px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;border:1px solid #e3e6ea;border-radius:6px;padding:5px 7px;text-align:center;font-size:11.5px;font-weight:700}
+.whd-document-number span{white-space:nowrap;flex-shrink:0}.whd-document-number b{font-size:15px;line-height:1.35;white-space:nowrap;unicode-bidi:isolate}
+.whd-meta{display:grid;flex:1;min-width:0;grid-template-columns:1.25fr 1.2fr 1.05fr 1.5fr;gap:5px;font-size:11px}
+.whd-meta>span{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 4px;min-width:0;padding:5px 6px;border:1px solid #e3e6ea;border-radius:6px;overflow-wrap:anywhere;text-align:center}
 .whd-meta .whd-label{flex:0 0 auto;white-space:nowrap}
-.whd-meta>span b{font-size:10px;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.whd-meta>span b{font-size:12px;font-weight:700;min-width:0;overflow-wrap:anywhere}
 .whd-meta>span b[dir=ltr]{white-space:nowrap;overflow-wrap:normal;unicode-bidi:isolate}
 .whd-store-meta{grid-template-columns:1.3fr 1.3fr 1.1fr 1.5fr .7fr}
 .whd-store-meta>span{flex-wrap:wrap}
@@ -57,9 +57,9 @@
    the interactive tare details retain their existing layout. */
 @media print{
  .whd-store-print .whd-head{gap:3px;margin-bottom:3px}
- .whd-store-print .whd-document-number{padding:2px 3px}
+ .whd-store-print .whd-document-number{padding:3px 4px}
  .whd-store-print .whd-meta{gap:3px}
- .whd-store-print .whd-meta>span{padding:2px 3px}
+ .whd-store-print .whd-meta>span{padding:3px 5px}
  .whd-store-print .whd-products th{padding:2px 4px;line-height:1.2}
  .whd-store-print .whd-products td{padding:2px 4px;line-height:1.2}
  .whd-store-print .whd-total{margin-top:4px;padding:3px 8px;font-size:10px}
@@ -75,12 +75,12 @@
 .whd-store-doc .whd-head{flex-wrap:wrap;align-items:stretch;gap:3px}
 .whd-store-doc .whd-document-number{flex:1 0 auto;max-width:100%;padding:2px 4px}
 .whd-store-doc .whd-store-meta{display:contents}
-.whd-store-doc .whd-store-meta>span{flex:1 0 max-content;max-width:100%;flex-wrap:nowrap;justify-content:center;gap:3px;padding:2px 4px}
+.whd-store-doc .whd-store-meta>span{flex:1 0 max-content;max-width:100%;flex-wrap:nowrap;justify-content:center;gap:4px;padding:4px 6px}
 .whd-store-doc .whd-store-meta>span b{white-space:normal;overflow-wrap:anywhere}
 .whd-store-doc .whd-total{margin-left:0;margin-right:auto}
 @media print{
  .whd-store-print .whd-head{margin-bottom:3px}
- .whd-store-print .whd-document-number,.whd-store-print .whd-store-meta>span{padding:1px 3px}
+ .whd-store-print .whd-document-number,.whd-store-print .whd-store-meta>span{padding:3px 4px}
 }
 
 /* Net total is the physical-left weight cell of the RTL product table. */
@@ -89,28 +89,32 @@
 .whd-products tfoot .whd-total{margin:0!important;width:auto;max-width:none;padding:0!important;border:0;background:none;justify-content:center}
 /* Six ordered header cells share a single print row; long values wrap inside it. */
 .whd-store-print .whd-head{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.3fr);align-items:stretch}
-.whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:3px 5px;overflow-wrap:anywhere}
-.whd-store-print .whd-store-meta>span b{font-size:9px}
+.whd-store-print .whd-store-meta>span{min-width:0;max-width:100%;flex-wrap:wrap;padding:4px 6px;overflow-wrap:anywhere}
+.whd-store-print .whd-store-meta>span b{font-size:11.5px}
+/* متن بزرگ‌تر نباید از کادر بیرون بزند: برچسب و شمارهٔ سند در چاپ می‌توانند به خط دوم بروند. */
+.whd-store-print .whd-document-number{flex-wrap:wrap}
+.whd-store-print .whd-document-number span{white-space:normal;flex-shrink:1;text-align:center;line-height:1.25}
+.whd-store-print .whd-meta>span .whd-label{white-space:normal}
 
 /* Remote-order documents: keep the requested field order on one row with a
    50px header height for clearer separation. */
 .whd-remote-head{display:flex!important;align-items:center;min-height:50px;direction:rtl;margin:0 0 4px;padding:4px;background:#f4f7fb;border:1px solid #cbd5e1;border-radius:5px}
-.whd-remote-meta{display:grid;flex:1 1 auto;grid-template-columns:var(--whd-remote-columns,repeat(5,minmax(0,1fr)));align-items:center;gap:2px;min-width:0;min-height:40px;font-size:var(--whd-remote-font,8px);line-height:1.05}
-.whd-remote-group{min-width:0;min-height:40px;display:flex;align-items:center;justify-content:center;gap:3px;padding:3px 3px;border:1px solid #dfe4e9;border-radius:3px;background:#fbfcfd;white-space:nowrap}
+.whd-remote-meta{display:grid;flex:1 1 auto;grid-template-columns:var(--whd-remote-columns,repeat(5,minmax(0,1fr)));align-items:center;gap:2px;min-width:0;min-height:40px;font-size:var(--whd-remote-font,10px);line-height:1.15}
+.whd-remote-group{min-width:0;min-height:40px;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px;border:1px solid #dfe4e9;border-radius:3px;background:#fbfcfd;white-space:nowrap}
 .whd-remote-pair{min-width:0;display:inline-flex;align-items:baseline;gap:1px;white-space:nowrap}
 .whd-remote-label{flex:none;color:#475569;font-size:.9em;font-weight:600;white-space:nowrap}
 .whd-remote-pair>b{flex:0 0 auto;min-width:0;color:#0f172a;font-size:1em;line-height:1.05;font-weight:800;white-space:nowrap}
 .whd-remote-pair>b[dir=ltr]{direction:ltr;unicode-bidi:isolate}
 @media screen and (max-width:700px){
  .whd-remote-head{padding:1px}
- .whd-remote-meta{gap:1px;font-size:min(var(--whd-remote-font,8px),4.4px)}
+ .whd-remote-meta{gap:1px;font-size:min(var(--whd-remote-font,10px),5.2px)}
  .whd-remote-group{gap:1px;padding:1px}
  .whd-remote-pair{gap:1px}
 }
-@media screen and (max-width:340px){.whd-remote-meta{font-size:min(var(--whd-remote-font,8px),3.7px)}}
+@media screen and (max-width:340px){.whd-remote-meta{font-size:min(var(--whd-remote-font,10px),4.4px)}}
 @media print{
  .whd-remote-head{margin-bottom:3px;padding:1px 2px}
  .whd-remote-meta{gap:1px 2px;line-height:1}
- .whd-remote-group{gap:2px;padding:1px 2px;background:#fff}
+ .whd-remote-group{gap:2px;padding:2px 3px;background:#fff}
  .whd-remote-pair{gap:1px}
 }

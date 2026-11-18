@@ -9,7 +9,7 @@ const DSP_STATUS_CLASS = { PENDING_ASSIGN: 'orange', ASSIGNED: 'orange', DRIVER_
 const DSP_RET_STATUS = { AT_SALES: 'نزد واحد فروش', AT_WAREHOUSE: 'ارجاع به انبار', RECEIVED: 'دریافت‌شده توسط انبار' };
 const DSP_SETTLE = { CASH: 'نقدی', CREDIT: 'معوق' };
 const DSP_LIVE_MS = 4000;
-const dsp = { tab: 'pending', driverTab:'assigned', retTab: '', orders: [], counts: {}, drivers: [], open: [], driverData:null, sig: null, sigs: {} };
+const dsp = { tab: 'pending', driverTab:'assigned', retTab: '', planTab: 'incoming', orders: [], counts: {}, drivers: [], open: [], driverData:null, sig: null, sigs: {} };
 
 /* fallback plateViewHtml for standalone dispatch — will be overridden by app.js if loaded */
 if(typeof plateViewHtml === 'undefined'){
@@ -582,12 +582,32 @@ function paintReturns(data) {
 }
 
 /* Transport planning; old open dispatches remain separately traceable. */
-function transportPlanRows(orders){
- return orders.flatMap(o=>(o.services||[]).map(s=>{
-  const a=s.assignment,service=o.storeOrderKind==='PARTIAL'?'سفارش جزئی':s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
-  const state=s.tripStatus==='CLOSED'?'مدارک بازگشته':s.tripStatus==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':s.departed?'در مسیر':s.awaitingGate?'منتظر تأیید خروج نگهبانی':s.canDepart?'آماده ثبت خروج':s.handedOver&&s.run?(s.salesReviewed?'منتظر خروج نگهبانی':'منتظر بررسی فروش'):s.handedOver?'در انتظار فاکتور':'در انتظار تحویل انبار';
-  return orderSummaryRow(o,{className:'dsp-card order-compact-row',name:o.customerName||'—',statusHtml:`<span class="badge blue">${esc(state)}</span>`,itemCount:(o.items||[]).length,extras:[{html:esc(service)},{html:`راننده: ${esc(a?.driverName||'تعیین نشده')}`},{html:`خودرو: ${esc(a?.vehicleType||'—')} ${esc(fa(a?.vehiclePlate||''))}`}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات سفارش</button>`});
- })).join('');
+/* v37.50.0 — سربرگ «سفارشات» ترابری به دو بخش مستقل تقسیم شد:
+   «ورودی» = سرویسی که هنوز راننده/خودرو برایش تخصیص نیافته،
+   «تخصیص‌یافته» = سرویسی که راننده و خودروی آن مشخص شده است.
+   داده، شمارش و اقدام‌ها بدون تغییر مانده‌اند؛ فقط گروه‌بندی قابل تشخیص شد. */
+function transportPlanRows(orders,tab){
+ const views=transportPlanViews(orders).filter(view=>tab?view.assigned===(tab==='assigned'):true);
+ return views.map(({order:o,service:s,assigned})=>{
+  const a=s.assignment,label=o.storeOrderKind==='PARTIAL'?'سفارش جزئی':s.run?`سرویس ${s.run===1?'اول':'دوم'}`:'سفارش مشتری';
+  const driver=a?`راننده: ${a.driverName||'—'}`:'راننده: تعیین نشده';
+  const vehicle=a?`خودرو: ${a.vehicleType||'—'} ${fa(a.vehiclePlate||'')}`:'منتظر انتخاب راننده و خودرو';
+  return orderSummaryRow(o,{className:'dsp-card order-compact-row',name:o.customerName||'—',statusHtml:`<span class="badge ${assigned?'blue':'orange'}">${esc(transportPlanStateLabel(s))}</span>`,itemCount:(o.items||[]).length,extras:[{html:esc(label)},{html:esc(driver)},{html:esc(vehicle)}],actionsHtml:`<button type="button" class="btn btn-secondary btn-sm" data-tp="details" data-id="${esc(o.id)}" data-run="${s.run}">جزئیات سفارش</button>`});
+ }).join('');
+}
+
+/* کمک‌تابع‌های تفکیک «ورودی/تخصیص‌یافته» عمداً بعد از transportPlanRows تعریف شده‌اند؛
+   به این ترتیب تست واحد می‌تواند از همین نقطه تا انتهای فایل را ایزوله اجرا کند. */
+function transportPlanStateLabel(service){
+ const a=service.assignment;
+ return service.tripStatus==='CLOSED'?'مدارک بازگشته':service.tripStatus==='RECEIPT_CONFIRMED'?'دریافت فروشگاه تأیید شد':service.departed?'در مسیر':service.awaitingGate?'منتظر تأیید خروج نگهبانی':service.canDepart?'آماده ثبت خروج':service.handedOver&&service.run?(service.salesReviewed?'منتظر خروج نگهبانی':'منتظر بررسی فروش'):service.handedOver?'در انتظار فاکتور':transportPlanServiceAssigned(service)?'تخصیص‌یافته — منتظر تحویل انبار':'در انتظار تخصیص راننده';
+}
+function transportPlanServiceAssigned(service){
+ const a=service&&service.assignment;
+ return !!(a&&(a.driverId||a.driverName));
+}
+function transportPlanViews(orders){
+ return (Array.isArray(orders)?orders:[]).flatMap(o=>(o.services||[]).map(s=>({order:o,service:s,assigned:transportPlanServiceAssigned(s)})));
 }
 
 async function renderTransportPlanQueue(){
@@ -596,8 +616,21 @@ async function renderTransportPlanQueue(){
   const capability=await api('/api/transport/capabilities');if($('#transportPlans')!==host||!capability.experimentalWorkflow)return;
   const [data,resources]=await Promise.all([api('/api/transport/plans'),api('/api/transport/resources')]);if($('#transportPlans')!==host)return;
   const orders=data.orders||[];
-  host.innerHTML=`<section class="sd-panel sd-pad"><div class="stl-block-head"><h2>برنامه‌ریزی و خروج ترابری</h2><button type="button" class="btn btn-secondary btn-sm" data-tp="refresh">به‌روزرسانی</button></div><p>تخصیص هر سرویس مستقل است؛ خروج فروشگاه پس از بررسی فروش توسط نگهبانی تأیید می‌شود.</p><div class="adm-list order-compact-scroll tp-plan-list">${transportPlanRows(orders)||'<p>سفارشی در صف گردش جدید نیست.</p>'}</div></section>`;
-  host.onclick=e=>{const b=e.target.closest('[data-tp]');if(!b)return;if(b.dataset.tp==='refresh')return renderTransportPlanQueue();const order=orders.find(o=>o.id===b.dataset.id),service=order?.services?.find(s=>s.run===Number(b.dataset.run));if(order&&service)transportPlanDetails(order,service,resources);};
+  if(!['incoming','assigned'].includes(dsp.planTab))dsp.planTab='incoming';
+  const views=transportPlanViews(orders),counts={incoming:views.filter(v=>!v.assigned).length,assigned:views.filter(v=>v.assigned).length};
+  const tabs=[['incoming','ورودی','سفارش‌های بدون راننده؛ آمادهٔ تخصیص'],['assigned','تخصیص‌یافته','سرویس‌هایی که راننده و خودروی آن‌ها مشخص شده است']];
+  const rows=transportPlanRows(orders,dsp.planTab);
+  const empty=dsp.planTab==='assigned'?'سرویس تخصیص‌یافته‌ای نیست':'سفارش ورودی بدون راننده‌ای نیست';
+  host.innerHTML=`<section class="sd-panel sd-pad"><div class="stl-block-head"><h2>برنامه‌ریزی و خروج ترابری</h2><button type="button" class="btn btn-secondary btn-sm" data-tp="refresh">به‌روزرسانی</button></div><p>تخصیص هر سرویس مستقل است؛ خروج فروشگاه پس از بررسی فروش توسط نگهبانی تأیید می‌شود.</p>`
+   +`<nav class="sd-tabs tp-plan-tabs" role="tablist" aria-label="سفارش‌های ترابری">${tabs.map(([key,label,desc])=>`<button type="button" role="tab" aria-selected="${dsp.planTab===key}" aria-controls="tpPlanPanel" class="sd-tab ${dsp.planTab===key?'active':''}" data-tp="plan-tab" data-tab="${key}"><span class="sd-tab-copy"><strong>${label}</strong><small>${desc}</small></span><b class="sd-tab-count ${counts[key]?'show':''}">${counts[key]?fa(counts[key]):''}</b></button>`).join('')}</nav>`
+   +`<div id="tpPlanPanel" role="tabpanel" data-tp-panel="${dsp.planTab}"><div class="adm-list order-compact-scroll tp-plan-list">${rows||`<p>${empty}</p>`}</div></div></section>`;
+  host.onclick=e=>{
+   const b=e.target.closest('[data-tp]');if(!b)return;
+   if(b.dataset.tp==='refresh')return renderTransportPlanQueue();
+   if(b.dataset.tp==='plan-tab'){dsp.planTab=b.dataset.tab==='assigned'?'assigned':'incoming';return renderTransportPlanQueue();}
+   const order=orders.find(o=>o.id===b.dataset.id),service=order?.services?.find(s=>s.run===Number(b.dataset.run));
+   if(order&&service)transportPlanDetails(order,service,resources);
+  };
  }catch(err){if($('#transportPlans')===host)host.innerHTML=`<section class="sd-panel sd-pad" role="alert">خطا در دریافت برنامه ترابری: ${esc(err.message)} <button type="button" class="btn btn-secondary btn-sm" data-tp-retry>تلاش مجدد</button></section>`;host.querySelector('[data-tp-retry]')?.addEventListener('click',renderTransportPlanQueue);}
 }
 function transportPlanDetails(order,service,resources){

@@ -439,6 +439,36 @@ async function deleteProduct(id) {
   catch (err) { toast(err.message); }
 }
 
+/* ---------- v37.50.0 — سوابق کامل سفارش‌ها (کارتابل مدیر) ----------
+   فهرست همهٔ سفارش‌ها با جستجو و صفحه‌بندی؛ دکمهٔ «جزئیات سفارش» پروندهٔ کامل
+   (نوع سفارش، اطلاعات کامل مشتری، اقلام و وزن‌کشی با نام کاربر، مراحل و همهٔ رویدادها)
+   را از مسیر مدیریتی باز می‌کند. */
+async function renderAdminOrdersHistory(q = '', offset = 0) {
+  const host = $('#content'); if (!host) return;
+  host.onclick = null;
+  host.innerHTML = '<div class="empty">در حال دریافت سوابق سفارش‌ها…</div>';
+  try {
+    const d = await api(`/api/admin/orders?limit=25&offset=${offset}&q=${encodeURIComponent(q)}`);
+    const rows = d.orders || [];
+    const body = rows.map((o) => `<article class="adm-row adm-order-row">
+      <div class="adm-cell"><small>شماره سفارش</small><b>${admE(fa(o.orderNo || '—'))}</b><span class="adm-code">${admE(o.orderTypeLabel || '')}</span></div>
+      <div class="adm-cell"><small>مشتری / فروشگاه</small><b>${admE(o.name || o.customerName || '—')}</b><span dir="ltr">${admE(fa(o.phone || ''))}</span></div>
+      <div class="adm-cell"><small>ثبت سفارش</small><b>${admE(dt(o.createdAt))}</b><span>ثبت‌کننده: ${admE(o.createdByName || '—')}</span></div>
+      <div class="adm-cell"><small>آخرین اقدام</small><b>${admE(dt(o.updatedAt || o.createdAt))}</b>${o.warehouseCompletedAt ? `<span>وزن نهایی انبار: ${admE(dt(o.warehouseCompletedAt))}</span>` : ''}</div>
+      <div class="adm-cell"><small>وضعیت</small>${badge(o.status)}</div>
+      <div class="adm-cell adm-actions"><button type="button" class="btn btn-secondary btn-sm" data-admin-order-history="${admE(o.id)}">${icon('eye', 14)} جزئیات سفارش</button></div>
+    </article>`).join('');
+    host.innerHTML = admHead('history', 'سوابق کامل سفارش‌ها', 'همهٔ سفارش‌ها از زمان ثبت تا پایان کار؛ با جزئیات کامل مشتری، اقلام، وزن‌کشی و کاربر ثبت‌کنندهٔ هر مرحله.', Number(d.total || rows.length))
+      + `<form id="admOrderSearch" class="adm-toolbar"><div class="input-shell adm-search"><span>${icon('search', 16)}</span><input name="q" value="${admE(q)}" placeholder="نام مشتری، تلفن، شماره سفارش یا فاکتور" aria-label="جستجو در سوابق سفارش‌ها" autocomplete="off"></div><button class="btn btn-primary" type="submit">جستجو</button></form>`
+      + `<div class="adm-count">${fa(offset + 1)}–${fa(Math.min(Number(d.total || 0), offset + rows.length))} از ${fa(d.total || 0)} سفارش</div>`
+      + `<div id="admList" class="adm-list adm-orders-list">${body || sdEmpty('history', 'سفارشی یافت نشد', 'عبارت جستجو را تغییر دهید.')}</div>`
+      + `<div class="sales-history-pages"><button type="button" class="btn btn-secondary" data-orders-offset="${Math.max(0, offset - 25)}" ${offset === 0 ? 'disabled' : ''}>صفحه قبل</button><button type="button" class="btn btn-secondary" data-orders-offset="${offset + 25}" ${offset + 25 >= Number(d.total || 0) ? 'disabled' : ''}>صفحه بعد</button></div></section>`;
+    bindAdm('orders-history', host); // پیوند «جزئیات سفارش» را به پروندهٔ کامل وصل می‌کند
+    host.querySelector('#admOrderSearch').onsubmit = (e) => { e.preventDefault(); renderAdminOrdersHistory(e.currentTarget.elements.q.value.trim(), 0); };
+    host.querySelectorAll('[data-orders-offset]').forEach((button) => button.addEventListener('click', () => renderAdminOrdersHistory(q, Number(button.dataset.ordersOffset) || 0)));
+  } catch (e) { host.innerHTML = `<div class="form-error">${admE(e.message)}</div>`; }
+}
+
 /* ---------- تاریخچه فعالیت‌ها ---------- */
 async function renderActivityPage() {
   const u = await api('/api/admin/users');
